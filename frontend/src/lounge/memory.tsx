@@ -1,6 +1,7 @@
 import {useEffect,useState} from 'react';
 import type {MemoryDeck,MemoryDifficulty,MemoryIntent,MemoryState,MemorySymbol} from './memoryBridge';
 import './memory.css';
+import {MemoryIllustration} from './MemoryIllustration';
 type Lang='en'|'de';
 type Props={state:MemoryState;language:Lang;pending:boolean;error:string;animations:boolean;
  command:(intent:MemoryIntent)=>void};
@@ -55,11 +56,13 @@ function emblem(deckId:string,glyph:string){
 function Face({deckId,symbol}:{deckId:string;symbol:MemorySymbol}){
  const isPlaying=deckId==='card-suits';
  const isCasino=deckId==='casino-icons';
+ const isIllustrated=deckId==='animals'||deckId==='fruits';
  const glyph=emblem(deckId,symbol.glyph);
- return <div className={'memo-face '+(isPlaying?'playing':isCasino?'casino':'medallion')}
+ return <div className={'memo-face '+(isPlaying?'playing':isCasino?'casino':isIllustrated?'illustrated '+deckId:'medallion')}
    style={{'--memo-accent':symbol.accent} as React.CSSProperties}>
   {isPlaying&&<span className="memo-corner">{symbol.glyph}</span>}
-  <span className="memo-glyph" aria-hidden="true">{glyph}</span>
+  {isIllustrated?<MemoryIllustration deck={deckId as 'animals'|'fruits'} name={symbol.name} accent={symbol.accent}/>
+   :<span className="memo-glyph" aria-hidden="true">{glyph}</span>}
   {isPlaying&&<span className="memo-corner inverted">{symbol.glyph}</span>}
   {!isPlaying&&<span className="memo-face-name">{symbol.name}</span>}
  </div>;

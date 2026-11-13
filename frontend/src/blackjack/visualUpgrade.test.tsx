@@ -48,7 +48,7 @@ describe('premium wager sculpture',()=>{
   expect(html).toContain('bj-chip-face-emerald');
   expect(html).toContain('bj-chip-face-ruby');
   expect(html).toContain('bj-wager-facing-coin');
-  expect(html).toContain('bj-wager-pixi');
+  expect(html).not.toContain('bj-wager-pixi');
   expect(html).toContain('aria-hidden="true"');
   expect(html).not.toContain('<button');
   expect(html).not.toContain('<input');

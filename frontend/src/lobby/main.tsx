@@ -3,8 +3,12 @@ import { useEffect, useState } from 'react';
 import type {PointerEvent as ReactPointerEvent} from 'react';
 import { createRoot } from 'react-dom/client';
 import {PlayerPortrait,CosmeticTitle,VaultIcon} from './Cosmetics';
+import {localizedSudokuTitleName} from './sudokuTitleLocalization';
 import {Modal} from './Modal';
 import {NavIcon} from './NavIcon';
+import './rouletteTile.css';
+import {ArcadeMenu} from './ArcadeMenu';
+import {ARCADE_MODE_ID,arcadeLobbyMode} from './arcadeCatalog';
 import { LobbyAmbient } from './LobbyAmbient';
 import { ModernShop } from './ModernShop';
 import { ModernChallenges } from './ModernChallenges';
@@ -28,12 +32,14 @@ import type { LobbyMode, LobbySnapshot } from './lobbyBridge';
 import './lobby.css';
 
 type Filter = 'all'|'tables'|'slots'|'relax'|'empire'|'collections'|'shop'|'stats'|'season'|'challenges'|'vault'|'daily'|'profile';
-const artOrder = ['blackjack','kniffel','chill-lounge','casino-empire','midnight-reels',
-  'neon-vault','nine-lives','midnight-manor','midnight-merge'];
+const artOrder = ['blackjack','roulette','kniffel','chill-lounge','casino-empire','midnight-reels',
+  'neon-vault','nine-lives','midnight-manor','midnight-merge',ARCADE_MODE_ID,'midnight-descent'];
 const categoryById: Record<string, string> = {
-  blackjack:'TABLE GAMES',kniffel:'TABLE GAMES','chill-lounge':'RELAXED',
+  blackjack:'TABLE GAMES',roulette:'TABLE GAMES · HIGH LIMIT',kniffel:'TABLE GAMES','chill-lounge':'RELAXED',
   'casino-empire':'EMPIRE','midnight-reels':'SLOTS','neon-vault':'SLOTS',
   'nine-lives':'SLOTS','midnight-manor':'SLOTS','midnight-merge':'CASINO RESTORATION',
+  'arcade-games':'ARCADE CHALLENGES',
+  'midnight-descent':'ACTION ROGUELITE',
 };
 const navigation: {id: Filter; en: string; de: string}[] = [
   {id:'all',en:'Lobby',de:'Lobby'}, {id:'tables',en:'Table Games',de:'Tischspiele'},
@@ -50,7 +56,7 @@ const navigation: {id: Filter; en: string; de: string}[] = [
 function percent(n: number): string { return Math.round(n * 100) + '%'; }
 function matchesFilter(id: string, filter: Filter): boolean {
   if (filter === 'all') return true;
-  if (filter === 'tables') return id === 'blackjack' || id === 'kniffel';
+  if (filter === 'tables') return id === 'blackjack' || id === 'roulette' || id === 'kniffel';
   if (filter === 'slots') return ['midnight-reels','neon-vault','nine-lives','midnight-manor'].includes(id);
   if (filter === 'relax') return id === 'chill-lounge';
   if (filter === 'empire') return ['casino-empire','midnight-merge'].includes(id);
@@ -79,16 +85,23 @@ function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
   };
   return <article className={'lobby-game game-'+mode.id+
       (mode.enabled?'':' unavailable')} onPointerMove={move} onPointerLeave={leave}>
-    <div className="game-art-window" data-mode-art={mode.id} aria-hidden="true"/>
+    <div className="game-art-window" data-mode-art={mode.id} aria-hidden="true">
+      {mode.id==='roulette'&&<div className="roulette-tile-art"><span>✦</span><i/></div>}
+      {mode.id===ARCADE_MODE_ID&&<div className="arcade-tile-scene">
+        <span className="arcade-tile-spark one"/><span className="arcade-tile-spark two"/>
+        <span className="arcade-tile-spark three"/>
+        <span className="arcade-tile-machine"><span>✦</span></span>
+      </div>}
+    </div>
     <div className="game-info">
-      <div className="game-category">{categoryById[mode.id] || mode.category.toUpperCase()}</div>
+      <div className="game-category">{mode.id==='midnight-descent'?(language==='de'?'ACTION-ROGUELITE · NEUES FENSTER':'ACTION ROGUELITE · NEW WINDOW'):(categoryById[mode.id] || mode.category.toUpperCase())}</div>
       <h3>{mode.title}</h3>
       <p>{mode.description}</p>
       <div className="game-actions">
         <button type="button" className="lobby-gold-button" disabled={!mode.enabled}
           onClick={()=>onOpen(mode.id)}>
-          <span aria-hidden="true">{mode.id==='casino-empire'?'↗':'▶'}</span>
-          {mode.id==='casino-empire'? (language==='de'?'Öffnen':'Enter') :
+          <span aria-hidden="true">{mode.id==='casino-empire'||mode.id==='midnight-descent'?'↗':'▶'}</span>
+          {mode.id==='midnight-descent'?(language==='de'?'Öffnen':'Open'):mode.id==='casino-empire'? (language==='de'?'Öffnen':'Enter') :
             (language==='de'?'Spielen':'Play')}
         </button>
         {mode.secondary && <button className="lobby-secondary" type="button"
@@ -181,6 +194,7 @@ function LobbyApp() {
   const [shopPending,setShopPending] = useState<string|null>(null);
   const [shopNotice,setShopNotice] = useState<{success:boolean;message:string}|null>(null);
   const [filter,setFilter] = useState<Filter>('all');
+  const [arcadeOpen,setArcadeOpen] = useState(false);
   const [updates,setUpdates] = useState<LobbyUpdatesSnapshot>(fallbackUpdates);
   const [updatesOpen,setUpdatesOpen] = useState(false);
   const [newsOpen,setNewsOpen]=useState(false);
@@ -198,7 +212,7 @@ function LobbyApp() {
   useEffect(()=>{
     const stop = onRecordsMessage(message=>{
       if(message.type==='lobby.records.show'){
-        setRecordsVisible(message.data.page);setShopVisible(false);setDailyOpen(false);
+        setRecordsVisible(message.data.page);setShopVisible(false);setDailyOpen(false);setArcadeOpen(false);
       }else if(message.type==='lobby.records.snapshot'){
         if(message.data.page==='challenges'){setChallenges(message.data.snapshot);setChallengesLoaded(true);}
         else if(message.data.page==='statistics'){setStatistics(message.data.snapshot);setStatisticsLoaded(true);}
@@ -232,7 +246,7 @@ function LobbyApp() {
         setShopPending(null);
         setShopNotice({success:message.data.success,message:message.data.message});
       }
-      else if(message.type==='lobby.shop.show'){setShopVisible(true);setRecordsVisible(null);setDailyOpen(false);}
+      else if(message.type==='lobby.shop.show'){setShopVisible(true);setRecordsVisible(null);setDailyOpen(false);setArcadeOpen(false);}
       else if(message.type==='lobby.shop.hide'){setShopVisible(false);}
     });
     return stop;
@@ -265,6 +279,7 @@ function LobbyApp() {
     lobbyCommand('lobby.records.close');
   };
   const openRecords = (page:RecordsPage) => {
+    setArcadeOpen(false);
     if(shopVisible)closeShop();
     setRecordsVisible(page);setDailyOpen(false);setShopNotice(null);setRecordsPending(null);
     if(page==='vault'){setVaultReward(null);setVaultNotice(null);}
@@ -279,6 +294,7 @@ function LobbyApp() {
     lobbyCommand('lobby.records.open',page);
   };
   const openShop = () => {
+    setArcadeOpen(false);
     if(recordsVisible)closeRecords();
     setShopNotice(null);
     setShopVisible(true);setShopLoaded(!embeddedLobby);setDailyOpen(false);
@@ -288,7 +304,17 @@ function LobbyApp() {
     setShopVisible(false);setShopNotice(null);setShopPending(null);
     lobbyCommand('lobby.shop.close');
   };
-  const openMode = (id:string)=>{if(shopVisible)closeShop();if(recordsVisible)closeRecords();lobbyCommand('lobby.open',id);};
+  const openMode = (id:string)=>{
+    if(shopVisible)closeShop();
+    if(recordsVisible)closeRecords();
+    if(id==='roulette'&&!embeddedLobby){window.location.href='./roulette.html';return;}
+    if(id===ARCADE_MODE_ID){
+      setDailyOpen(false);setFilter('all');setArcadeOpen(true);
+      return;
+    }
+    setArcadeOpen(false);
+    lobbyCommand('lobby.open',id);
+  };
   const openSecondary = (id:string)=>lobbyCommand('lobby.open-secondary',id);
   const openProgression = (id:string)=>{
     if(id==='Cosmetic Shop'){openShop();return;}
@@ -301,6 +327,7 @@ function LobbyApp() {
     lobbyCommand('lobby.progression',id);
   };
   const chooseNav = (id:Filter)=>{
+    setArcadeOpen(false);
     if(id==='collections') {openProgression("Collector's Album");return;}
     if(id==='shop') {openShop();return;}
     if(shopVisible)closeShop();
@@ -324,27 +351,28 @@ function LobbyApp() {
     setUpdatesOpen(false);
     lobbyCommand('lobby.updates.close');
   };
-  const modes = data.modes
+  // Arcade is a local selection screen; it does not issue an unknown native game route.
+  const modes = [...data.modes.filter(x=>x.id!==ARCADE_MODE_ID),arcadeLobbyMode(data.language)]
     .filter(x=>matchesFilter(x.id,filter))
     .sort((a,b)=>artOrder.indexOf(a.id)-artOrder.indexOf(b.id));
   return <div className="casino-lobby-shell" data-reduced={lowMotion || !data.animationsEnabled}>
     <LobbyAmbient motionEnabled={!lowMotion && data.animationsEnabled}/>
     <header className="lobby-topbar">
-      <button className="lobby-brand" type="button" onClick={()=>{if(shopVisible)closeShop();if(recordsVisible)closeRecords();setFilter('all');}}>
+      <button className="lobby-brand" type="button" onClick={()=>{if(shopVisible)closeShop();if(recordsVisible)closeRecords();setArcadeOpen(false);setFilter('all');}}>
         <span className="brand-spade" aria-hidden="true">♠</span>
         <span><b>BLACKJACK CASINO</b><i>THE MIDNIGHT CLUB</i></span>
       </button>
       <div className="lobby-top-status">
         <button className="header-widget header-compact" onClick={()=>openProgression('Challenges')}>
           <span className="header-emoji">♛</span><span><small>{de?'AUFGABEN':'CHALLENGES'}</small>
-          <b>{percent(data.challengeFraction)}</b><Progress value={data.challengeFraction}/></span>
+          <b>{data.challengeCompleted} / {data.challengeTotal} · {percent(data.challengeOverallFraction)}</b><Progress value={data.challengeOverallFraction}/></span>
         </button>
         <button className="header-widget header-compact" onClick={()=>openProgression("Collector's Album")}>
           <span className="header-emoji">▤</span><span><small>ALBUM</small><b>{data.albumOwned} / {data.albumTotal}</b></span>
         </button>
         <button className="header-widget profile-widget" onClick={()=>openRecords('profile')}>
           <PlayerPortrait portrait={data.portraitVariant} frame={data.frameVariant}/><span><b>{data.displayName}</b>
-          <small>LV {data.level} · ◆ {data.coins}</small><em><CosmeticTitle variant={data.titleVariant}>{data.title}</CosmeticTitle></em></span>
+          <small>LV {data.level} · ◆ {data.coins}</small><em><CosmeticTitle variant={data.titleVariant}>{localizedSudokuTitleName(data.title,data.language)}</CosmeticTitle></em></span>
           {data.prestige>0&&<span className="prestige-badge">✦<br/>P{data.prestige}</span>}
         </button>
         <button className="header-widget vault-widget" onClick={()=>openRecords('vault')}>
@@ -357,16 +385,11 @@ function LobbyApp() {
         <span><small>BANKROLL</small><strong>{data.bankroll}</strong></span>
         {data.showEmpireBalance&&<span className="empire-wallet"><small>EMPIRE CREDITS</small><strong>{data.empireCredits}</strong></span>}
       </div>
-      <button type="button" className="lobby-language" aria-label={de?'Sprache wechseln: Englisch':'Switch language: German'}
-        title={de?'Switch to English':'Zu Deutsch wechseln'}
-        onClick={()=>lobbyCommand('lobby.language.set',de?'en':'de')}>
-        <span>{de?'EN':'DE'}</span>
-      </button>
       <button type="button" className="lobby-exit" onClick={()=>lobbyCommand('lobby.exit')}>
         ↪ <span>{de?'Beenden':'Exit'}</span>
       </button>
     </header>
-    <div className={'lobby-body '+(shopVisible?'shop-active':recordsVisible?'records-active':'')}>
+    <div className={'lobby-body '+(shopVisible?'shop-active':recordsVisible?'records-active':arcadeOpen?'arcade-active':'')}>
       <nav className="lobby-nav" aria-label={de?'Casino-Navigation':'Casino navigation'}>
         <div className="lobby-nav-scroll">
         <button className="lobby-nav-item" onClick={()=>setNewsOpen(true)}><NavIcon name="news"/><span>News</span></button>
@@ -375,9 +398,16 @@ function LobbyApp() {
           className={'lobby-nav-item '+((shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')+(n.id==='collections'?' nav-section-start':'')}
           onClick={()=>chooseNav(n.id)}>
           <NavIcon name={n.id}/>
-          <span>{de?n.de:n.en}</span>
-          {n.id==='challenges'&&data.challengesReady>0&&
-            <span className="nav-ready" aria-label={de?'Belohnungen bereit':'Rewards ready'}>{data.challengesReady}</span>}
+          <span className="lobby-nav-label">{de?n.de:n.en}</span>
+          {((n.id==='challenges'&&data.challengesReady>0)||
+            (n.id==='collections'&&data.albumPacksReady>0))&&
+            <span className="nav-ready" aria-label={
+              (n.id==='collections'
+                ?(de?'Ungeöffnete Packs: ':'Unopened packs: ')
+                :(de?'Abholbereite Belohnungen: ':'Claimable rewards: '))+
+              (n.id==='collections'?data.albumPacksReady:data.challengesReady)}>
+              +{Math.min(99,n.id==='collections'?data.albumPacksReady:data.challengesReady)}
+            </span>}
         </button>)}
         <div className="lobby-nav-decoration" aria-hidden="true">♣</div>
         </div>
@@ -433,7 +463,8 @@ function LobbyApp() {
         onBack={()=>{closeShop();setFilter('all');}}
         onCosmetic={id=>{setShopPending(id);lobbyCommand('lobby.shop.action',id);}}
         onPack={rarity=>{setShopPending(rarity);lobbyCommand('lobby.shop.pack',rarity);}}
-        onAlbum={()=>openProgression("Collector's Album")}/>:<>
+        onAlbum={()=>openProgression("Collector's Album")}/>:
+      arcadeOpen?<ArcadeMenu language={data.language} onBack={()=>setArcadeOpen(false)}/>:<>
       <main className="lobby-main">
         <div className="lobby-hero">
           <div className="lobby-hero-picture" aria-hidden="true"/>
@@ -470,11 +501,20 @@ function LobbyApp() {
         <header className="lobby-updates-header">
           <div><small>THE MIDNIGHT CLUB</small>
             <h2>{de?'Einstellungen':'Settings'}</h2>
-            <p>{de?'Musik und die gemeinsame Casino-Anzeige verwalten.':'Manage music and the shared casino display.'}</p>
+            <p>{de?'Musik, Sprache und Casino-Anzeige verwalten.':'Manage language, music and the shared casino display.'}</p>
           </div>
           <button type="button" className="lobby-updates-close" aria-label={de?'Schließen':'Close'}
             onClick={()=>setSettingsOpen(false)}>×</button>
         </header>
+        <label className="lobby-settings-language">
+          <span>{de?'Sprache':'Language'}</span>
+          <select data-testid="lobby-language-select" value={data.language}
+            onChange={e=>lobbyCommand('lobby.language.set',e.target.value)}>
+            <option value="de">Deutsch</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+
         <label className="lobby-settings-check">
           <input type="checkbox" data-testid="lobby-music-enabled" checked={data.musicEnabled}
             onChange={e=>lobbyCommand('lobby.settings.music',String(e.target.checked))}/>

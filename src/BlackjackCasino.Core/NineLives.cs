@@ -36,16 +36,18 @@ public static class NineLivesRules
         10_000m, 25_000m,
     ];
 
+    // 1000-point strip gives Triple-9 a subtle 3.0% -> 3.1% per-cell boost.
+    // Other bonus features and payout multipliers remain unchanged.
     private static readonly NineLivesSymbolDefinition[] Definitions =
     [
-        new(NineLivesSymbol.Yarn, "Yarn", 28, 0.75m),
-        new(NineLivesSymbol.Fishbone, "Fishbone", 23, 1.25m),
-        new(NineLivesSymbol.Bell, "Lucky Bell", 18, 2m),
-        new(NineLivesSymbol.TabbyCat, "Tabby", 12, 4m),
-        new(NineLivesSymbol.WhiteCat, "Moon Cat", 8, 7m),
-        new(NineLivesSymbol.BlackCat, "Black Cat", 5, 12m),
-        new(NineLivesSymbol.Wild, "Pounce Wild", 3, 25m),
-        new(NineLivesSymbol.Bonus, "Nine Lives", 3, 0m),
+        new(NineLivesSymbol.Yarn, "Yarn", 279, 0.75m),
+        new(NineLivesSymbol.Fishbone, "Fishbone", 230, 1.25m),
+        new(NineLivesSymbol.Bell, "Lucky Bell", 180, 2m),
+        new(NineLivesSymbol.TabbyCat, "Tabby", 120, 4m),
+        new(NineLivesSymbol.WhiteCat, "Moon Cat", 80, 7m),
+        new(NineLivesSymbol.BlackCat, "Black Cat", 50, 12m),
+        new(NineLivesSymbol.Wild, "Pounce Wild", 30, 25m),
+        new(NineLivesSymbol.Bonus, "Nine Lives", 31, 0m),
     ];
 
     private static readonly int[][] Paylines =

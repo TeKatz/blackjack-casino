@@ -30,6 +30,7 @@ internal sealed record AppPreferences
     public BlackjackCasino.Core.Kniffel.KniffelState Kniffel { get; init; } = new();
 
     public BlackjackCasino.Core.Sudoku.SudokuProgressState Sudoku { get; init; } = new();
+    public BlackjackCasino.Core.Sudoku.SudokuVariantProgressState SudokuVariants { get; init; } = new();
     public bool SudokuShowTimer { get; init; } = true;
     public bool SudokuShowGuides { get; init; } = true;
     public BlackjackCasino.Core.Solitaire.SolitaireProgressState Solitaire { get; init; } = new();
@@ -38,6 +39,7 @@ internal sealed record AppPreferences
     public BlackjackCasino.Core.Jigsaw.JigsawProgressState Jigsaw { get; init; } = new();
     public BlackjackCasino.Core.Adventure.AdventureProgressState Adventure { get; init; } = new();
     public BlackjackCasino.Core.TowerDefense.TdState TowerDefense { get; init; } = new();
+    public BlackjackCasino.Core.Minesweeper.SweepProgress Minesweeper { get; init; } = new();
 
     public BlackjackCasino.Core.Empire.EmpireState Empire { get; init; } = new();
 

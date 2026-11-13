@@ -4,9 +4,11 @@ import { createRoot } from 'react-dom/client';
 import {
   availableActions, browserPreview, sendAction, sendCommand, subscribeToHost,
 } from './bridge/protocol';
-import type { GameAction, ManorSnapshot } from './bridge/protocol';
+import type { GameAction, ManorSnapshot, ManorRun } from './bridge/protocol';
 import { ManorStage } from './graphics/ManorStage';
-import { ManorBonusStage } from './graphics/ManorBonusStage';
+import {ManorWindowVista} from './graphics/ManorWindowVista';
+import { ManorBonus3D } from './graphics/ManorBonus3D';
+import { shouldMountManorGodot } from './graphics/manorGodotLoadPolicy';
 import { ManorHelp } from './ManorHelp';
 import { localizeFeature, t } from './i18n';
 import type { ManorLanguage } from './i18n';
@@ -15,7 +17,6 @@ import { localizeMoment, runCue, runMoment, spinCue, settledSpinMoment } from '.
 import { isFreshOwnSpin } from './graphics/presentationGate';
 import type { ManorMoment } from './graphics/manorMoments';
 import type { ReelSpeed } from './graphics/reelTiming';
-import type { RendererDiagnostics } from './graphics/rendererDiagnostics';
 import { BET_PRESETS, AUTO_PRESETS, canAffordBet, validManorBet, shouldContinueAuto } from './graphics/manorAutoplay';
 import './styles.css';
 
@@ -31,6 +32,9 @@ function ManorApp() {
   const [revealingReels, setRevealingReels] = useState(false);
   const [languageOverride, setLanguageOverride] = useState<ManorLanguage | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [conclusionOpen, setConclusionOpen] = useState(false);
+  const lastLiveRun = useRef<ManorRun | null>(null);
+  const concludedRun = useRef<ManorRun | null>(null);
   const closeHelp = useCallback(() => setHelpOpen(false), []);
   const [connected, setConnected] = useState(!embedded);
   const [error, setError] = useState<string | null>(null);
@@ -61,8 +65,7 @@ function ManorApp() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [ambienceEnabled, setAmbienceEnabled] = useState(false);
   const [volume, setVolume] = useState(35);
-  const [showDiagnostics, setShowDiagnostics] = useState(false);
-  const [renderMetrics, setRenderMetrics] = useState<RendererDiagnostics | null>(null);
+
   const [moment, setMoment] = useState<ManorMoment | null>(null);
   const audio = useRef<ManorAudio | null>(null);
   if (audio.current === null) audio.current = new ManorAudio();
@@ -86,6 +89,8 @@ function ManorApp() {
     setRevealingReels(false);
     audio.current?.stopReels();
     setShownSnapshot(result);
+    lastLiveRun.current = result.run;
+    if (result.run) setConclusionOpen(false);
     setMoment(settledSpinMoment(result));
     const cue = spinCue(result);
     if (cue) audio.current?.play(cue);
@@ -96,7 +101,16 @@ function ManorApp() {
       if (BigInt(next.revision) < BigInt(acceptedRevisionRef.current)) return false;
       acceptedRevisionRef.current = next.revision;
       setSnapshot(next);
-      if (!conceal && awaitingPresentation.current === null) setShownSnapshot(next);
+      if (!conceal && awaitingPresentation.current === null) {
+        const precedingRun = lastLiveRun.current;
+        if (precedingRun && !next.run && next.lastRun) {
+          concludedRun.current = precedingRun;
+          setConclusionOpen(true);
+        }
+        if (next.run) setConclusionOpen(false);
+        lastLiveRun.current = next.run;
+        setShownSnapshot(next);
+      }
       setBet(defaultBet(next.selectedBet));
       setConnected(true);
       return true;
@@ -147,6 +161,10 @@ function ManorApp() {
     if (embedded && connected && rendererReady) { finishModeBoot(); sendCommand('ui.ready'); }
   }, [connected, rendererReady]);
 
+  // The WebGL iframe must exist ONLY while the bonus is on screen.
+  // Keeping a hidden Godot context at 8 FPS starved the PixiJS reel renderer.
+  // Browser caching can still reuse downloaded WASM/PCK bytes on the next visit.
+
   const actions = availableActions(snapshot);
   const motionOff = lowMotion || !ambient || !snapshot.animationsEnabled;
   const disabled = !embedded || !connected || !rendererReady ||
@@ -156,6 +174,10 @@ function ManorApp() {
   const validBet = validManorBet(bet);
   const fundedBet = validBet && canAffordBet(snapshot.bankroll, bet);
   const run = shownSnapshot.run;
+  const practice = shownSnapshot.practiceRun ?? null;
+  const godotVisible = Boolean(practice || run || conclusionOpen);
+  const bonusRun = practice ?? run ?? (conclusionOpen ? concludedRun.current : null);
+
   const language: ManorLanguage = languageOverride ?? snapshot.language;
   const visibleMoment = moment ? localizeMoment(moment, language) : null;
   useEffect(() => { document.documentElement.lang = language; }, [language]);
@@ -173,6 +195,8 @@ function ManorApp() {
   }, [snapshot.globalSoundEnabled, snapshot.globalMusicEnabled, snapshot.globalMusicVolume]);
 
   function act(type: GameAction, extras: { bet?: string; room?: number } = {}) {
+    // Never wager behind an acknowledged C# payout whose 3D receipt is open.
+    if (conclusionOpen && type.startsWith('spin.')) return;
     // Immediate ref guard prevents two same-frame clicks from placing two wagers.
     if (disabled || pendingRef.current !== null ||
       awaitingPresentation.current !== null || !actions.includes(type)) return;
@@ -212,7 +236,8 @@ function ManorApp() {
   useEffect(() => {
     const job = autoSpins.current;
     if (!job || pending !== null || animating || revealingReels ||
-      awaitingPresentation.current !== null || !rendererReady || !connected || fatal) return;
+      awaitingPresentation.current !== null || !rendererReady || !connected || fatal ||
+      Boolean(snapshot.practiceRun) || conclusionOpen) return;
     if (!shouldContinueAuto(snapshot, job.bet, job.remaining)) {
       haltAuto();
       return;
@@ -233,10 +258,11 @@ function ManorApp() {
       }
     };
   }, [snapshot, pending, animating, revealingReels, rendererReady, connected, fatal,
-    autoRemaining, haltAuto]);
+    autoRemaining, conclusionOpen, haltAuto]);
 
   function startAuto(count: number) {
-    if (autoRemaining !== null || disabled || !snapshot.canSpin || !fundedBet) return;
+    if (autoRemaining !== null || disabled || Boolean(snapshot.practiceRun) ||
+      conclusionOpen || !snapshot.canSpin || !fundedBet) return;
     autoSpins.current = { remaining: count - 1, bet };
     setAutoRemaining(count - 1);
     act('spin.paid', { bet });
@@ -279,8 +305,12 @@ function ManorApp() {
                 : t(language, 'paylinesHeader')}
             </span>
           </div>
-          <div className={'slot-viewport' + (run ? ' bonus-active' : '') +
+          <div className={'slot-viewport' + (run || practice || conclusionOpen ? ' bonus-active' : '') +
+            (godotVisible ? ' godot-active' : '') +
             (motionOff ? ' no-motion' : '')}>
+            <div className="manor-room-dressing" aria-hidden="true">
+              <ManorWindowVista animate={!motionOff&&!Boolean(run)}/>
+            </div>
             <div className="slot-dust" aria-hidden="true">
               {Array.from({ length: 20 }, (_, i) => <i key={i} style={{
                 left: (3 + (i * 37) % 91) + '%',
@@ -295,27 +325,20 @@ function ManorApp() {
                 spinEpoch={spinEpoch} onSpinningChange={setAnimating}
                 onReelStop={index => presentation.current.onReel(index)}
                 onSpinPresented={result => presentation.current.onSpin(result)}
-                onDiagnostics={showDiagnostics ? setRenderMetrics : undefined}
+
                 onReady={() => setRendererReady(true)} />
             </div>
-            {run && <div className="slot-bonus-portal">
-              <div className="bonus-depth-tunnel" aria-hidden="true"><i/><i/><i/></div>
-              <ManorBonusStage run={run} language={language} disabled={disabled}
-                reducedMotion={motionOff}
-                onAction={(action, room) => act(action, room === undefined ? {} : { room })} />
-            </div>}
-            {showDiagnostics && <div className="render-metrics slot-metrics"
-              role="status" aria-live="off">
-              <strong>{t(language, 'diagnostics')}</strong>
-              <span>{motionOff ? t(language, 'tickerPaused') :
-                renderMetrics ? t(language, 'fpsObserved', renderMetrics.fpsEstimate,
-                  renderMetrics.averageMs, renderMetrics.p95Ms, renderMetrics.overBudget,
-                  renderMetrics.frames) : t(language, 'sample')}</span>
-              <small>{renderMetrics
-                ? t(language, 'dpiObserved', renderMetrics.width, renderMetrics.height,
-                  renderMetrics.pixelRatio) : t(language, 'diagnosticsHint')}</small>
-            </div>}
-            {visibleMoment && visibleMoment.key !== 'loss' &&
+            {shouldMountManorGodot(godotVisible) && <ManorBonus3D
+              active={godotVisible} demo={Boolean(practice)} run={bonusRun}
+              conclusion={conclusionOpen ? shownSnapshot.lastRun ?? null : null}
+              language={language} reducedMotion={motionOff} disabled={disabled}
+              onExitDemo={() => act('practice.exit')}
+              onCloseResult={() => {
+                concludedRun.current = null;
+                setConclusionOpen(false);
+              }}
+              onAction={(action, room) => act(action, room === undefined ? {} : { room })} />}
+            {!godotVisible && visibleMoment && visibleMoment.key !== 'loss' &&
               <div className={'slot-celebration ' + visibleMoment.key +
               (motionOff ? ' no-motion' : '')} role="status" aria-live="polite">
               <div className="slot-celebration-light" aria-hidden="true">
@@ -347,13 +370,14 @@ function ManorApp() {
               shownSnapshot.scatters + ' ' + t(language, 'moons') + ' · ' +
               shownSnapshot.doors + ' ' + t(language, 'doors')}</span>
           </div>
-          {!run && <div className="action-console">
-            <div className="stake-control">
+          {!run && !practice && !conclusionOpen && <div className="action-console">
+            <div className="stake-control manor-wager-panel" data-testid="manor-bet-controls">
               <label htmlFor="manor-bet">{t(language, 'stake')}</label>
               <div className="bet-input">
                 <span>$</span>
                 <input id="manor-bet" type="text" readOnly value={bet}
-                  disabled={disabled || autoRemaining !== null || !snapshot.canSpin} />
+                  disabled={disabled || Boolean(practice) ||
+                    autoRemaining !== null || !snapshot.canSpin} />
               </div>
               <div className="preset-bets" role="group" aria-label={t(language, 'quickBet')}>
                 {BET_PRESETS.map(value => <button key={value} type="button"
@@ -366,17 +390,19 @@ function ManorApp() {
                 </button>)}
               </div>
             </div>
-            <div className="main-actions">
+            <div className="main-actions manor-primary-panel" data-testid="manor-spin-controls">
               {shownSnapshot.canFreeSpin ?
                 <button className="gold-button" disabled={disabled}
                   onClick={() => act('spin.free')}>{t(language, 'freeSpin', shownSnapshot.freeSpinsRemaining)}</button> :
                 <button className="gold-button"
-                  disabled={disabled || autoRemaining !== null || !shownSnapshot.canSpin || !fundedBet}
+                  disabled={disabled || Boolean(practice) ||
+                    autoRemaining !== null || !shownSnapshot.canSpin || !fundedBet}
                   onClick={() => act('spin.paid', { bet })}>
                   {pending ? t(language, 'saving') : revealingReels ?
                     t(language, 'spinRolling') : t(language, 'spin')}
                 </button>}
-              <div className="auto-spin-controls" role="group" aria-label={t(language, 'autoLabel')}>
+            </div>
+            <div className="auto-spin-controls manor-autoplay-panel" data-testid="manor-auto-controls" role="group" aria-label={t(language, 'autoLabel')}>
                 <span className="auto-label">{autoRemaining === null
                   ? t(language, 'autoLabel')
                   : t(language, 'autoRemaining', autoRemaining)}</span>
@@ -390,7 +416,6 @@ function ManorApp() {
                     <button className="auto-chip auto-stop" type="button"
                       onClick={haltAuto}>{t(language, 'autoStop')}</button>}
                 </div>
-              </div>
             </div>
           </div>}
 
@@ -430,6 +455,20 @@ function ManorApp() {
           <details className="status-card settings-fold">
             <summary className="eyebrow">{t(language, 'settings')}</summary>
             <div className="settings-fold-body">
+            <div className="manor-3d-settings">
+              <span className="eyebrow">{t(language, 'godotSettingsHeading')}</span>
+              <button className="ghost-button manor-test-bonus" type="button"
+                disabled={Boolean(run) || Boolean(practice) || conclusionOpen ||
+                  snapshot.cycleActive || pending !== null || revealingReels ||
+                  animating || awaitingPresentation.current !== null ||
+                  autoRemaining !== null || fatal}
+                onClick={() => {
+                  haltAuto();
+                  setMoment(null);
+                  act('practice.start');
+                }}>{t(language, 'godotTestButton')}</button>
+              <p className="display-hint">{t(language, 'godotSettingsHint')}</p>
+            </div>
             <label className="switch-row"><span>{t(language, 'cabinetAnimation')}</span>
               <input type="checkbox" checked={ambient}
                 onChange={event => setAmbient(event.target.checked)} /></label>
@@ -477,15 +516,6 @@ function ManorApp() {
                   {language === 'de' ? 'Hintergrundmusik ist global deaktiviert.' :
                     'Background music is disabled in the casino-wide settings.'}</p>}
             </div>
-            <label className="switch-row" htmlFor="manor-perf-diagnostics">
-              <span>{t(language, 'diagnosticsToggle')}</span>
-              <input type="checkbox" id="manor-perf-diagnostics"
-                checked={showDiagnostics}
-                onChange={event => {
-                  setShowDiagnostics(event.target.checked);
-                  setRenderMetrics(null);
-                }} />
-            </label>
             <label className="speed-control" htmlFor="reel-speed">{t(language, 'speed')}
               <select id="reel-speed" value={reelSpeed}
                 onChange={event => setReelSpeed(event.target.value as ReelSpeed)}>

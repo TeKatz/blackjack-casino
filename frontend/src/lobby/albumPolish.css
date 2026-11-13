@@ -1,0 +1,165 @@
+/* Collector Archive: viewport-fit, legible 3D flips and uninterrupted collection flow. */
+.album-page.opening-active .record-page-scroll{
+ overflow:hidden!important;overscroll-behavior:none;scrollbar-width:none;
+}
+.album-opening-scrim{
+ overflow:hidden;min-width:0;min-height:0;overscroll-behavior:none;
+ touch-action:none;padding:clamp(5px,.75vh,12px);
+}
+.album-opening-panel{
+ height:100%;max-height:100%;min-height:0;overflow:hidden!important;
+ justify-content:flex-start;gap:clamp(3px,.7vh,9px);
+ padding:clamp(7px,1.3vh,16px) clamp(9px,1.5vw,22px);
+}
+.album-opening-panel .album-opening-exit{flex:0 0 auto}
+.album-opening-panel .album-opening-intro{
+ flex:0 0 auto;min-height:0;max-width:100%;padding:0;
+}
+.album-opening-panel .album-opening-intro h2{
+ font-size:clamp(23px, min(3vw,4.5vh), 39px);margin:2px 0;
+}
+.album-opening-panel .album-opening-intro p{font-size:clamp(10px,1.35vh,12px)}
+.album-opening-panel .album-reveal-banner{
+ flex:0 0 auto;margin:0;min-height:18px;gap:12px;
+}
+.album-opening-panel .album-reveal-spotlight{
+ flex:0 0 auto;min-height:clamp(35px,6vh,62px);margin:0;
+ gap:3px;
+}
+.album-opening-panel .album-reveal-spotlight strong{
+ font-size:clamp(16px,min(2.1vw,3.1vh),25px);
+}
+.album-opening-panel .album-reveal-theatre{
+ flex:1 1 auto;min-height:0;max-height:none;
+ display:flex;align-items:center;justify-content:center;
+ padding:clamp(4px,1vh,12px) clamp(5px,1.2vw,18px);
+}
+.album-opening-panel .album-reveal-grid{
+ flex:1;min-width:0;min-height:0;height:100%;max-width:1110px;
+ display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+ align-items:center;justify-items:center;
+ gap:clamp(3px,.8vw,13px);padding:25px 0 6px;
+}
+.album-opening-panel .album-reveal-slot{
+ width:min(100%,23vh);height:auto;max-height:100%;
+ aspect-ratio:.69;min-width:0;min-height:0;
+}
+.album-opening-panel .album-reveal-front .album-collection-card{
+ height:100%;overflow:hidden;
+}
+/* A CSS filter on the preserve-3d rotating element flattened the faces,
+   exposing mirrored card backs. Keep all colour effects on the faces instead. */
+.album-opening-panel .album-reveal-inner{
+ filter:none!important;transform-style:preserve-3d;
+ -webkit-transform-style:preserve-3d;
+}
+.album-opening-panel .album-reveal-slot.flipped .album-reveal-inner{
+ filter:none!important;transform:rotateY(180deg);
+}
+.album-opening-panel .album-reveal-back,
+.album-opening-panel .album-reveal-front{
+ -webkit-backface-visibility:hidden;backface-visibility:hidden;
+}
+.album-opening-panel .album-reveal-back{transform:rotateY(0deg) translateZ(1px)}
+.album-opening-panel .album-reveal-front{transform:rotateY(180deg) translateZ(1px)}
+.album-opening-panel .album-reveal-slot.flipped.rare,
+.album-opening-panel .album-reveal-slot.flipped.epic,
+.album-opening-panel .album-reveal-slot.flipped.legendary,
+.album-opening-panel .album-reveal-slot.flipped.ultra{filter:none!important}
+.album-opening-panel .album-reveal-slot.flipped.epic .album-reveal-front{
+ box-shadow:inset 0 0 16px #c79cff66,0 0 15px #ad76e799;
+}
+.album-opening-panel .album-reveal-slot.flipped.legendary .album-reveal-front{
+ box-shadow:inset 0 0 18px #f8d98a66,0 0 18px #f3cf828c;
+}
+/* Status remains outside the flipping layer so it is never mirrored. */
+.album-reveal-result{
+ position:absolute;top:-22px;left:50%;transform:translateX(-50%);
+ z-index:7;pointer-events:none;white-space:nowrap;
+ display:inline-flex;align-items:center;justify-content:center;
+ min-height:20px;padding:2px 9px;border-radius:999px;border:1px solid currentColor;
+ letter-spacing:.07em;font-size:10px;font-weight:900;text-transform:uppercase;
+}
+.album-reveal-result.is-new{
+ color:#a9ffce;background:#124330ec;text-shadow:0 0 8px #6cf4a87c;
+ box-shadow:0 0 13px #48e7a071;
+}
+.album-reveal-result.is-duplicate{
+ color:#f1d5ff;background:#3e2055ee;text-shadow:0 0 8px #e3a5ff8c;
+ box-shadow:0 0 13px #d387ff66;
+}
+.album-opening-panel .album-opening-summary{
+ flex:0 0 auto;margin:2px 0;padding:clamp(5px,.9vh,11px) 12px;gap:clamp(9px,2vw,22px);
+}
+.album-opening-panel .album-opening-actions{
+ flex:0 0 auto;min-height:38px;margin:0;
+}
+.album-opening-panel .album-opening-actions button{
+ padding:clamp(7px,1.1vh,11px) clamp(12px,2vw,20px);
+}
+.album-collect-status{color:#a5e7be;font-size:12px;font-weight:750;
+ letter-spacing:.05em;text-align:center}
+.album-opening-panel .album-opening-notice{flex:0 0 auto;max-width:100%}
+.album-opening-panel .album-booster-stage{flex:1;min-height:0;overflow:hidden}
+.album-opening-panel.phase-stage .album-booster-stage,
+.album-opening-panel.phase-await .album-booster-stage{
+ min-height:0;
+}
+/* Collection-only ambient foils: Epic and Legendary never stop glowing, even at rest. */
+.album-gallery .album-collection-card.is-epic{
+ animation:album-epic-ambient 4.2s ease-in-out infinite alternate;
+}
+.album-gallery .album-collection-card.is-legendary{
+ animation:album-legendary-ambient 3.8s ease-in-out infinite alternate;
+}
+.album-gallery .album-collection-card.is-epic::after,
+.album-gallery .album-collection-card.is-legendary::after{
+ content:"";position:absolute;inset:2px;border-radius:9px;pointer-events:none;
+ z-index:3;opacity:.26;
+ background:linear-gradient(115deg,transparent 21%,#f8e7ff77 48%,transparent 68%);
+ transform:translateX(-120%);
+ animation:album-rare-sheen 6.5s ease-in-out infinite;
+}
+.album-gallery .album-collection-card.is-legendary::after{
+ background:linear-gradient(115deg,transparent 18%,#ffdf8988 48%,transparent 72%);
+ animation-duration:5.3s;
+}
+@keyframes album-epic-ambient{
+ 0%{box-shadow:0 0 5px #a262ef55,inset 0 0 6px #af7de433;border-color:#aa75d8}
+ 100%{box-shadow:0 0 20px #c69effaa,inset 0 0 13px #b37fff77;border-color:#e3c4ff}
+}
+@keyframes album-legendary-ambient{
+ 0%{box-shadow:0 0 7px #e1b45d77,inset 0 0 8px #f5d58d44;border-color:#cdac62}
+ 100%{box-shadow:0 0 25px #ffd989bb,inset 0 0 14px #ffe1a487;border-color:#ffedbb}
+}
+@keyframes album-rare-sheen{
+ 0%,62%{opacity:0;transform:translateX(-120%)}
+ 80%{opacity:.38}
+ 100%{opacity:0;transform:translateX(120%)}
+}
+@media(max-height:720px){
+ .album-opening-panel{gap:3px}
+ .album-opening-panel .album-opening-intro .shop-eyebrow{font-size:9px}
+ .album-opening-panel .album-reveal-spotlight{min-height:35px}
+ .album-opening-panel .album-opening-summary strong{font-size:18px}
+ .album-opening-panel .album-opening-intro p{display:none}
+ .album-opening-panel .album-reveal-slot{width:min(100%,21vh)}
+}
+@media(max-width:760px){
+ .album-opening-scrim{padding:3px}
+ .album-opening-panel .album-reveal-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
+ .album-opening-panel .album-reveal-slot{width:min(100%,20vh)}
+ .album-reveal-result{top:-19px;font-size:8px;padding:2px 4px}
+ .album-opening-panel .album-reveal-front .album-card-details strong{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+ .album-gallery .album-collection-card.is-epic,
+ .album-gallery .album-collection-card.is-legendary,
+ .album-gallery .album-collection-card.is-epic::after,
+ .album-gallery .album-collection-card.is-legendary::after{animation:none!important}
+}
+.casino-lobby-shell[data-reduced="true"] .album-gallery .album-collection-card.is-epic,
+.casino-lobby-shell[data-reduced="true"] .album-gallery .album-collection-card.is-legendary,
+.casino-lobby-shell[data-reduced="true"] .album-gallery .album-collection-card::after{
+ animation:none!important;
+}

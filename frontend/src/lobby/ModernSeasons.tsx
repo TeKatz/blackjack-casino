@@ -88,7 +88,7 @@ export function ModernSeasons({data,loaded,language,pending,onBack,onActivate}:P
   </div>
   <div className="season-progress-track" role="progressbar" aria-label={de?'Saisonfortschritt':'Season progress'}
    aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}>
-   <span style={{width:progress+'%'}}/>
+   <span className="season-progress-fill" style={{width:progress+'%'}}><i className="season-progress-sheen" aria-hidden="true"/></span>
   </div>
   <div className="season-progress-caption"><span>{selected.archived?(de?'Archivierter Fortschritt':'Archived progress'):(de?'Dein Fortschritt':'Your progression')}</span>
    <span>{Math.round(progress)}%</span></div>

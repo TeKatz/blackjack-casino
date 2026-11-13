@@ -5,9 +5,21 @@ namespace BlackjackCasino.Tests;
 public sealed class NineLivesTests
 {
     [Fact]
+    public void TripleNineHasASmallOddsBoostWithoutChangingOtherBonusRules()
+    {
+        Assert.Equal(1000, NineLivesRules.TotalWeight);
+        Assert.Equal(31, NineLivesRules.Symbols.Single(x => x.Symbol == NineLivesSymbol.Bonus).Weight);
+        Assert.Equal(NineLivesSymbol.Wild, NineLivesRules.SymbolForRoll(968));
+        Assert.Equal(NineLivesSymbol.Bonus, NineLivesRules.SymbolForRoll(969));
+        Assert.Equal(NineLivesSymbol.Bonus, NineLivesRules.SymbolForRoll(999));
+        Assert.Equal(9, NineLivesRules.BonusSpins);
+        Assert.Equal(5000m, NineLivesRules.FullGridMultiplier);
+    }
+
+    [Fact]
     public void Three_Bonus_Symbols_Award_Nine_Spins()
     {
-        var random = new SequenceRandom([97, 97, 97, 0, 28, 51, 69, 81, 89]);
+        var random = new SequenceRandom([970, 970, 970, 0, 280, 510, 690, 810, 890]);
         var session = new NineLivesSession(10_000m, random.Next);
 
         NineLivesSpinResult result = session.Spin(10m);
@@ -22,7 +34,7 @@ public sealed class NineLivesTests
     {
         var random = new SequenceRandom(
         [
-            97, 97, 97, 0, 28, 51, 69, 81, 89,
+            970, 970, 970, 0, 280, 510, 690, 810, 890,
             0, 26, 48, 65, 77, 85, 25, 47, 64,
         ]);
         var session = new NineLivesSession(10_000m, random.Next);
@@ -41,7 +53,7 @@ public sealed class NineLivesTests
     [Fact]
     public void Pounce_Wild_Strikes_A_Second_Cell()
     {
-        var random = new SequenceRandom([94, 28, 51, 69, 81, 89, 0, 28, 51, 0, 0]);
+        var random = new SequenceRandom([940, 280, 510, 690, 810, 890, 0, 280, 510, 0, 0]);
         var session = new NineLivesSession(10_000m, random.Next);
 
         NineLivesSpinResult result = session.Spin(10m);
@@ -54,7 +66,7 @@ public sealed class NineLivesTests
     [Fact]
     public void Full_Grid_Frenzy_Pays_Five_Thousand_X()
     {
-        var random = new SequenceRandom(Enumerable.Repeat(89, NineLivesRules.Cells));
+        var random = new SequenceRandom(Enumerable.Repeat(890, NineLivesRules.Cells));
         var session = new NineLivesSession(100_000m, random.Next);
 
         NineLivesSpinResult result = session.Spin(10m);

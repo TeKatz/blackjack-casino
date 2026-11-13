@@ -89,3 +89,9 @@
 @media(max-width:620px){.empire-shell{grid-template-columns:1fr;grid-template-rows:70px 48px minmax(0,1fr)}.empire-main{grid-row:3}.empire-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}.empire-room{height:145px}.empire-room-copy h3{font-size:18px}.empire-scene-frame{height:95px}.empire-scene-title h2{font-size:21px}.empire-scene-title p{display:none}.empire-floorbar{align-items:stretch}.empire-floorbar>div{flex-wrap:wrap}.empire-overview-panel strong{font-size:14px}.empire-overview-panel .empire-eyebrow{display:none}.empire-detail-scrim{inset:70px 0 0}.empire-estate .empire-inspector{top:70px;width:min(410px,100vw)}.empire-preview{width:calc(100% - 28px);right:14px}}
 @media(prefers-reduced-motion:reduce){.empire-estate .empire-inspector{animation:none}}
 .empire-shell[data-motion=false] .empire-estate .empire-inspector{animation:none}
+
+
+/* Opt-in management-idle prototype switch; no changes to classic navigation behavior. */
+.empire-prototype-entry{border-color:#ad905477!important;background:linear-gradient(110deg,#543d204d,#17382d)!important;color:#edce8b!important;white-space:nowrap;font-size:11px!important;padding:8px 12px!important;min-height:34px!important}
+@media(max-width:1000px){.empire-prototype-entry{font-size:10px!important;padding:7px 8px!important}.empire-header{gap:8px}}
+@media(max-width:620px){.empire-prototype-entry{font-size:9px!important;padding:5px 7px!important;white-space:normal;max-width:118px}}

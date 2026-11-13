@@ -65,6 +65,57 @@ internal static class EmpireWebSmoke
             await Check(view, "document.querySelector('.empire-pixi canvas, .empire-pixi[data-fallback=true]')",
                 "Estate graphics did not finish initializing before capture.");
             await Capture(view, Path.Combine(output, "empire-react-overview.png"));
+            // Second-generation Command Center: 15 rooms visible, true C# hover
+            // previews, multiple Pixi canvases, contextual panels and safe rollback.
+            int beforeCommandSlot = fixture.Level("slots");
+            await Click(view, "empire-command-open");
+            await Check(view, "document.querySelector('[data-testid=empire-command-center]') && document.querySelectorAll('.cc-business').length===15 && document.querySelectorAll('.cc-floor').length===3",
+                "Command Center did not render all fifteen departments across the three compact floors.");
+            await Check(view, "document.querySelector('[data-testid=cc-pixi-atmosphere] canvas, [data-testid=cc-pixi-atmosphere][data-fallback=true]')",
+                "Command Center Pixi atmosphere did not initialize or gracefully fall back.");
+            await Check(view, "document.querySelectorAll(\"[data-testid^=cc-manager-status-]\").length===15", "Room manager labels missing.");
+            await Capture(view, Path.Combine(output, "empire-command-center.png"));
+            await Script(view, "document.querySelector('[data-testid=cc-upgrade-slots]').dispatchEvent(new MouseEvent('mouseover',{bubbles:true}));true");
+            await Check(view, "document.querySelector('[data-testid=cc-hover]') && document.querySelector('[data-testid=cc-income-delta]') && document.querySelector('[data-testid=cc-capital-delta]')",
+                "Business hover did not produce a read-only Core investment preview.");
+            Require(fixture.Level("slots") == beforeCommandSlot, "Command Center hover preview mutated Core.");
+            await Click(view, "cc-buy-qty-10");
+            await Click(view, "cc-upgrade-slots");
+            await Wait(() => fixture.Level("slots") == beforeCommandSlot + 10,
+                "Command Center upgrade did not commit exactly the quoted ten levels.");
+            await Click(view, "cc-open-research");
+            await Check(view, "document.querySelector('[data-testid=cc-window-layer] [role=dialog]') && document.querySelector('[data-testid=cc-research-graph]')",
+                "Research did not open in a graphical contextual window.");
+            await Check(view, "document.querySelector('[data-testid=cc-pixi-research] canvas, [data-testid=cc-pixi-research][data-fallback=true]')",
+                "Research network Pixi lattice did not initialize.");
+            await Check(view, "document.querySelector('[data-testid=cc-research-detail]') && document.querySelector('.cc-window-backdrop').tagName==='DIV' && document.querySelector('[data-testid=empire-command-center]').dataset.modalOpen==='true'",
+                "Research details or stable non-button modal backdrop missing.");
+            await Check(view, "document.querySelector('[data-testid=cc-pixi-atmosphere]').dataset.ticker==='stopped' || document.querySelector('[data-testid=cc-pixi-atmosphere]').dataset.fallback==='true'",
+                "Background animation continued behind a modal.");
+            await Capture(view, Path.Combine(output, "empire-command-research.png"));
+            await Click(view, "cc-window-close");
+            foreach (string module in new[] { "projects", "staff", "automation", "expansion", "opportunities" })
+            {
+                await Click(view, "cc-open-" + module);
+                await Check(view, "document.querySelector('[data-testid=cc-window-layer] [role=dialog]')",
+                    "Command Center contextual module failed to open: " + module);
+                await Click(view, "cc-window-close");
+            }
+            // Desktop layout must remain a one-screen overview at normal resolutions.
+            foreach (var size in new[] { (1366, 768), (1920, 1080) })
+            {
+                await view.Browser.CoreWebView2.CallDevToolsProtocolMethodAsync("Emulation.setDeviceMetricsOverride",
+                    JsonSerializer.Serialize(new { width = size.Item1, height = size.Item2, deviceScaleFactor = 1, mobile = false }));
+                await Task.Delay(120);
+                await Check(view, "document.documentElement.scrollWidth<=innerWidth+1 && document.documentElement.scrollHeight<=innerHeight+1 && document.querySelectorAll('.cc-business').length===15 && [...document.querySelectorAll('.cc-business')].every(e=>e.getBoundingClientRect().right<=innerWidth+1) && document.querySelector('.cc-command-bar').getBoundingClientRect().bottom<=innerHeight+1",
+                    "Command Center clipped or scrolled at " + size);
+            }
+            await view.Browser.CoreWebView2.CallDevToolsProtocolMethodAsync("Emulation.clearDeviceMetricsOverride", "{}");
+            await Click(view, "cc-classic");
+            await Check(view, "document.querySelector('[data-testid=empire-ready]') && document.querySelectorAll('.empire-gallery .empire-room').length===15",
+                "Returning from Command Center lost the classic Empire presentation.");
+            await Check(view, "document.querySelector('.empire-pixi canvas, .empire-pixi[data-fallback=true]')",
+                "Classic Pixi stage did not reinitialize after returning from Command Center.");
             await Click(view, "floor-3");
             await Check(view, "document.querySelectorAll('.empire-gallery .empire-room').length===5", "Resort gallery lost a department.");
             await Click(view, "room-hotel");

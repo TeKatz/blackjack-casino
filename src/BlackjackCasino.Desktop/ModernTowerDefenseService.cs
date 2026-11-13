@@ -17,9 +17,9 @@ internal sealed class ModernTowerDefenseService
 
     internal object Snapshot() => new
     {
-        Screen = "game",
-        MapPath = TdMap.Path, Pads = TdMap.Pads,
-        MaxWaves = TowerDefenseGame.MaxWaves,
+        Screen = game.State.Screen,
+        MapPath = TdMap.PathFor(game.State.Stage), Pads = TdMap.PadsFor(game.State.Stage),
+        MaxWaves = TdMastery.StageWaves(game.State.Stage),
         State = game.State.Copy(),
     };
 

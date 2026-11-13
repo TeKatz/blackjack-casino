@@ -3,14 +3,23 @@ import dicePalettes from './dicePalettes.json';
 import frameThemes from './frameThemes.json';
 import './cosmetics.css';
 const jpg=new Set(['house-guest','eclipse-raven','eclipse-lady','eclipse-moon','eclipse-sovereign','dynasty-heiress','neon-overseer','neon-emperor','neon-croupier']);
-const svg=new Set(['secret-guest']);
-export function portraitPath(variant:string){const id=variant.replace(/^portrait-/,'');return /^[a-z0-9-]+$/.test(id)?'/shop/portraits/'+id+'.'+(svg.has(id)?'svg':jpg.has(id)?'jpg':'png'):'';}
-const titleColors:Record<string,string>={'title-violet':'#CEAAFF','title-gold':'#FFD877','title-teal':'#68E9CD','title-rose':'#FFAACD','title-ice':'#A7DEFF','title-amber':'#FFB968','title-neon-cyan':'#63F5F0','title-neon-magenta':'#FF6BC7','title-dynasty-gold':'#FFD36E','title-dynasty-prism':'#E7B6FF'};
+export function portraitPath(variant:string){
+ const id=variant.replace(/^portrait-/,'');
+ return /^[a-z0-9-]+$/.test(id)?'/shop/portraits/'+id+'.'+(id==='secret-guest'||jpg.has(id)?'jpg':'png'):'';
+}
+const titleColors:Record<string,string>={'title-violet':'#CEAAFF','title-gold':'#FFD877','title-teal':'#68E9CD','title-rose':'#FFAACD','title-ice':'#A7DEFF','title-amber':'#FFB968','title-neon-cyan':'#63F5F0','title-neon-magenta':'#FF6BC7','title-dynasty-gold':'#FFD36E','title-dynasty-prism':'#E7B6FF',
+ 'title-sudoku-slate':'#ABBAC6','title-sudoku-mint':'#80DAC1','title-sudoku-blue':'#84C6ED',
+ 'title-sudoku-violet':'#CAA2F7','title-sudoku-gold':'#F2CB81','title-sudoku-rose':'#E9A3C8',
+ 'title-sudoku-amber':'#F2B96E','title-sudoku-prism':'#D5B4FD','title-sudoku-cyan':'#82E6EA',
+ 'title-sudoku-legend':'#F5D989'};
 export function titleStyle(variant=''):CSSProperties{
  const gradient=variant==='title-adventure-names'?'linear-gradient(90deg,#D7C17B,#8FD5B4)':variant==='title-adventure-bell'?'linear-gradient(90deg,#65D7CF,#F0D38A)':null;
  return gradient?{backgroundImage:gradient,backgroundClip:'text',color:'transparent'}:{color:titleColors[variant]??'#F3E6CF'};
 }
-export function CosmeticTitle({variant,children}:{variant?:string;children:ReactNode}){return <span className="cosmetic-title" style={titleStyle(variant)}>{children}</span>;}
+export function CosmeticTitle({variant,children}:{variant?:string;children:ReactNode}){
+ const prestige=variant==='title-sudoku-premium'||variant==='title-sudoku-ultra';
+ return <span className={'cosmetic-title '+(prestige?variant:'')} style={prestige?undefined:titleStyle(variant)}>{children}</span>;
+}
 const frames:Record<string,[string,string,string?]>={
  'classic':['#52695A','#52695A'],'static-slate':['#92A4B8','#92A4B8'],'static-copper':['#CF966E','#CF966E'],'static-sage':['#9BC5A5','#9BC5A5'],'static-pearl':['#E1DFD3','#E1DFD3'],
  'neon-noir':['#58F5EE','#FF4DAB'],'eclipse-thread':['#E0CDEB','#766885'],'eclipse-halo':['#FFCB75','#9A563F'],
@@ -30,7 +39,13 @@ export function ProfileFrame({variant='classic',children,large=false}:{variant?:
  style={{'--frame-a':palette[0],'--frame-b':palette[1],'--frame-c':palette[2]??palette[0],'--frame-duration':(theme?.seconds??4)+'s'} as CSSProperties}>{children??'♠'}</span>;
 }
 export function PlayerPortrait({portrait,frame,large=false}:{portrait?:string;frame?:string;large?:boolean}){
- return <ProfileFrame variant={frame} large={large}>{portrait?<img src={portraitPath(portrait)} alt=""/>:'♠'}</ProfileFrame>;
+ const framed=<ProfileFrame variant={frame} large={large}>
+   {portrait?<img src={portraitPath(portrait)} alt=""/>:'♠'}
+ </ProfileFrame>;
+ if(portrait!=='portrait-secret-guest')return framed;
+ return <span className="secret-guest-profile">
+   {framed}<span className="secret-guest-profile-spark" aria-hidden="true">✦</span>
+ </span>;
 }
 export function DicePreview({variant}:{variant:string}){
  const palette:Record<string,{top:string;bottom:string;pips:string;edge:string;glow?:string;engraved:boolean}>=dicePalettes;

@@ -1,9 +1,9 @@
-import {useId} from 'react';
+import {memo,useId} from 'react';
 import type {NeonSymbol} from './bridge';
 
 const themes:Record<NeonSymbol,{a:string;b:string;c:string;name:string}>={
  Pulse:{a:'#72f8ff',b:'#176eab',c:'#0a284b',name:'Pulse'},
- Prism:{a:'#d9a5ff',b:'#7954df',c:'#251a58',name:'Prism'},
+ Prism:{a:'#9efbff',b:'#715ce6',c:'#14134f',name:'Prism'},
  Chip:{a:'#87ffe5',b:'#138c89',c:'#093e50',name:'High Roller'},
  Crown:{a:'#ffebb1',b:'#d79a44',c:'#603321',name:'Crown'},
  Key:{a:'#ffd4a1',b:'#cc7648',c:'#642a35',name:'Vault Key'},
@@ -18,7 +18,7 @@ const themes:Record<NeonSymbol,{a:string;b:string;c:string;name:string}>={
  * Separate core, foil, energy and sparkle layers allow symbol-specific idle
  * motion and amplified winning feedback without rerendering any game state.
  */
-export function SymbolArt({symbol,compact=false,animate=true,emphasis=false}:{
+function SymbolArtView({symbol,compact=false,animate=true,emphasis=false}:{
  symbol:NeonSymbol;compact?:boolean;animate?:boolean;emphasis?:boolean;
 }){
  const id=useId().replaceAll(':','');
@@ -84,19 +84,28 @@ export function SymbolArt({symbol,compact=false,animate=true,emphasis=false}:{
        <circle cx="102" cy="25" r="5.5" fill="#e8fdff" stroke={theme.a} strokeWidth="3"/>
      </>}
      {symbol==='Prism'&&<>
-       <path d="M100 7 L160 46 L143 109 L100 132 L56 109 L39 46 Z"
-         fill="#170d36" stroke={theme.a} strokeWidth="5.5"/>
-       <g className="vault-symbol-prism-facets">
-         <path d="M100 7 L39 46 L100 69 Z" fill="#b9d4ff"/>
-         <path d="M100 7 L160 46 L100 69 Z" fill="#b272ff"/>
-         <path d="M39 46 L56 109 L100 69 Z" fill="#4523a9"/>
-         <path d="M160 46 L143 109 L100 69 Z" fill="#8c45d3"/>
-         <path d="M56 109 L100 132 L100 69 Z" fill="#6435ac"/>
-         <path d="M143 109 L100 132 L100 69 Z" fill="#34206d"/>
+       <g className="vault-symbol-prism-orbit" fill="none">
+         <ellipse cx="100" cy="68" rx="79" ry="51" stroke="#86faff" strokeWidth="2.3" opacity=".65"/>
+         <ellipse cx="100" cy="68" rx="66" ry="43" stroke="#a08bff" strokeWidth="2" strokeDasharray="21 12" opacity=".8"/>
+         <path d="M13 68 H42 M158 68 H187 M100 7 V25 M100 111 V130" stroke="#e2feff" strokeWidth="3" opacity=".75"/>
+         <circle cx="24" cy="57" r="3.5" fill="#96ffff"/>
+         <circle cx="172" cy="43" r="3" fill="#ffb7ff"/>
        </g>
-       <path d="M100 7 L100 132 M39 46 L160 46 M39 46 L100 69 L160 46 M56 109 L100 69 L143 109"
-         fill="none" stroke="#f6d8ff" strokeWidth="2" opacity=".87"/>
-       <path d="M94 17 L58 45 L96 63" fill="none" stroke="white" strokeWidth="4" opacity=".72"/>
+       <g className="vault-symbol-prism-core">
+         <path d="M100 10 L150 68 L100 126 L50 68 Z" fill="#090f37" stroke="#cbffff" strokeWidth="5"/>
+         <path d="M100 10 L100 68 L50 68 Z" fill="#e6ffff"/>
+         <path d="M100 10 L150 68 L100 68 Z" fill="#7bc7f9"/>
+         <path d="M50 68 L100 68 L100 126 Z" fill="#6446d8"/>
+         <path d="M150 68 L100 126 L100 68 Z" fill="#aa60f6"/>
+         <path d="M100 24 L132 68 L100 105 L69 68 Z" fill="none" stroke="#e7faff" strokeWidth="2.2" opacity=".86"/>
+         <path d="M100 10 L100 126 M50 68 H150" stroke="#ffffff" strokeWidth="1.5" opacity=".75"/>
+         <path d="M65 54 L100 16 L111 38" stroke="#ffffff" strokeWidth="3.5" fill="none" opacity=".8"/>
+         <circle cx="100" cy="68" r="6" fill="#ffffff" stroke="#7af6ff" strokeWidth="3"/>
+       </g>
+       <g className="vault-symbol-prism-rays" strokeLinecap="round" fill="none">
+         <path d="M151 68 L178 43 M150 68 L183 81 M50 68 L23 91" stroke="#7bfaff" strokeWidth="3" opacity=".9"/>
+         <path d="M150 68 L182 59 M50 68 L21 54" stroke="#ff93fd" strokeWidth="2.5" opacity=".85"/>
+       </g>
      </>}
      {symbol==='Chip'&&<>
        <g className="vault-symbol-chip-spin">
@@ -112,9 +121,9 @@ export function SymbolArt({symbol,compact=false,animate=true,emphasis=false}:{
          fontFamily="Georgia,serif" fill={'url(#'+metal+')'} stroke="#e8fff1" strokeWidth=".7">$</text>
      </>}
      {symbol==='Crown'&&<>
-       <path d="M25 37 L53 75 L79 20 L105 77 L144 30 L172 47 L155 112 L42 112 Z"
+       <path d="M23 38 L51 75 L65 27 L91 67 L100 13 L109 67 L135 27 L149 75 L177 38 L159 113 L41 113 Z"
          fill="#4b241f" stroke="#5a311a" strokeWidth="9"/>
-       <path d="M25 37 L53 75 L79 20 L105 77 L144 30 L172 47 L155 112 L42 112 Z"
+       <path d="M23 38 L51 75 L65 27 L91 67 L100 13 L109 67 L135 27 L149 75 L177 38 L159 113 L41 113 Z"
          fill={'url(#'+metal+')'} stroke="#fff2bf" strokeWidth="3.3"/>
        <path d="M46 88 Q102 107 159 84 L154 113 H43 Z" fill="#9f571f" opacity=".55"/>
        <rect x="42" y="106" width="116" height="18" rx="5" fill={'url(#'+shadow+')'}
@@ -196,3 +205,5 @@ export function SymbolArt({symbol,compact=false,animate=true,emphasis=false}:{
    </g>}
  </svg>;
 }
+
+export const SymbolArt=memo(SymbolArtView);

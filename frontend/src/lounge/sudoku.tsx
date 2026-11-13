@@ -2,8 +2,12 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import type {Difficulty,SudokuGame,SudokuIntent,SudokuState} from './sudokuBridge';
 import {difficulties,sudokuEditIntent} from './sudokuBridge';
 import './sudoku.css';
+import {SudokuModeMenu} from './SudokuModeMenu';
+import {SudokuVariantScreen} from './SudokuVariantScreen';
 
 type Lang='en'|'de';
+type ModeId='classic'|'x'|'killer'|'jigsaw'|'samurai'|'mini';
+
 type Props={state:SudokuState;language:Lang;pending:boolean;error:string;command:(intent:SudokuIntent)=>void};
 const names:Record<Lang,Record<Difficulty,string>>={
  en:{Relaxed:'Relaxed',Easy:'Easy',Medium:'Medium',Hard:'Hard',Expert:'Expert',Master:'Master'},
@@ -53,13 +57,14 @@ const isRelated=(a:number,b:number)=>Math.floor(a/9)===Math.floor(b/9)
 export function SudokuScreen({state,language,pending,error,command}:Props) {
  const t=text[language];
  const [selected,setSelected]=useState(-1);
+ const [selectedMode,setSelectedMode]=useState<ModeId|null>(null);
  const [pencil,setPencil]=useState(false);
  const [confirm,setConfirm]=useState<Difficulty|null>(null);
  const [clock,setClock]=useState(0);
  const [lastUpdate,setLastUpdate]=useState(Date.now());
  const game=state.game;
  const boardRef=useRef<HTMLDivElement>(null);
- useEffect(()=>{setSelected(-1);setPencil(false);setClock(0);},[game?.puzzleId]);
+ useEffect(()=>{setSelected(-1);setPencil(false);setClock(0);if(game)setSelectedMode('classic');},[game?.puzzleId]);
  useEffect(()=>{setLastUpdate(Date.now());setClock(0);},[game?.elapsedSeconds,game?.puzzleId]);
  useEffect(()=>{
    const id=window.setInterval(()=>setClock(Math.floor((Date.now()-lastUpdate)/1000)),1000);
@@ -113,7 +118,14 @@ export function SudokuScreen({state,language,pending,error,command}:Props) {
    if(canResume){setConfirm(difficulty);return;}
    command({action:'sudoku.new',value:difficulty});
  }
+
+ if(state.variant)return <SudokuVariantScreen game={state.variant} language={language}
+   pending={pending} error={error} command={command}/>;
+ if(!game&&selectedMode!=='classic')return <SudokuModeMenu language={language}
+   selectedMode={selectedMode} select={setSelectedMode} career={state.career}
+   entries={state.variantEntries??[]} pending={pending} command={command}/>;
  if(!game) return <section className="sudoku-library" data-testid="sudoku-library">
+   <button type="button" className="sudoku-mode-back" data-testid="sudoku-back-to-modes" onClick={()=>setSelectedMode(null)}>← {language==='de'?'Alle Sudoku-Modi':'All Sudoku modes'}</button>
    <div className="sudoku-banner">
      <span className="sudoku-eyebrow">{t.eyebrow}</span>
      <h1>{t.title}</h1><p>{t.description}</p>

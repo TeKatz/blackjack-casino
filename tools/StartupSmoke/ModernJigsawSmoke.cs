@@ -17,6 +17,11 @@ internal static class ModernJigsawSmoke
             "React Jigsaw did not open the twelve-scene gallery.");
         Require(await Js(web,"document.querySelectorAll('.jigsaw-sizes button').length===8"),
             "One of the eight original puzzle sizes is missing.");
+        await Wait(web, @"[...document.querySelectorAll('.jigsaw-gallery img')].length===12 &&
+          [...document.querySelectorAll('.jigsaw-gallery img')].every(img=>
+            img.complete && img.naturalWidth>=1600 && img.naturalHeight>=900 &&
+            img.currentSrc.includes('/jigsaw/scenes/'))",
+            "The new dedicated 12 high-resolution Jigsaw scene images did not load.");
         await Capture(web,Path.Combine(output,"modern-jigsaw-gallery.png"));
 
         await Click(web,".jigsaw-sizes button:first-child",
@@ -42,15 +47,20 @@ internal static class ModernJigsawSmoke
         Require(game.PieceCount==24 && game.Pieces.Count==24,"The native puzzle has wrong dimensions.");
 
         await web.ExecuteScriptAsync("document.querySelector('.jigsaw-tray-grid [data-piece-id=\"0\"]')?.click()");
-        // Click the exact native target center of piece zero. React sends coordinates;
-        // only the authoritative C# engine can lock the piece.
+        // Exercise a real pointer press/release pair. The Pixi board deliberately rejects
+        // orphan pointerup events so dropping a piece from the tray cannot double-place it.
+        // Compute the logical piece center through the letterboxed responsive canvas.
+        // React sends puzzle coordinates; only the authoritative C# engine can lock it.
         await web.ExecuteScriptAsync(@"(()=>{
           const b=document.querySelector('.jigsaw-board');
           const r=b.getBoundingClientRect();
-          b.dispatchEvent(new PointerEvent('pointerup',{
-           bubbles:true,pointerId:11,clientX:r.left+r.width/12,
-           clientY:r.top+r.height/8
-          }));
+          const fit=Math.min(r.width/960,r.height/600);
+          const x=r.left+(r.width-960*fit)/2+80*fit;
+          const y=r.top+(r.height-600*fit)/2+75*fit;
+          const common={bubbles:true,pointerId:11,pointerType:'mouse',
+           isPrimary:true,button:0,clientX:x,clientY:y};
+          b.dispatchEvent(new PointerEvent('pointerdown',{...common,buttons:1}));
+          b.dispatchEvent(new PointerEvent('pointerup',{...common,buttons:0}));
         })()");
         await UntilAsync(()=>service.CurrentGame?.Pieces[0].Locked==true,
             "Pixi board did not commit the native first-piece snap.");

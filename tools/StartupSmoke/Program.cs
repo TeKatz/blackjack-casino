@@ -232,12 +232,11 @@ internal static class Program
                     "return rect.width>100&&Math.abs(rect.height/rect.width-500/960)<0.06;})()");
                 Require(canvasGeometry.Equals("true", StringComparison.OrdinalIgnoreCase),
                     "Modern Manor reel stage is stretched vertically or letterboxed.");
-                // Debug metrics are opt-in and never require a wager or touch a save.
+                // Internal renderer metrics are no longer exposed in player-facing settings.
                 string diagnosticsControl = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
-                    "(()=>{const input=document.querySelector('#manor-perf-diagnostics');" +
-                    "return Boolean(input && input.type==='checkbox' && !input.checked);})()");
+                    "(()=>!document.querySelector('#manor-perf-diagnostics, .render-metrics.slot-metrics'))()");
                 Require(diagnosticsControl.Equals("true", StringComparison.OrdinalIgnoreCase),
-                    "Modern Manor renderer diagnostics must start disabled and remain optional.");
+                    "Modern Manor must not expose renderer diagnostic settings or metrics.");
                 string responsiveReel = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
                     "(()=>{const canvas=document.querySelector('.manor-canvas canvas');" +
                     "if(!canvas)return false;const r=canvas.getBoundingClientRect();" +
@@ -451,7 +450,7 @@ internal static class Program
     /// RenderTargetBitmap cannot capture a WebView2 HWND, so WPF-only screenshots
     /// can silently show the legacy fallback even when the React lobby is broken.
     /// Require the actual packaged browser to load, receive live C# profile data,
-    /// expose the full nine-game navigation and produce a real WebView2 capture.
+    /// expose the full casino navigation (ten native modes and Arcade) and produce a real WebView2 capture.
     /// </summary>
     private static async Task VerifyPackagedModernLobby(MainWindow window, string output)
     {
@@ -495,16 +494,27 @@ internal static class Program
             + "const art=games.map(g=>g.querySelector('.game-art-window'));"
             + "const gpu=document.querySelector('.lobby-pixi');"
             + "const hero=getComputedStyle(document.querySelector('.lobby-hero-picture')).backgroundImage;"
-            + "return Boolean(shell&&games.length===9&&nav.length>=11"
+            + "const expected=['blackjack','roulette','kniffel','chill-lounge','casino-empire','midnight-reels','neon-vault','nine-lives','midnight-manor','midnight-merge','arcade-games','midnight-descent'];"
+            + "return Boolean(shell&&games.length===expected.length&&expected.every(id=>games.some(g=>g.classList.contains('game-'+id)))&&nav.length>=11"
             + "&&daily&&rewards.length===7&&!document.querySelector('.lobby-overview')"
             + "&&gpu"
-            + "&&art.every(x=>x&&x.dataset.modeArt&&!x.firstElementChild)"
+            + "&&art.every(x=>x&&x.dataset.modeArt&&(x.dataset.modeArt==='arcade-games'"
+            + "?Boolean(x.querySelector('.arcade-tile-scene')):x.dataset.modeArt==='roulette'"
+            + "?Boolean(x.querySelector('.roulette-tile-art')):!x.firstElementChild))"
+            + "&&Boolean(document.querySelector('.game-arcade-games .lobby-gold-button'))"
+            + "&&Boolean(document.querySelector('.game-midnight-descent .lobby-gold-button:not(:disabled)'))"
+            + "&&getComputedStyle(document.querySelector('.game-midnight-descent .game-art-window')).backgroundImage.includes('midnight-descent.svg')"
+            + "&&Boolean(document.querySelector('.game-roulette .lobby-gold-button:not(:disabled)'))"
             + "&&hero.includes('/lobby/art/hero.png')"
             + "&&profile?.textContent?.includes('Startup Smoke')"
             + "&&document.querySelector('.lobby-hero h1')?.textContent?.length>5);})()");
         Require(result.Equals("true", StringComparison.OrdinalIgnoreCase),
-            "Packaged React lobby did not render nine real games and live profile state. "
+            "Packaged React lobby did not render the eleven native modes and Arcade Games tile. "
             + "DOM validation returned " + result);
+
+        Require(await modern.Browser.CoreWebView2.ExecuteScriptAsync(
+            "(()=>{const tiles=[...document.querySelectorAll('.lobby-game')];return Boolean(tiles.length===12&&tiles.every(t=>{const r=t.getBoundingClientRect(),b=t.querySelector('.lobby-gold-button').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+1&&b.bottom<=r.bottom+1&&b.height>15})&&new Set(tiles.map(t=>t.offsetTop)).size===3)})()") == "true",
+            "The complete twelve-tile lobby must fit on screen in three rows with every Play button visible.");
 
         // The browser-side GPU art system loads local SVG texture pairs in the
         // background. A visible Canvas alone is not proof that artwork loaded.
@@ -529,6 +539,8 @@ internal static class Program
         await modern.Browser.CoreWebView2.ExecuteScriptAsync("document.querySelector('.casino-news .lobby-gold-button')?.click()");
         await Task.Delay(100);
         RequireNoLegacyLobbyFrame(window, "rendered React lobby");
+        await CheckModernRoulette(window, modern, output);
+        await CheckModernArcadeMenu(modern);
         await CheckModernLobbyUpdates(window, modern);
         Require(!Find<FrameworkElement>(window).Any(drawer => drawer.Name == "LobbyDailyDrawer" && drawer.IsVisible),
             "The obsolete daily-login drawer is still layered over the React lobby.");
@@ -539,6 +551,185 @@ internal static class Program
             CoreWebView2CapturePreviewImageFormat.Png, capture);
         Require(capture.Length > 15_000,
             "Modern lobby WebView2 preview is unexpectedly small or empty.");
+    }
+
+    private static async Task CheckModernRoulette(MainWindow window, ModernLobbyView modern, string output)
+    {
+        CoreWebView2 web = modern.Browser.CoreWebView2!;
+        await web.ExecuteScriptAsync("document.querySelector('.game-roulette .lobby-gold-button')?.click()");
+        ModernRouletteView? roulette = null;
+        for (int attempt=0;attempt<150;attempt++) { roulette=Find<ModernRouletteView>(window).FirstOrDefault(); if(roulette?.Ready==true)break; await Task.Delay(100); }
+        Require(roulette?.Ready==true && !modern.IsVisible, "Roulette did not mount a separate ready WebView.");
+        web=roulette!.Browser.CoreWebView2!;
+        async Task WaitFor(string script, string message)
+        {
+            for (int attempt = 0; attempt < 100; attempt++)
+            {
+                if (await web.ExecuteScriptAsync(script) == "true") return;
+                await Task.Delay(100);
+            }
+            Require(false, message);
+        }
+
+        await WaitFor(
+            "Boolean(document.querySelector('.roulette-room')"
+            + "&&document.querySelector('.roulette-wheel canvas')"
+            + "&&document.querySelectorAll('.roulette-numbers .roulette-cell').length===36"
+            + "&&document.querySelector('.roulette-zero')"
+            + "&&document.querySelectorAll('.roulette-chip').length===8"
+            + "&&document.querySelector('.roulette-spin:disabled')"
+            + "&&!document.querySelector('.lobby-hero')&&!document.querySelector('.lobby-nav'))",
+            "Roulette did not open its React/PixiJS table with all 37 pockets and high-limit chips.");
+        await WaitFor("(()=>{const s=document.querySelector('.roulette-spin'),w=document.querySelector('.roulette-wheel'),r=document.querySelector('.roulette-settlement');return Boolean(s&&w&&r&&document.documentElement.scrollHeight<=innerHeight+1&&s.getBoundingClientRect().bottom<=innerHeight&&r.getBoundingClientRect().bottom<=innerHeight&&w.getBoundingClientRect().top>=0&&w.getBoundingClientRect().bottom<=r.getBoundingClientRect().top+1)})()", "Roulette must fit its wheel, settlement and spin controls in the viewport without scrolling.");
+
+        ModernWebViewBootstrapSmoke.RequireHardened(web, "Roulette");
+        using (var capture=File.Create(Path.Combine(output,"roulette-webview2-live.png")))
+        {
+            await web.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png,capture);
+            Require(capture.Length>15_000,"Roulette WebView2 capture is unexpectedly small.");
+        }
+
+        // Exercise actual React interactions without changing the seeded wallet
+        // used by the remaining startup tests.
+        await web.ExecuteScriptAsync("document.querySelector('.roulette-numbers .roulette-cell')?.click()");
+        await WaitFor(
+            "Boolean(document.querySelector('.roulette-placed')&&document.querySelector('.roulette-spin:not(:disabled)'))",
+            "Roulette did not accept a valid chip on the number layout.");
+        await web.ExecuteScriptAsync("document.querySelector('.roulette-controls button:nth-child(2)')?.click()");
+        await WaitFor(
+            "Boolean(!document.querySelector('.roulette-placed')&&document.querySelector('.roulette-spin:disabled'))",
+            "Roulette did not clear the wager and disable spinning.");
+        await web.ExecuteScriptAsync("document.querySelector('.roulette-back')?.click()");
+        web=modern.Browser.CoreWebView2!;
+        await WaitFor(
+            "Boolean(document.querySelector('.lobby-hero')&&document.querySelector('.game-roulette')&&!document.querySelector('.roulette-room')&&document.querySelectorAll('.game-art-window[data-pixi-art-ready]').length===9)",
+            "Back from Roulette did not restore the casino lobby.");
+    }
+
+    private static async Task CheckModernArcadeMenu(ModernLobbyView modern)
+    {
+        CoreWebView2 web = modern.Browser.CoreWebView2!;
+        await web.ExecuteScriptAsync("document.querySelector('.game-arcade-games .lobby-gold-button')?.click()");
+        bool menuOpened = false;
+        for (int attempt = 0; attempt < 40; attempt++)
+        {
+            string ready = await web.ExecuteScriptAsync(
+                "Boolean(document.querySelector('[data-testid=arcade-menu]')"
+                + "&&document.querySelectorAll('[data-arcade-id]').length===20"
+                + "&&!document.querySelector('.lobby-hero'))");
+            if (ready == "true") { menuOpened = true; break; }
+            await Task.Delay(100);
+        }
+        Require(menuOpened, "Arcade Games did not open its dedicated twenty-game menu.");
+        // The streamlined hub must open a full personal high-score table.
+        await web.ExecuteScriptAsync(
+            "document.querySelector('[data-testid=arcade-highscores-open]')?.click()");
+        string highScores = await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('[data-testid=arcade-highscores-dialog]')"
+            + "&&document.querySelectorAll('.arcade-highscores-entry').length===20)");
+        Require(highScores == "true", "Arcade personal high-score table is missing games.");
+        await web.ExecuteScriptAsync(
+            "document.querySelector('.arcade-highscores-dialog .arcade-detail-close')?.click()");
+
+        // Launch and exit all twenty real Arcade games in packaged WebView2.
+        // Static cards and nonfunctional "Play" buttons cannot pass this check.
+        foreach (string id in new[] {
+            "midnight-wings", "cave-escape", "perfect-stack", "blade-timing",
+            "death-snake", "neon-breaker", "bullet-storm",
+            "hexagon-hell", "spike-rush", "endless-ascent",
+            "midnight-beats", "phantom-hook", "neon-drift", "gravity-chamber", "echo-sequence",
+            "prism-lock", "meteor-miner", "circuit-rush", "shadow-heist", "pulse-perfect" })
+        {
+            await web.ExecuteScriptAsync(
+                "document.querySelector('[data-arcade-id=" + id + "]')?.click()");
+            bool detailsOpened = false;
+            for (int attempt = 0; attempt < 40; attempt++)
+            {
+                string ready = await web.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.arcade-detail[role=dialog]')"
+                    + "&&document.querySelector('[data-testid=arcade-play-button]'))");
+                if (ready == "true") { detailsOpened = true; break; }
+                await Task.Delay(100);
+            }
+            Require(detailsOpened, "Playable arcade game did not open details: " + id);
+            await web.ExecuteScriptAsync(
+                "document.querySelector('[data-testid=arcade-play-button]')?.click()");
+            bool gameOpened = false;
+            for (int attempt = 0; attempt < 40; attempt++)
+            {
+                string ready = await web.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('[data-testid=arcade-game-screen][data-game-id=" + id + "]')"
+                    + "&&document.querySelector('[data-testid=arcade-canvas]')"
+                    + "&&document.querySelector('.arcade-play-overlay[data-phase=ready]'))");
+                if (ready == "true") { gameOpened = true; break; }
+                await Task.Delay(100);
+            }
+            Require(gameOpened, "Arcade game failed to mount its real canvas: " + id);
+            // Gameplay must fit the actual client area, not introduce its own scrollbar.
+            string fits = await web.ExecuteScriptAsync(
+                "(()=>{const p=document.querySelector('.arcade-play');"
+                + "const s=document.querySelector('.arcade-play-stage');"
+                + "const c=document.querySelector('[data-testid=arcade-canvas]');"
+                + "const h=document.querySelector('.arcade-play-header');"
+                + "const runs=document.querySelector('[data-testid=arcade-runs]');"
+                + "const shell=document.querySelector('.casino-lobby-shell');"
+                + "const bounds=p?.getBoundingClientRect(),stage=s?.getBoundingClientRect();"
+                + "return Boolean(p&&s&&c&&h&&runs&&shell&&p.clientHeight>180"
+                + "&&p.scrollHeight<=p.clientHeight+3&&p.scrollWidth<=p.clientWidth+3"
+                + "&&document.documentElement.scrollHeight<=innerHeight+3"
+                + "&&document.body.scrollHeight<=innerHeight+3"
+                + "&&shell.getBoundingClientRect().bottom<=innerHeight+3"
+                + "&&stage.bottom<=bounds.bottom+2"
+                + "&&runs.getBoundingClientRect().bottom<=h.getBoundingClientRect().bottom+1"
+                + "&&stage.width<innerWidth-100"
+                + "&&stage.height<innerHeight*.78"
+                + "&&c.getBoundingClientRect().height>80)})()");
+            Require(fits == "true", "Arcade game overflowed its viewport: " + id);
+            await web.ExecuteScriptAsync(
+                "document.querySelector('.arcade-primary-action')?.click()");
+            bool started = false;
+            for (int attempt = 0; attempt < 40; attempt++)
+            {
+                string ready = await web.ExecuteScriptAsync(
+                    "(()=>{const c=document.querySelector('[data-testid=arcade-canvas]');"
+                    + "if(!c||document.querySelector('.arcade-play-overlay[data-phase=ready]'))return false;"
+                    + "const p=c.getContext('2d')?.getImageData(Math.floor(c.width/2),Math.floor(c.height/2),1,1).data;"
+                    + "return Boolean(p&&p[3]>0)})()");
+                if (ready == "true") { started = true; break; }
+                await Task.Delay(100);
+            }
+            Require(started, "Arcade game did not start or render a frame: " + id);
+            // Pause must stop simulation and show a real pause overlay.
+            await web.ExecuteScriptAsync(
+                "document.querySelector('.arcade-play-actions button:last-child')?.click()");
+            bool paused = await web.ExecuteScriptAsync(
+                "Boolean(document.querySelector('.arcade-play-overlay[data-phase=paused]'))") == "true";
+            Require(paused, "Arcade pause control did not pause the run: " + id);
+            await web.ExecuteScriptAsync(
+                "document.querySelector('.arcade-play-heading .arcade-back')?.click()");
+            bool returned = false;
+            for (int attempt = 0; attempt < 40; attempt++)
+            {
+                string ready = await web.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('[data-testid=arcade-menu]')"
+                    + "&&document.querySelectorAll('[data-arcade-id]').length===20)");
+                if (ready == "true") { returned = true; break; }
+                await Task.Delay(100);
+            }
+            Require(returned, "Arcade game did not return to selection: " + id);
+        }
+        await web.ExecuteScriptAsync("document.querySelector('.arcade-back')?.click()");
+        bool backToLobby = false;
+        for (int attempt = 0; attempt < 40; attempt++)
+        {
+            string ready = await web.ExecuteScriptAsync(
+                "Boolean(document.querySelector('.lobby-hero')"
+                + "&&document.querySelector('.game-arcade-games')"
+                + "&&document.querySelector('.lobby-daily'))");
+            if (ready == "true") { backToLobby = true; break; }
+            await Task.Delay(100);
+        }
+        Require(backToLobby, "Back from Arcade Games did not restore the casino lobby.");
     }
 
     private static async Task CheckModernLobbyUpdates(MainWindow window, ModernLobbyView modern)

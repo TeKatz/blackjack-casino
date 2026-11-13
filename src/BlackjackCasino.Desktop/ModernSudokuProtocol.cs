@@ -39,7 +39,15 @@ internal static class ModernSudokuProtocol
             bool valid = action switch
             {
                 "sudoku.daily" or "sudoku.back" or "sudoku.exit"
-                    or "sudoku.undo" or "sudoku.redo" => blank,
+                    or "sudoku.undo" or "sudoku.redo"
+                    or "sudoku.variant.back" or "sudoku.variant.undo" or "sudoku.variant.redo" => blank,
+                "sudoku.variant.new" or "sudoku.variant.resume" => index is null && digit is null &&
+                    value is not null && BlackjackCasino.Core.Sudoku.SudokuVariantLibrary.TryParseKey(value,
+                        out _, out _, out _),
+                "sudoku.variant.value" or "sudoku.variant.note" => index is >= 0 and < 441 &&
+                    digit is >= 1 and <= 9 && value is null,
+                "sudoku.variant.erase" => index is >= 0 and < 441 && digit is null && value is null,
+                "sudoku.variant.hint" => index is >= -1 and < 441 && digit is null && value is null,
                 "sudoku.new" or "sudoku.resume" => index is null && digit is null &&
                     value is "Relaxed" or "Easy" or "Medium" or "Hard" or "Expert" or "Master",
                 "sudoku.value" or "sudoku.note" => index is >= 0 and < 81 &&

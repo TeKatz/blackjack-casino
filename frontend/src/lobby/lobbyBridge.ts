@@ -13,10 +13,10 @@ export type LobbySnapshot = {
   dailyLogin: DailyLoginSnapshot;
  titleVariant?:string;portraitVariant?:string;frameVariant?:string;
   displayName: string; level: number; coins: string; prestige: number; title: string;
-  bankroll: string; empireCredits: string; albumOwned: number; albumTotal: number;
+  bankroll: string; bankrollValue?:number; empireCredits: string; albumOwned: number; albumTotal: number; albumPacksReady: number;
   seasonTier: number; seasonNextTier: number; seasonExperience: number; seasonRequired: number;
   seasonFraction: number; seasonComplete: boolean; challengeName: string;
-  challengeFraction: number; challengesReady: number; vaultTier: string;
+  challengeFraction: number; challengesReady: number; challengeTotal: number; challengeCompleted: number; challengeOverallFraction: number; vaultTier: string;
   vaultAmount: string; vaultCapacity: string; vaultFraction: number;
   animationsEnabled: boolean; albumSoundEnabled: boolean;
   musicEnabled: boolean; musicVolume: number; showEmpireBalance: boolean;
@@ -32,6 +32,7 @@ const fraction = (x: unknown) => numeric(x) && x >= 0 && x <= 1;
 
 export function isLobbySnapshot(x: unknown): x is LobbySnapshot {
   if (!object(x) || !object(x.dailyLogin)) return false;
+  if(x.bankrollValue!==undefined&&(!numeric(x.bankrollValue)||x.bankrollValue<0))return false;
   if (!['titleVariant','portraitVariant','frameVariant'].every(k=>x[k]===undefined||
     typeof x[k]==='string'&&/^[a-z0-9-]{1,100}$/.test(x[k] as string)))return false;
   if(x.installedVersion!==undefined&&(!string(x.installedVersion)||x.installedVersion.length>80))return false;
@@ -49,8 +50,9 @@ export function isLobbySnapshot(x: unknown): x is LobbySnapshot {
   if (!['displayName','coins','title','bankroll','empireCredits','challengeName',
     'vaultTier','vaultAmount','vaultCapacity'].every(k => string(x[k]))) return false;
   if (!['level','prestige','albumOwned','albumTotal','seasonTier','seasonNextTier',
-    'seasonExperience','seasonRequired','challengesReady'].every(k => numeric(x[k]) && Number(x[k]) >= 0)) return false;
-  if (!['seasonFraction','challengeFraction','vaultFraction'].every(k => fraction(x[k]))) return false;
+    'seasonExperience','seasonRequired','challengesReady','albumPacksReady','challengeTotal','challengeCompleted'].every(k => numeric(x[k]) && Number(x[k]) >= 0)) return false;
+  if (!['seasonFraction','challengeFraction','challengeOverallFraction','vaultFraction'].every(k => fraction(x[k]))) return false;
+  if (Number(x.challengeCompleted) > Number(x.challengeTotal)) return false;
   if (typeof x.seasonComplete !== 'boolean' || typeof x.albumSoundEnabled !== 'boolean'
     || typeof x.animationsEnabled !== 'boolean'
     || typeof x.musicEnabled !== 'boolean' || typeof x.showEmpireBalance !== 'boolean'
@@ -77,14 +79,15 @@ export const fallbackLobby: LobbySnapshot = {
     ],
   },
   displayName: 'Guest', level: 1, coins: '0', prestige: 0, title: 'Midnight Dealer',
-  bankroll: '$1,000.00', empireCredits: '0 cr', albumOwned: 0, albumTotal: 136,
+  bankroll: '$1,000.00', bankrollValue:1000, empireCredits: '0 cr', albumOwned: 0, albumTotal: 136, albumPacksReady: 0,
   seasonTier: 0, seasonNextTier: 1, seasonExperience: 0, seasonRequired: 2000,
   seasonFraction: 0, seasonComplete: false, challengeName: 'Unbroken',
-  challengeFraction: 0, challengesReady: 0, vaultTier: 'BRONZE',
+  challengeFraction: 0, challengesReady: 0, challengeTotal: 3, challengeCompleted: 1, challengeOverallFraction: 1/3, vaultTier: 'BRONZE',
   vaultAmount: '$0.00', vaultCapacity: '$100,000.00', vaultFraction: 0,
   animationsEnabled: true, albumSoundEnabled:true,
   musicEnabled:true, musicVolume:0.10, showEmpireBalance:true,
   language: 'en', modes: [
+    {id:'roulette',title:'Roulette',category:'Table games',description:'European single-zero roulette. High-limit table.',enabled:true,secondary:false},
     {id:'blackjack',title:'Blackjack',category:'Table games',description:'A quiet seat, a fresh shoe and your next decision.',enabled:true,secondary:false},
     {id:'kniffel',title:'Midnight Dice',category:'Table games',description:'Five dice and your score sheet. Play solo or with AI opponents.',enabled:true,secondary:false},
     {id:'chill-lounge',title:'Chill Lounge',category:'Relaxed games',description:'Offline games at your own pace: Sudoku and Solitaire.',enabled:true,secondary:false},
@@ -93,6 +96,7 @@ export const fallbackLobby: LobbySnapshot = {
     {id:'neon-vault',title:'Neon Vault',category:'Video slots',description:'Five reels, 1,024 ways and Vault Break Free Spins.',enabled:true,secondary:false},
     {id:'nine-lives',title:'Nine Lives',category:'Video slots',description:'Five lines, Pounce Wilds and nine bonus spins.',enabled:true,secondary:false},
     {id:'midnight-manor',title:'Midnight Manor',category:'Video slots',description:'Five haunted reels, Free Spins and rooms that remember.',enabled:true,secondary:false},
+    {id:'midnight-descent',title:'Midnight Descent',category:'Action Roguelite',description:'Descend beneath the club. Discover relics and forge your legend.',enabled:false,secondary:false},
     {id:'midnight-merge',title:'Midnight Merge',category:'Casino restoration',description:'Bring the Midnight Club back room by room.',enabled:true,secondary:false},
   ],
 };

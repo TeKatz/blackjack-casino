@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="280" viewBox="0 0 600 280" role="img" aria-label="Midnight Bastion tower defense illustration">
+<defs><linearGradient id="back" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#102a32"/><stop offset=".56" stop-color="#3a604c"/><stop offset="1" stop-color="#102a32"/></linearGradient>
+<radialGradient id="light"><stop stop-color="#eed8a4" stop-opacity=".21"/><stop offset="1" stop-color="#eed8a4" stop-opacity="0"/></radialGradient>
+<filter id="depth" x="-20%" y="-25%" width="150%" height="160%"><feDropShadow dx="0" dy="9" stdDeviation="8" flood-color="#041019" flood-opacity=".62"/></filter></defs>
+<rect width="600" height="280" fill="url(#back)"/><circle cx="346" cy="116" r="240" fill="url(#light)"/>
+<g fill="#d9d1aa"><circle cx="21" cy="16" r="1" opacity=".18"/><circle cx="214" cy="95" r="2" opacity=".18"/><circle cx="407" cy="174" r="3" opacity=".18"/><circle cx="0" cy="253" r="1" opacity=".18"/><circle cx="193" cy="52" r="2" opacity=".18"/><circle cx="386" cy="131" r="3" opacity=".18"/><circle cx="579" cy="210" r="1" opacity=".18"/><circle cx="172" cy="9" r="2" opacity=".18"/><circle cx="365" cy="88" r="3" opacity=".18"/><circle cx="558" cy="167" r="1" opacity=".18"/><circle cx="151" cy="246" r="2" opacity=".18"/><circle cx="344" cy="45" r="3" opacity=".18"/><circle cx="537" cy="124" r="1" opacity=".18"/><circle cx="130" cy="203" r="2" opacity=".18"/><circle cx="323" cy="2" r="3" opacity=".18"/><circle cx="516" cy="81" r="1" opacity=".18"/><circle cx="109" cy="160" r="2" opacity=".18"/></g><path d="M0 256C135 225 395 285 600 231" fill="none" stroke="#c9bf91" stroke-opacity=".15" stroke-width="2"/>
+<g>
+<path d="M0 203C98 185 147 87 246 91C339 95 334 209 434 192C518 177 492 115 600 103V280H0Z" fill="#284e43" opacity=".7"/>
+<g stroke="#142d34" stroke-opacity=".18" stroke-width="1"><path d="M0 0V280"/><path d="M66 0V280"/><path d="M132 0V280"/><path d="M198 0V280"/><path d="M264 0V280"/><path d="M330 0V280"/><path d="M396 0V280"/><path d="M462 0V280"/><path d="M528 0V280"/><path d="M594 0V280"/></g>
+<path d="M-50 199C73 211 101 86 217 93C298 99 290 206 398 193C493 180 478 106 648 117"
+ stroke="#43575a" stroke-width="91" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M-50 199C73 211 101 86 217 93C298 99 290 206 398 193C493 180 478 106 648 117"
+ stroke="#c4b18a" stroke-width="79" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M-50 199C73 211 101 86 217 93C298 99 290 206 398 193C493 180 478 106 648 117"
+ stroke="#e0d0a4" stroke-opacity=".45" stroke-width="2.3" fill="none" stroke-dasharray="4 13" stroke-linecap="round"/>
+<g fill="#315e4c" stroke="#72947c" stroke-width="2">
+<path d="M23 78l14-31 20 21-13 25Z"/><path d="M112 253l20-27 17 22-12 25Z"/><path d="M545 207l14-32 19 16-11 28Z"/></g>
+<g fill="#cfc39c" opacity=".25"><circle cx="43" cy="32" r="1.2"/><circle cx="150" cy="91" r="2.2"/><circle cx="257" cy="150" r="3.2"/><circle cx="364" cy="209" r="1.2"/><circle cx="471" cy="268" r="2.2"/><circle cx="578" cy="47" r="3.2"/><circle cx="85" cy="106" r="1.2"/><circle cx="192" cy="165" r="2.2"/><circle cx="299" cy="224" r="3.2"/><circle cx="406" cy="3" r="1.2"/><circle cx="513" cy="62" r="2.2"/><circle cx="20" cy="121" r="3.2"/><circle cx="127" cy="180" r="1.2"/><circle cx="234" cy="239" r="2.2"/><circle cx="341" cy="18" r="3.2"/><circle cx="448" cy="77" r="1.2"/><circle cx="555" cy="136" r="2.2"/><circle cx="62" cy="195" r="3.2"/><circle cx="169" cy="254" r="1.2"/><circle cx="276" cy="33" r="2.2"/><circle cx="383" cy="92" r="3.2"/><circle cx="490" cy="151" r="1.2"/><circle cx="597" cy="210" r="2.2"/><circle cx="104" cy="269" r="3.2"/><circle cx="211" cy="48" r="1.2"/><circle cx="318" cy="107" r="2.2"/><circle cx="425" cy="166" r="3.2"/><circle cx="532" cy="225" r="1.2"/></g>
+<g transform="translate(175 184)" filter="url(#depth)">
+<circle r="44" fill="#152e38" fill-opacity=".52" stroke="#c6bb8f" stroke-width="2.1" stroke-dasharray="4 7"/>
+<circle r="31" fill="#455e5c" stroke="#d6c39a" stroke-width="5"/>
+<circle r="23" fill="#254f50" stroke="#142d33" stroke-width="3"/>
+<g transform="rotate(-49)"><path d="M-10 -16H10L8 -47H-8Z" fill="#95dcd1" stroke="#ebdfc0" stroke-width="2.3"/>
+<rect x="-5" y="-45" width="10" height="9" rx="2" fill="#133f46"/></g>
+<circle r="11" fill="#d3bb8c" stroke="#f5e6bc" stroke-width="2"/>
+<circle r="5" fill="#223b42"/></g><g transform="translate(365 78)" filter="url(#depth)">
+<circle r="44" fill="#152e38" fill-opacity=".52" stroke="#c6bb8f" stroke-width="2.1" stroke-dasharray="4 7"/>
+<circle r="31" fill="#455e5c" stroke="#d6c39a" stroke-width="5"/>
+<circle r="23" fill="#555244" stroke="#142d33" stroke-width="3"/>
+<g transform="rotate(57)"><path d="M-10 -16H10L8 -47H-8Z" fill="#e7b77f" stroke="#ebdfc0" stroke-width="2.3"/>
+<rect x="-5" y="-45" width="10" height="9" rx="2" fill="#133f46"/></g>
+<circle r="11" fill="#d3bb8c" stroke="#f5e6bc" stroke-width="2"/>
+<circle r="5" fill="#223b42"/></g>
+<!-- Two enemies clearly travel along the curving road. -->
+<g transform="translate(293 135) scale(1)" filter="url(#depth)">
+<ellipse cx="0" cy="12" rx="22" ry="8" fill="#112832" opacity=".55"/>
+<path d="M-17 -12L0 -25L18 -12L15 15L0 24L-15 15Z" fill="#ab6c59" stroke="#f7d2a5" stroke-width="3"/>
+<path d="M-10 -11L0 -17L10 -11L7 4L-7 4Z" fill="#523d3e"/><path d="M-9 10l-7 15m25-15 7 15" stroke="#60484a" stroke-width="5"/>
+<circle cx="-5" cy="-1" r="2.4" fill="#e4c5a7"/><circle cx="5" cy="-1" r="2.4" fill="#e4c5a7"/>
+<rect x="-19" y="-35" width="38" height="5" rx="2" fill="#1a3840" stroke="#dab98e" stroke-width=".8"/>
+<rect x="-17.5" y="-33.5" width="25" height="2.5" fill="#88d8b7"/></g><g transform="translate(489 163) scale(0.86)" filter="url(#depth)">
+<ellipse cx="0" cy="12" rx="22" ry="8" fill="#112832" opacity=".55"/>
+<path d="M-17 -12L0 -25L18 -12L15 15L0 24L-15 15Z" fill="#ab6c59" stroke="#f7d2a5" stroke-width="3"/>
+<path d="M-10 -11L0 -17L10 -11L7 4L-7 4Z" fill="#523d3e"/><path d="M-9 10l-7 15m25-15 7 15" stroke="#60484a" stroke-width="5"/>
+<circle cx="-5" cy="-1" r="2.4" fill="#e4c5a7"/><circle cx="5" cy="-1" r="2.4" fill="#e4c5a7"/>
+<rect x="-19" y="-35" width="38" height="5" rx="2" fill="#1a3840" stroke="#dab98e" stroke-width=".8"/>
+<rect x="-17.5" y="-33.5" width="25" height="2.5" fill="#88d8b7"/></g>
+<!-- Tracer paths visibly connect side-mounted towers with the attackers. -->
+<path d="M200 164L276 145" stroke="#9ff1d9" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 12" fill="none"/>
+<path d="M389 96L475 151" stroke="#ffdc9d" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 12" fill="none"/>
+<g transform="translate(286 139)" stroke="#d8fff1" fill="none" stroke-width="2.3" stroke-linecap="round">
+<path d="M-19 -14L-9 -5M18 -18L8 -7M-19 14L-7 6M18 15L8 6"/><circle r="10" stroke="#a3f5dc"/>
+</g><g transform="translate(478 154)" stroke="#ffe9ba" fill="none" stroke-width="2">
+<path d="M-15 -11L-5 -3M15 -12L4 -4M-13 12L-4 4M13 11L4 4"/></g>
+<!-- Strategic defense markers reinforce turret placement, not a castle illustration. -->
+<g fill="#e4d6ac" font-family="Segoe UI,sans-serif" font-size="10" font-weight="700" letter-spacing="2"><text x="91" y="31">PATH · DEFEND · UPGRADE</text></g>
+</g>
+<rect width="600" height="280" fill="none" stroke="#efe0af" stroke-opacity=".19" stroke-width="2"/></svg>

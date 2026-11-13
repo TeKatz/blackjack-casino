@@ -55,6 +55,21 @@ public static class CosmeticCatalog
         new("title-neon-regular", "Neon Regular", CosmeticKind.Title, 3200, true, "A modern title for a very familiar face."),
         new("title-house-myth", "House Myth", CosmeticKind.Title, 5200, true, "For players whose save file has stories."),
 
+
+        // Sudoku career only: the Cosmetic Shop previews these, but coins cannot buy them.
+        new("title-sudoku-10", "Zahlenkenner", CosmeticKind.Title, 0, false, "Sudoku career level 10 exclusive title.", "title-sudoku-slate", 0, 10),
+        new("title-sudoku-20", "Logikdetektiv", CosmeticKind.Title, 0, false, "Sudoku career level 20 exclusive title.", "title-sudoku-mint", 0, 20),
+        new("title-sudoku-30", "Rätselstratege", CosmeticKind.Title, 0, false, "Sudoku career level 30 exclusive title.", "title-sudoku-blue", 0, 30),
+        new("title-sudoku-40", "Zahlenvirtuose", CosmeticKind.Title, 0, false, "Sudoku career level 40 exclusive title.", "title-sudoku-violet", 0, 40),
+        new("title-sudoku-50", "Meister der Neun", CosmeticKind.Title, 0, false, "Sudoku career level 50 exclusive title.", "title-sudoku-gold", 0, 50),
+        new("title-sudoku-60", "Architekt der Logik", CosmeticKind.Title, 0, false, "Sudoku career level 60 exclusive title.", "title-sudoku-rose", 0, 60),
+        new("title-sudoku-70", "Sudoku-Großmeister", CosmeticKind.Title, 0, false, "Sudoku career level 70 exclusive title.", "title-sudoku-amber", 0, 70),
+        new("title-sudoku-80", "Herrscher der Zahlen", CosmeticKind.Title, 0, false, "Sudoku career level 80 exclusive title.", "title-sudoku-prism", 0, 80),
+        new("title-sudoku-90", "Zahlenvisionär", CosmeticKind.Title, 0, false, "Sudoku career level 90 exclusive title.", "title-sudoku-cyan", 0, 90),
+        new("title-sudoku-100", "Sudoku-Legende", CosmeticKind.Title, 0, false, "Sudoku career level 100 exclusive title.", "title-sudoku-legend", 0, 100),
+        new("title-sudoku-90-premium", "Das perfekte Muster", CosmeticKind.Title, 0, false, "Animated premium Sudoku career level 90 exclusive.", "title-sudoku-premium", 0, 90),
+        new("title-sudoku-100-ultra", "Jenseits aller Logik", CosmeticKind.Title, 0, false, "Animated ultra-premium Sudoku career level 100 exclusive.", "title-sudoku-ultra", 0, 100),
+
         // Shop frames. Every purchasable frame has a distinct presentation variant used by the WPF profile UI.
         new("frame-emerald", "Emerald Edge", CosmeticKind.Frame, 600, true, "Deep green glass with a slow breathing glow.", "emerald-breathe"),
         new("frame-midnight", "Midnight Edge", CosmeticKind.Frame, 900, true, "A cool blue border with a restrained moonlight sweep.", "midnight-sweep"),
@@ -76,9 +91,9 @@ public static class CosmeticCatalog
         new("portrait-golden-joker", "Golden Joker", CosmeticKind.Portrait, 2800, true, "A theatrical gold mask for players who enjoy variance.", "portrait-golden-joker"),
         new("portrait-velvet-king", "Velvet King", CosmeticKind.Portrait, 3400, true, "An imperial velvet king crowned in gold, rubies and amethyst.", "portrait-velvet-king"),
 
-        // Exclusive challenge portrait. Never sold in the shop; the personal artwork is supplied separately.
+        // Exclusive challenge portrait; stable Sudoku Master Key reward and original ID.
         new(SecretGuestPortraitId, "The Secret Guest", CosmeticKind.Portrait, 0, false,
-            "An exclusive portrait unlocked by claiming the Master Key Sudoku challenge.", "portrait-secret-guest"),
+            "She appears before the room remembers.", "portrait-secret-guest"),
 
         // Playing-card cosmetics. Classic remains free; the first premium collection requires Player Prestige I.
         new("cardset-art-deco", "Art Deco", CosmeticKind.CardSet, 1800, true, "Ivory faces, black geometry and restrained brass trim.", "card-art-deco"),

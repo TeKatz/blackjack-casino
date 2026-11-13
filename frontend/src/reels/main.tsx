@@ -48,11 +48,14 @@ function ReelsApp(){
   const pendingRef=useRef<string|null>(null);
   const shown=useRef([4,4,4]);
   const lastId=useRef<string|null>(null);
+  const seenWin=useRef<string|null>(null);
+  const [winBurst,setWinBurst]=useState<string|null>(null);
   const timers=useRef<ReturnType<typeof setTimeout>[]>([]);
   const cancelTimers=useCallback(()=>{for(const id of timers.current)clearTimeout(id);timers.current=[];},[]);
   useEffect(()=>{
     const unsub=listenReels(event=>{
       if(event.type==='snapshot'){
+        if(!current.current)seenWin.current=event.data.state.lastSpin?.id??null;
         if(current.current?.session===event.data.session&&event.data.revision<current.current.revision)return;
         current.current=event.data;setSnapshot(event.data);
       }else if(event.data.requestId===pendingRef.current){
@@ -101,6 +104,15 @@ function ReelsApp(){
     timers.current.push(setTimeout(finish,STOP_DELAYS[2]+150));
     return()=>{window.cancelAnimationFrame(raf);cancelTimers();};
   },[last?.id,snapshot?.state.animationsEnabled,cancelTimers]);
+  useEffect(()=>{
+    if(!snapshot||!last||animating||!snapshot.state.animationsEnabled)return;
+    if(seenWin.current===last.id)return;
+    seenWin.current=last.id;
+    if(Number(last.net)<=0)return;
+    setWinBurst(last.id);
+    const timer=window.setTimeout(()=>setWinBurst(id=>id===last.id?null:id),1700);
+    return()=>window.clearTimeout(timer);
+  },[snapshot?.state.lastSpin?.id,animating,snapshot?.state.animationsEnabled]);
   const act=useCallback((intent:ReelsIntent)=>{
     if(!current.current||pendingRef.current||uncertain||animating)return;
     const id=sendReelsIntent(current.current,intent);
@@ -137,20 +149,34 @@ function ReelsApp(){
       strip[(movement.base[index]+n-1+32)%32]);
   };
   return <div className="reels-app" lang={s.language} data-language={s.language}
-    data-testid="reels-app" data-animating={animating} data-spin-id={result?.id??''}>
+    data-testid="reels-app" data-motion={s.animationsEnabled}
+     data-win-tier={!animating&&result&&Number(result.net)>0?(result.multiplier>=25?'jackpot':'win'):'none'}
+     data-animating={animating} data-bet-pending={!!pending&&!animating} data-spin-id={result?.id??''}>
     <header className="reels-header">
       <button className="reels-back" onClick={close}>← {t.back} <kbd>ESC</kbd></button>
-      <div className="reels-identity"><small>THE MIDNIGHT CLUB</small><h1>MIDNIGHT REELS</h1></div>
+
       <div className="reels-header-wallet"><small>{t.balance}</small><strong>{money(s.bankroll)}</strong></div>
     </header>
     <div className="reels-body">
       <main className="reels-cabinet">
+        <div className="reels-atmosphere" aria-hidden="true">
+          <i/><i/><i/><i/><i/><i/>
+        </div>
         <div className="reels-brand"><span>✦</span><h2>M I D N I G H T</h2><span>✦</span></div>
         <p className="reels-tagline">{t.tag}</p>
         <div className={'reels-lightband'+(!animating&&result?.multiplier===100?' jackpot':'')} aria-hidden="true">
           {Array.from({length:11},(_,i)=><i key={i}/>)}
         </div>
         <div className="reels-stage" data-testid="reels-display">
+          <div className="reels-stage-illumination" aria-hidden="true"><i/><i/><i/></div>
+          {winBurst===result?.id&&<div key={winBurst} className={'reels-win-burst'+
+             (result&&result.multiplier>=25?' jackpot':'')} aria-hidden="true">
+             {Array.from({length:16},(_,i)=><i key={i} style={{
+              '--spark-angle':(i*22.5)+'deg','--spark-distance':(65+i%4*22)+'px',
+              '--spark-delay':(i%5*34)+'ms',
+             } as React.CSSProperties}/>)}
+             <span>{result?.multiplier===100?'100×':result?.multiplier+'×'}</span>
+           </div>}
           <div className="reels-payline" aria-hidden="true"/>
           <span className="reels-pointer left" aria-hidden="true">▸</span>
           <div className="reels-grid">
@@ -184,7 +210,7 @@ function ReelsApp(){
           </div>
           <button className="reels-spin" data-testid="reels-spin" disabled={locked||!s.canSpin}
             onClick={()=>act({action:'spin'})}>
-            {locked?t.spinning:s.canSpin?t.spin:t.out}<kbd>SPACE</kbd>
+            {animating?t.spinning:s.canSpin?t.spin:t.out}<kbd>SPACE</kbd>
           </button>
         </div>
       </main>

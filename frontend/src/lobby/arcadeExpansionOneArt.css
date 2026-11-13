@@ -1,0 +1,71 @@
+/* Arcade Expansion I: per-game gameplay previews, with reduced-motion fallback. */
+.arcade-game-card:is(:hover,:focus-visible) .exp-beats-notes{
+ animation:exp-beats-fall 1.45s linear infinite;
+}
+.arcade-game-card:is(:hover,:focus-visible) .exp-beats-lights{
+ animation:exp-beats-lights 1.45s ease-in-out infinite;
+}
+@keyframes exp-beats-fall{
+ 0%{translate:0 -58px;opacity:.3}
+ 50%{opacity:1}
+ 77%{translate:0 19px;opacity:1}
+ 85%,100%{translate:0 27px;opacity:0}
+}
+@keyframes exp-beats-lights{
+ 0%,100%{opacity:.35;filter:brightness(.9)}
+ 30%,50%{opacity:1;filter:brightness(1.7)}
+ 70%{opacity:.52}
+}
+
+.arcade-scene .exp-hook-swing{transform-box:view-box;transform-origin:130px 20px}
+.arcade-game-card:is(:hover,:focus-visible) .exp-hook-swing{
+ animation:exp-hook-pendulum 2.2s ease-in-out infinite alternate;
+}
+.arcade-game-card:is(:hover,:focus-visible) .exp-hook-anchors{
+ animation:exp-hook-beacon 1.2s ease-in-out infinite alternate;
+}
+@keyframes exp-hook-pendulum{from{rotate:-30deg}to{rotate:30deg}}
+@keyframes exp-hook-beacon{from{opacity:.55}to{opacity:1}}
+
+.arcade-scene .exp-drift-car{transform-box:fill-box;transform-origin:center}
+.arcade-game-card:is(:hover,:focus-visible) .exp-drift-car{
+ animation:exp-drift-slide 2s ease-in-out infinite;
+}
+.arcade-game-card:is(:hover,:focus-visible) .exp-drift-tire{
+ animation:exp-drift-skid 2s ease-in-out infinite;
+}
+@keyframes exp-drift-slide{
+ 0%,100%{translate:0 0;rotate:0deg}
+ 35%{translate:26px 0;rotate:15deg}
+ 72%{translate:-20px 0;rotate:-12deg}
+}
+@keyframes exp-drift-skid{0%,100%{opacity:0}35%,75%{opacity:1}}
+
+.arcade-game-card:is(:hover,:focus-visible) .exp-gravity-player{
+ animation:exp-gravity-flip 2.2s ease-in-out infinite;
+}
+.arcade-game-card:is(:hover,:focus-visible) .exp-gravity-arrow{
+ animation:exp-gravity-pulse 2.2s ease-in-out infinite;
+}
+@keyframes exp-gravity-flip{
+ 0%,10%,100%{translate:0 0}
+ 43%,60%{translate:0 -52px}
+ 90%{translate:0 0}
+}
+@keyframes exp-gravity-pulse{
+ 0%,100%{opacity:.25}
+ 35%,60%{opacity:1}
+}
+
+.arcade-scene .exp-echo-highlight{transform-box:fill-box;transform-origin:center}
+.arcade-game-card:is(:hover,:focus-visible) .exp-echo-highlight{
+ animation:exp-echo-memory 1.3s steps(1,end) infinite;
+}
+@keyframes exp-echo-memory{0%,100%{opacity:.5}40%,75%{opacity:1;filter:brightness(2)}}
+
+@media(prefers-reduced-motion:reduce){
+ .arcade-scene [class^="exp-"]{animation:none!important;transition:none!important}
+}
+.casino-lobby-shell[data-reduced="true"] .arcade-scene [class^="exp-"]{
+ animation:none!important;transition:none!important
+}

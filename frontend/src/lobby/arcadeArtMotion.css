@@ -1,0 +1,50 @@
+/* Legacy hover choreography retained only for the three accepted Arcade scenes.
+   The seven corrected scenes use arcadeArtMotionV2.css. */
+.arcade-game-art:has(.arcade-scene){background:#0b2430}
+.arcade-game-art:has(.arcade-scene)::before{display:none}
+.arcade-game-art:has(.arcade-scene)::after{opacity:.4;transition:opacity .2s}
+.arcade-game-card:is(:hover,:focus-visible) .arcade-game-art::after{opacity:.15}
+.arcade-scene{display:block;width:100%;height:100%;overflow:hidden;filter:drop-shadow(0 2px 6px #001a22b3)}
+.arcade-scene [class^="arcade-"]{transform-box:fill-box;transform-origin:center}
+
+
+
+
+
+
+.arcade-game-card:is(:hover,:focus-visible) .arcade-bullet-wave-a{animation:au-rain-a 1.3s linear infinite}
+.arcade-game-card:is(:hover,:focus-visible) .arcade-bullet-wave-b{animation:au-rain-b 1.6s linear infinite}
+.arcade-game-card:is(:hover,:focus-visible) .arcade-bullet-dodger{animation:au-dodge 2.1s ease-in-out infinite}
+.arcade-game-card:is(:hover,:focus-visible) .arcade-bullet-nearmiss{animation:au-miss 2.1s ease-in-out infinite}
+@keyframes au-rain-a{to{translate:7px 33px;opacity:.6}}
+@keyframes au-rain-b{to{translate:-9px 35px;opacity:.35}}
+@keyframes au-dodge{0%,100%{translate:-13px 0;rotate:-9deg}30%{translate:24px -6px;rotate:12deg}62%{translate:-24px 2px;rotate:-12deg}80%{translate:10px -3px;rotate:5deg}}
+@keyframes au-miss{0%,100%{opacity:0}46%,58%{opacity:.8}}
+
+.arcade-game-card:is(:hover,:focus-visible) .arcade-breaker-ball{animation:an-ball 1.8s ease-in-out infinite}
+.arcade-game-card:is(:hover,:focus-visible) .arcade-breaker-paddle{animation:an-paddle 1.8s ease-in-out infinite}
+.arcade-game-card:is(:hover,:focus-visible) .arcade-breaker-target{animation:an-target 1.8s linear infinite}
+.arcade-game-card:is(:hover,:focus-visible) .arcade-breaker-shards{animation:an-shards 1.8s ease-out infinite}
+.arcade-game-card:is(:hover,:focus-visible) .arcade-breaker-ray{animation:an-ray 1.8s ease-in-out infinite}
+@keyframes an-ball{0%,8%{translate:0 0}44%{translate:42px -37px}52%{translate:40px -32px}100%{translate:-33px 5px}}
+@keyframes an-paddle{0%,20%{translate:0 0}52%{translate:28px 0}100%{translate:-18px 0}}
+@keyframes an-target{0%,39%,100%{opacity:1}44%,65%{opacity:.09}}
+@keyframes an-shards{0%,39%,73%,100%{opacity:0;scale:.6}48%{opacity:1;scale:1.25}}
+@keyframes an-ray{0%,35%,65%,100%{opacity:0}47%{opacity:.7}}
+
+.arcade-game-card:is(:hover,:focus-visible) .arcade-snake-face{animation:ad-bite 2.15s ease-in-out infinite}
+.arcade-game-card:is(:hover,:focus-visible) .arcade-snake-current{animation:ad-flow 1.3s linear infinite}
+.arcade-game-card:is(:hover,:focus-visible) .arcade-snake-food{animation:ad-food 2.15s ease-in-out infinite}
+@keyframes ad-bite{0%,15%,100%{translate:0 0}63%,78%{translate:29px 0}}
+@keyframes ad-flow{to{stroke-dashoffset:-33}}
+@keyframes ad-food{0%,59%,100%{scale:1;opacity:1}70%{scale:.15;opacity:.12}82%{scale:0;opacity:0}}
+
+
+/* Keep every art layer still when either motion preference requests it. */
+@media(prefers-reduced-motion:reduce){
+ .arcade-scene *, .arcade-game-art::after{animation:none!important;transition:none!important}
+}
+.casino-lobby-shell[data-reduced="true"] .arcade-scene *,
+.casino-lobby-shell[data-reduced="true"] .arcade-game-art::after{
+ animation:none!important;transition:none!important
+}

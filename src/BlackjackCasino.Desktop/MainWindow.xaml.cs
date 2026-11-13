@@ -47,6 +47,9 @@ public partial class MainWindow : Window
     private decimal selectedBet { get => blackjack.SelectedBet; set => blackjack.SelectedBet = value; }
     private UpdateManifest? pendingManifest;
     private bool updateOperationBusy;
+    private bool exitingForVerifiedUpdate;
+    private bool exitConfirmationAccepted;
+    private bool exitConfirmationOpen;
     private bool suppressPreferenceEvents;
 
     private readonly PlayerProfileState? initialProfile;
@@ -87,8 +90,26 @@ public partial class MainWindow : Window
         Loaded += async (_, _) =>
         {
             RefreshGameUi();
+            InitializeCasinoExitOverlay();
             if (manorRecoveryNotice is not null) StatusText.Text = manorRecoveryNotice;
             if(!testSession) await CheckForUpdatesAsync(silent: true);
+        };
+        Closing += (_, e) =>
+        {
+            if (testSession || exitingForVerifiedUpdate || exitConfirmationAccepted) return;
+            e.Cancel = true;
+            // Opening an owned modal Window from within the Closing event can
+            // re-enter WPF shutdown. Cancel first, then show it on the dispatcher.
+            if (exitConfirmationOpen) return;
+            exitConfirmationOpen = true;
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    RequestCasinoExitConfirmation();
+                }
+                catch { exitConfirmationOpen = false; throw; }
+            }));
         };
         Closed += (_, _) =>
         {
@@ -233,12 +254,57 @@ public partial class MainWindow : Window
         try
         {
             SetUpdateBusy(true);
-            SetUpdateMessage("Downloading update…");
+            // A Development release may be replaced between the menu's original
+            // availability check and the install click. Bind the download to a
+            // newly fetched, validated manifest rather than the cached menu state.
+            UpdateChannel channel = SelectedUpdateChannel;
+            SetUpdateMessage("Revalidating update package…");
+            UpdateCheckResult current = await updateService.CheckAsync(channel, AppVersion.Current);
+            if (!current.UpdateAvailable)
+            {
+                pendingManifest = null;
+                SetUpdateMessage("The selected update is no longer available. Check again.");
+                SetUpdateBusy(false);
+                return;
+            }
 
+            SemanticVersion updaterVersion = UpdaterLauncher.CurrentVersion ?? AppVersion.Current;
+            if (DesktopUpdateService.MinimumUpdaterVersion(current.Manifest) > updaterVersion)
+            {
+                pendingManifest = null;
+                SetUpdateMessage("This update requires a newer updater. Check the release notes.");
+                SetUpdateBusy(false);
+                return;
+            }
+
+            pendingManifest = current.Manifest;
+            SetUpdateMessage("Downloading update…");
             var progress = new Progress<double>(value =>
                 SetUpdateMessage($"Downloading update… {value:P0}"));
 
-            string packagePath = await updateService.DownloadAsync(pendingManifest.Package, progress);
+            string packagePath;
+            try
+            {
+                packagePath = await updateService.DownloadAsync(pendingManifest.Package, progress);
+            }
+            catch (InvalidDataException ex) when (ex.Message.Contains("mismatch", StringComparison.OrdinalIgnoreCase))
+            {
+                // If a mutable release was replaced during the download, refresh
+                // once and retry only when the versioned package identity changed.
+                // Never accept a file with the wrong size or hash.
+                SetUpdateMessage("Release changed during download. Checking latest package…");
+                UpdateCheckResult refreshed = await updateService.CheckAsync(channel, AppVersion.Current);
+                if (!refreshed.UpdateAvailable
+                    || refreshed.Manifest.Package == pendingManifest.Package
+                    || DesktopUpdateService.MinimumUpdaterVersion(refreshed.Manifest) > updaterVersion)
+                {
+                    throw;
+                }
+
+                pendingManifest = refreshed.Manifest;
+                SetUpdateMessage("Downloading refreshed update…");
+                packagePath = await updateService.DownloadAsync(pendingManifest.Package, progress);
+            }
 
             SavePreferences();
             SetUpdateMessage("Update verified. Restarting…");
@@ -247,6 +313,7 @@ public partial class MainWindow : Window
             // Their virtual-host mappings point at files in the installation
             // directory, and a lingering browser may prevent its atomic rename.
             ReleaseBrowserHostsForUpdate();
+            exitingForVerifiedUpdate = true;
             Application.Current.Shutdown();
         }
         catch (Exception ex)

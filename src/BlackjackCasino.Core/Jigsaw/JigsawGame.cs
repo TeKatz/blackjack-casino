@@ -9,18 +9,18 @@ public static class JigsawCatalog
     // Reuse bundled, offline collection illustrations. Never download pictures during a game.
     public static readonly IReadOnlyList<JigsawMotif> Motifs =
     [
-        new("enchanted-forest", "Enchanted Forest", "Nature", "enchanted-forest.png"),
-        new("sakura-garden", "Sakura Garden", "Nature", "sakura-garden.png"),
-        new("ocean-depths", "Ocean Depths", "Nature", "ocean-depths.png"),
-        new("frost-kingdom", "Frost Kingdom", "Fantasy", "frost-kingdom.png"),
-        new("celestial-voyage", "Celestial Voyage", "Fantasy", "celestial-voyage.png"),
-        new("pirate-cove", "Pirate Cove", "Fantasy", "pirate-cove.png"),
-        new("midnight-manor", "Midnight Manor", "The Midnight Club", "midnight-manor.png"),
-        new("neon-city", "Neon City", "The Midnight Club", "neon-city.png"),
-        new("eternal-casino", "Eternal Casino", "The Midnight Club", "eternal-casino.png"),
-        new("clockwork", "Clockwork", "Art & Design", "clockwork.png"),
-        new("desert-gold", "Desert Gold", "Art & Design", "desert-gold.png"),
-        new("primordial-dragons", "Primordial Dragons", "Fantasy", "primordial-dragons.png"),
+        new("enchanted-forest", "Enchanted Forest", "Nature", "enchanted-forest.jpg"),
+        new("sakura-garden", "Sakura Garden", "Nature", "sakura-garden.jpg"),
+        new("ocean-depths", "Ocean Depths", "Nature", "ocean-depths.jpg"),
+        new("frost-kingdom", "Frost Kingdom", "Fantasy", "frost-kingdom.jpg"),
+        new("celestial-voyage", "Celestial Voyage", "Fantasy", "celestial-voyage.jpg"),
+        new("pirate-cove", "Pirate Cove", "Fantasy", "pirate-cove.jpg"),
+        new("midnight-manor", "Midnight Manor", "The Midnight Club", "midnight-manor.jpg"),
+        new("neon-city", "Neon City", "The Midnight Club", "neon-city.jpg"),
+        new("eternal-casino", "Eternal Casino", "The Midnight Club", "eternal-casino.jpg"),
+        new("clockwork", "Clockwork", "Art & Design", "clockwork.jpg"),
+        new("desert-gold", "Desert Gold", "Art & Design", "desert-gold.jpg"),
+        new("primordial-dragons", "Primordial Dragons", "Fantasy", "primordial-dragons.jpg"),
     ];
 
     public static readonly IReadOnlyList<JigsawSize> Sizes =

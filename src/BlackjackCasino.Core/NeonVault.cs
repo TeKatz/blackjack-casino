@@ -72,12 +72,12 @@ public static class NeonVaultRules
 
     private static readonly NeonVaultSymbolDefinition[] Definitions =
     [
-        new(NeonVaultSymbol.Pulse, "Pulse", 28, 0.15m, 0.40m, 1.20m),
+        new(NeonVaultSymbol.Pulse, "Pulse", 27, 0.15m, 0.40m, 1.20m),
         new(NeonVaultSymbol.Prism, "Prism", 22, 0.20m, 0.60m, 1.80m),
         new(NeonVaultSymbol.Chip, "High Roller", 18, 0.25m, 0.75m, 2.50m),
         new(NeonVaultSymbol.Crown, "Crown", 14, 0.40m, 1.20m, 4.00m),
         new(NeonVaultSymbol.Key, "Vault Key", 10, 0.60m, 2.00m, 7.00m),
-        new(NeonVaultSymbol.Wild, "Wild", 4, 0m, 0m, 0m),
+        new(NeonVaultSymbol.Wild, "Wild", 5, 0m, 0m, 0m),
         new(NeonVaultSymbol.Scatter, "Vault", 3, 0m, 0m, 0m),
         new(NeonVaultSymbol.VaultKey, "Access Key", 1, 0m, 0m, 0m),
     ];

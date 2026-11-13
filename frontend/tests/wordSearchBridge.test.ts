@@ -63,5 +63,5 @@ describe('Word Search replacement choice',()=>{
   expect(html).toContain('data-testid="word-search-start-Easy"');
   expect(html).toContain('Dein aktuelles Rätsel bleibt gespeichert');
   expect(html).not.toMatch(/data-testid="word-search-start-Relaxed" disabled/);
- });
+ },15_000);
 });

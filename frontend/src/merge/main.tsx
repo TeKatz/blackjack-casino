@@ -15,6 +15,9 @@ const dictionary={
   completed:'AREA COMPLETE',unlocked:'UNLOCKED',locked:'LOCKED',waiting:'NEED ITEMS',
   next:'NEXT UPGRADE',area:'AREA',earned:'PLAYER XP',season:'SEASON XP',
   saved:'AUTOSAVED · NO ENERGY · NO COOLDOWNS',requirements:'REQUIRED SUPPLIES',
+  estate:'CASINO RESTORATION ROADMAP',returnCurrent:'CURRENT ROOM',preview:'VIEWING FINISHED ROOM',
+  expand:'VIEW FULL PANORAMA',shrink:'CLOSE PANORAMA',
+  tierOne:'TIER I · FREE',unlockedAt:'UNLOCK AT',fullyRestored:'FULLY RESTORED',
   order:'ORDER',remaining:'TO GO',help:'Select an item, then a free tile to move or an identical tile to merge.',
   empty:'Empty space', selected:'SELECTED',deselect:'Click again to deselect',
   blocked:'Another operation is being saved.',restoring:'Restoring your workshop…',
@@ -31,6 +34,9 @@ const dictionary={
   completed:'BEREICH ABGESCHLOSSEN',unlocked:'FREIGESCHALTET',locked:'GESPERRT',waiting:'ITEMS FEHLEN',
   next:'NÄCHSTES UPGRADE',area:'BEREICH',earned:'SPIELER-XP',season:'SAISON-XP',
   saved:'AUTOMATISCH GESPEICHERT · KEINE ENERGIE · KEINE WARTEZEIT',
+  estate:'AUSBAUPLAN DES CASINOS',returnCurrent:'AKTUELLER RAUM',preview:'ABGESCHLOSSENER RAUM',
+  expand:'PANORAMA ANSEHEN',shrink:'PANORAMA SCHLIESSEN',
+  tierOne:'STUFE I · GRATIS',unlockedAt:'FREI AB',fullyRestored:'VOLLSTÄNDIG RESTAURIERT',
   requirements:'BENÖTIGTE VORRÄTE',order:'AUFTRAG',remaining:'NOCH',
   help:'Wähle ein Item und klicke dann auf ein freies Feld oder auf ein gleiches Item.',
   empty:'Freies Feld',selected:'AUSGEWÄHLT',deselect:'Zum Abwählen erneut klicken',
@@ -52,6 +58,8 @@ function App(){
  const [settings,setSettings]=useState(false);
  const [animCell,setAnimCell]=useState(-1);
  const [celebration,setCelebration]=useState(false);
+ const [previewArea,setPreviewArea]=useState<string|null>(null);
+ const [cinematic,setCinematic]=useState(false);
  const activeSnap=useRef<MergeSnapshot|null>(null),activePending=useRef<string|null>(null);
  const lastRevision=useRef(-1);
  const selectedRef=useRef<string|null>(null);
@@ -77,7 +85,7 @@ function App(){
      if(lastRevision.current>=0&&next.revision>lastRevision.current&&next.state.lastAction){
        const result=next.state.lastAction;
        setAnimCell(result.position);
-       if(result.milestones?.length)setCelebration(true);
+       if(result.milestones?.length){setCelebration(true);setPreviewArea(null);}
        if(soundNotice.current)clearTimeout(soundNotice.current);
        if(celebrateTimer.current)clearTimeout(celebrateTimer.current);
        soundNotice.current=setTimeout(()=>setAnimCell(-1),820);
@@ -113,13 +121,14 @@ function App(){
    const key=(event:KeyboardEvent)=>{
      if(event.key!=='Escape')return;
      event.preventDefault();
+     if(cinematic){setCinematic(false);return;}
      if(settings){setSettings(false);return;}
      if(selectedRef.current){selectedRef.current=null;setSelected(null);return;}
      close();
    };
    document.addEventListener('keydown',key);
    return()=>document.removeEventListener('keydown',key);
- },[settings,close]);
+ },[settings,cinematic,close]);
  const onCell=useCallback((position:number,item:MergeItem|null)=>{
    if(activePending.current||uncertain)return;
    const current=selectedRef.current;
@@ -152,9 +161,15 @@ function App(){
  const selectedDef=selectedItem&&definitions.get(selectedItem.definitionId);
  const labels=state?.labels;
  const lang=state?.language??'en',t=dictionary[lang];
- const disabled=!!pending||uncertain;
+ // In-flight requests are already guarded by send, onCell and onDrop.
+ // Disabling every button during a save caused the global disabled opacity flicker.
+ const disabled=uncertain;
  const available=state?.capacity!==undefined?state.capacity-state.items.length:42;
- const next=state?.restoration.next;
+ const displayedRoom=state
+   ?state.restoration.areas.find(area=>area.areaId===previewArea)??state.restoration
+   :undefined;
+ const viewingPrevious=!!state&&displayedRoom?.areaId!==state.restoration.areaId;
+ const next=displayedRoom?.next;
  const canMerge=(item:MergeItem|null):boolean=>
    !!item&&!!selectedItem&&selectedItem.id!==item.id&&selectedDef?.id===item.definitionId
    &&selectedDef.mergeResult!==null;
@@ -167,41 +182,124 @@ function App(){
        <h1>MIDNIGHT <em>MERGE</em></h1>
        <small>{t.saved}</small>
      </div>
-     <div className="merge-top-stats">
-       <div><small>{t.restoration}</small><strong data-testid="merge-points">{state?.renovationPoints.toLocaleString(lang)||'0'}</strong></div>
-       <div><small>{t.level}</small><strong>{state?.profile?.level??'—'}</strong></div>
-       <div><small>{t.record}</small><strong>{state?.totalMerges.toLocaleString(lang)||'0'}</strong></div>
+     <div className="merge-top-stats" aria-label={lang==='de'?'Spielfortschritt':'Game progress'}>
+       <div className="merge-stat-card stat-renovation">
+         <span className="merge-stat-emblem" aria-hidden="true">
+           <svg viewBox="0 0 32 32"><path d="M5 25V13L16 5l11 8v12H5ZM12 25V15h8v10M8 13h16"/></svg>
+         </span>
+         <span className="merge-stat-content">
+           <small>{t.restoration}</small>
+           <strong data-testid="merge-points">{(state?.renovationPoints??0).toLocaleString(lang)}</strong>
+           <span className="merge-stat-meter"><i style={{width:((state?.restoration.upgradeProgress??0)*100)+'%'}}/></span>
+         </span>
+       </div>
+       <div className="merge-stat-card stat-level">
+         <span className="merge-stat-emblem" aria-hidden="true">
+           <svg viewBox="0 0 32 32"><path d="M16 3l4 9 10 1-7.5 7 2 10-8.5-5-9 5 2-10L2 13l10-1 4-9Z"/></svg>
+         </span>
+         <span className="merge-stat-content">
+           <small>{t.level}</small><strong>{state?.profile?.level??'—'}</strong>
+           <span className="merge-stat-meter"><i style={{width:(state?.profile?.nextLevelExperience
+             ?Math.min(100,100*state.profile.levelExperience/state.profile.nextLevelExperience):0)+'%'}}/></span>
+         </span>
+       </div>
+       <div className="merge-stat-card stat-merges">
+         <span className="merge-stat-emblem" aria-hidden="true">
+           <svg viewBox="0 0 32 32"><path d="M7 9a12 12 0 0 1 19 4M26 6v7h-7M25 23A12 12 0 0 1 6 19M6 26v-7h7"/></svg>
+         </span>
+         <span className="merge-stat-content">
+           <small>{t.record}</small><strong>{(state?.totalMerges??0).toLocaleString(lang)}</strong>
+           <span className="merge-stat-merges-line" aria-hidden="true">◆ ◇ ◆</span>
+         </span>
+       </div>
+     </div>
+     <div className="merge-header-tools">
+       <details className="merge-header-help" data-testid="merge-how-to-play">
+         <summary>{labels?.howToPlay??(lang==='de'?'Spielhilfe':'How to play')}</summary>
+         <p>{t.help}</p>
+       </details>
+       <div className="merge-settings">
+         <button type="button" data-testid="merge-settings" aria-expanded={settings}
+           onClick={()=>setSettings(x=>!x)}>⚙ {t.settings}</button>
+         {settings&&<div className="merge-settings-panel" data-testid="merge-settings-panel">
+           <label><input type="checkbox" checked={state?.soundEnabled??true} disabled={disabled}
+             onChange={e=>send({action:'sound.set',value:e.target.checked?'true':'false'})}/>{t.sound}</label>
+           <label><input type="checkbox" checked={state?.animationsEnabled??true} disabled={disabled}
+             onChange={e=>send({action:'animations.set',value:e.target.checked?'true':'false'})}/>{t.motion}</label>
+           <small>{t.soundHint}</small>
+         </div>}
+       </div>
      </div>
      <button className="merge-back" data-testid="merge-back" disabled={disabled}
        onClick={close}>{labels?.back??'← Casino lobby'}</button>
    </header>
    {!snap||!state||!isMergeSnapshot(snap)?<div className="merge-loading">
      <div className="merge-loading-symbol">◈</div><strong>{t.restoring}</strong></div>:
-   <div className="merge-scroll">
-     <div className={'merge-restoration'+(celebration?' celebrating':'')}>
+   <div className="merge-scroll" aria-busy={!!pending}>
+     <section className={'merge-restoration'+(celebration?' celebrating':'')}
+       aria-label={t.estate}>
        <div className="merge-room-head">
-         <div><small>{t.chapter} · {state.restoration.areaIndex}/{state.restoration.areaCount}</small>
-           <h2 data-testid="merge-area">{state.restoration.areaName}</h2></div>
-         <div className="merge-room-stage"><small>{state.restoration.current.id.toUpperCase()}</small>
-           <strong>{state.restoration.current.name}</strong></div>
+         <div>
+           <small>{t.chapter} · {displayedRoom!.areaIndex}/{state.restoration.areaCount}
+             {viewingPrevious?' · '+t.preview:''}</small>
+           <h2 data-testid="merge-area">{displayedRoom!.areaName}</h2>
+         </div>
+         <div className="merge-room-stage">
+           <small>{displayedRoom!.current.id.toUpperCase()}</small>
+           <strong>{displayedRoom!.current.name}</strong>
+         </div>
+         {viewingPrevious&&<button type="button" className="merge-room-return"
+           onClick={()=>setPreviewArea(null)}>{t.returnCurrent}</button>}
        </div>
-       <div className="merge-scene"><RestorationScene stage={state.restoration}/>
-         {celebration&&<div className="merge-unlock"><span>✦</span>{t.milestone}<span>✦</span></div>}</div>
+       <div className={'merge-scene'+(cinematic?' is-expanded':'')+(displayedRoom!.next===null?' fully-restored':'')+(!state.animationsEnabled?' motion-off':'')}
+         role={cinematic?'dialog':undefined} aria-modal={cinematic?true:undefined}
+         aria-label={cinematic?displayedRoom!.areaName:undefined}
+         data-testid="merge-panorama-container">
+         {cinematic&&<div className="merge-cinema-caption">
+           <small>{t.chapter} {displayedRoom!.areaIndex} / {state.restoration.areaCount}</small>
+           <strong>{displayedRoom!.areaName}</strong><span>{displayedRoom!.current.name}</span>
+         </div>}
+         <RestorationScene stage={displayedRoom!} animated={state.animationsEnabled} fit={cinematic?'contain':'crop'}/>
+         {displayedRoom!.next===null&&<div className="merge-complete-seal" aria-label={t.fullyRestored}>
+           <span aria-hidden="true">✦</span> {t.fullyRestored}</div>}
+         {celebration&&!viewingPrevious&&<div className="merge-unlock" aria-live="polite">
+           <span>✦</span>{t.milestone}<span>✦</span></div>}
+         <button type="button" className="merge-scene-expand" data-testid="merge-scene-expand"
+           aria-label={cinematic?t.shrink:t.expand}
+           onClick={()=>setCinematic(value=>!value)}>
+           {cinematic?t.shrink:t.expand} <span aria-hidden="true">{cinematic?'×':'⤢'}</span>
+         </button>
+       </div>
        <div className="merge-milestone-bar">
          <div className="merge-next"><div><small>{t.next}</small>
            <strong data-testid="merge-next-upgrade">{next
-             ?lang==='de'? 'Noch '+state.restoration.pointsUntilNext.toLocaleString(lang)+' Punkte bis '+next.name
-               :state.restoration.pointsUntilNext.toLocaleString(lang)+' points until '+next.name
+             ?lang==='de'? 'Noch '+displayedRoom!.pointsUntilNext.toLocaleString(lang)+' Punkte bis '+next.name
+               :displayedRoom!.pointsUntilNext.toLocaleString(lang)+' points until '+next.name
              :labels?.areaComplete}</strong></div>
            <small>{next?state.renovationPoints.toLocaleString(lang)+' / '+next.points.toLocaleString(lang):t.completed}</small></div>
          <div className="merge-progress" role="progressbar" aria-label={t.next}
-           aria-valuenow={Math.round(100*state.restoration.upgradeProgress)}
+           aria-valuenow={Math.round(100*displayedRoom!.upgradeProgress)}
            aria-valuemin={0} aria-valuemax={100}>
-           <span style={{width:state.restoration.upgradeProgress*100+'%'}}/></div>
-         <div className="merge-milestone-labels">{state.restoration.milestones.map(ms=>
+           <span style={{width:displayedRoom!.upgradeProgress*100+'%'}}/></div>
+         <div className="merge-milestone-labels">{displayedRoom!.milestones.map(ms=>
            <span key={ms.id} className={ms.unlocked?'unlocked':''}>{ms.name}</span>)}</div>
        </div>
-     </div>
+       <nav className="merge-estate-roadmap" aria-label={t.estate} data-testid="merge-estate-roadmap">
+         {state.restoration.areas.map(room=>{
+           const unlocked=state.renovationPoints>=room.milestones[0].points;
+           const completed=state.renovationPoints>=room.milestones[room.milestones.length-1].points;
+           const showing=room.areaId===displayedRoom!.areaId;
+           return <button type="button" key={room.areaId} disabled={!unlocked}
+             data-testid={'merge-room-'+room.areaId} aria-pressed={showing}
+             className={'merge-estate-stop'+(showing?' active':'')+
+               (completed?' complete':'')+(unlocked?' unlocked':' locked')}
+             onClick={()=>setPreviewArea(room.areaId===state.restoration.areaId?null:room.areaId)}>
+             <span className="merge-estate-number">{completed?'✓':String(room.areaIndex).padStart(2,'0')}</span>
+             <span className="merge-estate-name">{room.areaName}</span>
+           </button>;
+         })}
+       </nav>
+     </section>
      <div className="merge-workspace">
        <section className="merge-board-panel">
          <div className="merge-section-heading"><h2><span>✦</span> {t.board}</h2>
@@ -219,8 +317,8 @@ function App(){
                  className={'merge-cell'+(item?' filled':' empty')+(own?' selected':'')
                    +(target?' merge-target':'')+(canMerge(item)?' compatible':'')
                    +(animCell===position&&state.animationsEnabled?' created':'')}
-                 aria-label={definition?definition.name+' · '+(Math.floor(position/7)+1)+':'+(position%7+1):
-                   t.empty+' · '+(Math.floor(position/7)+1)+':'+(position%7+1)}
+                 aria-label={definition?definition.name+' · '+(position+1)+'/42':
+                   t.empty+' · '+(position+1)+'/42'}
                  draggable={!!item&&!disabled}
                  onDragStart={event=>item&&onDrag(event,item)}
                  onDragOver={event=>event.preventDefault()}
@@ -241,17 +339,13 @@ function App(){
                <span className="merge-producer-art"><MergeItemArt
                  definition={definitions.get(producer.outputDefinitionId)!} small/></span>
                <span className="merge-producer-text"><strong>{producer.name}</strong>
-                 <small>{producer.unlocked?labels?.producerHint:
-                  lang==='de'?'Ab '+producer.unlockPoints+' Punkten': 'Unlocks at '+producer.unlockPoints+' points'}</small></span>
+                 <small>{producer.unlocked?t.tierOne:
+                  t.unlockedAt+' '+producer.unlockPoints.toLocaleString(lang)}</small></span>
                <span className="merge-producer-icon">{producer.unlocked?'+':'⌑'}</span>
              </button>)}
-             <div className="merge-standby">
-               <span>●</span>{labels?.noEnergy}</div>
-             <div className="merge-help"><h4>{labels?.howToPlay}</h4>
-               <p>{t.help}</p>
-               {selectedDef&&<div className="merge-selection" data-testid="merge-selected">
-                 <span>{t.selected}</span><strong>{selectedDef.name}</strong><small>{t.deselect}</small></div>}
-             </div>
+             {selectedDef&&<div className="merge-selection" data-testid="merge-selected">
+               <span>{t.selected}</span><strong>{selectedDef.name}</strong><small>{t.deselect}</small>
+             </div>}
            </div>
          </div>
        </section>
@@ -283,31 +377,10 @@ function App(){
          </div>
        </aside>
      </div>
-     <footer className="merge-footer">
-       <div className="merge-status" role="status" aria-live="polite">
-         <small>{t.status} <span>{pending?' · SAVING':''}</span></small>
-         <strong data-testid="merge-feedback">{error??state.feedback}</strong>
-         {state.progressionSaveFailed&&<p className="merge-warning">{labels?.progressionSaveFailed}</p>}
-       </div>
-       <div className="merge-rewards">{state.playerXp>0||state.seasonXp>0
-         ?<strong>+{state.playerXp} {t.earned} · +{state.seasonXp} {t.season}</strong>
-         :<span>{labels?.xpHint}</span>}
-         <small>{state.profile?'P'+state.profile.prestige+' · LV '+state.profile.level+
-            ' · '+state.profile.levelExperience+' / '+state.profile.nextLevelExperience+' XP'
-            :labels?.profileUnavailable}</small></div>
-       <div className="merge-settings">
-         <button data-testid="merge-settings" onClick={()=>setSettings(x=>!x)}>
-           ⚙ {t.settings}</button>
-         {settings&&<div className="merge-settings-panel" data-testid="merge-settings-panel">
-           <label><input type="checkbox" checked={state.soundEnabled} disabled={disabled}
-             onChange={e=>send({action:'sound.set',value:e.target.checked?'true':'false'})}/>{t.sound}</label>
-           <label><input type="checkbox" checked={state.animationsEnabled} disabled={disabled}
-             onChange={e=>send({action:'animations.set',value:e.target.checked?'true':'false'})}/>{t.motion}</label>
-           <small>{t.soundHint}</small>
-         </div>}
-       </div>
-     </footer>
-     <div className="merge-bottom-note">{t.disk}</div>
+     {(error||state.progressionSaveFailed)&&<div className="merge-save-alert" role="alert"
+       data-testid="merge-save-alert">
+       {error??labels?.progressionSaveFailed}
+     </div>}
    </div>}
   </div>;
 }

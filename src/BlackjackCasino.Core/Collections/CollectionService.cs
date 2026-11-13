@@ -27,6 +27,19 @@ public sealed record CollectionThemeRewardClaimResult(
 /// <summary>Profile-owned collection; presentation never rolls cards or awards inventory.</summary>
 public static class CollectionService
 {
+    /// <summary>
+    /// Unopened packs in the player's inventory. Collection-theme completion
+    /// rewards are a separate claim, never an unopened pack. This query is
+    /// intentionally read-only; displaying the lobby must not grant anything.
+    /// </summary>
+    public static long UnopenedPackCount(PlayerProfileState profile)
+    {
+        lock (profile)
+        {
+            return profile.Collection?.Packs?.Values.Sum(count => (long)Math.Max(0, count)) ?? 0L;
+        }
+    }
+
     public static void Normalize(PlayerProfileState profile)
     {
         profile.Collection ??= new();

@@ -9,6 +9,8 @@ using BlackjackCasino.Core.Memory;
 using BlackjackCasino.Core.Jigsaw;
 using BlackjackCasino.Core.Adventure;
 using BlackjackCasino.Core.TowerDefense;
+using BlackjackCasino.Core.Minesweeper;
+using BlackjackCasino.Core;
 
 namespace BlackjackCasino.Desktop;
 
@@ -29,6 +31,8 @@ public partial class MainWindow
     private ModernAdventureSession? modernAdventureSession;
     private ModernTowerDefenseSession? modernTowerDefenseSession;
     private ModernTowerDefenseService? modernTowerDefense;
+    private ModernMinesweeperSession? modernMinesweeperSession;
+    private ModernMinesweeperService? modernMinesweeper;
     private ModernAdventureService? modernAdventure;
     private bool modernAdventureSoundtrack;
     private bool modernLoungeMenuMusic = true;
@@ -52,7 +56,8 @@ public partial class MainWindow
             "memory" => CurrentModernMemoryStatus(),
             "jigsaw" => CurrentModernJigsawStatus(),
             "tales-backroom" => CurrentModernAdventureStatus(),
-            "tower-defense" => $"Wave {preferences.TowerDefense?.Wave ?? 0}/15 · {preferences.TowerDefense?.Phase ?? "planning"}",
+            "tower-defense" => $"Lv {preferences.TowerDefense?.Progress?.Level ?? 1} · {preferences.TowerDefense?.Progress?.CompletedStages?.Count ?? 0}/2 maps",
+            "minesweeper" => $"{progressionController?.Profile.Minesweeper.Wins ?? 0:N0} wins · {progressionController?.Profile.Minesweeper.BestWinStreak ?? 0:N0} best streak",
             _ => null,
         });
         return new
@@ -80,6 +85,9 @@ public partial class MainWindow
             TowerDefenseSession = modernTowerDefenseSession?.Id ?? string.Empty,
             TowerDefenseRevision = modernTowerDefenseSession?.Revision ?? 0L,
             TowerDefense = modernTowerDefense?.Snapshot(),
+            MinesweeperSession = modernMinesweeperSession?.Id ?? string.Empty,
+            MinesweeperRevision = modernMinesweeperSession?.Revision ?? 0L,
+            Minesweeper = modernMinesweeper?.Snapshot(),
             Language = Localization.Language == UiLanguagePreference.German ? "de" : "en",
             MusicEnabled = preferences.Presentation("chill-lounge").MusicEnabled,
             SoundEnabled = preferences.Presentation("chill-lounge").SoundEnabled,
@@ -139,6 +147,7 @@ public partial class MainWindow
         modernJigsawSession = new ModernJigsawSession();
         modernAdventureSession = new ModernAdventureSession();
         modernTowerDefenseSession = new ModernTowerDefenseSession();
+        modernMinesweeperSession = new ModernMinesweeperSession();
         modernLoungeView = new ModernLoungeView(() => CreateModernLoungeSnapshot(),
             OnModernLoungeGameSelected, ApplyModernSudokuCommand, CheckpointModernSudoku,
             ApplyModernSolitaireCommand, CheckpointModernSolitaire,
@@ -147,6 +156,7 @@ public partial class MainWindow
             ApplyModernJigsawCommand, CheckpointModernJigsaw,
             ApplyModernAdventureCommand,
             ApplyModernTowerDefenseCommand, TickModernTowerDefense,
+            ApplyModernMinesweeperCommand, TickModernMinesweeper,
             CloseModernLounge, OnModernLoungeFailed, OpenModernCaseBoardWindow);
         MountModernSurface(modernLoungeView);
         if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
@@ -172,7 +182,7 @@ public partial class MainWindow
     {
         if (!ModernLoungeOpen) return;
         // The temporary Lobby soundtrack now covers the menu and every game.
-        if (id is "sudoku" or "solitaire" or "word-search" or "memory" or "jigsaw" or "tower-defense")
+        if (id is "sudoku" or "solitaire" or "word-search" or "memory" or "jigsaw" or "tower-defense" or "minesweeper")
             SetModernLoungeMenuMusic(false);
         if (id == "sudoku")
         {
@@ -180,7 +190,12 @@ public partial class MainWindow
                 SaveModernSudokuProgress, () => preferences.SudokuShowTimer,
                 value => SaveModernSudokuTimer(value),
                 () => preferences.SudokuShowGuides,
-                value => SaveModernSudokuGuides(value), () => sudokuRewardNotice);
+                value => SaveModernSudokuGuides(value), () => sudokuRewardNotice,
+                () => progressionController?.Profile.SudokuCareer ?? new SudokuCareerState(),
+                new ModernSudokuVariants(preferences.SudokuVariants,
+                    SaveModernSudokuVariantProgress,
+                    () => progressionController?.Profile.SudokuVariants ?? new SudokuVariantStatistics(),
+                    () => sudokuRewardNotice));
             modernLoungeView?.Refresh();
             return;
         }
@@ -253,6 +268,12 @@ public partial class MainWindow
         if (id == "tower-defense")
         {
             modernTowerDefense ??= new ModernTowerDefenseService(preferences.TowerDefense, SaveModernTowerDefenseProgress);
+            modernLoungeView?.Refresh();
+            return;
+        }
+        if (id == "minesweeper")
+        {
+            modernMinesweeper ??= new ModernMinesweeperService(preferences.Minesweeper, SaveModernMinesweeperProgress);
             modernLoungeView?.Refresh();
             return;
         }
@@ -559,6 +580,15 @@ public partial class MainWindow
         RecordSudokuCompletions(state);
     }
 
+    private void SaveModernSudokuVariantProgress(SudokuVariantProgressState state)
+    {
+        AppPreferences previous = preferences;
+        preferences = preferences with { SudokuVariants = state };
+        try { if (!testSession) SavePreferences(); }
+        catch { preferences = previous; throw; }
+        RecordSudokuVariantCompletions(state);
+    }
+
     private void SaveModernSudokuTimer(bool value)
     {
         AppPreferences old = preferences;
@@ -590,6 +620,20 @@ public partial class MainWindow
         preferences = preferences with { TowerDefense = state };
         try { if (!testSession) SavePreferences(); }
         catch { preferences = previous; throw; }
+        if (progressionController is not null && !testSession)
+        {
+            var profile = progressionController.Profile;
+            var old = profile.TowerDefense;
+            var next = state.Progress;
+            if (old.WavesCleared != next.WavesCleared || old.Victories != next.Victories
+                || old.Defeats != next.Defeats || old.Level != next.Level
+                || old.EnemiesDefeated != next.EnemiesDefeated || old.RunsStarted != next.RunsStarted)
+            {
+                profile.TowerDefense = next.Copy();
+                PlayerProfileStore.SaveProfile(profile);
+                modernLobby?.Refresh();
+            }
+        }
     }
 
     private ModernTowerDefenseReply ApplyModernTowerDefenseCommand(ModernTowerDefenseCommand command)
@@ -628,6 +672,76 @@ public partial class MainWindow
         }
     }
 
+    private void SaveModernMinesweeperProgress(SweepProgress state)
+    {
+        AppPreferences previous = preferences;
+        preferences = preferences with { Minesweeper = state.Copy() };
+        try
+        {
+            if (!testSession) SavePreferences();
+            SweepRun run = state.Run;
+            PlayerProfileState? profile = progressionController?.Profile;
+            if (!run.Finished || profile is null) return;
+            lock (profile)
+            {
+                SweepStatistics previousStats = profile.Minesweeper;
+                SweepStatistics next = previousStats.Copy();
+                if (!next.Record(run)) return;
+                profile.Minesweeper = next;
+                try
+                {
+                    if (!testSession) PlayerProfileStore.SaveProfileOrThrow(profile);
+                }
+                catch
+                {
+                    profile.Minesweeper = previousStats;
+                    throw;
+                }
+                modernLobby?.Refresh();
+            }
+        }
+        catch
+        {
+            preferences = previous;
+            throw;
+        }
+    }
+
+    private ModernMinesweeperReply ApplyModernMinesweeperCommand(ModernMinesweeperCommand command)
+    {
+        if (modernMinesweeperSession is null || modernMinesweeper is null)
+            return new ModernMinesweeperReply(command.RequestId, false, "Midnight Sweep is not open.", 0);
+        return modernMinesweeperSession.Execute(command, request =>
+        {
+            try
+            {
+                var result = modernMinesweeper.Execute(request);
+                if (result.Success && request.Action == "mine.exit")
+                {
+                    modernMinesweeper = null;
+                    SetModernLoungeMenuMusic(true);
+                }
+                return result;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                or InvalidOperationException or ArgumentException or OverflowException)
+            {
+                return (false, ex is IOException or UnauthorizedAccessException
+                    ? "Midnight Sweep save failed. Your last committed field is preserved."
+                    : ex.Message);
+            }
+        });
+    }
+
+    private void TickModernMinesweeper()
+    {
+        try { modernMinesweeper?.Tick(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            StatusText.Text = "Midnight Sweep clock checkpoint failed: " + ex.Message;
+        }
+    }
+
     private void OnModernLoungeFailed()
     {
         if (modernLoungeView?.Failed != true || !IsLoaded) return;
@@ -652,6 +766,7 @@ public partial class MainWindow
             ApplyModernWordSearchCommand, () => { }, ApplyModernMemoryCommand, () => { },
             ApplyModernJigsawCommand, () => { }, ApplyModernAdventureCommand,
             ApplyModernTowerDefenseCommand, () => false,
+            ApplyModernMinesweeperCommand, () => { },
             () => host.Close(), () => host.Close(), boardOnly: true);
         host.Content = view;
         host.Closed += (_, _) => { view.Dispose(); service.DetachedBoardOpen = false; modernCaseBoardWindow = null; modernLoungeView?.Refresh(); };
@@ -707,6 +822,16 @@ public partial class MainWindow
         }
         modernTowerDefense = null;
         modernTowerDefenseSession = null;
+        if (modernMinesweeper is not null)
+        {
+            try { modernMinesweeper.Checkpoint(); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                StatusText.Text = "Midnight Sweep save failed: " + ex.Message;
+            }
+        }
+        modernMinesweeper = null;
+        modernMinesweeperSession = null;
         modernAdventure = null;
         modernAdventureSession = null;
         modernAdventureSoundtrack = false;

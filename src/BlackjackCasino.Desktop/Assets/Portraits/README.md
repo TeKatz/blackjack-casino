@@ -24,3 +24,13 @@ Default and Season portraits continue to use their existing presentation.
 `tools/ManorSmoke` checks the actual WPF resources, distinct images, cache reuse,
 transparent circle corners, real shop purchase/equip and the Player view. Its
 runtime evidence includes eight circular previews and shop/player screenshots.
+
+## The Secret Guest
+
+The owner-approved special portrait replaces the reserved silhouette. Native
+profile and fallback windows use a cached 512 × 512 `secret-guest.jpg`; the
+React shop displays the matching animated `secret-guest.svg` with an embedded portrait and its
+custom gold/ruby effects, falling back to the still for reduced motion. The
+portrait keeps its existing reward-only Sudoku Master Key unlock, stable cosmetic
+ID, ownership and save behavior. Its deliberately cryptic description is:
+“She appears before the room remembers.”

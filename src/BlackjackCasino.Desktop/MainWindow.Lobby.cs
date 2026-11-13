@@ -14,6 +14,7 @@ public partial class MainWindow
         InitializeEmpire();
         modeRegistry.Register(new("blackjack","Blackjack","The velvet tables","A quiet seat, a fresh shoe and your next decision. Solo or with the house regulars.","#537D66","♠","Table games"),()=>
         {OpenBlackjackMode();TableModeText.Text="Blackjack · your table";});
+        modeRegistry.Register(new("roulette","Roulette","Grand Roulette","European single-zero roulette. High-limit table up to $100K.","#D5AB6A","◉","Table games"), OpenModernRoulette, () => ModernRouletteView.IsAvailable);
         modeRegistry.Register(new("midnight-reels","Midnight Reels","The golden floor","Three reels, a centre payline and a little old-school casino charm.","#C69A51","7 7 7","Classic slots"),()=>
         {TableModeText.Text="Midnight Reels · classic slots";OpenMidnightReels();});
         modeRegistry.Register(new("neon-vault","Neon Vault","The high-voltage floor","Five reels, 1,024 ways and Vault Break Free Spins. High Roller stakes up to $250K.","#55DDF8","◇","Video slots"),()=>
@@ -38,6 +39,9 @@ public partial class MainWindow
         modeRegistry.Register(new("kniffel", "Midnight Dice", "The dice lounge",
             "Five dice and your score sheet. Play solo or join a casino table with three AI opponents.",
             "#9DD6B3", "⚄", "Table games"), OpenKniffel);
+        modeRegistry.Register(new("midnight-descent", "Descent.Title", "Descent.Subtitle",
+            "Descent.Description", "#B996EB", "♠", "Descent.Category", UseResourceKeys: true),
+            OpenMidnightDescent);
         lobby=new CasinoLobbyView(modeRegistry,OpenProgression, () => preferences.Presentation("lobby").AnimationsEnabled,OpenNativeUpdates);
         // Use the WPF lobby only on genuine frontend failure. Keep its logical
         // visibility for native navigation, but never allow its art to flash

@@ -35,10 +35,10 @@ public sealed class ChallengeClaimAllTests
         {
             var profile = new PlayerProfileState();
             var service = new ProgressionService(profile);
-            SetEndgameMetric(profile, challenge.Metric, challenge.Goal - 1);
+            SetEndgameMetric(profile, challenge.Metric, challenge.Goal - 1, challenge.Id);
             Assert.False(ChallengeCatalog.Complete(profile, challenge));
             Assert.False(service.ClaimChallenge(challenge.Id).Success);
-            SetEndgameMetric(profile, challenge.Metric, challenge.Goal);
+            SetEndgameMetric(profile, challenge.Metric, challenge.Goal, challenge.Id);
             Assert.True(ChallengeCatalog.Complete(profile, challenge));
             Assert.True(service.ClaimChallenge(challenge.Id).Success);
             Assert.False(service.ClaimChallenge(challenge.Id).Success);
@@ -255,7 +255,7 @@ public sealed class ChallengeClaimAllTests
             && !profile.ClaimedChallengeIds.Contains(challenge.Id, StringComparer.Ordinal))
         .ToArray();
 
-    private static void SetEndgameMetric(PlayerProfileState profile, ChallengeMetric metric, decimal value)
+    private static void SetEndgameMetric(PlayerProfileState profile, ChallengeMetric metric, decimal value, string? challengeId = null)
     {
         switch (metric)
         {
@@ -300,6 +300,9 @@ public sealed class ChallengeClaimAllTests
             case ChallengeMetric.SudokuExpertCompleted: profile.Sudoku.ExpertCompleted = (long)value; break;
             case ChallengeMetric.SudokuCompleted: profile.Sudoku.CompletedPuzzles = (long)value; break;
             case ChallengeMetric.SudokuMasterCompleted: profile.Sudoku.MasterCompleted = (long)value; break;
+            case ChallengeMetric.SudokuSamuraiCompleted: profile.SudokuVariants.SamuraiCompleted = (long)value; break;
+            case ChallengeMetric.SudokuVariantCompleted: profile.SudokuVariants.CompletedPuzzles = (long)value; break;
+            case ChallengeMetric.SudokuCareerLevel: profile.SudokuCareer.Level = (int)value; break;
             case ChallengeMetric.MergeMerges: profile.MidnightMerge.Merges = (long)value; break;
             case ChallengeMetric.MergeOrdersCompleted: profile.MidnightMerge.OrdersCompleted = (long)value; break;
             case ChallengeMetric.MergeRenovationPoints: profile.MidnightMerge.RenovationPointsEarned = (long)value; break;
@@ -328,6 +331,34 @@ public sealed class ChallengeClaimAllTests
             case ChallengeMetric.ChillLoungeCompletions: profile.Sudoku.CompletedPuzzles = (long)value; break;
             case ChallengeMetric.JigsawCompletions: profile.Jigsaw.CompletedGames = (long)value; break;
             case ChallengeMetric.AdventureRunsCompleted: profile.Adventure.RunsCompleted = (long)value; break;
+            case ChallengeMetric.BastionWaves: profile.TowerDefense.WavesCleared = (long)value; break;
+            case ChallengeMetric.BastionKills: profile.TowerDefense.EnemiesDefeated = (long)value; break;
+            case ChallengeMetric.BastionVictories: profile.TowerDefense.Victories = (long)value; break;
+            case ChallengeMetric.BastionBestWave:
+                profile.TowerDefense.BestWaves["forest"] = (int)value;
+                break;
+            case ChallengeMetric.BastionMasteryLevel:
+                profile.TowerDefense.Level = (int)value;
+                break;
+            case ChallengeMetric.SweepWins: profile.Minesweeper.Wins = (int)value; break;
+            case ChallengeMetric.SweepNoScanWins: profile.Minesweeper.NoScanWins = (int)value; break;
+            case ChallengeMetric.SweepExpertWins: profile.Minesweeper.ExpertWins = (int)value; break;
+            case ChallengeMetric.SweepBestStreak: profile.Minesweeper.BestWinStreak = (int)value; break;
+            case ChallengeMetric.SweepSafeCells: profile.Minesweeper.SafeCellsRevealed = (long)value; break;
+            case ChallengeMetric.ArcadeBestScore:
+                // Every Arcade endgame goal is a per-game best score, not a shared value.
+                const string suffix = "-score-master";
+                string gameId = challengeId is not null && challengeId.StartsWith("arcade-", StringComparison.Ordinal)
+                    && challengeId.EndsWith(suffix, StringComparison.Ordinal)
+                        ? challengeId[7..^suffix.Length] : "";
+                Assert.True(ArcadeChallengeCatalog.IsGame(gameId));
+                profile.Arcade.Games[gameId] = new ArcadeGameStatistics { BestScore = (long)value };
+                break;
+            case ChallengeMetric.BastionStages:
+                profile.TowerDefense.CompletedStages.Clear();
+                if (value >= 1) profile.TowerDefense.CompletedStages.Add("forest");
+                if (value >= 2) profile.TowerDefense.CompletedStages.Add("frost");
+                break;
             default: throw new InvalidOperationException($"Missing endgame boundary test for {metric}.");
         }
     }

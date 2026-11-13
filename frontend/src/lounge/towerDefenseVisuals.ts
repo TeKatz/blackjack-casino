@@ -30,10 +30,10 @@ export const enemySpeed:Readonly<Record<TdEnemy['kind'],number>>={
  grunt:56,runner:96,brute:32,shield:43,
 };
 export function previewRange(kind:TowerKind,level:number):number{
- return kind==='cannon'?148+10*level:kind==='frost'?152+9*level:162+12*level;
+ return kind==='cannon'?148+10*level:kind==='frost'?152+9*level:kind==='ballista'?205+11*level:kind==='flame'?128+9*level:162+12*level;
 }
 export function previewDamage(kind:TowerKind,level:number):number{
- return kind==='cannon'?30+16*level:kind==='frost'?9+7*level:12+10*level;
+ return kind==='cannon'?30+16*level:kind==='frost'?9+7*level:kind==='ballista'?49+24*level:kind==='flame'?16+11*level:12+10*level;
 }
 export function interpolateEnemy(enemy:TdEnemy,path:readonly TdPoint[],
  elapsedSeconds:number,speed:1|2,running:boolean):TdPoint{

@@ -53,17 +53,44 @@ internal static partial class Program
         throw new InvalidOperationException("Collector's Album did not open through its active UI.");
     }
 
+    // Reduced-motion mode can reveal all five cards between two host-side
+    // polling calls. Observe the actual DOM transition before triggering a
+    // pack open or navigation, and optionally suspend it at its first reveal.
+    private static async Task ArmReactRevealObserver(
+        Microsoft.Web.WebView2.Core.CoreWebView2 web, bool suspend)
+    {
+        string script = """
+            (() => {
+              window.__albumSmokeObserver?.disconnect();
+              window.__albumSmokeReveal = null;
+              const inspect = () => {
+                const panel = document.querySelector('.album-opening-panel.phase-reveal, .album-opening-panel.phase-summary');
+                if (!panel || !panel.dataset.openingId) return;
+                window.__albumSmokeReveal = panel.dataset.openingId;
+                window.__albumSmokeObserver?.disconnect();
+                if (SUSPEND) panel.querySelector('.album-opening-exit')?.click();
+                else panel.querySelector('.album-opening-secondary')?.click();
+              };
+              window.__albumSmokeObserver = new MutationObserver(inspect);
+              window.__albumSmokeObserver.observe(document.body, {subtree:true, childList:true, attributes:true, attributeFilter:['class','data-opening-id']});
+              inspect();
+            })()
+            """.Replace("SUSPEND", suspend ? "true" : "false", StringComparison.Ordinal);
+        await web.ExecuteScriptAsync(script);
+    }
+
     private static async Task CheckReactAlbum(MainWindow window, PlayerProfileState profile, ModernLobbyView modern)
     {
         var web=modern.Browser.CoreWebView2!;
         async Task Expect(string expression,string message)
         {
-            for(int i=0;i<110;i++)
+            for(int i=0;i<300;i++)
             {
                 if(await web.ExecuteScriptAsync(expression)=="true")return;
                 await Task.Delay(50);
             }
-            throw new InvalidOperationException(message);
+            string state = await web.ExecuteScriptAsync("JSON.stringify({phase:document.querySelector('.album-opening-panel')?.className,receipt:window.__albumSmokeReveal,notice:document.querySelector('.album-opening-notice')?.textContent})");
+            throw new InvalidOperationException(message + " Browser state: " + state);
         }
         await Expect("document.querySelectorAll('.album-theme-item').length===16",
             "React Album does not expose all sixteen collections.");
@@ -82,6 +109,9 @@ internal static partial class Program
         await Expect("!document.querySelector('.album-opening-scrim')",
             "React staged pack cannot be dismissed without purchasing.");
         await web.ExecuteScriptAsync("document.querySelector('[data-pack-rarity=Common]')?.click()");
+        await Expect("Boolean(document.querySelector('.album-opening-panel.phase-stage .album-opening-primary:not(:disabled)'))",
+            "React pack staging did not reopen.");
+        await ArmReactRevealObserver(web, suspend: true);
         await web.ExecuteScriptAsync("document.querySelector('.album-opening-primary')?.click()");
         for(int i=0;i<120 && profile.Collection.PendingOpening is null;i++)await Task.Delay(40);
         CollectionOpening receipt=profile.Collection.PendingOpening??
@@ -89,38 +119,37 @@ internal static partial class Program
         Require(profile.Collection.PacksOpened==before+1&&
             profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common)==owned-1,
             "React pack open did not debit exactly one C# pack.");
-        await Expect("Boolean(document.querySelector('.album-opening-panel.phase-reveal')"
-            +"||document.querySelector('.album-opening-panel.phase-summary'))",
+        // The album bridge uses Guid.ToString("N"), not the dashed JSON Guid format.
+        await Expect("window.__albumSmokeReveal===" + System.Text.Json.JsonSerializer.Serialize(receipt.Id.ToString("N")),
             "React did not start its sealed-pack opening animation.");
-        await web.ExecuteScriptAsync(
-            "document.querySelector('.album-opening-panel.phase-reveal .album-opening-secondary')?.click()");
-        await Expect("document.querySelectorAll('.album-reveal-slot.flipped').length===5",
-            "React pack reveal did not expose five distinct animation slots.");
+        await Expect("!document.querySelector('.album-opening-scrim')",
+            "React reveal did not suspend at the observed transition.");
+        // Exit before completion; the durable receipt must survive navigation.
         Require(profile.Collection.PendingOpening?.Id==receipt.Id,
-            "Rendering the React reveal cleared or rerolled the pending receipt.");
-        await web.ExecuteScriptAsync("document.querySelector('.album-opening-exit')?.click()");
+            "React reveal regenerated the pending native receipt.");
         await web.ExecuteScriptAsync("document.querySelector('.album-page .shop-back')?.click()");
         for(int i=0;i<110 && modern.RecordsPage is not null;i++)await Task.Delay(40);
         Require(profile.Collection.PendingOpening?.Id==receipt.Id,
-            "Leaving React Album discarded the durable reveal receipt.");
+            "Leaving React Album mid-reveal discarded the pending receipt.");
+        await ArmReactRevealObserver(web, suspend: true);
         await web.ExecuteScriptAsync(
             "[...document.querySelectorAll('.lobby-nav-item')].find(x=>/Collections|Sammlungen/.test(x.textContent||''))?.click()");
-        await Expect("Boolean(document.querySelector('.album-opening-panel.phase-reveal')"
-            +"||document.querySelector('.album-opening-panel.phase-summary'))",
-            "Reloading React Album did not resume the exact saved opening.");
+        await Expect("window.__albumSmokeReveal===" + System.Text.Json.JsonSerializer.Serialize(receipt.Id.ToString("N")),
+            "React Album did not resume its durable receipt.");
+        await Expect("!document.querySelector('.album-opening-scrim')",
+            "React resumed reveal did not suspend.");
         Require(profile.Collection.PendingOpening?.Id==receipt.Id,
             "Resuming a React pack reveal rerolled the five original cards.");
-        await web.ExecuteScriptAsync(
-            "document.querySelector('.album-opening-panel.phase-reveal .album-opening-secondary')?.click()");
-        await Expect("Boolean(document.querySelector('.album-opening-panel.phase-summary'))",
-            "Resumed React reveal never reached the result stage.");
-        await web.ExecuteScriptAsync(
-            "document.querySelector('.album-opening-panel.phase-summary .album-opening-primary')?.click()");
-        for(int i=0;i<110 && profile.Collection.PendingOpening is not null;i++)await Task.Delay(45);
+        await ArmReactRevealObserver(web, suspend: false);
+        await web.ExecuteScriptAsync("document.querySelector('.album-resume-banner')?.click()");
+        await Expect("document.querySelectorAll('.album-reveal-slot.flipped').length===5"
+            +"&&document.querySelectorAll('.album-reveal-result').length===5",
+            "React Album did not show five card faces with New/Duplicate labels.");
+        for(int i=0;i<150 && profile.Collection.PendingOpening is not null;i++)await Task.Delay(45);
         Require(profile.Collection.PendingOpening is null,
-            "React Collect did not clear the original native receipt.");
+            "React Album did not automatically complete its original receipt.");
         await Expect("Boolean(document.querySelector('.album-opening-panel.phase-finished'))",
-            "React Album did not acknowledge a completed five-card pack.");
+            "React Album did not acknowledge automatic completion.");
         Require(profile.Collection.PacksOpened==before+1,
             "React resume or collect opened the pack more than once.");
     }
@@ -304,6 +333,9 @@ internal static partial class Program
 
         Find<Button>(window).Single(b => b.Name == "AlbumBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40); window.UpdateLayout();
+        ModernLobbyView? observingLobby = Find<ModernLobbyView>(window).FirstOrDefault(v=>v.Ready&&v.IsVisible);
+        if (observingLobby is not null)
+            await ArmReactRevealObserver(observingLobby.Browser.CoreWebView2!, suspend: true);
         await OpenAlbumFromLobby(window, fromHeader: true);
         ModernLobbyView? resumedReact = Find<ModernLobbyView>(window)
             .FirstOrDefault(view => view.Ready && view.IsVisible);
@@ -313,18 +345,17 @@ internal static partial class Program
             // exact previously persisted receipt before deliberately switching to
             // the WPF fallback to test its own historical resume behavior.
             var web = resumedReact.Browser.CoreWebView2!;
+            string expectedReceipt = System.Text.Json.JsonSerializer.Serialize(profile.Collection.PendingOpening!.Id.ToString("N"));
             bool resumed = false;
-            for (int i = 0; i < 110 && !resumed; i++)
+            for (int i = 0; i < 300 && !resumed; i++)
             {
                 resumed = await web.ExecuteScriptAsync(
-                    "Boolean(document.querySelector('.album-opening-panel.phase-reveal')"
-                    + "||document.querySelector('.album-opening-panel.phase-summary'))") == "true";
-                if (!resumed) await Task.Delay(40);
+                    "Boolean(window.__albumSmokeReveal===" + expectedReceipt + "&&!document.querySelector('.album-opening-scrim'))") == "true";
+                if (!resumed) await Task.Delay(50);
             }
             Require(resumed, "React Album did not resume the saved pack opening.");
             Require(profile.Collection.PendingOpening is not null,
                 "React Album discarded the original C# opening receipt.");
-            await web.ExecuteScriptAsync("document.querySelector('.album-opening-exit')?.click()");
             await web.ExecuteScriptAsync("document.querySelector('.album-page .shop-back')?.click()");
             await WaitUntil(() => resumedReact.RecordsPage is null,
                 "React Album failed to return to lobby after resuming a saved pack.");

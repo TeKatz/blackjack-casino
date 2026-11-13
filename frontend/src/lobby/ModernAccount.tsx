@@ -1,5 +1,6 @@
 import {PlayerPortrait,CosmeticTitle,portraitPath} from './Cosmetics';
 import {useEffect,useState} from 'react';
+import {localizedSudokuTitle} from './sudokuTitleLocalization';
 import type {AccountSnapshot} from './recordsBridge';
 type Props={
  data:AccountSnapshot;loaded:boolean;language:'en'|'de';pending:string|null;
@@ -17,7 +18,8 @@ export function ModernAccount({data,loaded,language,pending,onBack,onRoute,onEdi
  ['album','▤',de?'Sammleralbum':'Collector’s Album'],['challenges','♛','Challenges'],
  ['statistics','▥',de?'Statistiken':'Statistics'],['history','▧',de?'Spielverlauf':'Hand History']];
  const options=(group==='portraits'?data.portraits:data.titles).filter(item=>
-   item.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
+   (group==='titles'?localizedSudokuTitle(item.id,item.name,language):item.name)
+     .toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
  return <main className="record-page account-page"><div className="record-page-scroll">
  <header className="record-hero"><div className="record-hero-copy">
  <button className="shop-back" onClick={onBack}>{de?'‹ Zur Lobby':'‹ Back to lobby'}</button>
@@ -25,9 +27,9 @@ export function ModernAccount({data,loaded,language,pending,onBack,onRoute,onEdi
  <h1>{de?'Spielerprofil':'Player profile'}</h1>
  <p>{de?'Identität, Sammlung und Fortschritt an einem Ort.':'Identity, collection and progression in one place.'}</p>
  </div><div className="record-hero-side"><span>{de?'SPIELER':'PLAYER'}</span>
- <strong className="account-name">{loaded?data.displayName:'…'}</strong><small><CosmeticTitle variant={data.titleVariant}>{data.title}</CosmeticTitle></small>{data.prestige>0&&<span className="prestige-badge">✦ P{data.prestige}</span>}</div></header>
+ <strong className="account-name">{loaded?data.displayName:'…'}</strong><small><CosmeticTitle variant={data.titleVariant}>{localizedSudokuTitle(data.equippedTitleId,data.title,language)}</CosmeticTitle></small>{data.prestige>0&&<span className="prestige-badge">✦ P{data.prestige}</span>}</div></header>
  {!loaded?<p className="record-empty" role="status">{de?'Profil wird geladen…':'Loading profile…'}</p>:<>
- <div className="account-portrait"><PlayerPortrait portrait={data.portraitVariant??data.portraits.find(p=>p.id===data.equippedPortraitId)?.visualVariant} frame={data.frameVariant} large/><div><strong>{data.displayName}</strong><CosmeticTitle variant={data.titleVariant}>{data.title}</CosmeticTitle></div></div>
+ <div className="account-portrait"><PlayerPortrait portrait={data.portraitVariant??data.portraits.find(p=>p.id===data.equippedPortraitId)?.visualVariant} frame={data.frameVariant} large/><div><strong>{data.displayName}</strong><CosmeticTitle variant={data.titleVariant}>{localizedSudokuTitle(data.equippedTitleId,data.title,language)}</CosmeticTitle></div></div>
  <div className="record-summary account-summary">
  <div><span>LEVEL</span><strong>{data.level}</strong></div>
  <div><span>{de?'MÜNZEN':'COINS'}</span><strong>{data.coins}</strong></div>
@@ -71,7 +73,7 @@ export function ModernAccount({data,loaded,language,pending,onBack,onRoute,onEdi
  <img alt="" src={portraitPath(item.visualVariant)} loading="lazy"
  onError={e=>{e.currentTarget.style.display='none';}}/>:group==='portraits'?'♠':'✦'}
  </div>
- <div><strong>{group==='titles'?<CosmeticTitle variant={item.visualVariant}>{item.name}</CosmeticTitle>:item.name}</strong><p>{item.description}</p></div>
+ <div><strong>{group==='titles'?<CosmeticTitle variant={item.visualVariant}>{localizedSudokuTitle(item.id,item.name,language)}</CosmeticTitle>:item.name}</strong><p>{item.description}</p></div>
  <button type="button" disabled={active||pending!==null} onClick={()=>onEquip(item.id)}>
  {active?(de?'AUSGERÜSTET':'EQUIPPED'):pending===item.id?'…':(de?'AUSRÜSTEN':'EQUIP')}</button>
  </article>;

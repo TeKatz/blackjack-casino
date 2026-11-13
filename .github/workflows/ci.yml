@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, develop, "feature/**", "fix/**"]
+    branches: [main, develop, "feature/**", "feat/**", "fix/**"]
   pull_request:
     branches: [main]
 
@@ -16,7 +16,7 @@ permissions:
 jobs:
   build-test:
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
 
     steps:
       - name: Checkout
@@ -44,6 +44,17 @@ jobs:
       - name: Build modern frontend
         working-directory: frontend
         run: npm run build
+
+      # Export after Vite rebuilds dist, and before MSBuild globs package it.
+      - name: Cache single-threaded Godot Web and Windows templates
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Roaming/Godot/export_templates/4.5.1.stable
+          key: manor-godot-4.5.1-web-nothreads-windows-v1
+
+      - name: Import, smoke-test and export Godot Manor bonus for WebView2
+        shell: pwsh
+        run: ./tools/build_manor_bonus_web.ps1 -OutputDirectory frontend/dist/manor3d
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
@@ -194,6 +205,16 @@ jobs:
 
           New-Item -ItemType Directory -Path artifacts/preview-app/tools/updater -Force | Out-Null
           Copy-Item artifacts/preview-updater/BlackjackCasino.Updater.exe artifacts/preview-app/tools/updater/BlackjackCasino.Updater.exe
+
+      - name: Cache Godot Windows export template
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Roaming/Godot/export_templates/4.5.1.stable
+          key: godot-4.5.1-windows-x86_64-release-template-v1
+
+      - name: Export and smoke-test Godot Midnight Descent
+        shell: pwsh
+        run: ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/preview-app/MidnightDescent
 
       - name: Publish WPF-free native shell preview (not the updater target)
         if: github.event_name == 'push' || github.event_name == 'pull_request'

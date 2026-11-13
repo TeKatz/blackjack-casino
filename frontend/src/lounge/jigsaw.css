@@ -69,3 +69,61 @@
 
 .jigsaw-playing.piece-placed .jigsaw-board{animation:puzzle-snap .65s ease-out}
 @keyframes puzzle-snap{35%{box-shadow:0 0 22px #91dfae88;border-color:#c4e6ae}}
+
+/* Fit the entire game into one desktop viewport; no hint strip below the board. */
+.jigsaw-playing .jigsaw-board-panel{position:relative;display:flex;flex-direction:column;min-height:0;min-width:0}
+.jigsaw-board-frame{position:relative;display:flex;flex:1 1 auto;min-width:0;min-height:0}
+.jigsaw-playing .jigsaw-board{width:100%;height:100%;min-width:0;min-height:0;aspect-ratio:auto;margin:0;
+ border:0;box-shadow:inset 0 0 0 1px #47685877;touch-action:none}
+.jigsaw-playing .jigsaw-board canvas{width:100%!important;height:100%!important}
+.jigsaw-playing .jigsaw-hint.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+ overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.jigsaw-playing .jigsaw-placement-notice{position:absolute;bottom:12px;left:12px;right:12px;
+ margin:0;min-height:0;width:fit-content;max-width:calc(100% - 24px);padding:6px 11px;
+ border-radius:7px;background:#102e29ea;border:1px solid #b49a63bd;pointer-events:none;
+ font-size:12px;color:#f4dfa7!important;box-shadow:0 4px 18px #0008}
+.jigsaw-playing .jigsaw-placement-notice:empty{display:none}
+.jigsaw-playing .jigsaw-board-panel>.jigsaw-error{position:absolute;top:12px;left:12px;
+ background:#3b1919e8;padding:8px 12px;border-radius:8px}
+.jigsaw-tray-grid{isolation:isolate}
+.jigsaw-tray-grid button{position:relative;touch-action:none;user-select:none;transition:transform .16s ease,box-shadow .16s ease,
+ border-color .16s ease,background .16s ease;transform-origin:center;will-change:transform}
+.jigsaw-tray-grid button:hover:not(:disabled),.jigsaw-tray-grid button:focus-visible{
+ transform:scale(1.28);z-index:3;background:#315447;border-color:#f7d58e;
+ box-shadow:0 0 0 2px #f4d38d75,0 8px 23px #000b,0 0 21px #dabc6655}
+.jigsaw-tray-grid button:hover svg,.jigsaw-tray-grid button:focus-visible svg{
+ filter:drop-shadow(0 1px 3px #f4d38dbb)}
+.jigsaw-drag-preview{position:fixed;z-index:10000;pointer-events:none;user-select:none;
+ filter:drop-shadow(0 5px 12px #000c) drop-shadow(0 0 4px #eccb7c9c);
+ opacity:.9;transition:opacity .1s ease}
+.jigsaw-drag-preview.over-board{opacity:1;filter:drop-shadow(0 2px 3px #000d) drop-shadow(0 0 2px #eddfb3)}
+.jigsaw-drag-preview svg{display:block;overflow:visible}
+.jigsaw-tray .jigsaw-recover{margin-top:8px;border-color:#ce9b57;color:#ffe0ad;background:#4c3024;
+ font-size:11px;padding:7px 8px;width:100%}
+@media(min-width:1051px) and (min-height:650px){
+ .jigsaw-playing{height:100%;min-height:0;max-width:none;display:flex;flex-direction:column;overflow:hidden}
+ .jigsaw-playing .jigsaw-heading{flex:0 0 auto;min-height:64px;align-items:center}
+ .jigsaw-playing .jigsaw-heading h1{font-size:28px;line-height:1.05;margin:3px 0}
+ .jigsaw-playing .jigsaw-heading p{margin:3px 0}
+ .jigsaw-playing .jigsaw-heading .jigsaw-actions{margin:0}
+ .jigsaw-playing .jigsaw-layout{flex:1 1 auto;min-height:0;margin-top:8px;
+  grid-template-columns:minmax(0,1fr) clamp(292px,18vw,336px);gap:12px}
+ .jigsaw-playing .jigsaw-tray{min-width:0;min-height:0;padding:12px 11px;display:flex;flex-direction:column;
+  overflow:hidden;border-color:#b69b65;box-shadow:inset 0 0 0 1px #f6dfa819,0 8px 24px #0004}
+ .jigsaw-playing .jigsaw-tray h2{margin:4px 0}
+ .jigsaw-playing .jigsaw-tray p{margin:5px 0;font-size:11px}
+ .jigsaw-playing .jigsaw-tray-grid{gap:4px}
+ .jigsaw-playing .jigsaw-pages{margin:8px 0 2px}
+ .jigsaw-playing .jigsaw-pages button{padding:6px}
+ .jigsaw-playing .jigsaw-tray>.jigsaw-actions{margin:5px 0}
+ .jigsaw-playing .jigsaw-tray>.jigsaw-actions button{padding:6px 7px}
+}
+@media(prefers-reduced-motion:reduce){
+ .jigsaw-drag-preview,.jigsaw-tray-grid button{transition:none!important}
+}
+
+/* Below desktop breakpoints, preserve a real board height instead of a zero-height flex child. */
+@media(max-width:1050px), (max-height:649px){
+ .jigsaw-board-frame{width:100%;height:auto;flex:0 0 auto;aspect-ratio:8/5}
+ .jigsaw-playing .jigsaw-board{height:100%;aspect-ratio:8/5}
+}

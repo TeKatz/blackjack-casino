@@ -1,0 +1,88 @@
+/* Each mode is a true gameplay route; full-size gallery fits a 1920×1080 desktop viewport. */
+.sudoku-career-overview{appearance:none;color:inherit;text-align:left;cursor:pointer;width:100%;font-family:inherit;transition:border-color .18s,background .18s}
+.sudoku-career-overview:hover,.sudoku-career-overview:focus-visible{border-color:#e9d098;background:#163338}
+.sudoku-variant-select{max-width:990px;padding:20px 25px}
+.sudoku-variant-select-head{display:grid;grid-template-columns:205px 1fr;gap:18px;align-items:center}
+.sudoku-variant-select-head img{width:100%;margin:0;border-radius:9px;aspect-ratio:16/9;object-fit:cover}
+.sudoku-variant-select-head h2{font:normal 32px Georgia,serif;margin:6px 0}
+.sudoku-variant-select-head p{margin:0}.sudoku-variant-select h3{font:normal 23px Georgia,serif;margin:18px 0 10px}
+.sudoku-variant-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.sudoku-variant-option{display:flex;flex-direction:column;gap:7px;padding:13px;background:#193831;border:1px solid #628474;border-radius:10px}
+.sudoku-variant-option strong{font:normal 19px Georgia,serif;color:#f7dfaf}.sudoku-variant-option>span{color:#a0c2b1;font-size:11px}
+.sudoku-variant-option>div{display:flex;gap:6px;margin-top:auto}
+.sudoku-variant-option button{flex:1;padding:8px 4px;color:#edd7b7;background:#22483f;border:1px solid #709b80;border-radius:6px;cursor:pointer;font-size:10px}
+.sudoku-variant-option button.primary{background:#58462b;border-color:#c3a36b}.sudoku-variant-option button:disabled{opacity:.4;cursor:default}
+.sudoku-career-overlay{position:fixed;inset:0;z-index:80;background:#010b0cd9;display:grid;place-items:center;padding:18px;backdrop-filter:blur(7px)}
+.sudoku-career-modal{color:#f2e5d0;width:min(760px,96vw);max-height:min(850px,92dvh);overflow:auto;background:linear-gradient(145deg,#183634,#0b1b29);border:1px solid #b39767;border-radius:18px;padding:24px 27px;box-shadow:0 30px 85px #000c}
+.sudoku-career-modal-head{display:flex;justify-content:space-between;gap:20px}.sudoku-career-modal-head h2{font:normal 32px Georgia,serif;margin:6px 0}
+.sudoku-career-modal-head p,.sudoku-career-modal>p{font-size:12px;color:#a5c6b9;line-height:1.5}
+.sudoku-career-modal-head>button{align-self:flex-start;background:#263a3b;border:1px solid #71897a;border-radius:50%;color:#f4ddb3;min-width:34px;min-height:34px;cursor:pointer}
+.sudoku-career-modal-track{display:grid;grid-template-columns:70px 1fr 130px;align-items:center;gap:11px;color:#ebce94;font-size:11px;margin:15px 0}
+.sudoku-career-modal-track>div{height:9px;background:#21383b;border-radius:10px;overflow:hidden}.sudoku-career-modal-track i{display:block;height:100%;background:linear-gradient(90deg,#4aa791,#e5ce8f)}
+.sudoku-career-milestones{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.sudoku-career-milestone{min-width:0;display:grid;grid-template-columns:52px 1fr;align-items:center;gap:2px 8px;border:1px solid #59786e;background:#162f30;padding:11px;border-radius:9px}
+.sudoku-milestone-level{grid-row:span 2;font:normal 19px Georgia,serif;color:#e2c892}
+.sudoku-milestone-name{font:normal 16px Georgia,serif;color:#f2e1c0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sudoku-milestone-status{font-size:9px;letter-spacing:.1em;font-weight:850;color:#93aa9c}
+.sudoku-career-milestone.unlocked{border-color:#b69c6c;background:#263f35}
+.sudoku-career-milestone.unlocked .sudoku-milestone-status{color:#97d7b3}
+.sudoku-career-milestone.premium .sudoku-milestone-name{color:#a4e8f4;text-shadow:0 0 9px #8dd2ed}
+.sudoku-career-milestone.ultra{border-color:#d6b66b}
+.sudoku-career-milestone.ultra .sudoku-milestone-name{color:#ffe5a4;text-shadow:0 0 13px #ffd98a}
+@media(min-width:1450px) and (min-height:850px){
+ .chill-content .sudoku-mode-menu{height:calc(100dvh - 127px);min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:0}
+ .chill-content .sudoku-mode-hero{flex:none;padding:12px 22px;gap:14px;margin-bottom:10px;min-height:0;max-height:156px}
+ .chill-content .sudoku-mode-hero h1{font-size:30px;margin:5px 0}
+ .chill-content .sudoku-mode-hero p{font-size:12px;line-height:1.35;margin:5px 0 0}
+ .chill-content .sudoku-career-overview{padding:9px 14px;gap:4px}
+ .chill-content .sudoku-career-overview>strong{font-size:27px}
+ .chill-content .sudoku-mode-grid{flex:1;min-height:0;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:10px}
+ .chill-content .sudoku-mode-tile{min-height:0}
+ .chill-content .sudoku-mode-tile img{height:52%;max-height:173px;min-height:110px;aspect-ratio:auto;object-fit:cover}
+ .chill-content .sudoku-mode-tile-body{padding:8px 13px 11px;gap:3px;min-height:0}
+ .chill-content .sudoku-mode-tile-body strong{font-size:20px}
+ .chill-content .sudoku-mode-tile-body>span:not(.sudoku-mode-kicker){min-height:0;font-size:11px;line-height:1.25}
+ .chill-content .sudoku-mode-tile-body>b{margin-top:auto;font-size:9px}
+ .chill-content .sudoku-career-note{flex:none;margin:8px 3px 0;font-size:10px;line-height:1.3}
+}
+@media(max-width:750px){.sudoku-variant-options,.sudoku-career-milestones{grid-template-columns:1fr}.sudoku-variant-select-head{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.sudoku-career-overview{transition:none}}
+
+/* Desktop variant selection: match the full six-tile gallery instead of shrink-to-fit. */
+.sudoku-mode-menu .sudoku-mode-coming.sudoku-variant-select{
+ width:min(100%,1360px);max-width:none;margin:0 auto 10px;
+ display:flex;flex-direction:column;align-self:center;
+ padding:clamp(20px,2vh,28px) clamp(24px,2.4vw,45px);
+}
+.sudoku-mode-menu .sudoku-variant-select-head{
+ width:100%;grid-template-columns:minmax(250px,36%) minmax(0,1fr);
+ gap:clamp(22px,3vw,52px);
+}
+.sudoku-mode-menu .sudoku-variant-select-head img{width:100%;max-height:265px;object-fit:cover}
+.sudoku-mode-menu .sudoku-variant-select-head h2{font-size:clamp(34px,3vw,48px)}
+.sudoku-mode-menu .sudoku-variant-select-head p{font-size:clamp(13px,1vw,17px)}
+.sudoku-mode-menu .sudoku-variant-options{grid-auto-rows:minmax(145px,1fr);gap:clamp(12px,1.2vw,20px);flex:1;min-height:0}
+.sudoku-mode-menu .sudoku-variant-option{padding:clamp(16px,1.6vw,24px);gap:10px;justify-content:center;min-width:0}
+.sudoku-mode-menu .sudoku-variant-option strong{font-size:clamp(22px,1.6vw,29px)}
+.sudoku-mode-menu .sudoku-variant-option>span{font-size:13px}
+.sudoku-mode-menu .sudoku-variant-option button{font-size:clamp(11px,.8vw,14px);min-height:46px;padding:10px 6px}
+.sudoku-mode-menu .sudoku-variant-select h3{font-size:clamp(24px,1.6vw,31px);margin:15px 0 13px}
+.sudoku-mode-menu .sudoku-variant-select .sudoku-mode-back{align-self:flex-start;font-size:13px;padding:9px 14px}
+@media(min-width:1450px) and (min-height:850px){
+ .chill-content .sudoku-mode-menu.is-selection .sudoku-mode-hero{max-height:130px;padding:10px 22px}
+ .chill-content .sudoku-mode-menu.is-selection .sudoku-variant-select{
+  flex:1;min-height:0;max-height:none;margin-bottom:6px;
+ }
+ .chill-content .sudoku-mode-menu.is-selection .sudoku-variant-select-head img{max-height:min(25dvh,240px)}
+ .chill-content .sudoku-mode-menu.is-selection .sudoku-variant-options{align-content:stretch}
+ .chill-content .sudoku-mode-menu.is-selection .sudoku-career-note{margin-top:4px}
+}
+@media(max-width:850px){
+ .sudoku-mode-menu .sudoku-variant-select-head{grid-template-columns:minmax(0,1fr)}
+ .sudoku-mode-menu .sudoku-variant-select-head img{max-height:180px}
+ .sudoku-mode-menu .sudoku-variant-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .sudoku-mode-menu .sudoku-variant-select{max-height:none}
+}
+@media(max-width:620px){
+ .sudoku-mode-menu .sudoku-variant-options{grid-template-columns:minmax(0,1fr)}
+}

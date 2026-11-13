@@ -206,6 +206,7 @@ internal static class PlayerProfileStore
         state.Coins = Math.Max(0, state.Coins);
         state.LifetimeExperience = Math.Max(0, state.LifetimeExperience);
         state.TotalPlaytimeSeconds = Math.Max(0, state.TotalPlaytimeSeconds);
+        state.TowerDefense ??= new BlackjackCasino.Core.TowerDefense.TdProgress();
 
         state.OwnedCosmeticIds = state.OwnedCosmeticIds
             .Where(id => CosmeticCatalog.TryGet(id) is not null)

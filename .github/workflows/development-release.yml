@@ -45,6 +45,17 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+      # Export after Vite rebuilds dist, and before MSBuild globs package it.
+      - name: Cache single-threaded Godot Web and Windows templates
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Roaming/Godot/export_templates/4.5.1.stable
+          key: manor-godot-4.5.1-web-nothreads-windows-v1
+
+      - name: Import, smoke-test and export Godot Manor bonus for WebView2
+        shell: pwsh
+        run: ./tools/build_manor_bonus_web.ps1 -OutputDirectory frontend/dist/manor3d
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
@@ -92,7 +103,23 @@ jobs:
         run: python tools/check_control_templates.py --self-test
 
       - name: Casino presentation runtime regression
-        run: dotnet run --project tools/PresentationSmoke --configuration Release -- artifacts/presentation-regression
+        shell: pwsh
+        run: |
+          $output = "artifacts/presentation-regression"
+          New-Item -ItemType Directory -Force $output | Out-Null
+          for ($attempt = 1; $attempt -le 2; $attempt++) {
+            $log = Join-Path $output "attempt-$attempt.log"
+            dotnet run --project tools/PresentationSmoke --configuration Release -- "$output/attempt-$attempt" 2>&1 | Tee-Object -FilePath $log
+            $code = $LASTEXITCODE
+            if ($code -eq 0) { exit 0 }
+            # Retry only a transient initial WebView2 readiness failure. All
+            # other presentation assertions must fail the release immediately.
+            if ($attempt -eq 1 -and (Select-String -Path $log -SimpleMatch "Cannot capture lobby artwork: React WebView2 did not become ready." -Quiet)) {
+              Write-Warning "Lobby browser startup failed; retrying the complete presentation smoke once."
+              continue
+            }
+            throw "Casino presentation regression failed (exit $code). See $log."
+          }
 
       - name: Desktop startup, Nine Lives and Kniffel smoke
         # An actual startup deadlock must fail this step explicitly instead of
@@ -167,10 +194,24 @@ jobs:
           New-Item -ItemType Directory -Path artifacts/app/tools/updater -Force | Out-Null
           Copy-Item artifacts/updater/BlackjackCasino.Updater.exe artifacts/app/tools/updater/BlackjackCasino.Updater.exe
 
+      - name: Cache Godot Windows export template
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Roaming/Godot/export_templates/4.5.1.stable
+          key: godot-4.5.1-windows-x86_64-release-template-v1
+
+      - name: Export and smoke-test Godot Midnight Descent
+        shell: pwsh
+        run: ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/app/MidnightDescent
+
       - name: Verify bundled Midnight Manor frontend assets
         shell: pwsh
         run: |
           $index = "artifacts/app/ModernFrontend/index.html"
+          foreach ($asset in @("index.html", "index.js", "index.wasm", "index.pck")) {
+            $resource = Join-Path "artifacts/app/ModernFrontend/manor3d" $asset
+            if (!(Test-Path $resource)) { throw "Packaged Godot 3D bonus resource missing: $resource" }
+          }
           $assets = "artifacts/app/ModernFrontend/assets"
           if (!(Test-Path $index)) { throw "Modern Manor index.html was not packaged." }
           if (!(Test-Path $assets)) { throw "Modern Manor bundles were not packaged." }
@@ -234,7 +275,10 @@ jobs:
             publishedAt = (Get-Date).ToUniversalTime().ToString("o")
             minimumUpdaterVersion = "0.1.0-preview.1"
             package = [ordered]@{
-              url = "https://github.com/$repo/releases/download/development/blackjack-casino-win-x64.zip"
+              # Version-specific CDN cache key: the Development release tag
+              # is mutable and the asset keeps its name after replacement.
+              # A stale cached manifest must never silently select another build.
+              url = "https://github.com/$repo/releases/download/development/blackjack-casino-win-x64.zip?revision=$env:VERSION"
               sha256 = $hash
               sizeBytes = $size
             }
@@ -284,6 +328,8 @@ jobs:
           $publishedNotes = Get-Content "$verifyDir/release-notes.json" -Raw | ConvertFrom-Json
           if ($publishedNotes.version -ne $env:VERSION -or $publishedNotes.channel -ne "development") { throw "Published notes version/channel mismatch." }
           if ($manifest.version -ne $env:VERSION -or $manifest.channel -ne "development") { throw "Published manifest version/channel mismatch." }
+          $expectedPackageUrl = "https://github.com/${{ github.repository }}/releases/download/development/blackjack-casino-win-x64.zip?revision=$env:VERSION"
+          if ($manifest.package.url -ne $expectedPackageUrl) { throw "Published manifest URL does not pin this Development build's cache key." }
           $publishedPackage = Get-Item "$verifyDir/blackjack-casino-win-x64.zip"
           $publishedHash = (Get-FileHash $publishedPackage.FullName -Algorithm SHA256).Hash
           if ($publishedHash -ne $manifest.package.sha256 -or $publishedPackage.Length -ne $manifest.package.sizeBytes) { throw "Published package hash/size mismatch." }

@@ -178,3 +178,455 @@ button:disabled{opacity:.45;cursor:default}button:focus-visible,input:focus-visi
  .merge-board-section{height:auto;container-type:size;grid-template-rows:minmax(0,1fr)}
  .merge-board{width:min(100%,calc(100cqh * 7 / 6));height:auto;max-height:100%}
 }
+
+/* Ten-room restoration: the scene is the primary reward, not a thin status banner. */
+.merge-restoration{position:relative;flex-shrink:0;background:linear-gradient(165deg,#233c3d,#0e222c 73%);border-color:#9b8252}
+.merge-room-head{min-height:44px;gap:18px}
+.merge-room-head>div:first-child{flex:1;min-width:0}
+.merge-room-head h2{font-size:clamp(17px,1.65vw,25px);letter-spacing:.025em}
+.merge-room-stage{flex:0 1 auto;min-width:0}
+.merge-room-stage strong{font-size:clamp(11px,1.1vw,15px)}
+.merge-room-return{padding:7px 10px;border:1px solid #c8a764;background:#1a3940;border-radius:7px;color:#f4d8a1;font-weight:700;font-size:10px}
+.merge-scene{height:clamp(150px,20vh,248px);border:2px solid #ad8d5f;background:#071723;box-shadow:inset 0 0 32px #030b14,0 4px 15px #0008}
+.merge-room-art{width:100%;height:100%;display:block}
+.merge-scene-expand{position:absolute;z-index:3;right:10px;bottom:10px;padding:5px 10px;border-radius:6px;
+ border:1px solid #c9a66a9e;background:#071c26dc;color:#f5dca5;font-weight:800;letter-spacing:.065em;font-size:10px}
+.merge-scene-expand span{font-size:16px;vertical-align:middle;margin-left:7px}
+.merge-scene-expand:hover{background:#214750;border-color:#f3d9a7}
+.merge-scene.is-expanded{position:fixed;z-index:80;inset:clamp(10px,3vw,44px);height:auto;border-radius:18px;border-width:3px;
+ box-shadow:0 0 0 120vw #02070de8,0 24px 110px #000}
+.merge-scene.is-expanded .merge-scene-expand{right:18px;bottom:18px;padding:11px 16px}
+.merge-estate-roadmap{display:flex;gap:7px;overflow-x:auto;scrollbar-width:thin;scrollbar-color:#8b7957 #102631;
+ padding:9px 1px 3px;white-space:nowrap}
+.merge-estate-stop{position:relative;flex:1 0 102px;min-width:0;max-width:165px;min-height:40px;display:flex;align-items:center;gap:7px;
+ padding:6px 8px;border:1px solid #53645c;border-radius:8px;background:#0a1d28;color:#a0aaa4;text-align:left;
+ transition:border-color .2s,background .2s}
+.merge-estate-stop:disabled{opacity:.56;cursor:not-allowed}
+.merge-estate-stop.unlocked{color:#dbd9bd;border-color:#8a835b;background:#18363b}
+.merge-estate-stop.active{background:linear-gradient(120deg,#446158,#204c51);border-color:#f1cf85;box-shadow:0 0 12px #f0cb6a30}
+.merge-estate-stop.complete .merge-estate-number{color:#d3f0c1;border-color:#80ba8f}
+.merge-estate-number{font:700 14px Georgia,serif;display:grid;place-items:center;flex:0 0 24px;width:24px;height:26px;border:1px solid #747866;border-radius:5px}
+.merge-estate-name{font-size:10px;font-weight:700;white-space:normal;line-height:1.16}
+.merge-estate-stop:focus-visible,.merge-scene-expand:focus-visible,.merge-room-return:focus-visible{outline:2px solid #ffe5a6;outline-offset:2px}
+.merge-restoration.celebrating{box-shadow:inset 0 0 28px #d9b86d30,0 0 19px #dfc38644}
+.merge-room-art .merge-scene-light{animation:merge-scene-glimmer 5s ease-in-out infinite;transform-origin:center}
+.merge-room-art .merge-scene-spark{animation:merge-scene-twinkle 3.5s ease-in-out infinite}
+@keyframes merge-scene-glimmer{50%{opacity:.6}}
+@keyframes merge-scene-twinkle{50%{opacity:.2}}
+@media(min-width:1000px) and (min-height:600px){
+ .merge-scroll{overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable}
+ .merge-restoration{flex:0 0 auto}
+ .merge-scene{height:clamp(148px,19vh,232px)}
+ .merge-workspace{flex:0 0 auto;min-height:clamp(440px,65dvh,740px);overflow:visible}
+ .merge-board-section{height:auto;flex:1;grid-template-rows:minmax(0,1fr)}
+ .merge-board{width:min(100%,calc(100cqh * 7 / 6));min-height:0;max-height:100%}
+}
+@media(max-width:950px){
+ .merge-estate-stop{flex-basis:120px}
+ .merge-scene{height:clamp(145px,22vh,235px)}
+}
+@media(max-height:740px) and (min-width:951px){
+ .merge-scene{height:125px}
+}
+@media(prefers-reduced-motion:reduce){
+ .merge-estate-stop,.merge-room-art .merge-scene-light,.merge-room-art .merge-scene-spark{animation:none!important;transition:none!important}
+}
+
+.merge-room-art.static .merge-scene-light,.merge-room-art.static .merge-scene-spark{animation:none!important}
+
+/* Compact, viewport-locked desktop workshop. Only the delivery list scrolls. */
+.merge-stat-emblem svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2.1;stroke-linejoin:round;stroke-linecap:round}
+.merge-stat-card{display:flex;align-items:center;gap:10px;min-width:128px;padding:7px 12px;
+ border:1px solid #8c715094;border-radius:10px;background:linear-gradient(145deg,#263b3d,#102631);
+ box-shadow:inset 0 1px 0 #f3d6a01c,0 4px 13px #0004;position:relative}
+.merge-stat-emblem{display:grid;place-items:center;width:36px;height:36px;flex:0 0 36px;
+ color:#e8ca8b;border:1px solid #b7a16b6b;border-radius:9px;background:#0b232b}
+.merge-stat-content{display:flex;flex-direction:column;align-items:start;gap:1px;min-width:0}
+.merge-stat-content small{font-size:9px;line-height:1.2;letter-spacing:.09em;color:#a6b9ad;white-space:nowrap}
+.merge-stat-content strong{font-family:Georgia,serif;font-size:clamp(20px,1.6vw,27px);font-variant-numeric:tabular-nums;
+ color:#f6d79b;line-height:1.1}
+.merge-stat-meter{width:100%;height:3px;min-width:60px;overflow:hidden;border-radius:5px;background:#0d222c;margin-top:4px}
+.merge-stat-meter i{display:block;height:100%;background:linear-gradient(90deg,#629b8a,#e8d28d);border-radius:5px;transition:width .3s ease}
+.stat-level{border-color:#64897e99}.stat-level .merge-stat-emblem{color:#abdfc5;border-color:#588d82}
+.stat-level .merge-stat-meter i{background:linear-gradient(90deg,#417f70,#a9e6bc)}
+.stat-merges{border-color:#7876a499}.stat-merges .merge-stat-emblem{color:#c2b5ec;border-color:#8981bb}
+.merge-stat-merges-line{font-size:8px;letter-spacing:5px;color:#908ab9;line-height:1.2}
+.merge-top-stats{justify-content:flex-end;gap:8px}
+.merge-top-stats .merge-stat-card{flex-direction:row;align-items:center}
+.merge-producer{min-height:0;overflow:hidden}
+.merge-producer-text small{margin-top:1px;line-height:1.2;font-size:9px;letter-spacing:.04em;color:#abcab0}
+.merge-producer-icon{font-size:18px}
+.merge-help{margin-top:auto;min-height:0}
+.merge-help details{font-size:10px;color:#a8b8ad}
+.merge-help summary{cursor:pointer;color:#d4c79d;font-weight:700;letter-spacing:.04em}
+.merge-help p{padding-top:5px}
+.merge-room-art{pointer-events:none}
+.merge-scene.fully-restored{border-color:#d7b973;box-shadow:inset 0 0 22px #dfbb6040,0 0 14px #d6b96622}
+.merge-complete-seal{position:absolute;left:10px;bottom:9px;padding:4px 8px;border:1px solid #f5d8a27b;
+ border-radius:6px;background:#0b2029d9;color:#efdcad;letter-spacing:.1em;font-weight:800;font-size:9px;
+ text-shadow:0 0 10px #ffde9c7a;pointer-events:none;z-index:2}
+.merge-complete-seal span{color:#eac475}
+.merge-cinema-caption{display:none}
+.merge-scene.is-expanded{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;
+ padding:72px 18px 48px;overflow:hidden;background:radial-gradient(ellipse at center,#203642,#060d17 80%);
+ border-color:#d0ac6b}
+.merge-scene.is-expanded .merge-room-art{width:100%;height:auto;max-height:100%;aspect-ratio:1200/280;
+ object-fit:contain;flex:0 1 auto;background:#111e29;border:1px solid #806d4e;box-shadow:0 15px 56px #0009}
+.merge-scene.is-expanded .merge-cinema-caption{display:flex;position:absolute;top:18px;left:22px;
+ flex-direction:column;gap:2px;color:#d5c39d;z-index:2}
+.merge-cinema-caption small{font-size:10px;letter-spacing:.17em;color:#95b1ab}
+.merge-cinema-caption strong{font:700 24px Georgia,serif;color:#f7dcaa}
+.merge-cinema-caption span{font-size:12px}
+.merge-scene.is-expanded .merge-complete-seal{left:22px;bottom:15px}
+.merge-scene.is-expanded .merge-scene-expand{position:absolute;right:17px;top:20px;bottom:auto}
+@media(min-width:1000px) and (min-height:600px){
+ html,body,#root{height:100%;overflow:hidden}
+ .merge-app{height:100dvh;min-height:0;overflow:hidden}
+ .merge-header{height:70px;min-height:70px;flex:0 0 70px;grid-template-columns:minmax(220px,.9fr) minmax(430px,1.7fr) auto;gap:12px;padding:5px 18px}
+ .merge-brand h1{font-size:clamp(20px,2vw,28px);margin:0}
+ .merge-brand small{font-size:8px}
+ .merge-top-stats{gap:7px}
+ .merge-stat-card{flex:0 1 190px;min-width:0;height:55px;padding:6px 10px}
+ .merge-stat-emblem{width:32px;height:32px;flex-basis:32px}
+ .merge-stat-emblem svg{width:21px;height:21px}
+ .merge-stat-content strong{font-size:clamp(19px,1.5vw,26px)}
+ .merge-stat-content small{font-size:8px}
+ .merge-scroll{box-sizing:border-box;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;
+   flex:1 1 0;height:auto;min-height:0;overflow:hidden;scrollbar-gutter:auto;
+   gap:5px;padding:6px clamp(8px,1.2vw,20px) 4px}
+ .merge-restoration{min-height:0;padding:5px 9px;flex:0 0 auto}
+ .merge-room-head{min-height:29px;gap:9px;margin-bottom:3px}
+ .merge-room-head h2{font-size:clamp(16px,1.45vw,21px);line-height:1.12}
+ .merge-room-stage strong{font-size:12px}
+ .merge-room-stage small,.merge-room-head small{font-size:8px}
+ .merge-scene{height:clamp(84px,10.7dvh,126px);max-height:none}
+ .merge-milestone-bar{padding-top:3px;gap:2px}
+ .merge-next div small{font-size:8px}
+ .merge-next div strong{font-size:10px}
+ .merge-progress{height:5px}
+ .merge-milestone-labels span{font-size:8px}
+ .merge-estate-roadmap{height:33px;padding:3px 0 0;gap:4px;overflow-x:auto}
+ .merge-estate-stop{min-height:28px;max-height:29px;min-width:0;flex:1 0 98px;padding:3px 5px;gap:4px}
+ .merge-estate-number{flex-basis:20px;width:20px;height:21px;font-size:11px}
+ .merge-estate-name{font-size:9px}
+ .merge-workspace{display:grid;grid-template-columns:minmax(0,1.58fr) minmax(290px,.88fr);
+   min-height:0;height:100%;flex:none;overflow:hidden;gap:8px}
+ .merge-board-panel,.merge-orders-panel{height:100%;min-height:0;padding:6px 8px;overflow:hidden}
+ .merge-board-panel{display:flex;flex-direction:column}
+ .merge-section-heading{flex:0 0 auto;margin-bottom:4px}
+ .merge-section-heading h2{font-size:clamp(14px,1.25vw,18px)}
+ .merge-board-section{display:grid;grid-template-columns:minmax(0,1fr) clamp(145px,13vw,174px);
+   grid-template-rows:minmax(0,1fr);align-items:stretch;gap:8px;height:auto;min-height:0;flex:1 1 0;container-type:size}
+ .merge-board{aspect-ratio:7/6;height:auto;max-height:100%;max-width:100%;
+   width:min(100%,calc(100cqh * 7 / 6));min-height:0;margin:auto;align-self:center;
+   padding:6px;gap:clamp(2px,.3vw,5px);box-shadow:inset 0 0 16px #010b11,0 0 0 2px #0d232a}
+ .merge-cell{min-height:0}
+ .merge-supply{height:100%;min-height:0;gap:4px;overflow:hidden}
+ .merge-supply h3{margin:0;font-size:10px;line-height:1.2}
+ .merge-producer{flex:0 1 40px;min-height:0;max-height:42px;padding:3px 5px;gap:5px}
+ .merge-producer-art{width:29px;height:29px;flex-basis:29px}
+ .merge-producer-text strong{font-size:10px;line-height:1.1}
+ .merge-producer-text small{font-size:8px}
+ .merge-standby{display:none}
+ .merge-help{padding:4px 5px;margin-top:auto;flex:0 0 auto;max-height:96px;overflow-y:auto}
+ .merge-help p{margin:2px 0;font-size:9px}
+ .merge-selection{margin-top:4px;padding-top:4px}
+ .merge-orders-panel{display:flex;flex-direction:column}
+ .merge-orders{min-height:0;overflow-y:auto;overscroll-behavior:contain;flex:1 1 0;scrollbar-gutter:stable}
+ .merge-footer{min-height:0;height:44px;padding:4px 9px;gap:8px}
+ .merge-status strong{font-size:10px}
+ .merge-rewards{gap:1px;font-size:9px}
+ .merge-settings>button{padding:6px 9px;font-size:10px}
+ .merge-bottom-note{min-height:0;font-size:8px;line-height:1.2}
+}
+@media(min-width:1000px) and (max-height:740px){
+ .merge-header{height:60px;min-height:60px;flex-basis:60px}
+ .merge-scene{height:84px}
+ .merge-milestone-labels{display:none}
+ .merge-room-head{min-height:27px}
+ .merge-estate-roadmap{height:28px}
+ .merge-estate-stop{min-height:24px;max-height:25px}
+ .merge-workspace{grid-template-columns:minmax(0,1.55fr) minmax(280px,.9fr)}
+ .merge-footer{height:39px}
+ .merge-bottom-note{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .merge-stat-meter i{transition:none}
+ .merge-scene.fully-restored{animation:none!important}
+}
+
+/* Layered 2.5D dressing and restrained ambient life for completed rooms. */
+.merge-scene .merge-room-art .merge-depth-far{transform:translateZ(0)}
+.merge-room-art .merge-depth-middle,.merge-room-art .merge-depth-near{transform-origin:center}
+.merge-scene.fully-restored:not(.motion-off) .merge-room-art:not(.static) .merge-depth-far{
+ animation:merge-backroom-drift 15s ease-in-out infinite alternate}
+.merge-scene.fully-restored:not(.motion-off) .merge-room-art:not(.static) .merge-depth-near{
+ animation:merge-foreground-drift 12s ease-in-out infinite alternate}
+.merge-room-art .merge-air-mote{animation:merge-mote-rise 9s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.merge-room-art .merge-polish-glint{animation:merge-shine-fade 5.5s ease-in-out infinite}
+.merge-room-art .merge-light-theater{animation:merge-shine-fade 7.5s ease-in-out infinite}
+.merge-room-art .merge-breeze{animation:merge-breeze 9s ease-in-out infinite alternate;transform-origin:50% 80%}
+.merge-room-art .merge-starfield circle{animation:merge-star-pulse 5s ease-in-out infinite}
+.merge-room-art .merge-hearth-glow{animation:merge-hearth-pulse 3s ease-in-out infinite alternate}
+.merge-room-art .merge-floor-light{pointer-events:none}
+.merge-scene.fully-restored:not(.motion-off):not(.is-expanded)::after{
+ content:'';position:absolute;inset:0;pointer-events:none;z-index:1;border:1px solid #ffe5ac2b;border-radius:inherit;
+ background:linear-gradient(105deg,transparent 7%,#e7cf8b0c 45%,transparent 68%);mix-blend-mode:screen}
+@keyframes merge-backroom-drift{to{transform:translateX(3px) translateY(-1px)}}
+@keyframes merge-foreground-drift{to{transform:translateX(-4px) translateY(1px)}}
+@keyframes merge-mote-rise{0%,100%{opacity:.15;transform:translateY(7px)}50%{opacity:.68;transform:translateY(-8px)}}
+@keyframes merge-shine-fade{0%,100%{opacity:.25}50%{opacity:.9}}
+@keyframes merge-breeze{to{transform:rotate(.4deg)}}
+@keyframes merge-star-pulse{0%,100%{opacity:.3}50%{opacity:.9}}
+@keyframes merge-hearth-pulse{0%{opacity:.35;transform:scale(.99)}100%{opacity:1;transform:scale(1.015)}}
+.merge-scene.motion-off .merge-room-art *{animation:none!important;transition:none!important}
+.merge-help{position:relative;overflow:visible!important;max-height:none!important}
+.merge-help details[open] p{position:absolute;z-index:12;bottom:calc(100% + 6px);right:0;width:230px;
+ margin:0;padding:10px 12px;border:1px solid #ae916a;border-radius:8px;background:#162e35;
+ box-shadow:0 8px 25px #0009;color:#e0d3b8;font-size:11px;line-height:1.4}
+@media(prefers-reduced-motion:reduce){
+ .merge-room-art *, .merge-room-art .merge-restored-atmosphere *{animation:none!important;transition:none!important}
+}
+
+
+/* The workshop footer is gone: allocate the space to readable supply sources.
+   Workbench and controls remain centered; orders are the only vertical scroller. */
+@media(min-width:1000px) and (min-height:600px){
+ .merge-scroll{grid-template-rows:auto minmax(0,1fr);row-gap:6px}
+ .merge-workspace{grid-template-columns:minmax(0,1.64fr) minmax(290px,.84fr)}
+ .merge-board-section{grid-template-columns:minmax(0,1fr) clamp(208px,17vw,256px);gap:10px;align-items:center}
+ .merge-board{max-height:100%;height:auto;width:min(100%,calc(100cqh * 7 / 6));margin-inline:auto}
+ .merge-supply{justify-content:center;align-items:stretch;gap:7px;overflow:visible;min-height:0}
+ .merge-supply h3{font-size:12px;margin:0 0 1px;line-height:1.25;text-align:left}
+ .merge-producer{flex:0 0 53px;min-height:53px;max-height:none;padding:6px 8px;gap:8px;border-radius:8px}
+ .merge-producer-art{width:36px;height:36px;flex:0 0 36px}
+ .merge-producer-text{min-width:0;display:flex;flex-direction:column;justify-content:center}
+ .merge-producer-text strong{font-size:11px;line-height:1.22;overflow-wrap:anywhere}
+ .merge-producer-text small{font-size:9px;margin-top:2px;line-height:1.25}
+ .merge-producer-icon{flex:0 0 auto;font-size:18px}
+ .merge-supply-tools{flex:0 0 auto;display:flex;flex-direction:column;gap:7px;margin-top:3px}
+ .merge-help{margin:0;padding:8px 9px;overflow:visible!important;max-height:none!important}
+ .merge-help details{font-size:11px}
+ .merge-help summary{font-size:11px;line-height:1.4}
+ .merge-help details[open] p{position:static;bottom:auto;right:auto;width:auto;max-width:100%;
+   margin:7px 0 1px;padding:7px 8px;border:1px solid #728b7a55;border-radius:6px;
+   background:#152d33;box-shadow:none;font-size:10px;line-height:1.45;color:#cbd7ca;
+   white-space:normal;overflow-wrap:break-word}
+ .merge-settings{position:relative;width:100%;align-self:stretch}
+ .merge-settings>button{width:100%;min-height:35px;padding:6px 12px;font-size:11px;
+   background:#24443f;border:1px solid #91a17d;border-radius:8px;text-align:center}
+ .merge-settings-panel{z-index:25;right:0;bottom:calc(100% + 7px);
+   width:min(270px,calc(100vw - 32px));box-shadow:0 12px 32px #000d}
+ .merge-footer,.merge-bottom-note{display:none}
+}
+/* Do not fade/redraw the whole SVG when creating an item; animate a local ring. */
+.merge-cell.created .merge-item-art{animation:none!important}
+.merge-cell.created::after{content:'';position:absolute;inset:3px;border-radius:6px;
+ border:2px solid #e8d9a8;box-shadow:0 0 10px #ddc98570;pointer-events:none;
+ animation:merge-created-ring .55s ease-out forwards}
+@keyframes merge-created-ring{from{opacity:.8;transform:scale(.9)}to{opacity:0;transform:scale(1.05)}}
+.merge-save-alert{position:absolute;z-index:50;right:18px;bottom:13px;
+ max-width:min(460px,calc(100vw - 36px));padding:10px 14px;
+ border-radius:9px;border:1px solid #e6b68a;background:#4b2c2a;
+ box-shadow:0 8px 32px #0009;color:#ffe2ca;font-size:12px;line-height:1.4}
+@media(min-width:1000px) and (min-height:600px) and (max-height:760px){
+ .merge-supply{gap:5px}
+ .merge-producer{flex-basis:47px;min-height:47px;padding:4px 6px}
+ .merge-producer-art{width:32px;height:32px;flex-basis:32px}
+ .merge-producer-text strong{font-size:10px}
+ .merge-producer-text small{font-size:8px}
+ .merge-supply-tools{gap:5px;margin-top:0}
+ .merge-help{padding:6px 8px}
+ .merge-settings>button{min-height:31px;padding:5px 8px}
+}
+@media(max-width:999px){
+ .merge-supply-tools{display:flex;flex-direction:column;gap:7px}
+ .merge-help details[open] p{position:static!important;width:auto!important;max-width:100%;
+   margin:7px 0;padding:8px;white-space:normal;overflow-wrap:break-word}
+ .merge-settings{width:100%}
+ .merge-settings>button{width:100%}
+ .merge-save-alert{bottom:12px}
+}
+@media(prefers-reduced-motion:reduce){
+ .merge-cell.created::after{animation:none;opacity:0}
+}
+
+
+/* At 720p WebView2's content area is ~684px high. Reserve room for
+   Settings and keep opened help text inside the board panel. */
+@media(min-width:1000px) and (min-height:600px) and (max-height:760px){
+ .merge-supply{gap:4px;justify-content:center}
+ .merge-producer{flex:0 0 45px;min-height:45px;max-height:45px;padding:3px 6px;gap:6px}
+ .merge-producer-art{width:30px;height:30px;flex-basis:30px}
+ .merge-producer-text{min-width:0}
+ .merge-producer-text strong{font-size:10px;line-height:1.16}
+ .merge-producer-text small{font-size:8px;line-height:1.1}
+ .merge-supply-tools{gap:4px}
+ .merge-help{padding:5px 8px;position:relative}
+ .merge-help details[open] p{position:absolute;left:auto;right:0;bottom:calc(100% + 7px);
+   width:min(245px,calc(100vw - 32px));max-width:none;z-index:20;
+   border:1px solid #ae916a;background:#162e35;box-shadow:0 8px 25px #000b;
+   padding:10px 12px;font-size:11px;line-height:1.4}
+ .merge-settings>button{min-height:30px;padding:4px 8px}
+}
+
+
+/* Rebalanced restoration workspace: preserve a readable room preview while
+   putting the board and delivery queue in the remaining flexible viewport. */
+@media(min-width:1000px) and (min-height:600px){
+ .merge-scroll{width:min(1920px,100%);grid-template-rows:auto minmax(0,1fr);
+  row-gap:9px;padding:7px clamp(12px,1.35vw,25px) 8px}
+ .merge-header{height:66px;min-height:66px;flex-basis:66px}
+ .merge-restoration{display:grid;grid-template-rows:auto auto auto auto;row-gap:4px;
+  min-width:0;padding:8px 13px 7px}
+ .merge-scene{height:clamp(104px,15dvh,175px)}
+ .merge-room-head{min-height:29px;margin-bottom:0}
+ .merge-estate-roadmap{height:35px;margin:0;padding:2px 0 0}
+ .merge-workspace{grid-template-columns:minmax(0,1.84fr) minmax(300px,.84fr);
+  gap:12px;height:100%;min-height:0}
+ .merge-board-panel,.merge-orders-panel{padding:10px 12px}
+ .merge-section-heading{min-height:30px;margin-bottom:6px}
+ .merge-board-section{display:grid;grid-template-columns:minmax(0,1fr) clamp(190px,15vw,238px);
+  grid-template-rows:minmax(0,1fr);align-items:stretch;gap:12px;min-height:0}
+ .merge-board{max-width:100%;max-height:100%;width:min(100%,calc(100cqh * 7 / 6));
+  min-height:0;align-self:center}
+ .merge-supply{display:flex;justify-content:center;gap:7px}
+ .merge-producer{flex:0 0 52px;min-height:52px;max-height:52px}
+ .merge-orders{height:auto;min-height:0;max-height:100%;overflow-y:auto}
+}
+@media(min-width:1000px) and (min-height:600px) and (max-height:760px){
+ .merge-header{height:58px;min-height:58px;flex-basis:58px}
+ .merge-scroll{row-gap:5px;padding-top:4px;padding-bottom:4px}
+ .merge-restoration{padding:5px 9px;row-gap:2px}
+ .merge-scene{height:clamp(84px,13dvh,118px)}
+ .merge-estate-roadmap{height:27px}
+ .merge-workspace{gap:8px;grid-template-columns:minmax(0,1.75fr) minmax(280px,.8fr)}
+ .merge-board-panel,.merge-orders-panel{padding:6px 8px}
+ .merge-board-section{grid-template-columns:minmax(0,1fr) minmax(182px,225px);gap:8px}
+ .merge-producer{flex-basis:45px;min-height:45px;max-height:45px}
+}
+
+/* At compact 720p heights the producer stack may exceed the vertical room.
+   Keep the gameplay tiles at readable height and keep help/settings visible
+   instead of clipping the bottom of the workshop. */
+@media(min-width:1000px) and (min-height:600px) and (max-height:760px){
+ .merge-supply{justify-content:flex-start;overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#65877f #132c32}
+ .merge-supply-tools{position:sticky;bottom:0;z-index:8;flex:0 0 auto;
+  padding:5px 0 2px;background:#152e33;border-top:1px solid #63877866;
+  box-shadow:0 -6px 16px #07171ab8}
+}
+
+
+/* Merge desktop v3: native logical 7×6 storage stays intact. At wide
+   desktop resolutions the 42 cells are RE-FLOWED into a 14×3 presentation.
+   Every cell keeps its exact native position, definition and drag/drop ID. */
+.merge-header{position:relative;z-index:20}
+.merge-header-tools{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
+.merge-header-help{position:relative;flex:0 0 auto}
+.merge-header-help summary,.merge-header-tools .merge-settings>button{
+ display:flex;align-items:center;justify-content:center;min-height:37px;
+ padding:7px 11px;border:1px solid #86998a;border-radius:8px;
+ background:#1c383b;color:#f2dcb3;
+ font:700 10px/1.3 "Segoe UI",sans-serif;letter-spacing:.04em;
+ list-style:none;cursor:pointer;white-space:nowrap}
+.merge-header-help summary::-webkit-details-marker{display:none}
+.merge-header-help summary:hover,.merge-header-tools .merge-settings>button:hover{
+ border-color:#e6ca91;background:#305453}
+.merge-header-help[open] summary{background:#34594f;border-color:#ddc38b}
+.merge-header-help p{position:absolute;z-index:60;right:0;top:calc(100% + 9px);
+ margin:0;width:min(315px,calc(100vw - 20px));padding:13px 15px;
+ border:1px solid #b49e70;border-radius:9px;
+ background:linear-gradient(140deg,#1b3a3e,#10242d);
+ box-shadow:0 15px 30px #0009;color:#e8e1c7;
+ font-size:12px;line-height:1.55;white-space:normal;overflow-wrap:break-word}
+.merge-header-tools .merge-settings{flex:0 0 auto;position:relative;width:auto}
+.merge-header-tools .merge-settings>button{min-height:37px;padding:7px 11px}
+.merge-header-tools .merge-settings-panel{position:absolute;top:calc(100% + 9px);bottom:auto;
+ right:0;z-index:61;width:260px}
+.merge-header-help:focus-within summary,.merge-header-tools .merge-settings:focus-within>button{
+ outline:2px solid #f6d99a;outline-offset:2px}
+.merge-supply>.merge-selection{margin-top:auto;padding:7px 10px;border:1px solid #8aab8a;
+ border-radius:7px;background:#183533}
+@media(min-width:1000px) and (min-height:600px){
+ .merge-header{grid-template-columns:minmax(185px,.8fr) minmax(320px,1.5fr) auto auto;
+   gap:8px;overflow:visible}
+ .merge-header-tools{grid-column:3}
+ .merge-header>.merge-back{grid-column:4}
+ .merge-supply-tools{display:none!important}
+}
+/* Full-height 1080p editorial presentation: the original cells are not scaled
+   down to make room for the view. The board instead doubles its columns and
+   halves its rows while the room panorama grows into the released height. */
+@media(min-width:1580px) and (min-height:820px){
+ .merge-scroll{grid-template-rows:minmax(0,1.08fr) minmax(0,1fr);
+   overflow:hidden;gap:10px;padding:8px clamp(12px,1vw,20px) 10px}
+ .merge-restoration{min-height:0;display:grid;
+   grid-template-rows:auto minmax(0,1fr) auto auto;row-gap:6px;padding:10px 13px 8px}
+ .merge-restoration .merge-scene{height:100%;min-height:0;max-height:none}
+ .merge-restoration .merge-estate-roadmap{height:35px;min-height:35px}
+ .merge-workspace{display:grid;min-height:0;height:100%;
+   grid-template-columns:minmax(0,1fr) clamp(250px,15.5vw,310px);
+   gap:10px;overflow:hidden}
+ .merge-board-panel,.merge-orders-panel{min-height:0;max-height:100%;
+   padding:9px 10px;overflow:hidden}
+ .merge-board-section{display:grid;grid-template-columns:minmax(0,1fr) clamp(192px,12.1vw,231px);
+   min-height:0;max-height:100%;height:100%;align-items:start;
+   gap:8px;container-type:normal}
+ .merge-board{
+   --merge-tile-size:clamp(64px,4.18vw,82px);
+   --merge-gap:4px;
+   display:grid;grid-template-columns:repeat(14,var(--merge-tile-size));
+   grid-template-rows:repeat(3,var(--merge-tile-size));
+   gap:var(--merge-gap);
+   box-sizing:border-box;
+   width:max-content;height:max-content;
+   min-height:0;min-width:0;max-height:none;max-width:100%;
+   aspect-ratio:auto;justify-self:start;align-self:start;margin:0;padding:6px;
+   overflow:visible}
+ .merge-cell{min-width:0;min-height:0;height:var(--merge-tile-size);width:var(--merge-tile-size);
+   border-radius:7px}
+ .merge-cell:nth-child(7n+2),.merge-cell:nth-child(7n+6){background:linear-gradient(135deg,#274747,#152e33)}
+ .merge-cell:nth-child(14n+2),.merge-cell:nth-child(14n+13){background:linear-gradient(140deg,#224144,#132b30)}
+ .merge-supply{height:100%;min-height:0;overflow:hidden;
+   display:flex;flex-direction:column;justify-content:flex-start;
+   align-items:stretch;gap:6px}
+ .merge-producer{flex:0 0 44px;min-height:44px;max-height:44px;padding:3px 6px}
+ .merge-producer-art{width:30px;height:30px;flex-basis:30px}
+ .merge-producer-text strong{font-size:10px}
+ .merge-orders{overflow-y:auto;min-height:0;height:auto;overscroll-behavior:contain}
+ .merge-order{padding:7px;gap:5px}
+}
+/* In a narrow/720p desktop window retain the original seven-column visual
+   arrangement so tiles remain usable rather than shrinking below touch size. */
+@media(min-width:1000px) and (max-width:1270px){
+ .merge-header{grid-template-columns:minmax(150px,.7fr) minmax(320px,1.4fr) auto auto}
+ .merge-header-tools{gap:5px}
+ .merge-header-help summary,.merge-header-tools .merge-settings>button{padding:6px 8px;font-size:9px}
+}
+@media(max-width:999px){
+ .merge-header{grid-template-columns:minmax(0,1fr) auto;gap:8px}
+ .merge-header-tools{grid-column:1/-1;grid-row:3;justify-content:start}
+ .merge-header>.merge-back{grid-column:2;grid-row:1}
+}
+
+/* Keep the compact desktop header on one row at real WebView2 720p sizes.
+   The long brand title must not force a second grid row beyond the fixed
+   58px header, and progress cards must fit its available content height. */
+@media(min-width:1000px) and (max-width:1270px){
+  .merge-header{grid-template-columns:minmax(190px,.65fr) minmax(300px,1.4fr) auto auto;
+    gap:6px;padding-inline:12px}
+  .merge-brand h1{font-size:clamp(17px,1.65vw,19px);line-height:1.1;
+    letter-spacing:.025em;white-space:nowrap}
+  .merge-eyebrow{font-size:8px;letter-spacing:.1em;white-space:nowrap}
+  .merge-brand small{white-space:nowrap}
+  .merge-top-stats{gap:4px}
+  .merge-stat-card{height:46px;padding:4px 5px;gap:5px}
+  .merge-stat-emblem{width:27px;height:27px;flex-basis:27px}
+  .merge-stat-emblem svg{width:19px;height:19px}
+  .merge-stat-content strong{font-size:18px}
+}
+
+@media(prefers-reduced-motion:reduce){
+ .merge-header-help summary,.merge-header-tools button{transition:none!important}
+}

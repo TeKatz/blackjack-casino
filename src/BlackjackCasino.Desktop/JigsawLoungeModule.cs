@@ -59,7 +59,7 @@ internal static class JigsawImages
             image.CacheOption = BitmapCacheOption.OnLoad;
             image.DecodePixelWidth = width;
             image.UriSource = new Uri(
-                "pack://application:,,,/BlackjackCasino.Desktop;component/Assets/CollectionArt/" + motif.Asset,
+                "pack://application:,,,/BlackjackCasino.Desktop;component/Assets/JigsawScenes/" + motif.Asset,
                 UriKind.Absolute);
             image.EndInit();
             image.Freeze();

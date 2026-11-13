@@ -12,6 +12,9 @@ public sealed class NeonVaultAudioCuesTests
     [InlineData("NeonOverride")]
     [InlineData("NeonBigWin")]
     [InlineData("NeonMegaWin")]
+    [InlineData("NeonWinSparkle")]
+    [InlineData("NeonWinCascade")]
+    [InlineData("NeonWinTriumph")]
     public void HighRollerCuesAreOfflineDecodableAndBounded(string cueName)
     {
         SlotSound cue = Enum.Parse<SlotSound>(cueName);

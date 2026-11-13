@@ -80,6 +80,30 @@ public sealed class ModernMergeBridgeTests
     }
 
     [Fact]
+    public void PrecraftedFutureMaterialsDoNotExposeLockedRestorationDeliveries()
+    {
+        var board = new MergeBoard(new MergeGameState
+        {
+            RenovationPoints = 38800,
+            Items =
+            [
+                new MergeItemInstance(Guid.NewGuid(), "sky-3", 0),
+                new MergeItemInstance(Guid.NewGuid(), "stage-4", 1),
+            ],
+        });
+        object payload = ModernMergeSnapshot.Create(board, null,
+            soundEnabled: false, animationsEnabled: false, feedback: "",
+            playerXp: 0, seasonXp: 0, progressionSaveFailed: false,
+            lastAction: null, translate: value => value,
+            language: UiLanguagePreference.English);
+        using JsonDocument json = JsonDocument.Parse(JsonSerializer.Serialize(payload));
+        JsonElement future = json.RootElement.GetProperty("Orders")
+            .EnumerateArray().Single(order => order.GetProperty("DefinitionId").GetString() == "observatory-mechanics");
+        Assert.False(future.GetProperty("Available").GetBoolean());
+        Assert.False(future.GetProperty("Visible").GetBoolean());
+    }
+
+    [Fact]
     public void NativeBoardAndDurableOrderReceiptsSurvivePresentationRecreation()
     {
         MergeGameState saved = new();

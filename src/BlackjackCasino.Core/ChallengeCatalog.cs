@@ -16,6 +16,9 @@ public enum ChallengeCategory
     Memory,
     Jigsaw,
     Solitaire,
+    TowerDefense,
+    Minesweeper,
+    Arcade,
 }
 
 public enum ChallengeMetric
@@ -91,6 +94,7 @@ public enum ChallengeMetric
     DiceGames, DiceBestScore, DiceUpperBonuses, DiceFiveOfAKinds, DiceFullHouses, DiceLargeStraights,
     DiceCasinoGames, DiceCasinoWins, DicePodiums, DiceWagered, DiceReturned, DiceBiggestPayout,
     SudokuCompleted, SudokuDailyCompleted, SudokuNoHintCompleted, SudokuExpertCompleted, SudokuMasterCompleted,
+    SudokuVariantCompleted, SudokuXCompleted, SudokuKillerCompleted, SudokuJigsawCompleted, SudokuSamuraiCompleted, SudokuMiniCompleted, SudokuMini4Completed, SudokuMini6Completed, SudokuVariantNoHint, SudokuCareerLevel,
     MergeMerges, MergeOrdersCompleted, MergeRenovationPoints, MergeHighestTier, MergeMilestones, MergeAreasCompleted,
     WordSearchCompleted, WordSearchWordsFound, WordSearchNoHintCompleted, WordSearchExpertCompleted, WordSearchMasterCompleted,
     MemoryGamesCompleted, MemoryPairsFound, MemoryPerfectGames, MemoryExpertCompleted, MemoryMasterCompleted, MemoryBestStreak,
@@ -99,6 +103,9 @@ public enum ChallengeMetric
     SolitaireSpiderWins, SolitaireSpiderFourSuitWins, SolitairePyramidWins,
     SolitaireGolfWins, SolitaireTriPeaksWins, SolitaireVariantsWon, SolitaireBestStreak,
     ChillLoungeCompletions, JigsawCompletions, AdventureRunsCompleted,
+    BastionWaves, BastionKills, BastionVictories, BastionStages, BastionBestWave, BastionMasteryLevel,
+    SweepWins, SweepNoScanWins, SweepExpertWins, SweepBestStreak, SweepSafeCells,
+    ArcadeRuns, ArcadeBestScore, ArcadeTotalScore, ArcadeLongestSeconds,
 }
 
 public sealed record ChallengeDefinition(
@@ -116,6 +123,53 @@ public static class ChallengeCatalog
 {
     private static readonly IReadOnlyList<ChallengeDefinition> Challenges = Array.AsReadOnly(new[]
     {
+        // Midnight Sweep milestones are account-wide and read only committed terminal-run receipts.
+        C("sweep-first", ChallengeCategory.Minesweeper, "First Light", "Clear your first midnight minefield.", ChallengeMetric.SweepWins, 1, 75),
+        C("sweep-10", ChallengeCategory.Minesweeper, "Night Surveyor", "Clear ten minefields.", ChallengeMetric.SweepWins, 10, 200),
+        C("sweep-50", ChallengeCategory.Minesweeper, "Lunar Cartographer", "Clear 50 minefields.", ChallengeMetric.SweepWins, 50, 600),
+        E("sweep-250", ChallengeCategory.Minesweeper, "Keeper of the Grid", "Clear 250 minefields.", ChallengeMetric.SweepWins, 250, 2000),
+        C("sweep-noscan-1", ChallengeCategory.Minesweeper, "Unaided Sight", "Win without using an Echo Scan.", ChallengeMetric.SweepNoScanWins, 1, 125),
+        C("sweep-noscan-25", ChallengeCategory.Minesweeper, "Trust the Pattern", "Win 25 games without an Echo Scan.", ChallengeMetric.SweepNoScanWins, 25, 450),
+        E("sweep-noscan-100", ChallengeCategory.Minesweeper, "True Night Vision", "Win 100 games without an Echo Scan.", ChallengeMetric.SweepNoScanWins, 100, 1350),
+        C("sweep-expert-1", ChallengeCategory.Minesweeper, "Into the Deep", "Clear an Expert minefield.", ChallengeMetric.SweepExpertWins, 1, 250),
+        C("sweep-expert-10", ChallengeCategory.Minesweeper, "Master of the Dark", "Clear ten Expert minefields.", ChallengeMetric.SweepExpertWins, 10, 700),
+        E("sweep-expert-50", ChallengeCategory.Minesweeper, "No Star Uncharted", "Clear 50 Expert minefields.", ChallengeMetric.SweepExpertWins, 50, 2500),
+        C("sweep-streak-3", ChallengeCategory.Minesweeper, "Steady Hand", "Win three minefields in a row.", ChallengeMetric.SweepBestStreak, 3, 200),
+        E("sweep-streak-10", ChallengeCategory.Minesweeper, "Unbroken Constellation", "Win ten minefields in a row.", ChallengeMetric.SweepBestStreak, 10, 1200),
+        C("sweep-safe-500", ChallengeCategory.Minesweeper, "Opening the Night", "Reveal 500 safe tiles across completed runs.", ChallengeMetric.SweepSafeCells, 500, 200),
+        E("sweep-safe-5000", ChallengeCategory.Minesweeper, "The Endless Horizon", "Reveal 5,000 safe tiles across completed runs.", ChallengeMetric.SweepSafeCells, 5000, 1200),
+        // The catalog grows with additional stages; receipts are global and monotonic.
+        C("bastion-first-wave", ChallengeCategory.TowerDefense, "First Watch", "Survive your first Bastion wave.", ChallengeMetric.BastionWaves, 1, 60),
+        C("bastion-waves-10", ChallengeCategory.TowerDefense, "Night Watch", "Clear ten waves across maps.", ChallengeMetric.BastionWaves, 10, 150),
+        C("bastion-waves-50", ChallengeCategory.TowerDefense, "Unbroken Ramparts", "Clear fifty waves.", ChallengeMetric.BastionWaves, 50, 500),
+        E("bastion-waves-200", ChallengeCategory.TowerDefense, "The Long Vigil", "Clear 200 waves.", ChallengeMetric.BastionWaves, 200, 1400),
+        C("bastion-enemies-100", ChallengeCategory.TowerDefense, "Hold the Line", "Defeat 100 Bastion enemies.", ChallengeMetric.BastionKills, 100, 120),
+        C("bastion-enemies-1000", ChallengeCategory.TowerDefense, "Unyielding", "Defeat 1,000 enemies.", ChallengeMetric.BastionKills, 1000, 600),
+        E("bastion-enemies-5000", ChallengeCategory.TowerDefense, "A Fortress of Legends", "Defeat 5,000 enemies.", ChallengeMetric.BastionKills, 5000, 2200),
+        C("bastion-first-win", ChallengeCategory.TowerDefense, "The Keep Stands", "Complete a Bastion map.", ChallengeMetric.BastionVictories, 1, 250),
+        C("bastion-both-maps", ChallengeCategory.TowerDefense, "Two Fronts", "Complete both Bastion maps.", ChallengeMetric.BastionStages, 2, 600),
+        C("bastion-level-5", ChallengeCategory.TowerDefense, "Apprentice Commander", "Reach Bastion mastery level five.", ChallengeMetric.BastionMasteryLevel, 5, 200),
+        C("bastion-level-15", ChallengeCategory.TowerDefense, "Veteran Commander", "Reach Bastion mastery level fifteen.", ChallengeMetric.BastionMasteryLevel, 15, 600),
+        E("bastion-endless-30", ChallengeCategory.TowerDefense, "Beyond the Dawn", "Reach wave 30 on any map.", ChallengeMetric.BastionBestWave, 30, 1100),
+        C("sudoku-x-first", ChallengeCategory.Sudoku, "First Diagonal", "Solve your first Sudoku X puzzle.", ChallengeMetric.SudokuXCompleted, 1, 100),
+        C("sudoku-x-10", ChallengeCategory.Sudoku, "Double Focus", "Complete ten Sudoku X puzzles.", ChallengeMetric.SudokuXCompleted, 10, 350),
+        C("sudoku-killer-first", ChallengeCategory.Sudoku, "The First Cage", "Solve your first Killer Sudoku.", ChallengeMetric.SudokuKillerCompleted, 1, 125),
+        C("sudoku-killer-10", ChallengeCategory.Sudoku, "Sum Architect", "Complete ten Killer Sudoku puzzles.", ChallengeMetric.SudokuKillerCompleted, 10, 450),
+        C("sudoku-jigsaw-first", ChallengeCategory.Sudoku, "A Different Shape", "Solve your first Jigsaw Sudoku.", ChallengeMetric.SudokuJigsawCompleted, 1, 125),
+        C("sudoku-jigsaw-10", ChallengeCategory.Sudoku, "Pattern Maker", "Complete ten irregular Jigsaw puzzles.", ChallengeMetric.SudokuJigsawCompleted, 10, 450),
+        C("sudoku-samurai-first", ChallengeCategory.Sudoku, "Fivefold Logic", "Complete your first Samurai Sudoku.", ChallengeMetric.SudokuSamuraiCompleted, 1, 250),
+        E("sudoku-samurai-10", ChallengeCategory.Sudoku, "The Five Grids", "Finish ten complete Samurai puzzles.", ChallengeMetric.SudokuSamuraiCompleted, 10, 900),
+        C("sudoku-mini-first", ChallengeCategory.Sudoku, "Little Numbers", "Solve your first Mini Sudoku.", ChallengeMetric.SudokuMiniCompleted, 1, 50),
+        C("sudoku-mini-25", ChallengeCategory.Sudoku, "Pocket Puzzles", "Finish twenty-five Mini Sudokus.", ChallengeMetric.SudokuMiniCompleted, 25, 300),
+        C("sudoku-mini-4", ChallengeCategory.Sudoku, "Four by Four", "Solve a 4x4 Mini Sudoku.", ChallengeMetric.SudokuMini4Completed, 1, 75),
+        C("sudoku-mini-6", ChallengeCategory.Sudoku, "Six by Six", "Solve a 6x6 Mini Sudoku.", ChallengeMetric.SudokuMini6Completed, 1, 75),
+        C("sudoku-variants-10", ChallengeCategory.Sudoku, "The Wider Library", "Solve ten Sudoku variants.", ChallengeMetric.SudokuVariantCompleted, 10, 200),
+        E("sudoku-variants-100", ChallengeCategory.Sudoku, "All the Patterns", "Solve one hundred Sudoku variants.", ChallengeMetric.SudokuVariantCompleted, 100, 1100),
+        C("sudoku-variant-clean-10", ChallengeCategory.Sudoku, "No Nudge", "Solve ten variants without hints.", ChallengeMetric.SudokuVariantNoHint, 10, 325),
+        C("sudoku-career-20", ChallengeCategory.Sudoku, "Sudoku Apprentice", "Reach Sudoku career level 20.", ChallengeMetric.SudokuCareerLevel, 20, 300),
+        C("sudoku-career-50", ChallengeCategory.Sudoku, "Halfway to Legend", "Reach Sudoku career level 50.", ChallengeMetric.SudokuCareerLevel, 50, 850),
+        E("sudoku-career-90", ChallengeCategory.Sudoku, "A Crystalline Mind", "Reach Sudoku career level 90.", ChallengeMetric.SudokuCareerLevel, 90, 1800),
+        E("sudoku-career-100", ChallengeCategory.Sudoku, "Beyond Logic", "Complete all one hundred Sudoku career levels.", ChallengeMetric.SudokuCareerLevel, 100, 3000),
         // Sudoku deliberately rewards persistence rather than speed. The Chill Lounge should
         // never turn its timer into pressure or punish players for using accessibility aids.
         C("sudoku-first", ChallengeCategory.Sudoku, "First Grid", "Complete your first Sudoku puzzle.", ChallengeMetric.SudokuCompleted, 1, 50),
@@ -410,7 +464,7 @@ public static class ChallengeCatalog
             a.CoinReward, a.Tier == Jigsaw.JigsawAchievementTier.Platinum)).ToArray();
 
     private static readonly IReadOnlyList<ChallengeDefinition> AllChallenges =
-        Challenges.Concat(JigsawChallenges).ToArray();
+        Challenges.Concat(JigsawChallenges).Concat(ArcadeChallengeCatalog.All).ToArray();
 
     public static IReadOnlyList<ChallengeDefinition> All => AllChallenges;
 
@@ -510,9 +564,20 @@ public static class ChallengeCatalog
             ChallengeMetric.DiceReturned => profile.Kniffel.TotalReturned,
             ChallengeMetric.DiceBiggestPayout => profile.Kniffel.BiggestPayout,
 
-            ChallengeMetric.SudokuCompleted => profile.Sudoku.CompletedPuzzles,
+            ChallengeMetric.SudokuCompleted => profile.Sudoku.CompletedPuzzles + profile.SudokuVariants.CompletedPuzzles,
+            ChallengeMetric.SudokuVariantCompleted => profile.SudokuVariants.CompletedPuzzles,
+            ChallengeMetric.SudokuXCompleted => profile.SudokuVariants.XCompleted,
+            ChallengeMetric.SudokuKillerCompleted => profile.SudokuVariants.KillerCompleted,
+            ChallengeMetric.SudokuJigsawCompleted => profile.SudokuVariants.JigsawCompleted,
+            ChallengeMetric.SudokuSamuraiCompleted => profile.SudokuVariants.SamuraiCompleted,
+            ChallengeMetric.SudokuMiniCompleted => profile.SudokuVariants.MiniCompleted,
+            ChallengeMetric.SudokuMini4Completed => profile.SudokuVariants.Mini4Completed,
+            ChallengeMetric.SudokuMini6Completed => profile.SudokuVariants.Mini6Completed,
+            ChallengeMetric.SudokuVariantNoHint => profile.SudokuVariants.NoHintCompletions,
+            ChallengeMetric.SudokuCareerLevel => profile.SudokuCareer.Level,
+
             ChallengeMetric.SudokuDailyCompleted => profile.Sudoku.DailyCompleted,
-            ChallengeMetric.SudokuNoHintCompleted => profile.Sudoku.NoHintCompletions,
+            ChallengeMetric.SudokuNoHintCompleted => profile.Sudoku.NoHintCompletions + profile.SudokuVariants.NoHintCompletions,
             ChallengeMetric.SudokuExpertCompleted => profile.Sudoku.ExpertCompleted,
             ChallengeMetric.SudokuMasterCompleted => profile.Sudoku.MasterCompleted,
 
@@ -536,6 +601,9 @@ public static class ChallengeCatalog
             ChallengeMetric.MemoryMasterCompleted => profile.Memory.MasterCompleted,
             ChallengeMetric.MemoryBestStreak => profile.Memory.BestStreak,
             ChallengeMetric.JigsawAchievement => JigsawProgress(profile, challenge),
+            ChallengeMetric.ArcadeRuns or ChallengeMetric.ArcadeBestScore or
+                ChallengeMetric.ArcadeTotalScore or ChallengeMetric.ArcadeLongestSeconds =>
+                ArcadeChallengeCatalog.Progress(profile.Arcade, challenge),
 
             ChallengeMetric.SolitaireGamesStarted => profile.Solitaire.GamesStarted,
             ChallengeMetric.SolitaireWins => profile.Solitaire.Wins,
@@ -554,20 +622,33 @@ public static class ChallengeCatalog
                 + (profile.Solitaire.PyramidWins > 0 ? 1 : 0)
                 + (profile.Solitaire.GolfWins > 0 ? 1 : 0)
                 + (profile.Solitaire.TriPeaksWins > 0 ? 1 : 0),
-            ChallengeMetric.ChillLoungeCompletions => profile.Sudoku.CompletedPuzzles
+            ChallengeMetric.ChillLoungeCompletions => profile.Sudoku.CompletedPuzzles + profile.SudokuVariants.CompletedPuzzles
                 + profile.Solitaire.Wins + profile.WordSearch.CompletedPuzzles
-                + profile.Memory.CompletedGames + profile.Jigsaw.CompletedGames,
+                + profile.Memory.CompletedGames + profile.Jigsaw.CompletedGames + profile.TowerDefense.Victories
+                + profile.Minesweeper.Wins,
             ChallengeMetric.JigsawCompletions => profile.Jigsaw.CompletedGames,
             ChallengeMetric.AdventureRunsCompleted => profile.Adventure.RunsCompleted,
+            ChallengeMetric.BastionWaves => profile.TowerDefense.WavesCleared,
+            ChallengeMetric.BastionKills => profile.TowerDefense.EnemiesDefeated,
+            ChallengeMetric.BastionVictories => profile.TowerDefense.Victories,
+            ChallengeMetric.BastionStages => profile.TowerDefense.CompletedStages.Count,
+            ChallengeMetric.BastionBestWave => profile.TowerDefense.BestWaves.Values.DefaultIfEmpty(0).Max(),
+            ChallengeMetric.BastionMasteryLevel => profile.TowerDefense.Level,
+            ChallengeMetric.SweepWins => profile.Minesweeper.Wins,
+            ChallengeMetric.SweepNoScanWins => profile.Minesweeper.NoScanWins,
+            ChallengeMetric.SweepExpertWins => profile.Minesweeper.ExpertWins,
+            ChallengeMetric.SweepBestStreak => profile.Minesweeper.BestWinStreak,
+            ChallengeMetric.SweepSafeCells => profile.Minesweeper.SafeCellsRevealed,
 
             ChallengeMetric.LifetimeExperience => profile.LifetimeExperience,
             ChallengeMetric.LifetimePlaytimeSeconds => profile.TotalPlaytimeSeconds,
             ChallengeMetric.LifetimeWagered => blackjack.TotalWagered + reels.TotalWagered + neon.TotalWagered + nine.TotalWagered
                 + manor.TotalWagered + legacy.TotalWagered + profile.Kniffel.TotalWagered,
             ChallengeMetric.LifetimePlays => (decimal)blackjack.RoundsPlayed + reels.Spins + neon.Spins + nine.Spins
-                + manor.PaidSpins + manor.FreeSpins + legacy.Spins + profile.Kniffel.CompletedGames + profile.Sudoku.CompletedPuzzles
+                + manor.PaidSpins + manor.FreeSpins + legacy.Spins + profile.Kniffel.CompletedGames + profile.Sudoku.CompletedPuzzles + profile.SudokuVariants.CompletedPuzzles
                 + profile.WordSearch.CompletedPuzzles + profile.Memory.CompletedGames + merge.OrdersCompleted
-                + profile.Solitaire.Wins + profile.Jigsaw.CompletedGames + profile.Adventure.RunsCompleted,
+                + profile.Solitaire.Wins + profile.Jigsaw.CompletedGames + profile.Adventure.RunsCompleted
+                + profile.TowerDefense.Victories + profile.Minesweeper.Wins + profile.Minesweeper.Losses,
             ChallengeMetric.PrestigeCount => profile.Prestige,
             _ => 0,
         };

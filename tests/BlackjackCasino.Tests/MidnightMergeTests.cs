@@ -46,10 +46,10 @@ public sealed class MidnightMergeTests
     [Fact]
     public void DifferentLinesAndSelfMergeAreRejectedByCore()
     {
-        var other = MergeCatalog.Default.Items["chip-1"] with { Id = "decor-1", LineId = "decorations", MergeResult = null };
+        var other = MergeCatalog.Default.Items["chip-1"] with { Id = "test-decor-1", LineId = "decorations", MergeResult = null };
         var catalog = new MergeCatalog(MergeCatalog.Default.Items.Values.Append(other), MergeCatalog.Default.Producers.Values,
             MergeCatalog.Default.Orders, MergeCatalog.Default.Areas);
-        var a = Chip(1, 0); var b = new MergeItemInstance(Guid.NewGuid(), "decor-1", 1);
+        var a = Chip(1, 0); var b = new MergeItemInstance(Guid.NewGuid(), "test-decor-1", 1);
         var board = new MergeBoard(new() { Items = [a, b] }, catalog: catalog);
         Assert.Equal(MergeOutcome.Incompatible, board.TryMerge(a.Id, 1).Outcome);
         Assert.Equal(MergeOutcome.Incompatible, board.TryMerge(a.Id, 0).Outcome);
@@ -218,7 +218,11 @@ public sealed class MidnightMergeTests
     {
         foreach (var item in MergeCatalog.Default.Items.Values.Where(x => x.MergeResult is null))
         {
-            var board = With(Enumerable.Range(0, 42).Select(p => new MergeItemInstance(Guid.NewGuid(), item.Id, p)).ToArray());
+            var board = new MergeBoard(new MergeGameState
+            {
+                RenovationPoints = 49800,
+                Items = Enumerable.Range(0, 42).Select(p => new MergeItemInstance(Guid.NewGuid(), item.Id, p)).ToList(),
+            });
             var order = board.Snapshot.Orders.First(x => MergeOrders.SelectRequired(board.Snapshot, MergeCatalog.Default.Orders.Single(d => d.Id == x.DefinitionId)) is not null);
             Assert.True(board.TryComplete(order.Id).Success);
             Assert.True(board.CanSpawn("chip-case"));

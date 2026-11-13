@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using BlackjackCasino.Core;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -49,6 +50,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private readonly Func<string, (bool Success, string Message)> activateSeason;
     private readonly Func<string, (bool Success, string Message)> claimChallenge;
     private readonly Func<(bool Success, string Message)> claimAllChallenges;
+    private readonly Func<string, int, int, Guid, bool> arcadeRun;
     private readonly Action recordsClosed;
     private readonly CasinoModeRegistry modes;
     private readonly Action<string> progression;
@@ -99,7 +101,8 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         Func<(bool Success, string Message, object? Reward)> vaultOpen,
         Func<string, (bool Success, string Message)> claimChallenge,
         Func<(bool Success, string Message)> claimAllChallenges, Action recordsClosed,
-        Action<string> progression, Action profile, Action vault, Action dailyClaim,
+        Action<string> progression, Func<string, int, int, Guid, bool> arcadeRun,
+        Action profile, Action vault, Action dailyClaim,
         Action<string> languageChange, Action exit, Action readyChanged,
         Func<object> updateSnapshot, Action<string> setUpdateChannel,
         Func<Task> checkUpdate, Func<Task> installUpdate,
@@ -130,6 +133,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         this.claimAllChallenges = claimAllChallenges;
         this.recordsClosed = recordsClosed;
         this.progression = progression;
+        this.arcadeRun = arcadeRun;
         this.profile = profile;
         this.vault = vault;
         this.dailyClaim = dailyClaim;
@@ -320,6 +324,26 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     Refresh();
                     if (recordsPage is not null) RefreshRecords();
                     break;
+                case "lobby.arcade.run" when id is not null && ArcadeChallengeCatalog.IsGame(id):
+                {
+                    // Only a terminal run receipt from the trusted local WebView may be
+                    // committed. Enforce bounded numeric values and a deduplication token.
+                    if (!value.TryGetProperty("score", out JsonElement rawScore)
+                        || rawScore.ValueKind != JsonValueKind.Number
+                        || !rawScore.TryGetInt32(out int score) || score is < 0 or > 100_000_000
+                        || !value.TryGetProperty("seconds", out JsonElement rawSeconds)
+                        || rawSeconds.ValueKind != JsonValueKind.Number
+                        || !rawSeconds.TryGetInt32(out int seconds) || seconds is < 0 or > 21_600
+                        || !value.TryGetProperty("runId", out JsonElement rawRun)
+                        || rawRun.ValueKind != JsonValueKind.String
+                        || !Guid.TryParse(rawRun.GetString(), out Guid runId)) break;
+                    if (arcadeRun(id, score, seconds, runId))
+                    {
+                        Refresh();
+                        if (recordsPage == "challenges") RefreshRecords();
+                    }
+                    break;
+                }
                 case "lobby.records.open" when id is "challenges" or "statistics" or "profile" or "history" or "season" or "vault" or "album":
                     shopOpen = false;
                     recordsPage = id;

@@ -1,4 +1,6 @@
 using BlackjackCasino.Core.Adventure;
+using BlackjackCasino.Core.TowerDefense;
+using BlackjackCasino.Core.Minesweeper;
 
 namespace BlackjackCasino.Core;
 
@@ -19,7 +21,8 @@ public sealed record CosmeticDefinition(
     bool ShopAvailable,
     string Description,
     string VisualVariant = "standard",
-    int RequiredPrestige = 0);
+    int RequiredPrestige = 0,
+    int RequiredSudokuLevel = 0);
 
 public sealed class StatisticsSnapshot
 {
@@ -81,12 +84,17 @@ public sealed class PlayerProfileState
     ];
     public List<string> ClaimedChallengeIds { get; set; } = [];
     public AdventureMetaProgressState Adventure { get; set; } = new();
+    public TdProgress TowerDefense { get; set; } = new();
+    public SweepStatistics Minesweeper { get; set; } = new();
     public Kniffel.KniffelStatistics Kniffel { get; set; } = new();
     public Sudoku.SudokuStatistics Sudoku { get; set; } = new();
+    public Sudoku.SudokuVariantStatistics SudokuVariants { get; set; } = new();
+    public Sudoku.SudokuCareerState SudokuCareer { get; set; } = new();
     public Solitaire.SolitaireStatistics Solitaire { get; set; } = new();
     public WordSearch.WordSearchStatistics WordSearch { get; set; } = new();
     public Memory.MemoryStatistics Memory { get; set; } = new();
     public Jigsaw.JigsawStatistics Jigsaw { get; set; } = new();
+    public ArcadeStatistics Arcade { get; set; } = new();
     public MidnightMerge.MidnightMergeStatistics MidnightMerge { get; set; } = new();
     public Manor.ManorStatistics Manor { get; set; } = new();
     public Collections.CollectionState Collection { get; set; } = new();

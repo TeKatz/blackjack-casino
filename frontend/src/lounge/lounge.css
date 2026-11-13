@@ -1,9 +1,10 @@
 :root{font-family:"Segoe UI",Inter,system-ui,sans-serif;color:#eee8d9;background:#061714;font-synthesis:none}
 *{box-sizing:border-box}
-html,body,#root{margin:0;width:100%;height:100%;min-width:580px}
+html,body,#root{margin:0;width:100%;height:100%;min-width:580px;overflow:hidden}
 button{font:inherit;cursor:pointer}
 button:focus-visible{outline:2px solid #f5d28d;outline-offset:3px}
-.chill-shell{position:relative;isolation:isolate;min-height:100%;background:radial-gradient(ellipse at 60% -20%,#25513e 0%,#102a26 40%,#071917 72%,#071210 100%);overflow:hidden}
+.chill-shell{position:relative;isolation:isolate;height:100dvh;min-height:0;overflow-y:auto;scrollbar-width:none;overscroll-behavior:contain;background:radial-gradient(ellipse at 60% -20%,#25513e 0%,#102a26 40%,#071917 72%,#071210 100%);overflow-x:hidden}
+.chill-shell::-webkit-scrollbar{display:none}
 .chill-shell:before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(115deg,#0a2019a3,#03110bcb),url('/lobby/lobby-atlas.webp') center top/cover no-repeat;opacity:.28;filter:blur(3px)}
 .chill-sparkles{position:absolute;inset:0;pointer-events:none;opacity:.45;background-image:radial-gradient(circle,#b8daae8c 1px,transparent 1.6px),radial-gradient(circle,#e6c3898c 1px,transparent 1.6px);background-size:99px 113px,179px 141px;background-position:15px 8px,41px 63px;mask-image:linear-gradient(to bottom,#000,transparent 82%);animation:chill-haze 18s ease-in-out infinite alternate}
 .chill-header{position:relative;z-index:2;display:flex;align-items:center;gap:15px;min-height:76px;padding:10px clamp(18px,3vw,48px);border-bottom:1px solid #ae89516b;background:#071914ec;box-shadow:0 11px 30px #0006}
@@ -102,3 +103,147 @@ button:focus-visible{outline:2px solid #f5d28d;outline-offset:3px}
 @media(max-width:760px){.chill-tower-defense{display:flex;grid-column:1;flex-direction:column}
  .chill-tower-defense .chill-card-art{height:160px;min-height:160px;border-right:0;border-bottom:1px solid #b69c657b}
  .chill-tower-defense .chill-card-body{padding:18px}}
+
+
+/* Three classic columns above; two equal feature cards on the final row. */
+.chill-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+.chill-grid>.chill-card{grid-column:span 2}
+.chill-grid>.chill-tower-defense,.chill-grid>.chill-minesweeper{
+ grid-column:span 3;display:flex;flex-direction:column;border-radius:17px;
+ border:1px solid #af957164;box-shadow:0 17px 37px #0008,inset 0 1px #eef6d819}
+.chill-grid>.chill-tower-defense .chill-card-art,.chill-grid>.chill-minesweeper .chill-card-art{
+ height:clamp(115px,17vh,200px);min-height:115px;flex-shrink:0;
+ border-right:0;border-bottom:1px solid #b69c657b;
+}
+.chill-grid>.chill-tower-defense .chill-card-body,.chill-grid>.chill-minesweeper .chill-card-body{
+ min-height:0;display:flex;flex:1;flex-direction:column;justify-content:initial;
+ padding:15px 22px 17px;
+}
+.chill-grid>.chill-tower-defense .chill-card-body strong,.chill-grid>.chill-minesweeper .chill-card-body strong{
+ font:normal clamp(24px,2.3vw,34px) Georgia,serif;margin:6px 0;color:#f2d8a8;
+}
+.chill-grid>.chill-tower-defense .chill-description,.chill-grid>.chill-minesweeper .chill-description{
+ font-size:12px;line-height:1.5;margin:9px 0 auto;max-width:unset;
+}
+.chill-grid>.chill-tower-defense .chill-card-bottom,.chill-grid>.chill-minesweeper .chill-card-bottom{
+ margin-top:12px;
+}
+.chill-minesweeper{background:linear-gradient(120deg,#233750,#18273d 58%,#101e30)}
+.chill-minesweeper .chill-card-art{
+ background:radial-gradient(ellipse at 70% 25%,#496c8a,#0d2234 70%);
+}
+.chill-minesweeper:hover{border-color:#aedfe7!important;box-shadow:0 15px 45px #0008,0 0 32px #7ac8e53e!important}
+.chill-minesweeper .chill-card-category,.chill-minesweeper .chill-card-bottom b{color:#a9e2e0}
+.chill-minesweeper .chill-card-body em{color:#a7d9e0}
+.lounge-sweep-preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+ filter:drop-shadow(0 8px 16px #0007);transition:transform .4s}
+.chill-minesweeper:hover .lounge-sweep-preview{transform:scale(1.05)}
+@media(max-width:1150px){
+ .chill-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .chill-grid>.chill-card,.chill-grid>.chill-tower-defense,.chill-grid>.chill-minesweeper{grid-column:auto}
+}
+@media(max-width:730px){
+ .chill-grid{grid-template-columns:minmax(0,1fr)}
+ .chill-grid>.chill-card,.chill-grid>.chill-tower-defense,.chill-grid>.chill-minesweeper{grid-column:auto}
+}
+
+
+/* Chill Lounge overview: all eight actual interactive entries fit 1920x1080.
+   Scoped to the overview so individual games retain their normal scroll/zoom. */
+@media (min-width:1500px) and (min-height:850px){
+  .chill-shell.chill-home{height:100dvh;min-height:0;overflow:hidden}
+  .chill-home .chill-header{height:58px;min-height:58px;padding-block:5px}
+  .chill-home .chill-mark{width:40px;height:40px;font-size:27px}
+  .chill-home .chill-brand strong{font-size:23px}
+  .chill-home .chill-content{
+    height:calc(100dvh - 58px);min-height:0;max-width:1920px;
+    margin:0 auto;padding:12px clamp(16px,1.45vw,28px) 10px;
+    display:flex;flex-direction:column;gap:9px;overflow:hidden;
+  }
+  .chill-home .chill-hero{
+    flex:0 0 99px;min-height:0;padding:11px 25px;border-radius:15px;
+  }
+  .chill-home .chill-hero h1{font-size:30px;margin:5px 0}
+  .chill-home .chill-intro{font-size:12px;line-height:1.35}
+  .chill-home .chill-kicker{font-size:10px}
+  .chill-home .chill-lantern{font-size:65px}
+  .chill-home .chill-filter{
+    flex:0 0 auto;margin:0;min-height:37px;gap:8px;align-content:center;
+  }
+  .chill-home .chill-filter button{padding:8px 15px;font-size:11px}
+  .chill-home .chill-grid{
+    flex:1 1 auto;min-height:0;display:grid;
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    grid-auto-flow:row;gap:10px;
+  }
+  .chill-home .chill-grid[data-filter="all"]{
+    grid-template-rows:repeat(3,minmax(0,1fr));
+  }
+  .chill-home .chill-grid>.chill-card{
+    min-height:0;max-height:100%;overflow:hidden;
+  }
+  .chill-home .chill-card-art{
+    height:clamp(65px,8vh,91px);min-height:0;flex:0 0 auto;
+  }
+  .chill-home .chill-card-body{
+    flex:1 1 auto;min-height:0;padding:8px 12px 9px;gap:0;
+  }
+  .chill-home .chill-card-category{font-size:9px}
+  .chill-home .chill-card-body strong{font-size:20px;line-height:1.12;margin:4px 0 3px}
+  .chill-home .chill-card-body em{font-size:11px}
+  .chill-home .chill-description{
+    font-size:11px;line-height:1.28;margin:6px 0 auto;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .chill-home .chill-card-bottom{
+    flex:0 0 auto;margin-top:7px;padding-top:7px;
+  }
+  .chill-home .chill-card-bottom>span{font-size:9px}
+  .chill-home .chill-card-bottom b{font-size:10px}
+  .chill-home .chill-grid>.chill-tower-defense .chill-card-art,
+  .chill-home .chill-grid>.chill-minesweeper .chill-card-art{
+    height:clamp(86px,10.4vh,116px);min-height:0;
+  }
+  .chill-home .chill-grid>.chill-tower-defense .chill-card-body,
+  .chill-home .chill-grid>.chill-minesweeper .chill-card-body{
+    padding:10px 18px;
+  }
+  .chill-home .chill-grid>.chill-tower-defense .chill-card-body strong,
+  .chill-home .chill-grid>.chill-minesweeper .chill-card-body strong{
+    font-size:25px;line-height:1.1;margin:3px 0;
+  }
+  .chill-home .chill-grid>.chill-tower-defense .chill-description,
+  .chill-home .chill-grid>.chill-minesweeper .chill-description{
+    font-size:11px;line-height:1.22;margin:5px 0 auto;
+  }
+  .chill-home .chill-grid>.chill-tower-defense .chill-card-bottom,
+  .chill-home .chill-grid>.chill-minesweeper .chill-card-bottom{margin-top:5px}
+  .chill-home .chill-footer{flex:0 0 17px;padding:0;font-size:10px;min-height:0}
+}
+/* Below desktop heights, retain the original scrollable, responsive card grid. */
+
+/* Jigsaw game occupies the available desktop viewport, not a scrolling page. */
+@media(min-width:1051px) and (min-height:650px){
+ .chill-shell.jigsaw-open{height:100dvh;min-height:0;overflow:hidden}
+ .jigsaw-open .chill-header{height:58px;min-height:58px;padding-top:4px;padding-bottom:4px}
+ .jigsaw-open .chill-mark{height:40px;width:40px;font-size:27px}
+ .jigsaw-open .chill-content{height:calc(100dvh - 58px);min-height:0;max-width:none;padding:10px 24px 13px;overflow:hidden}
+}
+
+
+/* Package 3 illustrations: use their full editorial composition, not a cropped emoji slot. */
+.chill-card-art>.lounge-editorial-preview,
+.chill-card-art>.lounge-bastion-preview,
+.chill-card-art>.lounge-sweep-preview{
+ position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;
+ object-position:center center;display:block;user-select:none;pointer-events:none;
+ filter:none;transition:transform .45s ease-out,filter .45s ease-out;
+}
+.chill-card:hover:not(:disabled) .chill-card-art>img{
+ transform:scale(1.035);filter:brightness(1.08);
+}
+.chill-card-art::after{z-index:1;pointer-events:none}
+.chill-card .chill-decoration{z-index:2;text-shadow:0 2px 7px #061218,0 0 12px #061218}
+@media(prefers-reduced-motion:reduce){
+ .chill-card-art>img{transition:none!important}
+}

@@ -177,10 +177,13 @@
  box-shadow:inset 0 2px 7px #0006;min-height:40px}
 .bj-bet{color:#ffe1a4;text-shadow:0 0 12px #dfbd7773}
 .bj-chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.bj-chips button{border-radius:50%;padding:7px 3px;aspect-ratio:1.25;min-height:41px;
- background:radial-gradient(circle at 38% 24%,#456b54,#102f29 64%,#071b1e 90%);
- border:3px double #e1c17c9c;box-shadow:inset 0 0 0 3px #102d2a,0 5px 10px #0009;
- font-size:12px}
+.bj-chips button{border-radius:9px;min-height:44px;aspect-ratio:auto;padding:10px 8px;
+ background:linear-gradient(145deg,#264439,#102b2a);color:#f5e3c4;
+ border:1px solid #8d9b76;box-shadow:inset 0 1px #d7dfaa19,0 3px 9px #0005;
+ font-size:12px;font-weight:750;transition:background .16s,border-color .16s,transform .16s}
+.bj-chips button:hover:not(:disabled){background:linear-gradient(145deg,#3e6150,#1c413b);
+ border-color:#dfc28a;transform:translateY(-1px)}
+.bj-chips button:focus-visible{outline:2px solid #e9cb91;outline-offset:2px}
 .bj-sidebar button.bj-deal{min-height:46px;border:1px solid #fff1bf;
  border-radius:10px;background:linear-gradient(135deg,#ffecb5,#d6ab61 50%,#99723c);
  color:#18251d;text-shadow:0 1px #fff9c780;letter-spacing:.09em;

@@ -5,6 +5,7 @@ import {albumArtStyle,albumAtlasUrl} from './albumArt';
 import {rarityOrder} from './albumBridge';
 import type {AlbumCard,AlbumDraw,AlbumOpening,AlbumRarity,AlbumResult,AlbumSnapshot,AlbumTheme} from './albumBridge';
 import './album.css';
+import './albumPolish.css';
 import {playAlbumCue} from './albumAudio';
 import {albumRevealDelay,albumRevealSound,packRuptureTime} from './albumCinema';
 
@@ -39,7 +40,7 @@ function CollectionCard({card,index,onInspect,de}:{
     {card.badge&&<b className="album-card-badge">{card.badge}</b>}</div>
   {index!==undefined&&<span className="album-card-index">#{index.toString().padStart(2,'0')}</span>}
  </>;
- return onInspect?<button type="button" className={'album-collection-card '+(!card.owned?'is-missing ':'')+(card.ultraRare?'is-ultra':'')}
+ return onInspect?<button type="button" className={'album-collection-card '+(!card.owned?'is-missing ':'')+(card.ultraRare?'is-ultra ':'')+(card.owned&&card.rarity==='Epic'?'is-epic ':'')+(card.owned&&card.rarity==='Legendary'?'is-legendary':'')}
  style={style} onClick={onInspect} aria-label={card.owned?card.name:(de?'Unentdeckte Karte':'Undiscovered card')}>
   {inner}</button>:
   <div className={'album-collection-card '+(card.ultraRare?'is-ultra':'')} style={style}>{inner}</div>;
@@ -87,6 +88,8 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
  const revealSuspended=useRef(false);
  const claimPending=useRef<string|null>(null);
  const [claimedId,setClaimedId]=useState<string|null>(null);
+ const autoCompleteReceipt=useRef<string|null>(null);
+ const [completionFailed,setCompletionFailed]=useState(false);
  const themes=data.themes;
  const theme=themes.find(t=>t.id===themeId)??themes[0];
  const currentPack=data.packs.find(p=>p.rarity===rarity);
@@ -98,9 +101,8 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
  &&(!query.trim()||(c.name+' '+theme.name+' '+c.rarity).toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())))??[],
  [theme,filter,query]);
  const selectedPackCount=data.pending?0:(currentPack?.owned??0);
- // The last pack in an Open All batch must also finish automatically.
- // Zero means a manually opened single pack, which waits for Collect.
- const hasQueuedBatch=batchRemaining>0;
+ // Completion only clears the committed native receipt; it does not credit
+ // any rewards a second time.
 
  // A persisted receipt is the only source of revealed cards. Returning from
  // another page or restarting the application resumes the same five results.
@@ -111,6 +113,8 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
   revealSuspended.current=false;
   setDisplayOpening(data.pending);
   setRarity(data.pending.rarity);
+  autoCompleteReceipt.current=null;
+  setCompletionFailed(false);
   setRevealed(0);
   setBusy(false);
   // Decode the exact original illustrated atlases before the first flip.
@@ -153,22 +157,28 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
   },extra);
   return()=>window.clearTimeout(timer);
  },[phase,revealed,data.pending,cinematic,soundEnabled]);
- // "Open all" is a sequence of *individual* durable native transactions.
- // Never open the next pack before the preceding receipt was completed.
+ // Every pack, whether single or from Open All, completes its receipt
+ // automatically. The ID guard prevents duplicate native commands from
+ // rerenders or snapshot updates; an error needs an explicit retry.
  useEffect(()=>{
-  if(phase!=='summary'||!data.pending||!hasQueuedBatch||busy)return;
+  if(phase!=='summary'||!data.pending||revealed<5||busy||completionFailed
+    ||revealSuspended.current||autoCompleteReceipt.current===data.pending.id)return;
+  const receipt=data.pending.id;
   const timer=window.setTimeout(()=>{
+   if(autoCompleteReceipt.current===receipt||revealSuspended.current)return;
+   autoCompleteReceipt.current=receipt;
    setBusy(true);
-   onComplete(data.pending!.id);
-  },cinematic?1600:80);
+   onComplete(receipt);
+  },cinematic?500:50);
   return()=>window.clearTimeout(timer);
- },[phase,data.pending,hasQueuedBatch,busy,cinematic,onComplete]);
+ },[phase,data.pending?.id,revealed,busy,completionFailed,cinematic,onComplete]);
  useEffect(()=>{
   if(!result)return;
   setUnresponsive(false);
   setNotice(result.message);
   if(result.operation==='claim'){claimPending.current=null;setClaimedId(null);return;}
   if(!result.success){setBusy(false);setBatchRemaining(0);
+   if(result.operation==='complete')setCompletionFailed(true);
    if(result.operation==='open'&&!data.pending)setPhase('stage');
    return;
   }
@@ -232,16 +242,19 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
   },8000);
   return()=>window.clearTimeout(timeout);
  },[phase,data.pending,unresponsive,de]);
- function finishPack(){
+ function retryFinishPack(){
   if(!data.pending||busy||revealed<5)return;
-  setBusy(true);onComplete(data.pending.id);
+  setCompletionFailed(false);
+  autoCompleteReceipt.current=data.pending.id;
+  setBusy(true);
+  onComplete(data.pending.id);
  }
  const stageHeader=phase==='stage'?(de?'Versiegeltes Pack':'Sealed collector pack'):
   phase==='await'?(de?'Das Siegel lädt Energie…':'The seal is gathering power…'):
   phase==='rupture'?(de?'DAS SIEGEL ZERBRICHT':'THE SEAL SHATTERS'):
   phase==='reveal'?(de?'Die Karten erscheinen…':'The cards emerge…'):
   phase==='finished'?(de?'Zum Album hinzugefügt':'Collection updated'):(de?'Deine fünf Karten':'Your five cards');
- return <main className="record-page album-page"><div className="record-page-scroll">
+ return <main className={'record-page album-page'+(openActive?' opening-active':'')}><div className="record-page-scroll">
   <header className="record-hero album-hero"><div className="record-hero-copy">
    <button type="button" className="shop-back" onClick={onBack}>{de?'‹ Zur Lobby':'‹ Back to lobby'}</button>
    <span className="shop-eyebrow">THE MIDNIGHT CLUB / COLLECTOR'S ARCHIVE</span>
@@ -285,10 +298,10 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
    <aside className="album-themes" aria-label={de?'Sammlungsthemen':'Collection themes'}>
     <h2>{de?'Kollektionen':'Collections'}</h2>
     {themes.map(t=><button type="button" key={t.id} data-theme-id={t.id} aria-current={t.id===theme?.id?'true':undefined}
-    className={'album-theme-item '+(t.id===theme?.id?'selected ':'')+(t.ultraRare?'ultra':'')}
+    className={'album-theme-item '+(t.id===theme?.id?'selected ':'')+(t.ultraRare?'ultra ':'')+(t.owned===t.total?'completed':'')}
     style={{'--theme-accent':t.accent} as CSSProperties} onClick={()=>{setThemeId(t.id);setFilter('all');setQuery('');}}>
     <span className="album-theme-symbol">{t.symbol}</span><span className="album-theme-name">{t.name}
-     <small>{t.ultraRare?'ULTRA RARE':'COLLECTION'}</small></span><strong>{t.owned}/{t.total}</strong></button>)}
+     <small>{t.owned===t.total?(de?'✓ VOLLSTÄNDIG':'✓ COMPLETE'):t.ultraRare?'ULTRA RARE':'COLLECTION'}</small></span><strong>{t.owned}/{t.total}</strong></button>)}
    </aside>
    <div className="album-gallery">
    {theme&&<><header className="album-gallery-header" style={{'--theme-accent':theme.accent} as CSSProperties}>
@@ -327,6 +340,7 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
   {loaded&&openActive&&<div className="album-opening-scrim" role="dialog" aria-modal="true" aria-label={stageHeader}>
    <div className={'album-opening-panel phase-'+phase+
     (revealed>0&&opening?.cards[Math.min(revealed-1,4)]?.ultraRare?' has-ultra':'')}
+    data-opening-id={opening?.id}
     style={{'--card-rarity':rarityColors[rarity]} as CSSProperties}>
     <div className="album-theatre-aura" aria-hidden="true"/>
     <div className="album-theatre-stars" aria-hidden="true">
@@ -377,6 +391,10 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
      {opening?.cards.map((card,i)=><div key={opening.id+'-'+i}
       className={'album-reveal-slot '+(i<revealed?'flipped ':'')+(i===revealed&&phase==='reveal'?'anticipating ':'')+(card.ultraRare?'ultra ':'')+card.rarity.toLowerCase()}
       style={{'--card-rarity':rarityColors[card.rarity],'--reveal-i':i} as CSSProperties}>
+      {i<revealed&&<span className={'album-reveal-result '+(card.isNew?'is-new':'is-duplicate')}
+       data-testid="album-reveal-result">
+       {card.isNew?(de?'NEW':'NEW'):(de?'DUPLIKAT':'DUPLICATE')+' +'+card.duplicatePoints}
+      </span>}
       <div className="album-reveal-inner"><div className="album-reveal-back">
        <span>♠</span><small>THE MIDNIGHT CLUB</small></div>
        <div className="album-reveal-front">
@@ -395,9 +413,11 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
     <div className="album-opening-actions">
      {phase==='reveal'&&<button type="button" className="album-opening-secondary"
       onClick={()=>setRevealed(5)}>{de?'ENTHÜLLUNG ÜBERSPRINGEN':'REVEAL ALL NOW'}</button>}
-     {phase==='summary'&&<button type="button" className="album-opening-primary"
-      disabled={busy||!data.pending} onClick={finishPack}>
-      {busy?'…':batchRemaining>1?(de?'SERIE FORTSETZEN':'CONTINUE SEQUENCE'):(de?'KARTEN EINSAMMELN':'COLLECT CARDS')}</button>}
+     {phase==='summary'&&!completionFailed&&<p className="album-collect-status" role="status">
+      {de?'Karten werden automatisch eingesammelt…':'Collecting cards automatically…'}</p>}
+    {phase==='summary'&&completionFailed&&<button type="button" className="album-opening-primary"
+      disabled={busy||!data.pending} onClick={retryFinishPack}>
+      {de?'EINSAMMELN ERNEUT VERSUCHEN':'RETRY COLLECTION'}</button>}
      {phase==='summary'&&batchRemaining>1&&<button type="button" className="album-opening-secondary"
       onClick={()=>setBatchRemaining(1)}>{de?'Nach diesem Pack stoppen':'Stop after this pack'}</button>}
      {phase==='finished'&&<>

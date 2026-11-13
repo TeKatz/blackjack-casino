@@ -490,10 +490,12 @@ internal static partial class Program
             return;
         }
         ModernLobbyView view=Find<ModernLobbyView>(window).Single();
-        for (int attempt=0;attempt<100 && !view.Ready && !view.Failed;attempt++)
+        for (int attempt=0;attempt<300 && !view.Ready && !view.Failed;attempt++)
             await Task.Delay(100);
         Require(view.Ready && !view.Failed && view.Browser.CoreWebView2 is not null,
-            "Cannot capture lobby artwork: React WebView2 did not become ready.");
+            "Cannot capture lobby artwork: React WebView2 did not become ready. "
+            + $"Ready={view.Ready}; Failed={view.Failed}; Reason={view.FailureReason}; "
+            + $"Navigation={view.LastNavigation}; Source={view.LastMessageSource}; Message={view.LastMessageType}");
         CoreWebView2 core=view.Browser.CoreWebView2!;
         bool texturesReady=false;
         for (int attempt=0;attempt<100;attempt++)

@@ -1,0 +1,76 @@
+name: Midnight Descent Godot smoke
+
+on:
+  push:
+    branches: [develop, main]
+    paths:
+      - 'games/midnight-descent/**'
+      - 'src/BlackjackCasino.Desktop/MainWindow.MidnightDescent.cs'
+      - '.github/workflows/midnight-descent.yml'
+  pull_request:
+    paths:
+      - 'games/midnight-descent/**'
+      - 'src/BlackjackCasino.Desktop/MainWindow.MidnightDescent.cs'
+      - '.github/workflows/midnight-descent.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  godot-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate fullscreen launch from Blackjack Casino
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          launcher = Path("src/BlackjackCasino.Desktop/MainWindow.MidnightDescent.cs").read_text(encoding="utf-8")
+          game = Path("games/midnight-descent/project.godot").read_text(encoding="utf-8")
+          assert launcher.count('start.ArgumentList.Add("--fullscreen");') == 1, "Casino host must request Godot fullscreen"
+          assert launcher.index('start.ArgumentList.Add("--fullscreen");') < launcher.index('start.ArgumentList.Add("--");'), "Godot fullscreen engine argument must precede user-argument separator"
+          assert "window/size/mode=3" in game, "Godot project must default to fullscreen as fallback"
+          print("Midnight Descent fullscreen host launch contract PASS")
+          PY
+      - name: Install pinned Godot editor
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 -o /tmp/godot.zip https://github.com/godotengine/godot-builds/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip
+          unzip -q /tmp/godot.zip -d /tmp/descent-godot
+          chmod +x /tmp/descent-godot/Godot_v4.5.1-stable_linux.x86_64
+          echo "/tmp/descent-godot" >> "$GITHUB_PATH"
+      - name: Import, parse and exercise both actual scenes
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot=Godot_v4.5.1-stable_linux.x86_64
+          project=games/midnight-descent
+          mkdir -p artifacts/descent-smoke
+          run_checked() {
+            local name="$1"
+            shift
+            "$godot" --headless --path "$project" "$@" 2>&1 | tee "artifacts/descent-smoke/$name.log"
+            if grep -Eq 'SCRIPT ERROR:|Parse Error:|Failed to load script' "artifacts/descent-smoke/$name.log"; then
+              echo "::error::Godot script error in $name"
+              # Direct compilation exposes the failing source line instead of
+              # only the menu.gd "Could not preload pixel_world.gd" symptom.
+              "$godot" --headless --path "$project" --script res://pixel_world.gd --check-only 2>&1 | tee "artifacts/descent-smoke/pixel-world-parse.log" || true
+              exit 1
+            fi
+          }
+          run_checked import --editor --import
+          run_checked menu --quit-after 240 -- --smoke-test
+          grep -Fq "Midnight Descent menu smoke PASS" artifacts/descent-smoke/menu.log
+          grep -Fq "Midnight Descent run smoke PASS" artifacts/descent-smoke/menu.log
+          run_checked gameplay --quit-after 240 res://run.tscn -- --run-smoke
+          grep -Fq "Midnight Descent gameplay scene smoke PASS" artifacts/descent-smoke/gameplay.log
+      - name: Upload Godot diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: midnight-descent-smoke
+          path: artifacts/descent-smoke
+          if-no-files-found: ignore

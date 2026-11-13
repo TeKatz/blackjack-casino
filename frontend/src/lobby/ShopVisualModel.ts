@@ -31,6 +31,7 @@ export function shopMaterial(kind:ShopKind,variant:string):ShopMaterial{
  return 'heritage';
 }
 export function shopVisualTier(item:ShopItem):VisualTier{
+ if(/title-sudoku-(premium|ultra|prism|legend)/.test(item.visualVariant))return 'showpiece';
  if(/classic|static-|linen|porcelain|house-guest/.test(item.visualVariant))return 'classic';
  if(item.requiredPrestige>0||item.price>=5000||/sovereign|dynasty|celestial|astral|solar|eclipse|crown/.test(item.visualVariant))
   return 'showpiece';

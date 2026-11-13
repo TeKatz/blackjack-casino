@@ -1,4 +1,4 @@
-export const loungeIds = ['sudoku','solitaire','word-search','memory','jigsaw','tales-backroom','tower-defense'] as const;
+export const loungeIds = ['sudoku','solitaire','word-search','memory','jigsaw','tales-backroom','tower-defense','minesweeper'] as const;
 export type LoungeId = typeof loungeIds[number];
 export type LoungeGame = { id: LoungeId; status: string | null };
 import { isSudokuState } from './sudokuBridge';
@@ -8,6 +8,7 @@ import { isMemoryState } from './memoryBridge';
 import { isJigsawState } from './jigsawBridge';
 import { isTaleState } from './adventureBridge';
 import { isTowerDefenseState } from './towerDefenseBridge';
+import { isSweepState } from './minesweeperBridge';
 import type { SudokuState } from './sudokuBridge';
 import type { SolitaireState } from './solitaireBridge';
 import type { WordSearchState } from './wordSearchBridge';
@@ -15,6 +16,7 @@ import type { MemoryState } from './memoryBridge';
 import type { JigsawState } from './jigsawBridge';
 import type { TaleState } from './adventureBridge';
 import type { TowerDefenseState } from './towerDefenseBridge';
+import type { SweepState } from './minesweeperBridge';
 export type LoungeSnapshot = {
   boardOnly?:boolean; version: 1; language: 'en' | 'de';
   session:string;revision:number;sudoku:SudokuState|null;
@@ -24,6 +26,7 @@ export type LoungeSnapshot = {
   jigsawSession:string;jigsawRevision:number;jigsaw:JigsawState|null;
   adventureSession:string;adventureRevision:number;adventure:TaleState|null;
   towerDefenseSession:string;towerDefenseRevision:number;towerDefense:TowerDefenseState|null;
+  minesweeperSession:string;minesweeperRevision:number;minesweeper:SweepState|null;
   musicEnabled: boolean; soundEnabled: boolean; animationsEnabled: boolean; games: LoungeGame[] };
 const record = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === 'object' && !Array.isArray(v);
 export const isLoungeId = (value: unknown): value is LoungeId =>
@@ -51,6 +54,9 @@ export function isLoungeSnapshot(value: unknown): value is LoungeSnapshot {
     || typeof value.towerDefenseSession!=='string'||!/^([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})$/i.test(value.towerDefenseSession)
     || typeof value.towerDefenseRevision!=='number'||!Number.isSafeInteger(value.towerDefenseRevision)||value.towerDefenseRevision<0
     || !(value.towerDefense===null||isTowerDefenseState(value.towerDefense))
+    || typeof value.minesweeperSession!=='string'||!/^([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})$/i.test(value.minesweeperSession)
+    || typeof value.minesweeperRevision!=='number'||!Number.isSafeInteger(value.minesweeperRevision)||value.minesweeperRevision<0
+    || !(value.minesweeper===null||isSweepState(value.minesweeper))
     || typeof value.musicEnabled !== 'boolean' || typeof value.soundEnabled !== 'boolean'
     || typeof value.animationsEnabled !== 'boolean' || !Array.isArray(value.games)
     || value.games.length !== loungeIds.length) return false;

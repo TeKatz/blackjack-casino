@@ -11,7 +11,7 @@ permissions:
 jobs:
   release:
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
 
     steps:
       - name: Checkout
@@ -85,6 +85,16 @@ jobs:
 
           New-Item -ItemType Directory -Path artifacts/app/tools/updater -Force | Out-Null
           Copy-Item artifacts/updater/BlackjackCasino.Updater.exe artifacts/app/tools/updater/BlackjackCasino.Updater.exe
+
+      - name: Cache Godot Windows export template
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Roaming/Godot/export_templates/4.5.1.stable
+          key: godot-4.5.1-windows-x86_64-release-template-v1
+
+      - name: Export and smoke-test Godot Midnight Descent
+        shell: pwsh
+        run: ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/app/MidnightDescent
 
       - name: Verify bundled Midnight Manor frontend assets
         shell: pwsh

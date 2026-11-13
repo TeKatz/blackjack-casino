@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="280" viewBox="0 0 600 280" role="img" aria-label="Jigsaw Puzzle illustration">
+<defs><linearGradient id="back" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0b2837"/><stop offset=".56" stop-color="#5a6550"/><stop offset="1" stop-color="#0b2837"/></linearGradient>
+<radialGradient id="light"><stop stop-color="#eed8a4" stop-opacity=".21"/><stop offset="1" stop-color="#eed8a4" stop-opacity="0"/></radialGradient>
+<filter id="depth" x="-20%" y="-25%" width="150%" height="160%"><feDropShadow dx="0" dy="9" stdDeviation="8" flood-color="#041019" flood-opacity=".62"/></filter></defs>
+<rect width="600" height="280" fill="url(#back)"/><circle cx="346" cy="116" r="240" fill="url(#light)"/>
+<g fill="#d9d1aa"><circle cx="21" cy="16" r="1" opacity=".18"/><circle cx="214" cy="95" r="2" opacity=".18"/><circle cx="407" cy="174" r="3" opacity=".18"/><circle cx="0" cy="253" r="1" opacity=".18"/><circle cx="193" cy="52" r="2" opacity=".18"/><circle cx="386" cy="131" r="3" opacity=".18"/><circle cx="579" cy="210" r="1" opacity=".18"/><circle cx="172" cy="9" r="2" opacity=".18"/><circle cx="365" cy="88" r="3" opacity=".18"/><circle cx="558" cy="167" r="1" opacity=".18"/><circle cx="151" cy="246" r="2" opacity=".18"/><circle cx="344" cy="45" r="3" opacity=".18"/><circle cx="537" cy="124" r="1" opacity=".18"/><circle cx="130" cy="203" r="2" opacity=".18"/><circle cx="323" cy="2" r="3" opacity=".18"/><circle cx="516" cy="81" r="1" opacity=".18"/><circle cx="109" cy="160" r="2" opacity=".18"/></g><path d="M0 256C135 225 395 285 600 231" fill="none" stroke="#c9bf91" stroke-opacity=".15" stroke-width="2"/>
+<g filter="url(#depth)">
+<rect x="156" y="18" width="332" height="244" rx="5" fill="#d5cbab" stroke="#dbca9b" stroke-width="6"/>
+<g><rect x="160" y="22" width="324" height="236" fill="#a8c1ad"/>
+<path d="M160 126Q235 78 294 112T484 62V22H160Z" fill="#679fa0"/>
+<circle cx="405" cy="72" r="34" fill="#e9d7a1"/>
+<path d="M160 183C228 116 301 190 371 134S448 142 484 121V258H160Z" fill="#365a4e"/>
+<path d="M160 219C240 164 284 230 364 186S437 209 484 175V258H160Z" fill="#79936b"/>
+<path d="M160 249C222 210 285 264 352 218S432 244 484 215V258H160Z" fill="#b3a076"/>
+<path d="M191 177l24-65 19 65M298 180l41-83 48 92" fill="#a6b7a7" opacity=".54"/></g>
+<!-- Vertical seams use a shared tab/surround contour across both rows. -->
+<g stroke="#142f36" stroke-opacity=".82" stroke-width="4.8" stroke-linejoin="round" fill="none">
+<path d="M268 22V70C280 62 291 69 292 80C292 94 280 103 268 95V140
+ M268 140V176C256 166 245 175 245 187C245 200 256 207 268 199V258"/>
+<path d="M376 22V67C364 60 352 68 352 81C352 96 363 102 376 94V140
+ M376 140V170C390 160 402 168 402 183C402 198 389 206 376 198V258"/>
+<!-- Horizontal seam is also shared continuously: each tab is an actual notch. -->
+<path d="M160 140H196C190 128 200 115 214 115C228 115 239 128 232 140H268
+ H304C298 154 310 168 323 168C339 168 349 154 340 140H376
+ H414C407 127 418 115 431 115C445 115 453 127 447 140H484"/></g>
+<g stroke="#f3e6c3" stroke-opacity=".65" stroke-width="1.35" fill="none" stroke-linejoin="round">
+<path d="M271 22V67C284 60 295 70 295 80C295 98 284 105 271 98V137"/>
+<path d="M379 22V64C367 58 349 67 349 81C349 101 365 107 379 96V137"/>
+<path d="M163 143H194C188 125 201 112 214 112C232 112 245 126 236 143H265"/>
+<path d="M380 143H411C404 122 417 112 431 112C450 112 458 127 451 143H481"/>
+</g><rect x="160" y="22" width="324" height="236" fill="none" stroke="#ece4c7" stroke-width="3"/></g>
+<rect width="600" height="280" fill="none" stroke="#efe0af" stroke-opacity=".19" stroke-width="2"/></svg>

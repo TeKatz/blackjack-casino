@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Collections;
+using BlackjackCasino.Core.Adventure;
 
 namespace BlackjackCasino.Desktop;
 
@@ -42,6 +43,7 @@ public partial class MainWindow
             ModernAlbumClaim, ModernProfileRename, ModernProfileEquip,
             ActivateModernSeason, ModernVaultOpen,
             ModernChallengeClaim, ModernChallengesClaimAll, OnModernProgressionClosed, OpenProgression,
+            ModernArcadeRun,
             OpenNativePlayerProfile, () => OpenModernProgression("vault"),
             () => { ClaimDailyLoginFromDrawer(); modernLobby?.Refresh(); },
             SetModernLobbyLanguage, Close, OnModernLobbyStateChanged,
@@ -209,6 +211,9 @@ public partial class MainWindow
     {
         PlayerProfileState profile = progressionController!.Profile;
         LobbyProgressSnapshot progress = LobbyProgressSnapshot.From(profile);
+        int totalChallenges = ChallengeRegistry.All.Count;
+        int completedChallenges = ChallengeRegistry.All.Count(challenge =>
+            ChallengeRegistry.Progress(profile, challenge) >= challenge.Goal);
         CasinoVaultSnapshot vault = CasinoVaultService.Snapshot(profile);
         DailyLoginStatus daily = GetDailyLoginStatus();
         int cycleStart = Math.Max(0, daily.TotalClaims - daily.CycleCompletedSteps);
@@ -254,11 +259,13 @@ public partial class MainWindow
             PortraitVariant = CosmeticCatalog.Get(profile.EquippedPortraitId).VisualVariant,
             FrameVariant = CosmeticCatalog.Get(profile.EquippedFrameId).VisualVariant,
             Bankroll = Money(session.Bankroll),
+            BankrollValue = session.Bankroll,
             EmpireCredits = empire is null ? "—" : FormatModernEmpireCredits(empire.Credits) + " cr",
             News = ReleaseNotesCatalog.Current,
             InstalledVersion = AppVersion.Current.ToString(),
             AlbumOwned = profile.Collection.OwnedCardIds.Count,
             AlbumTotal = CollectionCatalog.Cards.Count,
+            AlbumPacksReady = CollectionService.UnopenedPackCount(profile),
             SeasonTier = progress.SeasonTier,
             SeasonNextTier = progress.SeasonNextTier,
             SeasonExperience = progress.SeasonExperience,
@@ -267,6 +274,10 @@ public partial class MainWindow
             SeasonComplete = progress.SeasonComplete,
             ChallengeName = progress.ChallengeName,
             ChallengeFraction = progress.ChallengeFraction,
+            ChallengeTotal = totalChallenges,
+            ChallengeCompleted = completedChallenges,
+            ChallengeOverallFraction = totalChallenges == 0 ? 1.0
+                : (double)completedChallenges / totalChallenges,
             ChallengesReady = progress.ReadyCount,
             VaultTier = vault.Tier.Name.Replace(" Vault", "", StringComparison.Ordinal).ToUpperInvariant(),
             VaultAmount = Money(vault.CurrentAmount),
@@ -283,7 +294,8 @@ public partial class MainWindow
                 Id = mode.Id,
                 Title = Localize(mode, mode.Title),
                 Category = Localize(mode, mode.Category),
-                Description = Localize(mode, mode.Description),
+                Description = mode.Id == "roulette" && Localization.Language == UiLanguagePreference.German
+                    ? "Europäisches Roulette mit einer Null und Einsätzen bis $100K." : Localize(mode, mode.Description),
                 Enabled = modeRegistry.CanOpen(mode.Id),
                 Secondary = modeRegistry.HasSecondary(mode.Id) && modeRegistry.CanOpenSecondary(mode.Id),
             }).ToArray(),

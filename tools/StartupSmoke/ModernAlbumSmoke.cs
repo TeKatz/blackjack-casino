@@ -64,6 +64,33 @@ internal static class ModernAlbumSmoke
                 action.GetProperty("visible").GetBoolean()
                 && action.GetProperty("reachable").GetBoolean()),
             "Real pack buttons are not reachable: " + decoded);
+        // Install the interruption *before* opening the pack. On a fast
+        // Windows runner with reduced motion the reveal and automatic native
+        // completion can finish between two ExecuteScriptAsync calls. The old
+        // smoke allowed "phase-summary", so it sometimes navigated away after
+        // a legitimately completed opening and incorrectly expected a receipt.
+        // A MutationObserver exits atomically at the first partially revealed
+        // frame, before the timer for another card (or completion) can fire.
+        await web.ExecuteScriptAsync("""
+            (() => {
+              window.__albumSmokeInterrupt = { interrupted: false, overflowHidden: false };
+              const observer = new MutationObserver(() => {
+                const panel = document.querySelector('.album-opening-panel.phase-reveal');
+                if (!panel || window.__albumSmokeInterrupt.interrupted) return;
+                const close = panel.querySelector('.album-opening-exit');
+                if (!close || panel.querySelectorAll('.album-reveal-slot.flipped').length >= 5) return;
+                window.__albumSmokeInterrupt.overflowHidden =
+                  getComputedStyle(panel).overflowY === 'hidden';
+                window.__albumSmokeInterrupt.interrupted = true;
+                observer.disconnect();
+                close.click();
+              });
+              observer.observe(document.body, {
+                subtree: true, childList: true, attributes: true, attributeFilter: ['class']
+              });
+              return true;
+            })()
+            """);
         await web.ExecuteScriptAsync("document.querySelector('.album-opening-primary')?.click()");
         await Until(()=>profile.Collection.PendingOpening is not null,
             "Opening a React pack did not persist the native receipt.");
@@ -71,40 +98,78 @@ internal static class ModernAlbumSmoke
         Require(receipt.Cards.Count==5 && profile.Collection.PacksOpened==beforeOpened+1
             &&profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common)==beforePacks-1,
             "A single React open did not commit exactly one five-card transaction.");
-        await Wait(web,"Boolean(document.querySelector('.album-opening-panel.phase-reveal')"
-            +"||document.querySelector('.album-opening-panel.phase-summary'))",
-            "React did not start the pack reveal sequence.");
-        await web.ExecuteScriptAsync(
-            "document.querySelector('.phase-reveal .album-opening-secondary')?.click()");
-        await Wait(web,"Boolean(document.querySelector('.album-opening-panel.phase-summary'))",
-            "The five-card reveal did not reach its result summary.");
+        await Wait(web,
+            "window.__albumSmokeInterrupt?.interrupted===true"
+            +"&&!document.querySelector('.album-opening-panel')",
+            "React did not safely interrupt the pack during its card reveal.");
+        Require(await web.ExecuteScriptAsync(
+            "window.__albumSmokeInterrupt.overflowHidden")=="true",
+            "Pack opening still exposes an internal vertical scrollbar.");
         Require(profile.Collection.PendingOpening?.Id==receipt.Id,
-            "Client-side animation cleared or regenerated the C# receipt.");
-        await Capture(web,Path.Combine(output,"modern-album-five-cards.png"));
-
-        // Exit mid-reveal and reenter. The exact same receipt must be recoverable.
-        await web.ExecuteScriptAsync("document.querySelector('.album-opening-exit')?.click()");
+            "Leaving the incomplete reveal discarded its durable transaction.");
         await web.ExecuteScriptAsync("document.querySelector('.album-page .shop-back')?.click()");
         await Until(()=>modern.RecordsPage is null,"React Album failed to return to lobby.");
         Require(profile.Collection.PendingOpening?.Id==receipt.Id,
-            "Navigating away from the reveal discarded its durable transaction.");
-        await web.ExecuteScriptAsync("document.querySelector('.header-compact:nth-child(2)')?.click()");
-        await Wait(web,"Boolean(document.querySelector('.album-opening-panel.phase-reveal')"
-            +"||document.querySelector('.album-opening-panel.phase-summary'))",
-            "A stored opening was not resumed after reentering the Album.");
-        Require(profile.Collection.PendingOpening?.Id==receipt.Id,
-            "Resuming a pack produced a different receipt.");
+            "Navigating away mid-reveal discarded its durable transaction.");
+        // Wait for the actual lobby DOM, then reopen through the accessible
+        // Collections navigation. Reduced-motion reveals take only 15ms per
+        // card; a polling test can miss both reveal and summary entirely.
+        await Wait(web,"Boolean(document.querySelector('.lobby-hero')"
+            +"&&!document.querySelector('.album-page'))",
+            "React lobby did not finish restoring after Album close.");
+        await web.ExecuteScriptAsync("""
+            (() => {
+              window.__albumSmokeResume = { id: null, phases: [] };
+              const observer = new MutationObserver(() => {
+                const panel = document.querySelector('.album-opening-panel');
+                if (!panel) return;
+                const phase = ['reveal','summary','finished'].find(p => panel.classList.contains('phase-'+p));
+                if (!phase || !panel.dataset.openingId) return;
+                window.__albumSmokeResume.id = panel.dataset.openingId;
+                window.__albumSmokeResume.phases.push(phase);
+                if (phase === 'finished') observer.disconnect();
+              });
+              observer.observe(document.body, {
+                subtree: true, childList: true, attributes: true,
+                attributeFilter: ['class','data-opening-id']
+              });
+              return true;
+            })()
+            """);
         await web.ExecuteScriptAsync(
-            "document.querySelector('.phase-reveal .album-opening-secondary')?.click()");
-        await Wait(web,"Boolean(document.querySelector('.phase-summary .album-opening-primary'))",
-            "Resumed pack cannot be collected.");
-        await web.ExecuteScriptAsync("document.querySelector('.phase-summary .album-opening-primary')?.click()");
+            "[...document.querySelectorAll('.lobby-nav-item')]"
+            +".find(x=>/Collections|Sammlungen/.test(x.textContent||''))?.click()");
+        await Wait(web,"Boolean(window.__albumSmokeResume?.id"
+            +"&&window.__albumSmokeResume.phases.some(p=>p==='reveal'||p==='summary'||p==='finished'))",
+            "The stored pack opening did not resume.");
+        string? resumedId=JsonSerializer.Deserialize<string>(
+            await web.ExecuteScriptAsync("window.__albumSmokeResume.id"));
+        Require(Guid.TryParse(resumedId,out Guid resumedGuid) && resumedGuid==receipt.Id
+            && (profile.Collection.PendingOpening is null || profile.Collection.PendingOpening.Id==receipt.Id)
+            && profile.Collection.PacksOpened==beforeOpened+1,
+            "Resuming a pack generated a different receipt or opened an extra pack.");
+        await Wait(web,"document.querySelectorAll('.album-reveal-slot.flipped').length===5"
+            +"&&document.querySelectorAll('.album-reveal-result').length===5",
+            "Five card faces and the individual new/duplicate badges were not revealed.");
+        Require(await web.ExecuteScriptAsync(
+            "(()=>{const slots=[...document.querySelectorAll('.album-reveal-slot')];"
+            +"return slots.length===5&&slots.every((slot,i)=>{"
+            +"const inner=slot.querySelector('.album-reveal-inner');"
+            +"const badge=slot.querySelector('.album-reveal-result');"
+            +"return inner&&getComputedStyle(inner).filter==='none'&&badge"
+            +"&&/^(NEW|DUPLICATE|NEU|DUPLIKAT)/.test(badge.textContent.trim());});})()")=="true",
+            "Reveal is displaying the mirrored card backs or missing per-card badges.");
+        await Capture(web,Path.Combine(output,"modern-album-five-cards.png"));
         await Until(()=>profile.Collection.PendingOpening is null,
-            "Collect did not complete the original durable C# receipt.");
+            "The single pack was not automatically completed.",attempts:250);
         await Wait(web,"Boolean(document.querySelector('.album-opening-panel.phase-finished'))",
-            "React Album did not acknowledge the completed pack.");
+            "Automatic native completion never reached the finished stage.");
         Require(profile.Collection.PacksOpened==beforeOpened+1,
             "Resuming the reveal opened the same pack twice.");
+        Require(await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.phase-finished .album-opening-primary')"
+            +"&&document.querySelector('.phase-finished .album-opening-secondary'))")=="true",
+            "Finished pack must show Back to collection and Open another Pack.");
         await web.ExecuteScriptAsync("document.querySelector('.album-opening-exit')?.click()");
 
         // Open-all must complete each pack before sending the next command.

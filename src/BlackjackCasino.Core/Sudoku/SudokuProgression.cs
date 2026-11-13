@@ -21,7 +21,12 @@ public sealed class SudokuProgression(ProgressionService progression)
         long xp = PlayerExperience(completion.Difficulty);
         return LoungeProgression.GrantOnce(
             progression,
-            () => progression.State.Sudoku.Record(completion),
+            () =>
+            {
+                if (!progression.State.Sudoku.Record(completion)) return false;
+                SudokuCareer.Grant(progression.State, completion.Difficulty);
+                return true;
+            },
             xp,
             SeasonExperience(completion.Difficulty));
     }

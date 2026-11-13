@@ -74,3 +74,36 @@
 @media(max-width:1120px){.sudoku-play-columns{grid-template-columns:minmax(370px,1fr) minmax(260px,300px);gap:12px}.sudoku-difficulty h3{font-size:21px}.sudoku-difficulty{padding:11px}}
 @media(max-width:810px){.sudoku-difficulties{grid-template-columns:repeat(2,minmax(0,1fr))}.sudoku-play-columns{grid-template-columns:1fr}.sudoku-board{width:min(100%,620px)}.sudoku-actions{max-width:620px;margin:auto;width:100%}.sudoku-daily-card{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){.sudoku-cell{transition:none}}
+
+/* Independent Sudoku mode gallery, each illustration corresponds to its actual rules. */
+.sudoku-mode-menu{color:#f0e7d3;max-width:1400px;margin:0 auto;padding:4px 0 24px}
+.sudoku-mode-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(285px,370px);gap:18px;padding:23px 28px;margin-bottom:17px;border:1px solid #6b8e847e;border-radius:17px;background:radial-gradient(ellipse at 95% 0,#31625c55,transparent 49%),linear-gradient(115deg,#122b2b,#101c2a);box-shadow:0 16px 40px #0006}
+.sudoku-mode-hero h1{font:normal clamp(26px,3.4vw,45px) Georgia,serif;margin:11px 0;color:#f9e6c4}
+.sudoku-mode-hero p{color:#b6ccc6;font-size:13px;line-height:1.7;max-width:590px}
+.sudoku-career-overview{background:#081a24ad;border:1px solid #89bda65e;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:7px;box-shadow:inset 0 1px 12px #a0dcbb0b}
+.sudoku-career-overview>span{color:#abccb9;font-size:10px;letter-spacing:.16em;font-weight:750}
+.sudoku-career-overview>strong{font:normal 34px Georgia,serif;color:#fae4ad}.sudoku-career-overview strong small{font:normal 13px Segoe UI,sans-serif;color:#8ba7a1}
+.sudoku-career-overview>small{font-size:11px;color:#b2beb3}
+.sudoku-career-track{background:#1b3034;border-radius:20px;height:9px;overflow:hidden;box-shadow:inset 0 1px 4px #0009}
+.sudoku-career-track i{display:block;height:100%;background:linear-gradient(90deg,#519d8d,#e3c57a);box-shadow:0 0 12px #9fe5b8;border-radius:20px;transition:width .3s}
+.sudoku-career-rewards{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;margin-top:4px;font-size:10px;color:#e6d19d}
+.sudoku-mode-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.sudoku-mode-tile{padding:0;display:flex;flex-direction:column;overflow:hidden;border:1px solid #567e7799;border-radius:15px;color:#f5e5c9;text-align:left;background:#11272a;cursor:pointer;box-shadow:0 13px 29px #0005;transition:transform .2s,border-color .2s,box-shadow .2s}
+.sudoku-mode-tile:hover,.sudoku-mode-tile:focus-visible{transform:translateY(-4px);border-color:#e4c387;box-shadow:0 20px 35px #0008,0 0 0 1px #dabb6855}
+.sudoku-mode-tile img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;filter:saturate(.98)}
+.sudoku-mode-tile-body{padding:13px 17px 16px;display:flex;flex-direction:column;align-items:start;gap:5px;flex:1}
+.sudoku-mode-kicker{font-weight:800;font-size:10px;letter-spacing:.14em;color:#a9c9bd}.sudoku-mode-tile.available .sudoku-mode-kicker{color:#f4d499}
+.sudoku-mode-tile-body strong{font:normal 24px Georgia,serif;color:#f0e5cb}
+.sudoku-mode-tile-body>span:not(.sudoku-mode-kicker){font-size:12px;color:#acc0b8;line-height:1.5;min-height:35px}
+.sudoku-mode-tile-body>b{font-size:10px;letter-spacing:.07em;color:#e1c48d;margin-top:7px}
+.sudoku-mode-tile.upcoming{border-color:#466671}.sudoku-mode-tile.upcoming .sudoku-mode-tile-body>b{color:#a7c5ce}
+.sudoku-mode-back{display:inline-flex;align-items:center;background:none;border:1px solid #688878;border-radius:8px;padding:8px 12px;color:#e9d6ab;cursor:pointer;margin:0 0 12px;font-size:12px}
+.sudoku-mode-back:hover{background:#315149}
+.sudoku-mode-coming{max-width:700px;margin:0 auto 18px;padding:18px 24px 26px;border:1px solid #648680;border-radius:15px;background:linear-gradient(135deg,#142d31,#111d2b);box-shadow:0 20px 35px #0005}
+.sudoku-mode-coming img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:9px;margin-bottom:17px}
+.sudoku-mode-coming h2{font:normal 30px Georgia,serif;margin:8px 0}
+.sudoku-mode-coming p{color:#acc9c0;font-size:13px;line-height:1.7}
+.sudoku-career-note{color:#a9beb4;font-size:12px;line-height:1.6;margin:18px 4px}
+@media(max-width:1100px){.sudoku-mode-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:710px){.sudoku-mode-hero{grid-template-columns:1fr;padding:17px}.sudoku-mode-grid{grid-template-columns:1fr}.sudoku-mode-tile{flex-direction:row}.sudoku-mode-tile img{width:42%;aspect-ratio:4/3;object-fit:cover}.sudoku-mode-tile-body strong{font-size:20px}}
+@media(prefers-reduced-motion:reduce){.sudoku-mode-tile{transition:none}.sudoku-career-track i{transition:none}}

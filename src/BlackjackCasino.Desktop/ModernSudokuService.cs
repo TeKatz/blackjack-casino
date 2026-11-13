@@ -17,6 +17,8 @@ internal sealed class ModernSudokuService
     private readonly Func<bool> guidesVisible;
     private readonly Action<bool> setGuidesVisible;
     private readonly Func<string> rewardNotice;
+    private readonly Func<SudokuCareerState> careerState;
+    private readonly ModernSudokuVariants? variants;
     private readonly Stack<SudokuBoardFrame> undo = new();
     private readonly Stack<SudokuBoardFrame> redo = new();
     private readonly Stopwatch elapsed = new();
@@ -29,7 +31,8 @@ internal sealed class ModernSudokuService
     internal ModernSudokuService(SudokuProgressState saved, Action<SudokuProgressState> persist,
         Func<bool> timerVisible, Action<bool> setTimerVisible,
         Func<bool> guidesVisible, Action<bool> setGuidesVisible,
-        Func<string> rewardNotice)
+        Func<string> rewardNotice, Func<SudokuCareerState>? careerState = null,
+        ModernSudokuVariants? variants = null)
     {
         progress = SudokuProgressState.Normalize(saved);
         this.persist = persist;
@@ -38,6 +41,8 @@ internal sealed class ModernSudokuService
         this.guidesVisible = guidesVisible;
         this.setGuidesVisible = setGuidesVisible;
         this.rewardNotice = rewardNotice;
+        this.careerState = careerState ?? (() => new SudokuCareerState());
+        this.variants = variants;
     }
 
     internal bool InGame => board is not null;
@@ -63,6 +68,9 @@ internal sealed class ModernSudokuService
             };
         }).ToArray();
 
+        SudokuCareerState career = careerState();
+        long nextCareerXp = career.Level < SudokuCareer.MaximumLevel
+            ? SudokuCareer.ExperienceForNextLevel(career.Level) : 0;
         object? game = null;
         if (puzzle is not null && board is not null)
         {
@@ -88,6 +96,10 @@ internal sealed class ModernSudokuService
         return new
         {
             Screen = InGame ? "game" : "library",
+            Variant = variants?.Snapshot(), VariantEntries = variants?.Entries() ?? [],
+            Career = new { career.Level, career.Experience, NextLevelXp = nextCareerXp,
+                career.LifetimeExperience, career.CosmeticPointsEarned,
+                PointsPerLevel = SudokuCareer.CosmeticPointsPerLevel },
             ShowTimer = timerVisible(), ShowGuides = guidesVisible(),
             Entries = entries,
             NormalCompleted = progress.CompletedPuzzleIds.Count(id =>
@@ -105,6 +117,11 @@ internal sealed class ModernSudokuService
 
     internal (bool Success, string Message) Execute(ModernSudokuCommand command)
     {
+        if (command.Action.StartsWith("sudoku.variant.", StringComparison.Ordinal))
+            return InGame ? (false, "Close Classic Sudoku before opening another mode.")
+                : variants?.Execute(command) ?? (false, "Sudoku variants are not available.");
+        if (variants?.InGame == true && command.Action is not ("sudoku.guides" or "sudoku.timer"))
+            return (false, "Return to the variant menu before opening Classic Sudoku.");
         switch (command.Action)
         {
             case "sudoku.new":
@@ -318,12 +335,14 @@ internal sealed class ModernSudokuService
 
     internal void CheckpointClock()
     {
+        variants?.CheckpointClock();
         if (!InGame || !elapsed.IsRunning || CurrentSeconds - lastPersistedSeconds < 15) return;
         SaveElapsed();
     }
 
     internal void Stop()
     {
+        variants?.Stop();
         SaveElapsed();
         elapsed.Stop();
     }

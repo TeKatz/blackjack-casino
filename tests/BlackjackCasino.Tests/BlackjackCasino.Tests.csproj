@@ -25,9 +25,11 @@
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernNineLivesSnapshot.cs" Link="Presentation/ModernNineLivesSnapshot.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernNeonVaultProtocol.cs" Link="Presentation/ModernNeonVaultProtocol.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernMergeProtocol.cs" Link="Presentation/ModernMergeProtocol.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/ModernMergeSnapshot.cs" Link="Presentation/ModernMergeSnapshot.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernDiceProtocol.cs" Link="Presentation/ModernDiceProtocol.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernSudokuProtocol.cs" Link="Presentation/ModernSudokuProtocol.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernSudokuService.cs" Link="Presentation/ModernSudokuService.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/ModernSudokuVariants.cs" Link="Presentation/ModernSudokuVariants.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernSolitaireProtocol.cs" Link="Presentation/ModernSolitaireProtocol.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernSolitaireService.cs" Link="Presentation/ModernSolitaireService.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernWordSearchProtocol.cs" Link="Presentation/ModernWordSearchProtocol.cs" />
@@ -41,6 +43,8 @@
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernAdventureService.cs" Link="Presentation/ModernAdventureService.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernTowerDefenseProtocol.cs" Link="Presentation/ModernTowerDefenseProtocol.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernTowerDefenseService.cs" Link="Presentation/ModernTowerDefenseService.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/ModernMinesweeperProtocol.cs" Link="Presentation/ModernMinesweeperProtocol.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/ModernMinesweeperService.cs" Link="Presentation/ModernMinesweeperService.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernLoungeCatalog.cs" Link="Presentation/ModernLoungeCatalog.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/CasinoModeRegistry.cs" Link="Infrastructure/CasinoModeRegistry.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/BrowserRecoverySession.cs" Link="Infrastructure/BrowserRecoverySession.cs" />
@@ -77,6 +81,7 @@
     <Compile Include="../../src/BlackjackCasino.Desktop/DailyLoginClaimAudio.cs" Link="Audio/DailyLoginClaimAudio.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/CasinoAudio.cs" Link="Audio/CasinoAudio.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/SlotAudio.cs" Link="Audio/SlotAudio.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/NineLivesAudio.cs" Link="Audio/NineLivesAudio.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\BlackjackCasino.Core\BlackjackCasino.Core.csproj" />

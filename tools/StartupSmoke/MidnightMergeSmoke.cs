@@ -25,7 +25,8 @@ internal static class MidnightMergeSmoke
         Require(await web.ExecuteScriptAsync(
             "Boolean(document.querySelector('[data-testid=\"midnight-merge-app\"]')"
             + "&&document.querySelectorAll('.merge-cell').length===42"
-            + "&&document.querySelectorAll('.merge-producer').length===2"
+            + "&&document.querySelectorAll('.merge-producer').length===6"
+            + "&&document.querySelectorAll('.merge-estate-stop').length===10"
             + "&&document.querySelectorAll('.merge-order').length>=6"
             + "&&document.querySelector('[data-testid=\"merge-next-upgrade\"]')"
             + "&&document.querySelector('.merge-room-art'))") == "true",
@@ -37,6 +38,17 @@ internal static class MidnightMergeSmoke
         MergeGameState initial = State(window);
         Require(initial.Items.Count == 0, "Fresh Merge board should be empty.");
         await Capture(web, Path.Combine(output, "merge-modern-initial.png"));
+        // Regression: a pending native save must not temporarily disable/dim
+        // unrelated buttons. Observe a permanently empty board cell throughout
+        // multiple spawns and merges rather than checking only settled frames.
+        Require(await web.ExecuteScriptAsync(
+            "(()=>{const cell=document.querySelector('[data-testid=\\\"merge-cell-20\\\"]');"
+            + "if(!cell)return false;window.__mergeStableCellMutations=0;"
+            + "window.__mergeStableObserver=new MutationObserver(records=>"
+            + "{window.__mergeStableCellMutations+=records.length;});"
+            + "window.__mergeStableObserver.observe(cell,"
+            + "{attributes:true,attributeFilter:['disabled','style']});return true;})()") == "true",
+            "Failed to install the pending-state flicker regression observer.");
 
         await Action(web, window, "[data-testid=\"merge-producer-chip-case\"]", 1);
         await Action(web, window, "[data-testid=\"merge-producer-chip-case\"]", 2);
@@ -50,6 +62,12 @@ internal static class MidnightMergeSmoke
         Require(State(window).Items.Single().DefinitionId == "chip-2"
             && State(window).TotalMerges == 1, "React Merge did not merge the native chip identities.");
         await Capture(web, Path.Combine(output, "merge-modern-tier2.png"));
+        Require(await web.ExecuteScriptAsync(
+            "(()=>{window.__mergeStableObserver?.disconnect();"
+            + "return window.__mergeStableCellMutations===0"
+            + "&&document.querySelector('[data-testid=\\\"merge-cell-20\\\"]')"
+            + "?.disabled===false;})()") == "true",
+            "Spawn/merge temporarily disabled unrelated tiles, causing a full-board opacity flash.");
 
         await Action(web, window, "[data-testid=\"merge-deliver-first-stack\"]", 4);
         Require(State(window).RenovationPoints == 10 && State(window).Items.Count == 0,
@@ -108,6 +126,45 @@ internal static class MidnightMergeSmoke
             "React Merge did not rerender the native German resource translations.");
         await Capture(web, Path.Combine(output, "merge-modern-german.png"));
 
+        window.Width = 1920; window.Height = 1080; window.UpdateLayout();
+        await Task.Delay(250);
+        // Hosted Windows runners may expose only 1078x752 physical pixels,
+        // even after setting a larger WPF Window.Width/Height. Test the 1920
+        // CSS breakpoint in a temporary browser viewport, then restore it.
+        bool emulatedWide = int.Parse(await web.ExecuteScriptAsync("innerWidth"),
+            System.Globalization.CultureInfo.InvariantCulture) < 1580;
+        if (emulatedWide)
+        {
+            await web.CallDevToolsProtocolMethodAsync("Emulation.setDeviceMetricsOverride",
+                "{\"width\":1920,\"height\":1080,\"deviceScaleFactor\":1,\"mobile\":false}");
+            await Task.Delay(230);
+        }
+        string wideMetrics = await web.ExecuteScriptAsync(
+            "(()=>{const board=document.querySelector('[data-testid=\\\"merge-board\\\"]');"
+            + "const tiles=document.querySelectorAll('.merge-cell');"
+            + "const room=document.querySelector('.merge-scene');"
+            + "const root=document.querySelector('.merge-scroll');"
+            + "const columns=board?getComputedStyle(board).gridTemplateColumns.trim().split(/\\s+/):[];"
+            + "const tw=tiles[0]?.getBoundingClientRect().width||0;"
+            + "const th=tiles[41]?.getBoundingClientRect().height||0;"
+            + "const roomHeight=room?.getBoundingClientRect().height||0;"
+            + "const overflow=root?getComputedStyle(root).overflowY:'';"
+            + "const scrollHeight=root?.scrollHeight||0,clientHeight=root?.clientHeight||0;"
+            + "return {width:innerWidth,height:innerHeight,tiles:tiles.length,columns:columns.length,"
+            + "tileWidth:tw,tileHeight:th,roomHeight,overflow,scrollHeight,clientHeight,"
+            + "ok:tiles.length===42&&columns.length===14&&tw>=70&&th>=70"
+            + "&&roomHeight>=180&&overflow==='hidden'&&scrollHeight<=clientHeight+4};})()");
+        using (JsonDocument metrics = JsonDocument.Parse(wideMetrics))
+            Require(metrics.RootElement.GetProperty("ok").GetBoolean(),
+                "Wide Merge layout invariant failed: " + wideMetrics);
+        if (!emulatedWide)
+            await Capture(web, Path.Combine(output, "merge-wide-14x3-1920x1080.png"));
+        if (emulatedWide)
+        {
+            await web.CallDevToolsProtocolMethodAsync("Emulation.clearDeviceMetricsOverride", "{}");
+            await Task.Delay(130);
+        }
+
         window.Width = 1080; window.Height = 720; window.UpdateLayout();
         await Task.Delay(180);
         Require(await web.ExecuteScriptAsync(
@@ -117,6 +174,65 @@ internal static class MidnightMergeSmoke
             + "&&cells[41].getBoundingClientRect().width>=24)})()") == "true",
             "React Merge 7x6 table became unusable at 1080×720.");
         await Capture(web, Path.Combine(output, "merge-modern-german-1080x720.png"));
+        string compactMetrics = await web.ExecuteScriptAsync(
+            "(()=>{if(innerWidth<1000||innerHeight<600)return {ok:true,smallViewport:true};"
+            + "const controls=document.querySelector('.merge-supply');"
+            + "const tile=document.querySelector('.merge-producer');"
+            + "const help=document.querySelector('[data-testid=\\\"merge-how-to-play\\\"]');"
+            + "const settings=document.querySelector('[data-testid=\\\"merge-settings\\\"]');"
+            + "const header=document.querySelector('.merge-header');"
+            + "const tileHeight=tile?.getBoundingClientRect().height||0;"
+            + "const settingsBottom=settings?.getBoundingClientRect().bottom||0;"
+            + "const headerBottom=header?.getBoundingClientRect().bottom||0;"
+            + "const result={width:innerWidth,height:innerHeight,tileHeight,"
+            + "helpInHeader:!!help?.closest('.merge-header-tools'),"
+            + "settingsInHeader:!!settings?.closest('.merge-header-tools'),"
+            + "footerPresent:!!document.querySelector('.merge-footer'),settingsBottom,headerBottom};"
+            + "return {...result,ok:!!controls&&!!tile&&!!help&&!!settings"
+            + "&&tileHeight>=44&&result.helpInHeader&&result.settingsInHeader"
+            + "&&!result.footerPresent&&settingsBottom<=headerBottom+4};})()");
+        using (JsonDocument metrics = JsonDocument.Parse(compactMetrics))
+            Require(metrics.RootElement.GetProperty("ok").GetBoolean(),
+                "Compact Merge layout failed: " + compactMetrics);
+        await web.ExecuteScriptAsync(
+            "document.querySelector('[data-testid=\\\"merge-how-to-play\\\"] summary')?.click()");
+        Require(await web.ExecuteScriptAsync(
+            "(()=>{const description=document.querySelector('[data-testid=\\\"merge-how-to-play\\\"][open] p');"
+            + "const bounds=description?.getBoundingClientRect();"
+            + "const header=document.querySelector('.merge-header')?.getBoundingClientRect();"
+            + "return Boolean(description&&bounds&&header"
+            + "&&bounds.top>=header.bottom-3&&bounds.bottom<=innerHeight+3"
+            + "&&bounds.left>=0&&bounds.right<=innerWidth+3"
+            + "&&description.scrollWidth<=description.clientWidth+2);})()") == "true",
+            "Header How to Play popup clips or falls outside the viewport.");
+        await Capture(web, Path.Combine(output, "merge-modern-german-help-expanded.png"));
+        await web.ExecuteScriptAsync(
+            "document.querySelector('[data-testid=\\\"merge-how-to-play\\\"] summary')?.click()");
+        Require(await web.ExecuteScriptAsync(
+            "(()=>{if(innerWidth<1000||innerHeight<600)return true;"
+            + "const root=document.querySelector('.merge-scroll');"
+            + "const orders=document.querySelector('.merge-orders');"
+            + "return Boolean(root&&orders"
+            + "&&getComputedStyle(root).overflowY==='hidden'"
+            + "&&root.scrollHeight<=root.clientHeight+4"
+            + "&&getComputedStyle(orders).overflowY==='auto')})()") == "true",
+            "Merge workshop unexpectedly requires page scrolling at desktop size.");
+        Require(await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.merge-producer.unlocked small')"
+            + "?.textContent.includes('STUFE I'))") == "true",
+            "Active supply sources still occupy space with the legacy repeated explanation.");
+        await web.ExecuteScriptAsync("document.querySelector('[data-testid=\"merge-scene-expand\"]')?.click()");
+        Require(await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.merge-scene.is-expanded')"
+            + "&&document.querySelector('.merge-scene.is-expanded .merge-room-art')"
+            + "?.getAttribute('preserveAspectRatio')==='xMidYMid meet')") == "true",
+            "Expanded Merge panorama crops the scene instead of showing its complete viewBox.");
+        await Capture(web, Path.Combine(output, "merge-panorama-full-frame.png"));
+        await web.ExecuteScriptAsync("document.querySelector('[data-testid=\"merge-scene-expand\"]')?.click()");
+        Require(await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.merge-scene:not(.is-expanded) .merge-room-art')"
+            + "?.getAttribute('preserveAspectRatio')==='xMidYMid slice')") == "true",
+            "Merge panorama did not return to its compact viewport.");
 
         Localization.SetLanguage(UiLanguagePreference.English);
         await Task.Delay(120);
@@ -147,7 +263,7 @@ internal static class MidnightMergeSmoke
         await WaitForExit(window);
         window.Width = 1280; window.Height = 900;
         File.WriteAllText(Path.Combine(output, "merge-result.txt"),
-            "PASS: React 7x6 board, two native producers, click select/move/merge, order receipts, XP milestone, atomic disk save, exact reopen, German and English, 1080x720, WebView2 failure recovery.");
+            "PASS: React 7x6 board, six native producers, ten renovation rooms, click select/move/merge, order receipts, XP milestone, atomic disk save, exact reopen, German and English, 1080x720, WebView2 failure recovery.");
     }
 
     private static MergeGameState State(MainWindow window)

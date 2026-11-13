@@ -1,5 +1,7 @@
 # Midnight Manor 2.0 — Phase 3 technical closeout and player sign-off
 
+> **Historical 2D presentation signoff.** The 2D React bonus and its six SVG room vignettes have since been retired. The current 3D-only presentation, WebGL lifecycle and performance acceptance are documented in [Godot 3D bonus](manor-godot-bonus.md).
+
 **Historical phase-three sign-off (2026-11-04):** This document preserves its original test and branch context. The code was later integrated to `main` via PR #36; current Development is sourced from `develop`. Statements about the feature branch or unchanged `main` below reflect the earlier snapshot, not current policy. See [branching policy](branching-and-release-policy.md).
 
 **Status (2026-11-04):** Phase-3 engineering complete; the modern Manor has replaced the legacy WPF game as the single lobby entry in Development. The replacement passed CI and Development package verification on commit `2114b05` (version `0.10.1-dev.1009`). Each newer commit requires its own checks; visual, sound and long-session hardware testing remain ongoing.

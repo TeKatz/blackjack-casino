@@ -53,3 +53,28 @@
 @media(prefers-reduced-motion:reduce){
  .cosmetic-frame::before,.cosmetic-frame::after{animation:none!important}
 }
+
+
+/* Signature profile finish, intentionally independent of the chosen cosmetic rim. */
+.secret-guest-profile{position:relative;display:inline-grid;place-items:center;isolation:isolate}
+.secret-guest-profile .cosmetic-frame{box-shadow:0 0 12px #f9cb8780,inset 0 0 12px #c49d5a40}
+.secret-guest-profile::before{content:"";position:absolute;inset:-5px;z-index:-1;
+ border:1px solid #e6bb79a1;border-radius:16px;
+ box-shadow:0 0 10px #f2bb7880,0 0 22px #d6906c51;
+ animation:secret-guest-profile-aura 5s ease-in-out infinite}
+.secret-guest-profile-spark{position:absolute;top:-11px;right:-9px;color:#ffe6ab;
+ text-shadow:0 0 10px #e6ac72;pointer-events:none;
+ animation:secret-guest-profile-spark 5s ease-in-out infinite}
+@keyframes secret-guest-profile-aura{50%{opacity:.46;transform:scale(1.04)}}
+@keyframes secret-guest-profile-spark{50%{opacity:.3;transform:rotate(60deg)}}
+[data-reduced=true] .secret-guest-profile::before,[data-reduced=true] .secret-guest-profile-spark{animation:none!important}
+@media(prefers-reduced-motion:reduce){
+ .secret-guest-profile::before,.secret-guest-profile-spark{animation:none!important}
+}
+
+/* Sudoku exclusive titles use their own effects in the shop and on equipped profiles. */
+.cosmetic-title.title-sudoku-premium{color:#b9f7fa;background:linear-gradient(110deg,#79bdcb 0%,#d5f9ff 28%,#9cb8fb 50%,#84ebe2 72%,#e3fcff 100%);background-size:230% 100%;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 6px #70d9ed88);animation:sudoku-title-crystal 5.6s ease-in-out infinite}
+.cosmetic-title.title-sudoku-ultra{color:#ffda8f;background:linear-gradient(110deg,#cb8a41 0%,#ffe8a6 22%,#fff7d9 44%,#bde6fb 56%,#ffe09e 78%,#ad702d 100%);background-size:270% 100%;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 9px #f2bc66bb);animation:sudoku-title-crown 6.4s ease-in-out infinite}
+@keyframes sudoku-title-crystal{0%,100%{background-position:0% 50%;filter:drop-shadow(0 0 4px #70d9ed77)}50%{background-position:100% 50%;filter:drop-shadow(0 0 10px #98eaf8bb)}}
+@keyframes sudoku-title-crown{0%,100%{background-position:0% 50%;filter:drop-shadow(0 0 5px #edb76e88)}50%{background-position:100% 50%;filter:drop-shadow(0 0 14px #ffe7aa)}}
+@media(prefers-reduced-motion:reduce){.cosmetic-title.title-sudoku-premium,.cosmetic-title.title-sudoku-ultra{animation:none;background-position:50% 50%}}

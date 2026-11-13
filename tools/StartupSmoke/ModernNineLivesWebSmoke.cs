@@ -32,6 +32,11 @@ internal static class ModernNineLivesWebSmoke
         Require(await core.ExecuteScriptAsync(
             "Boolean(document.querySelector('[data-testid=\"nine-lives-app\"]')"
             + "&&document.querySelectorAll('.nine-cell').length===9"
+            + "&&document.querySelector('[data-reel-engine=\\\"nine-compositor-v1\\\"]')"
+            + "&&document.querySelectorAll('.nine-reel-column').length===3"
+            + "&&document.querySelectorAll('.nine-cell .nine-galaxy-scene').length===9"
+            + "&&new Set([...document.querySelectorAll('.nine-cell .nine-galaxy-scene')]"
+            + ".map(scene=>scene.dataset.galaxyName)).size===9"
             + "&&document.querySelectorAll('.nine-payrow').length===8"
             + "&&document.querySelectorAll('.nine-bet-grid button').length===13"
             + "&&document.querySelector('[data-testid=\"nine-lives-spin\"]'))") == "true",
@@ -51,8 +56,10 @@ internal static class ModernNineLivesWebSmoke
 
         await core.ExecuteScriptAsync("document.querySelector('[data-testid=\"nine-lives-settings\"]')?.click()");
         Require(await core.ExecuteScriptAsync(
-            "Boolean(document.querySelector('[data-testid=\"nine-lives-settings-panel\"]'))") == "true",
-            "Nine Lives React presentation settings flyout is missing.");
+            "Boolean(document.querySelector('[data-testid=\"nine-lives-settings-panel\"]')"
+            + "&&document.querySelectorAll('[data-testid=\\\"nine-lives-speed\\\"] option').length===3"
+            + "&&document.querySelectorAll('[data-testid=\\\"nine-lives-auto-count\\\"] option').length===5)") == "true",
+            "Nine Lives presentation, speed or autospin controls are missing.");
         await core.ExecuteScriptAsync("document.querySelector('[data-testid=\"nine-lives-paytable\"]')?.click()");
         Require(await core.ExecuteScriptAsync(
             "document.querySelectorAll('[data-testid=\"nine-lives-paytable-details\"] div').length===5") == "true",

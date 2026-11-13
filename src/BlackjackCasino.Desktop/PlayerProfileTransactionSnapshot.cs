@@ -12,6 +12,7 @@ internal enum RoutineProfileTransactionArea
     Memory,
     Jigsaw,
     Manor,
+    Arcade,
 }
 
 /// <summary>
@@ -45,12 +46,17 @@ internal static class PlayerProfileTransactionSnapshot
             OwnedCosmeticIds = [.. source.OwnedCosmeticIds],
             ClaimedChallengeIds = [.. source.ClaimedChallengeIds],
             Adventure = source.Adventure,
+            TowerDefense = source.TowerDefense,
+            Minesweeper = source.Minesweeper,
             Kniffel = source.Kniffel,
             Sudoku = source.Sudoku,
+            SudokuCareer = source.SudokuCareer,
+            SudokuVariants = source.SudokuVariants,
             Solitaire = source.Solitaire,
             WordSearch = source.WordSearch,
             Memory = source.Memory,
             Jigsaw = source.Jigsaw,
+            Arcade = source.Arcade,
             MidnightMerge = source.MidnightMerge,
             Manor = source.Manor,
             // Season rewards can grant card packs, so collection state must be isolated for every
@@ -77,6 +83,8 @@ internal static class PlayerProfileTransactionSnapshot
                 break;
             case RoutineProfileTransactionArea.Sudoku:
                 candidate.Sudoku = ManorPersistence.Clone(source.Sudoku);
+                candidate.SudokuCareer = ManorPersistence.Clone(source.SudokuCareer);
+                candidate.SudokuVariants = ManorPersistence.Clone(source.SudokuVariants);
                 break;
             case RoutineProfileTransactionArea.MidnightMerge:
                 candidate.MidnightMerge = ManorPersistence.Clone(source.MidnightMerge);
@@ -92,6 +100,9 @@ internal static class PlayerProfileTransactionSnapshot
                 break;
             case RoutineProfileTransactionArea.Jigsaw:
                 candidate.Jigsaw = ManorPersistence.Clone(source.Jigsaw);
+                break;
+            case RoutineProfileTransactionArea.Arcade:
+                candidate.Arcade = ManorPersistence.Clone(source.Arcade);
                 break;
             case RoutineProfileTransactionArea.Manor:
                 candidate.Manor = ManorPersistence.Clone(source.Manor);

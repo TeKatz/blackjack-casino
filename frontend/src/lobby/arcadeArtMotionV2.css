@@ -1,0 +1,178 @@
+/* Gameplay-accurate hover v2. Every preview moves only its gameplay actors.
+   The accepted Bullet Storm, Neon Breaker and Death Snake art remains untouched. */
+.arcade-game-card:is(:hover,:focus-visible) .preview-wings-pipes{
+ animation:preview-wings-scroll 5.8s linear infinite}
+.arcade-game-card:is(:hover,:focus-visible) .preview-wings-bird{
+ animation:preview-wings-bob 1s ease-in-out infinite}
+.arcade-game-card:is(:hover,:focus-visible) .preview-wings-flap{
+ transform-box:fill-box;transform-origin:75% 82%;
+ animation:preview-wings-wing .34s ease-in-out infinite alternate}
+.arcade-game-card:is(:hover,:focus-visible) .preview-wings-trail{
+ animation:preview-wings-draft .6s ease-in-out infinite alternate}
+@keyframes preview-wings-scroll{to{translate:-304px 0}}
+@keyframes preview-wings-bob{
+ 0%,100%{translate:0 3px}50%{translate:0 -5px}
+}
+@keyframes preview-wings-wing{from{rotate:-14deg}to{rotate:23deg}}
+@keyframes preview-wings-draft{
+ from{translate:4px 0;opacity:.35}to{translate:-4px 0;opacity:.85}
+}
+
+.arcade-game-card:is(:hover,:focus-visible) .preview-cave-parallax{
+ animation:preview-cave-scroll 2.4s linear infinite}
+.arcade-game-card:is(:hover,:focus-visible) .preview-cave-ship{
+ animation:preview-cave-glide 2.4s ease-in-out infinite}
+.arcade-game-card:is(:hover,:focus-visible) .preview-cave-trail{
+ animation:preview-cave-thrust .46s ease-in-out infinite alternate}
+@keyframes preview-cave-scroll{to{translate:-22px 0}}
+@keyframes preview-cave-glide{
+ 0%,100%{translate:0 8px}52%{translate:0 -9px}
+}
+@keyframes preview-cave-thrust{
+ from{opacity:.38}to{opacity:1}
+}
+
+/* Crucial: absolute SVG coordinates and a *viewBox* rotation origin. Do not
+   rotate a translated <g> around its post-transform bounding box. */
+.arcade-scene .preview-hex-outer,
+.arcade-scene .preview-hex-inner,
+.arcade-scene .preview-hex-player{
+ transform-box:view-box;
+ transform-origin:160px 64px;
+}
+.arcade-game-card:is(:hover,:focus-visible) .preview-hex-outer{
+ animation:preview-hex-approach 3.2s linear infinite}
+.arcade-game-card:is(:hover,:focus-visible) .preview-hex-inner{
+ animation:preview-hex-inner-approach 3.2s linear infinite}
+.arcade-game-card:is(:hover,:focus-visible) .preview-hex-player{
+ animation:preview-hex-steer 3.2s ease-in-out infinite}
+@keyframes preview-hex-approach{
+ 0%{rotate:0deg;scale:1;opacity:1}
+ 75%{rotate:105deg;scale:.69;opacity:1}
+ 92%,100%{rotate:125deg;scale:.66;opacity:0}
+}
+@keyframes preview-hex-inner-approach{
+ 0%{rotate:-23deg;scale:.96;opacity:.6}
+ 68%{rotate:-115deg;scale:.73;opacity:1}
+ 90%,100%{rotate:-145deg;scale:.72;opacity:0}
+}
+@keyframes preview-hex-steer{
+ 0%,100%{rotate:0deg}
+ 32%{rotate:-35deg}
+ 65%{rotate:38deg}
+ 88%{rotate:16deg}
+}
+
+/* Local impact/shadow scale pivots are fixed as well; never drift from the target. */
+.arcade-scene .preview-stack-hit{transform-box:view-box;transform-origin:175px 54px}
+.arcade-scene .preview-spike-shadow{transform-box:view-box;transform-origin:131px 104px}
+.arcade-scene .preview-blade-impact{transform-box:view-box;transform-origin:159px 102px}
+
+/* The static stack never shifts sideways; only the next block falls down. */
+.arcade-game-card:is(:hover,:focus-visible) .preview-stack-drop{
+ animation:preview-stack-vertical 2.1s cubic-bezier(.2,.1,.35,1) infinite}
+.arcade-game-card:is(:hover,:focus-visible) .preview-stack-hit{
+ animation:preview-stack-landing 2.1s ease-out infinite}
+@keyframes preview-stack-vertical{
+ 0%,26%{translate:0 0;opacity:1}
+ 62%,82%{translate:0 28px;opacity:1}
+ 91%,100%{translate:0 28px;opacity:0}
+}
+@keyframes preview-stack-landing{
+ 0%,59%,87%,100%{opacity:0;scale:.65}
+ 68%{opacity:1;scale:1.1}
+}
+
+/* The spike passes underneath at peak jump. Landing begins only after it is gone. */
+.arcade-game-card:is(:hover,:focus-visible) .preview-spike-hazard{
+ animation:preview-spike-pass 1.65s linear infinite}
+.arcade-game-card:is(:hover,:focus-visible) .preview-spike-cube{
+ transform-box:fill-box;transform-origin:center;
+ animation:preview-spike-jump 1.65s ease-in-out infinite}
+.arcade-game-card:is(:hover,:focus-visible) .preview-spike-shadow{
+ animation:preview-spike-shadow 1.65s ease-in-out infinite}
+.arcade-game-card:is(:hover,:focus-visible) .preview-spike-speed{
+ animation:preview-spike-speed .65s linear infinite}
+.arcade-game-card:is(:hover,:focus-visible) .preview-spike-dust{
+ animation:preview-spike-dust 1.65s linear infinite}
+@keyframes preview-spike-pass{
+ to{translate:-165px 0}
+}
+@keyframes preview-spike-jump{
+ 0%,10%{translate:0 0;rotate:0deg}
+ 34%{translate:0 -45px;rotate:105deg}
+ 51%{translate:0 -59px;rotate:190deg}
+ 73%{translate:0 -44px;rotate:280deg}
+ 91%,100%{translate:0 0;rotate:360deg}
+}
+@keyframes preview-spike-shadow{
+ 0%,10%,91%,100%{scale:1;opacity:.4}
+ 51%{scale:.7;opacity:.12}
+}
+@keyframes preview-spike-speed{to{translate:-29px 0;opacity:.12}}
+@keyframes preview-spike-dust{
+ 0%,82%,100%{opacity:0}91%{opacity:1}
+}
+
+/* The blade wheel uses the same fixed center as the drawn rim and hub. */
+.arcade-scene .preview-blade-rotor{
+ transform-box:view-box;
+ transform-origin:159px 55px;
+}
+.arcade-game-card:is(:hover,:focus-visible) .preview-blade-rotor{
+ animation:preview-blade-spin 3.1s linear infinite}
+.arcade-game-card:is(:hover,:focus-visible) .preview-blade-throw{
+ animation:preview-blade-launch 1.5s ease-in infinite}
+.arcade-game-card:is(:hover,:focus-visible) .preview-blade-impact{
+ animation:preview-blade-contact 1.5s ease-out infinite}
+@keyframes preview-blade-spin{to{rotate:360deg}}
+@keyframes preview-blade-launch{
+ 0%,19%{translate:0 0;opacity:1}
+ 50%,54%{translate:0 -14px;opacity:1}
+ 56%,87%,100%{translate:0 -14px;opacity:0}
+}
+@keyframes preview-blade-contact{
+ 0%,48%,77%,100%{opacity:0;scale:.7}
+ 54%{opacity:1;scale:1.2}
+ 72%{opacity:0;scale:1.5}
+}
+
+/* Physics in thumbnail coordinates: start feet (x≈123,y=106) on platform
+   y=106; keep the rising player LEFT of the target platform x=151 until its
+   feet are ABOVE y=54, then travel right and land with feet at y=54. */
+.arcade-game-card:is(:hover,:focus-visible) .preview-ascent-player{
+ animation:preview-ascent-bound 2.5s cubic-bezier(.33,.02,.62,.94) infinite}
+.arcade-game-card:is(:hover,:focus-visible) .preview-ascent-trail{
+ animation:preview-ascent-launch 2.5s ease-out infinite}
+.arcade-game-card:is(:hover,:focus-visible) .preview-ascent-landing{
+ animation:preview-ascent-land 2.5s ease-out infinite}
+@keyframes preview-ascent-bound{
+ 0%,10%{translate:0 0;opacity:1}
+ 26%{translate:6px -45px;opacity:1}
+ 45%{translate:34px -75px;opacity:1}
+ 70%,87%{translate:55px -52px;opacity:1}
+ 93%,100%{translate:55px -52px;opacity:0}
+}
+@keyframes preview-ascent-launch{
+ 0%,10%{opacity:.6}30%,100%{opacity:0}
+}
+@keyframes preview-ascent-land{
+ 0%,66%,90%,100%{opacity:0}
+ 74%{opacity:1}
+}
+
+@media(prefers-reduced-motion:reduce){
+ .arcade-scene .preview-wings-pipes,.arcade-scene .preview-wings-bird,.arcade-scene .preview-wings-flap,
+ .arcade-scene .preview-wings-trail,.arcade-scene .preview-cave-parallax,.arcade-scene .preview-cave-ship,
+ .arcade-scene .preview-cave-trail,.arcade-scene .preview-hex-outer,.arcade-scene .preview-hex-inner,
+ .arcade-scene .preview-hex-player,.arcade-scene .preview-stack-drop,.arcade-scene .preview-stack-hit,
+ .arcade-scene .preview-spike-hazard,.arcade-scene .preview-spike-cube,.arcade-scene .preview-spike-shadow,
+ .arcade-scene .preview-spike-speed,.arcade-scene .preview-spike-dust,.arcade-scene .preview-blade-rotor,
+ .arcade-scene .preview-blade-throw,.arcade-scene .preview-blade-impact,.arcade-scene .preview-ascent-player,
+ .arcade-scene .preview-ascent-trail,.arcade-scene .preview-ascent-landing{
+  animation:none!important;transition:none!important
+ }
+}
+.casino-lobby-shell[data-reduced="true"] .arcade-scene [class^="preview-"]{
+ animation:none!important;transition:none!important
+}

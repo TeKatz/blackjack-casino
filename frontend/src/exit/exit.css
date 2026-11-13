@@ -1,0 +1,42 @@
+:root{font-family:"Segoe UI",Inter,Arial,sans-serif;color:#f5e7cc;
+ font-synthesis:none;text-rendering:optimizeLegibility}
+*{box-sizing:border-box}
+html,body,#root{width:100%;height:100%;margin:0;overflow:hidden}
+.exit-shell{height:100dvh;width:100%;display:grid;place-items:center;
+ background:radial-gradient(ellipse at center,#183a38d4,#07141aef 66%,#050c11fa);
+ backdrop-filter:blur(5px);padding:clamp(12px,4vw,40px)}
+.exit-dialog{position:relative;width:min(560px,100%);padding:clamp(25px,4vw,42px);
+ border:1px solid #bea77e;border-radius:19px;
+ background:linear-gradient(146deg,#233c3b,#131f29 56%,#111923);
+ box-shadow:0 25px 80px #000b,0 0 0 6px #061317bb,inset 0 1px #e9d6ae44;
+ animation:exit-arrive .24s cubic-bezier(.16,.85,.26,1) both}
+.exit-dialog:before{content:'';position:absolute;pointer-events:none;inset:7px;
+ border:1px solid #c3ac7d35;border-radius:13px}
+.exit-crest{display:flex;align-items:center;gap:9px;color:#e8cd97;font-size:11px;
+ letter-spacing:.14em;font-weight:800}
+.exit-crest-mark{width:31px;height:31px;display:grid;place-items:center;
+ border:1px solid #d1b47e87;border-radius:50%;font-size:20px;
+ background:radial-gradient(circle at 45% 40%,#53635b,#243a3b 75%)}
+.exit-crest small{margin-left:auto;font-size:9px;letter-spacing:.09em;color:#8daba2}
+.exit-dialog h1{font:600 clamp(29px,3.2vw,37px)/1.1 Georgia,serif;
+ color:#f6deac;letter-spacing:.01em;margin:29px 0 13px}
+.exit-dialog>p#exit-description{font-size:14px;line-height:1.7;
+ color:#c0d1c7;max-width:455px;margin:0 0 25px}
+.exit-divider{height:1px;width:100%;background:linear-gradient(90deg,transparent,#cfb88f8c,transparent)}
+.exit-actions{display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap;margin-top:24px}
+.exit-action{min-height:47px;min-width:165px;padding:11px 19px;border-radius:9px;
+ font:700 12px "Segoe UI",sans-serif;letter-spacing:.035em;cursor:pointer;
+ transition:background .18s,border-color .18s,box-shadow .18s}
+.exit-stay{border:1px solid #b6d5b6;background:#2b6252;color:#f0ffea;
+ box-shadow:inset 0 1px #fff4}
+.exit-stay:hover{background:#3b7863;border-color:#d4f0ce;box-shadow:0 0 15px #8adaae36}
+.exit-leave{border:1px solid #b89681;background:#3b3032;color:#f2d9ce}
+.exit-leave:hover{background:#5e3b3d;border-color:#eac6ab}
+.exit-action:focus-visible{outline:3px solid #f4d792;outline-offset:3px}
+.exit-keyboard{margin:22px 0 0!important;color:#859e98;font-size:10px;text-align:right;letter-spacing:.08em}
+@keyframes exit-arrive{from{opacity:0;transform:translateY(13px) scale(.98)}
+ to{opacity:1;transform:none}}
+@media(max-width:520px){.exit-actions{flex-direction:column}
+ .exit-action{width:100%}.exit-crest small{display:none}}
+@media(prefers-reduced-motion:reduce){.exit-dialog{animation:none}
+ .exit-action{transition:none}}

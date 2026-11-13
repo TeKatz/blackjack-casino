@@ -53,7 +53,9 @@ internal static class ModernMergeSnapshot
             Orders = state.Orders.Select(order =>
             {
                 MergeOrderDefinition definition = catalog.Orders.Single(x => x.Id == order.DefinitionId);
-                bool available = MergeOrders.SelectRequired(state, definition) is not null;
+                MergeArea orderArea = catalog.Areas.Single(x => x.Id == definition.AreaId);
+                bool unlocked = state.RenovationPoints >= orderArea.Milestones[0].Points;
+                bool available = unlocked && MergeOrders.SelectRequired(state, definition) is not null;
                 return new
                 {
                     Id = order.Id.ToString("D"),
@@ -61,7 +63,7 @@ internal static class ModernMergeSnapshot
                     definition.AreaId,
                     definition.Reward,
                     Available = available,
-                    Visible = definition.AreaId == area.Id || available,
+                    Visible = unlocked && (definition.AreaId == area.Id || available),
                     Requirements = definition.Requirements.Select(requirement => new
                     {
                         requirement.DefinitionId, requirement.Count,
@@ -79,6 +81,29 @@ internal static class ModernMergeSnapshot
                 Next = next is null ? null : new { next.Id, Name = Text(next.DisplayName), next.Points },
                 PointsUntilNext = MergeProgression.PointsUntilNext(area, state.RenovationPoints),
                 UpgradeProgress = MergeProgression.UpgradeProgress(area, state.RenovationPoints),
+                Areas = catalog.Areas.Select((room, index) =>
+                {
+                    MergeMilestone roomCurrent = MergeProgression.Current(room, state.RenovationPoints);
+                    MergeMilestone? roomNext = MergeProgression.Next(room, state.RenovationPoints);
+                    return new
+                    {
+                        AreaId = room.Id,
+                        AreaName = Text(room.DisplayName),
+                        AreaIndex = index + 1,
+                        Current = new { roomCurrent.Id, Name = Text(roomCurrent.DisplayName), roomCurrent.Points },
+                        Next = roomNext is null ? null : new
+                        {
+                            roomNext.Id, Name = Text(roomNext.DisplayName), roomNext.Points,
+                        },
+                        PointsUntilNext = MergeProgression.PointsUntilNext(room, state.RenovationPoints),
+                        UpgradeProgress = MergeProgression.UpgradeProgress(room, state.RenovationPoints),
+                        Milestones = room.Milestones.Select(milestone => new
+                        {
+                            milestone.Id, Name = Text(milestone.DisplayName), milestone.Points,
+                            Unlocked = state.RenovationPoints >= milestone.Points,
+                        }).ToArray(),
+                    };
+                }).ToArray(),
                 Milestones = area.Milestones.Select(milestone => new
                 {
                     milestone.Id, Name = Text(milestone.DisplayName), milestone.Points,
