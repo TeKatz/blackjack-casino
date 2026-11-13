@@ -127,7 +127,7 @@ internal static class Program
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
-            or JsonException or ArgumentException or InvalidOperationException
+            or JsonException or InvalidDataException or ArgumentException or InvalidOperationException
             or System.ComponentModel.Win32Exception)
         {
             MessageBox.Show(ex.Message, "Host launch blocked",
