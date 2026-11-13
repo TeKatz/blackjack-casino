@@ -22,9 +22,10 @@ internal static class NativeShellContractSmoke
                     name.Name is "PresentationFramework" or "PresentationCore" or "WindowsBase"))
                 throw new InvalidOperationException("Native shell still references WPF assemblies.");
 
-            if (HostMigrationCatalog.PreviewRoutes.Count != 7
+            if (HostMigrationCatalog.PreviewRoutes.Count != 8
                 || HostMigrationCatalog.ApprovedForRelease
                 || !HostMigrationCatalog.IsPreviewRoute("midnight-manor")
+                || !HostMigrationCatalog.IsPreviewRoute("roulette")
                 || HostMigrationCatalog.IsPreviewRoute("casino-empire")
                 || HostMigrationCatalog.PreviewPageFor("reels") != "reels.html")
                 throw new InvalidOperationException("Host parity manifest is inconsistent.");
@@ -70,6 +71,22 @@ internal static class NativeShellContractSmoke
                     throw new InvalidOperationException("Blackjack native command failed.");
                 if (epoch.Execute(command, _ => throw new Exception("Replayed command!")) != result)
                     throw new InvalidOperationException("Blackjack receipt was replayed.");
+
+                // Preview roulette runs through the existing Core settlement rules
+                // and persists one authoritative result before responding.
+                using (var rouletteBets = System.Text.Json.JsonDocument.Parse(
+                    "[{\"key\":\"red\",\"amount\":100}]"))
+                {
+                    var roundId = Guid.NewGuid();
+                    var receipt = session.ApplyRoulette(roundId, rouletteBets.RootElement);
+                    if (receipt is not NativeRouletteReceipt paid
+                        || paid.RoundId != roundId || !paid.Success
+                        || session.Bankroll != paid.Bankroll)
+                        throw new InvalidOperationException("Native roulette did not settle.");
+                    if (!Equals(session.ApplyRoulette(roundId, rouletteBets.RootElement), paid)
+                        || session.Bankroll != paid.Bankroll)
+                        throw new InvalidOperationException("Native roulette double-charged a replay.");
+                }
 
                 session.OpenReels();
                 var spinEpoch = new ModernReelsSession();
@@ -148,6 +165,31 @@ internal static class NativeShellContractSmoke
                     throw new InvalidOperationException("Manor replay was not idempotent.");
                 session.CloseManor();
                 session.Persist();
+            }
+            // Receipt IDs persist across runtime lifetimes and browser restarts.
+            using (var resumed = new NativePreviewRuntime(directory))
+            {
+                using var repeatBets = System.Text.Json.JsonDocument.Parse(
+                    "[{\"key\":\"red\",\"amount\":100}]");
+                var receiptJournal = new NativeRouletteJournal(directory);
+                if (receiptJournal is null)
+                    throw new InvalidOperationException("Roulette journal missing.");
+                // A pending mirror failure must recover from the same journal.
+                string faultDirectory = Path.Combine(directory, "roulette-fault");
+                var faultJournal = new NativeRouletteJournal(faultDirectory);
+                var result = Roulette.Settle([new RouletteBet("red", 100m)], 1000m, 1);
+                var candidate = new AppPreferences { Bankroll = result.Bankroll };
+                try
+                {
+                    faultJournal.Commit(Guid.NewGuid(), result, candidate,
+                        _ => throw new IOException("Simulated interrupted roulette mirror."));
+                    throw new InvalidOperationException("Roulette fault injection was not reached.");
+                }
+                catch (IOException ex) when (ex.Message.Contains("Simulated interrupted"))
+                { }
+                new NativeRouletteJournal(faultDirectory).Recover();
+                if (PlayerStateStore.Load(faultDirectory).Bankroll != result.Bankroll)
+                    throw new InvalidOperationException("Roulette recovery lost the paid settlement.");
             }
             AppPreferences saved = PlayerStateStore.Load(directory);
             if (saved.Bankroll < 0 || !File.Exists(Path.Combine(directory, "profile.json")))

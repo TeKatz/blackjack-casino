@@ -36,10 +36,10 @@ def main() -> int:
         issues.append("Host catalog must exactly match the real desktop lobby registration order.")
     preview = [(alias, page) for _, alias, page in routes if alias]
     expected = {
-        "blackjack", "reels", "neon-vault", "nine-lives",
+        "blackjack", "roulette", "reels", "neon-vault", "nine-lives",
         "midnight-merge", "midnight-dice", "midnight-manor",
     }
-    if len(preview) != 7 or {alias for alias, _ in preview} != expected:
+    if len(preview) != 8 or {alias for alias, _ in preview} != expected:
         issues.append("Unexpected NativeShell preview route manifest.")
     for alias, document in preview:
         if not (ROOT / "frontend" / document).is_file():

@@ -8,7 +8,7 @@ The `BlackjackCasino.NativeShell.exe` stays a separately published test pilot.
 
 `src/BlackjackCasino.Core/Hosting/HostMigrationContracts.cs` defines:
 - All **11** existing top-level lobby routes, in the real WPF registry order.
-- Exact route aliases and local HTML pages for the **7** NativeShell preview bridges.
+- Exact route aliases and local HTML pages for the **8** NativeShell preview bridges.
 - All **8** Chill Lounge subgames, matching `ModernLoungeCatalog.GameIds`.
 - Explicit, non-approved release criteria; preview boot success never implies parity.
 - A host-neutral `IHostModeNavigator` port implemented by `CasinoModeRegistry`.
@@ -26,7 +26,7 @@ the production/preview path boundary.
 | Production lobby route | NativeShell alias | Pilot status | Still required for production |
 | --- | --- | --- | --- |
 | `blackjack` | `blackjack` | React bridge in pilot | Complete profile/history/account parity |
-| `roulette` | — | Missing | Full native roulette bridge and acceptance |
+| `roulette` | `roulette` | Durable native settlement in pilot | UI recovery and Windows game acceptance |
 | `midnight-reels` | `reels` | React bridge in pilot | Recovery, music, user data and lifecycle parity |
 | `neon-vault` | `neon-vault` | React bridge in pilot | Full bonus/reward restart and persistence QA |
 | `nine-lives` | `nine-lives` | React bridge in pilot | Full bonus/reward restart and persistence QA |

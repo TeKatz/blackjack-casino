@@ -18,6 +18,8 @@ internal sealed class NativePreviewRuntime : IDisposable
 {
     private readonly string directory;
     private readonly PlayerProgressionController progression;
+    private readonly NativeRouletteJournal rouletteJournal;
+    private bool rouletteRequiresRestart;
     private readonly BlackjackTableController table;
     private SlotMachineSession? reelsMachine;
     private SlotSpinResult? reelsLastSpin;
@@ -62,12 +64,79 @@ internal sealed class NativePreviewRuntime : IDisposable
         // Recover any interrupted aggregate Manor journal BEFORE loading either
         // player preference or profile mirrors, exactly as the regular app does.
         new ManorPersistence(directory).Recover();
+        rouletteJournal = new NativeRouletteJournal(directory);
+        rouletteJournal.Recover();
         Preferences = PlayerStateStore.Load(directory);
         progression = new PlayerProgressionController(LoadPreviewProfile(directory));
         table = new BlackjackTableController(Preferences);
         reelsBet = Math.Clamp(Preferences.SlotBet, SlotMachineRules.MinimumBet, SlotMachineRules.MaximumBet);
         neonBet = NeonVaultRules.Bets.OrderBy(bet => Math.Abs(bet - Preferences.NeonVaultBet)).First();
         nineBet = NineLivesRules.Bets.OrderBy(bet => Math.Abs(bet - Preferences.NineLivesBet)).First();
+    }
+
+    internal bool RouletteRequiresRestart => rouletteRequiresRestart;
+
+    internal object RouletteSnapshot()
+    {
+        AreaPresentationSettings area = Preferences.Presentation("roulette");
+        return new
+        {
+            Bankroll = Bankroll.ToString("C2", CultureInfo.GetCultureInfo("en-US")),
+            BankrollValue = Bankroll,
+            Language = Preferences.Language == UiLanguagePreference.German ? "de" : "en",
+            Motion = area.AnimationsEnabled,
+            Sound = area.SoundEnabled,
+        };
+    }
+
+    internal object ApplyRoulette(Guid roundId, JsonElement rawBets)
+    {
+        object Reject(string message) => new { RoundId = roundId, Success = false, Message = message };
+        if (disposed || rouletteRequiresRestart || ManorRequiresRestart)
+            return Reject("Preview save recovery requires restart.");
+        if (roundId == Guid.Empty) return Reject("Invalid round ID.");
+        if (rouletteJournal.TryReceipt(roundId, out NativeRouletteReceipt? replay))
+            return replay!;
+        if (HandInProgress || rawBets.ValueKind != JsonValueKind.Array
+            || rawBets.GetArrayLength() is < 1 or > 100)
+            return Reject("Finish the current game or use valid roulette bets.");
+
+        var bets = new List<RouletteBet>();
+        foreach (JsonElement bet in rawBets.EnumerateArray())
+        {
+            if (bet.ValueKind != JsonValueKind.Object
+                || !bet.TryGetProperty("key", out JsonElement key)
+                || key.ValueKind != JsonValueKind.String
+                || !bet.TryGetProperty("amount", out JsonElement amount)
+                || amount.ValueKind != JsonValueKind.Number
+                || !amount.TryGetDecimal(out decimal stake))
+                return Reject("Invalid roulette bet.");
+            bets.Add(new RouletteBet(key.GetString()!, stake));
+        }
+
+        RouletteResult result;
+        try { result = Roulette.Settle(bets, Bankroll, Roulette.Draw()); }
+        catch (Exception ex) when (ex is ArgumentException or OverflowException)
+        { return Reject(ex.Message); }
+
+        AppPreferences candidate = Preferences with { Bankroll = result.Bankroll };
+        try
+        {
+            NativeRouletteReceipt receipt = rouletteJournal.Commit(roundId, result, candidate);
+            table.Session.ResetBankroll(result.Bankroll);
+            table.NormalizeBet();
+            Preferences = candidate;
+            status = "Roulette settlement committed.";
+            Persist();
+            return receipt;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or JsonException or InvalidDataException or InvalidOperationException)
+        {
+            rouletteRequiresRestart = true;
+            status = "Roulette checkpoint uncertain. Restart this preview before another wager.";
+            return Reject(status + " " + ex.Message);
+        }
     }
 
     internal object BlackjackSnapshot() => BlackjackModernSnapshot.Create(
@@ -887,7 +956,7 @@ internal sealed class NativePreviewRuntime : IDisposable
     {
         // A possibly committed Manor aggregate journal is authoritative. Do
         // not overwrite either mirror with stale in-memory state before restart.
-        if (disposed || ManorRequiresRestart) return;
+        if (disposed || ManorRequiresRestart || rouletteRequiresRestart) return;
         table.NormalizeBet();
         Preferences = Preferences with
         {
@@ -962,7 +1031,7 @@ internal sealed class NativePreviewRuntime : IDisposable
             if (mergeBoard is not null) CloseMerge();
             if (diceGame is not null) CloseDice();
             if (manorController is not null) CloseManor();
-            if (!ManorRequiresRestart)
+            if (!ManorRequiresRestart && !rouletteRequiresRestart)
             {
                 AccountCompletedRound();
                 Persist();

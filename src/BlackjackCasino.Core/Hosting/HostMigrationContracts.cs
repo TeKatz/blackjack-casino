@@ -40,7 +40,7 @@ public static class HostMigrationCatalog
         Array.AsReadOnly(new HostCasinoRoute[]
         {
             new("blackjack", "Blackjack", "blackjack", "blackjack.html"),
-            new("roulette", "Roulette", null, null),
+            new("roulette", "Roulette", "roulette", "roulette.html"),
             new("midnight-reels", "Midnight Reels", "reels", "reels.html"),
             new("neon-vault", "Neon Vault", "neon-vault", "neon-vault.html"),
             new("nine-lives", "Nine Lives", "nine-lives", "nine-lives.html"),

@@ -81,6 +81,7 @@ internal sealed class NativeShellForm : Form
         };
         navigation.Controls.Add(MakeButton("Lobby", ReturnToHome));
         navigation.Controls.Add(MakeButton("Blackjack", () => _ = OpenModeAsync("blackjack")));
+        navigation.Controls.Add(MakeButton("Roulette", () => _ = OpenModeAsync("roulette")));
         navigation.Controls.Add(MakeButton("Midnight Reels", () => _ = OpenModeAsync("reels")));
         navigation.Controls.Add(MakeButton("Neon Vault", () => _ = OpenModeAsync("neon-vault")));
         navigation.Controls.Add(MakeButton("Nine Lives", () => _ = OpenModeAsync("nine-lives")));
@@ -180,6 +181,7 @@ internal sealed class NativeShellForm : Form
             WrapContents = false, AutoSize = false,
         };
         actions.Controls.Add(MakeButton("BLACKJACK SPIELEN", () => _ = OpenModeAsync("blackjack")));
+        actions.Controls.Add(MakeButton("ROULETTE", () => _ = OpenModeAsync("roulette")));
         actions.Controls.Add(MakeButton("MIDNIGHT REELS", () => _ = OpenModeAsync("reels")));
         actions.Controls.Add(MakeButton("NEON VAULT", () => _ = OpenModeAsync("neon-vault")));
         actions.Controls.Add(MakeButton("NINE LIVES", () => _ = OpenModeAsync("nine-lives")));
@@ -344,6 +346,7 @@ internal sealed class NativeShellForm : Form
     private static bool IsTrusted(string? mode, string? source) => mode switch
     {
         "blackjack" => BlackjackModernProtocol.Trusted(source),
+        "roulette" => string.Equals(source, "https://" + VirtualHost + "/roulette.html", StringComparison.Ordinal),
         "reels" => ModernReelsProtocol.Trusted(source),
         "neon-vault" => ModernNeonVaultProtocol.Trusted(source),
         "nine-lives" => ModernNineLivesProtocol.Trusted(source),
@@ -357,7 +360,7 @@ internal sealed class NativeShellForm : Form
     {
         if (closing || browserFailed || browser is null
             || !IsTrusted(activeMode, args.Source)
-            || args.WebMessageAsJson.Length > 4096) return;
+            || args.WebMessageAsJson.Length > (activeMode == "roulette" ? 8192 : 4096)) return;
         try
         {
             if (activeMode == "midnight-manor")
@@ -373,6 +376,30 @@ internal sealed class NativeShellForm : Form
             string? message = type.GetString();
             switch (message)
             {
+                case "roulette.ready" when activeMode == "roulette":
+                    listening = true;
+                    Post("roulette.snapshot", runtime.RouletteSnapshot());
+                    break;
+                case "roulette.ui-ready" when activeMode == "roulette" && listening:
+                    ready = true;
+                    watchdog.Stop();
+                    status.Text = runtime.Status;
+                    break;
+                case "roulette.close" when activeMode == "roulette" && ready:
+                    BeginInvoke(new Action(ReturnToHome));
+                    break;
+                case "roulette.spin" when activeMode == "roulette" && listening && ready:
+                {
+                    if (!root.TryGetProperty("roundId", out JsonElement rouletteId)
+                        || rouletteId.ValueKind != JsonValueKind.String
+                        || !Guid.TryParse(rouletteId.GetString(), out Guid roundId)
+                        || roundId == Guid.Empty
+                        || !root.TryGetProperty("bets", out JsonElement bets)) break;
+                    Post("roulette.result", runtime.ApplyRoulette(roundId, bets));
+                    Post("roulette.snapshot", runtime.RouletteSnapshot());
+                    status.Text = runtime.Status;
+                    break;
+                }
                 case "blackjack.ready" when activeMode == "blackjack":
                 case "reels.ready" when activeMode == "reels":
                 case "neon-vault.ready" when activeMode == "neon-vault":
