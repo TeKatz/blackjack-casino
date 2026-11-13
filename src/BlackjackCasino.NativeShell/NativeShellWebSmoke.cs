@@ -35,7 +35,15 @@ internal static class NativeShellWebSmoke
             checkRunningHost: false);
         if (NativeHostMigration.OpenCandidate(legacy, "web-smoke") != candidate)
             throw new InvalidDataException("Staged WebView2 candidate was not verified.");
-        using var form = new NativeShellForm(candidate, migrationCandidate: true);
+        // Run the real managed Development presentation: the React lobby must
+        // occupy the entire native window, without the migration tab strip or
+        // preview diagnostic footer.
+        using var form = new NativeShellForm(candidate,
+            migrationCandidate: true, managedDevelopment: true);
+        if (form.Controls.Count != 1 || form.Controls[0] is not Panel host
+            || host.Dock != DockStyle.Fill)
+            throw new InvalidOperationException(
+                "Managed NativeShell still exposes migration navigation or diagnostic footer.");
 
         form.Shown += async (_, _) =>
         {
