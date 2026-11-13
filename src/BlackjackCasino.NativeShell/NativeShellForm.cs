@@ -23,6 +23,21 @@ internal sealed class NativeShellForm : Form
     };
 
     private readonly NativePreviewRuntime runtime;
+    private readonly FullscreenKeyFilter fullscreenKeyFilter;
+    private sealed class FullscreenKeyFilter : IMessageFilter
+    {
+        private readonly NativeShellForm host;
+        internal FullscreenKeyFilter(NativeShellForm host) => this.host = host;
+        public bool PreFilterMessage(ref Message message)
+        {
+            // WM_KEYDOWN for WebView2's child HWND is handled before native
+            // accelerators consume the key. Only affect our own focused form.
+            if (message.Msg != 0x0100 || message.WParam != (IntPtr)(int)Keys.F11
+                || !host.ContainsFocus || host.closing) return false;
+            host.ToggleNativeFullscreen();
+            return true;
+        }
+    }
     private readonly bool managedDevelopment;
     private readonly NativeLobbyController lobbyController;
     private readonly NativeHostAudio hostAudio = new();
@@ -74,6 +89,8 @@ internal sealed class NativeShellForm : Form
         bool managedDevelopment = false)
     {
         this.managedDevelopment = managedDevelopment;
+        fullscreenKeyFilter = new FullscreenKeyFilter(this);
+        Application.AddMessageFilter(fullscreenKeyFilter);
         string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         previewDirectory ??= HostPreviewStorage.DefaultDirectory(localAppData);
         previewDirectory = HostPreviewStorage.RequireIsolatedDirectory(previewDirectory, localAppData);
@@ -512,19 +529,6 @@ internal sealed class NativeShellForm : Form
             Dock = DockStyle.Fill,
             DefaultBackgroundColor = Color.FromArgb(4, 22, 17),
         };
-        // WebView2 processes F11 as a browser accelerator before it reaches
-        // the parent Form. Handle the real physical key in the WebView2
-        // control; the injected document shortcut remains a fallback for
-        // browsers that deliver F11 directly to JavaScript.
-        web.AcceleratorKeyPressed += (_, key) =>
-        {
-            if (key.VirtualKey != (int)Keys.F11) return;
-            key.Handled = true;
-            if (key.KeyEventKind == CoreWebView2KeyEventKind.KeyDown
-                && !key.PhysicalKeyStatus.WasKeyDown
-                && IsHandleCreated && !closing)
-                BeginInvoke(new Action(ToggleNativeFullscreen));
-        };
         browser = web;
         content.Controls.Clear();
         content.Controls.Add(web);
@@ -678,19 +682,6 @@ internal sealed class NativeShellForm : Form
             Dock = DockStyle.Fill,
             DefaultBackgroundColor = mode == "blackjack"
                 ? Color.FromArgb(6, 23, 20) : Color.FromArgb(12, 10, 25),
-        };
-        // WebView2 processes F11 as a browser accelerator before it reaches
-        // the parent Form. Handle the real physical key in the WebView2
-        // control; the injected document shortcut remains a fallback for
-        // browsers that deliver F11 directly to JavaScript.
-        web.AcceleratorKeyPressed += (_, key) =>
-        {
-            if (key.VirtualKey != (int)Keys.F11) return;
-            key.Handled = true;
-            if (key.KeyEventKind == CoreWebView2KeyEventKind.KeyDown
-                && !key.PhysicalKeyStatus.WasKeyDown
-                && IsHandleCreated && !closing)
-                BeginInvoke(new Action(ToggleNativeFullscreen));
         };
         browser = web;
         content.Controls.Add(web);
@@ -1780,6 +1771,12 @@ internal sealed class NativeShellForm : Form
         if (old is null) return;
         content.Controls.Remove(old);
         old.Dispose();
+    }
+
+    protected override void OnFormClosed(FormClosedEventArgs e)
+    {
+        Application.RemoveMessageFilter(fullscreenKeyFilter);
+        base.OnFormClosed(e);
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
