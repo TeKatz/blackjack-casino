@@ -51,6 +51,11 @@ internal sealed class NativeShellForm : Form
     private ModernMergeSession? mergeEpoch;
     private ModernDiceSession? diceEpoch;
     private bool diceAiScheduling;
+    private Guid? reelsCompletedAudio, neonCompletedAudio, nineCompletedAudio;
+    private Guid? reelsStopSpin, neonStopSpin, nineStopSpin;
+    private readonly HashSet<int> reelsStoppedAudio = new();
+    private readonly HashSet<int> neonStoppedAudio = new();
+    private readonly HashSet<int> nineStoppedAudio = new();
     private bool manorProcessing;
     private string? activeMode;
     private bool listening, ready, browserFailed, closing;
@@ -171,11 +176,8 @@ internal sealed class NativeShellForm : Form
         KeyDown += (_, e) =>
         {
             if (e.KeyCode != Keys.F11) return;
-            FormBorderStyle = FormBorderStyle == FormBorderStyle.None
-                ? FormBorderStyle.Sizable : FormBorderStyle.None;
-            WindowState = FormBorderStyle == FormBorderStyle.None
-                ? FormWindowState.Maximized : FormWindowState.Normal;
-            e.Handled = true;
+            ToggleNativeFullscreen();
+            e.Handled = e.SuppressKeyPress = true;
         };
         ShowHome();
         Shown += (_, _) =>
@@ -184,6 +186,99 @@ internal sealed class NativeShellForm : Form
             if (activeMode is null && !lobbyBrowserDisabled)
                 _ = OpenLobbyAsync();
         };
+    }
+
+    private void ToggleNativeFullscreen()
+    {
+        if (WindowState == FormWindowState.Maximized
+            && FormBorderStyle == FormBorderStyle.None)
+        {
+            WindowState = FormWindowState.Normal;
+            FormBorderStyle = FormBorderStyle.Sizable;
+        }
+        else
+        {
+            WindowState = FormWindowState.Normal;
+            FormBorderStyle = FormBorderStyle.None;
+            WindowState = FormWindowState.Maximized;
+        }
+    }
+
+    private static bool MatchesSpinMessage(JsonElement root, Guid expected, out int reel)
+    {
+        reel = -1;
+        if (!root.TryGetProperty("spinId", out JsonElement raw)
+            || raw.ValueKind != JsonValueKind.String
+            || !Guid.TryParse(raw.GetString(), out Guid actual)
+            || actual != expected) return false;
+        if (root.TryGetProperty("reel", out JsonElement index))
+        {
+            if (index.ValueKind != JsonValueKind.Number
+                || !index.TryGetInt32(out reel)) return false;
+        }
+        return true;
+    }
+
+    private void PlayStopOnce(string? mode, JsonElement root)
+    {
+        Guid? active = mode switch
+        {
+            "reels" => runtime.ReelsAudioResult?.SpinId,
+            "neon-vault" => runtime.NeonAudioResult?.SpinId,
+            "nine-lives" => runtime.NineAudioResult?.SpinId,
+            _ => null,
+        };
+        if (active is not Guid id || !MatchesSpinMessage(root, id, out int index))
+            return;
+        int reelCount = mode == "neon-vault" ? 5 : 3;
+        if (index < 0 || index >= reelCount) return;
+        HashSet<int> stopped = mode switch
+        {
+            "reels" => reelsStoppedAudio,
+            "neon-vault" => neonStoppedAudio,
+            _ => nineStoppedAudio,
+        };
+        Guid? last = mode switch
+        {
+            "reels" => reelsStopSpin,
+            "neon-vault" => neonStopSpin,
+            _ => nineStopSpin,
+        };
+        if (last != id)
+        {
+            stopped.Clear();
+            if (mode == "reels") reelsStopSpin = id;
+            else if (mode == "neon-vault") neonStopSpin = id;
+            else nineStopSpin = id;
+        }
+        if (stopped.Add(index))
+            hostAudio.PlayGameCue(mode, "reel-stop", SoundEnabledForCurrentMode());
+    }
+
+    private void PlayResultOnce(string? mode, JsonElement root)
+    {
+        bool enabled = SoundEnabledForCurrentMode();
+        switch (mode)
+        {
+            case "reels" when runtime.ReelsAudioResult is { } reels
+                && MatchesSpinMessage(root, reels.SpinId, out _)
+                && reelsCompletedAudio != reels.SpinId:
+                reelsCompletedAudio = reels.SpinId;
+                hostAudio.PlayReelsOutcome(reels, enabled);
+                break;
+            case "neon-vault" when runtime.NeonAudioResult is { } neon
+                && MatchesSpinMessage(root, neon.SpinId, out _)
+                && neonCompletedAudio != neon.SpinId:
+                neonCompletedAudio = neon.SpinId;
+                hostAudio.PlayNeonOutcome(neon, enabled);
+                break;
+            case "nine-lives" when runtime.NineAudioResult is { } nine
+                && MatchesSpinMessage(root, nine.SpinId, out _)
+                && nineCompletedAudio != nine.SpinId:
+                nineCompletedAudio = nine.SpinId;
+                hostAudio.PlayNineOutcome(nine, enabled);
+                break;
+        }
     }
 
     // Minimal internal acceptance interface; never used by React or game commands.
@@ -693,10 +788,8 @@ internal sealed class NativeShellForm : Form
                     break;
                 }
                 case "lobby.settings.fullscreen" when activeMode is null && ready:
-                    FormBorderStyle = FormBorderStyle == FormBorderStyle.None
-                        ? FormBorderStyle.Sizable : FormBorderStyle.None;
-                    WindowState = FormBorderStyle == FormBorderStyle.None
-                        ? FormWindowState.Maximized : FormWindowState.Normal;
+                case "host.fullscreen.toggle" when ready:
+                    ToggleNativeFullscreen();
                     break;
                 case "lobby.exit" when activeMode is null && ready:
                     BeginInvoke(new Action(Close));
@@ -934,14 +1027,26 @@ internal sealed class NativeShellForm : Form
                 case "midnight-dice.recover" when activeMode == "midnight-dice" && listening && ready:
                     ScheduleFailure("The game requested WebView2 recovery.");
                     break;
-                // Browser presentation cues never determine casino outcomes.
+                // Browser presentation cues cannot settle a second spin.
+                case "reels.reel-stop" when activeMode == "reels" && ready:
                 case "neon-vault.reel-stop" when activeMode == "neon-vault" && ready:
                 case "nine-lives.reel-stop" when activeMode == "nine-lives" && ready:
-                    hostAudio.PlayGameCue(activeMode, "reel-stop", SoundEnabledForCurrentMode());
+                    PlayStopOnce(activeMode, root);
+                    break;
+                case "reels.animation-complete" when activeMode == "reels" && ready:
+                case "neon-vault.animation-complete" when activeMode == "neon-vault" && ready:
+                case "nine-lives.animation-complete" when activeMode == "nine-lives" && ready:
+                    PlayResultOnce(activeMode, root);
                     break;
                 case "neon-vault.feature-impact" when activeMode == "neon-vault" && ready:
+                    if (runtime.NeonAudioResult is { } impact
+                        && MatchesSpinMessage(root, impact.SpinId, out _))
+                        hostAudio.PlayNeonFeature(impact, SoundEnabledForCurrentMode());
+                    break;
                 case "nine-lives.feature-impact" when activeMode == "nine-lives" && ready:
-                    hostAudio.PlayGameCue(activeMode, "feature-impact", SoundEnabledForCurrentMode());
+                    if (runtime.NineAudioResult is { } feature
+                        && MatchesSpinMessage(root, feature.SpinId, out _))
+                        hostAudio.PlayGameCue(activeMode, "feature-impact", SoundEnabledForCurrentMode());
                     break;
             }
             if (activeMode is null && listening && ready)
