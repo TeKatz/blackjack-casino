@@ -171,13 +171,23 @@ internal static class CollectionLore
 
     internal static int AuthoredCount => Entries.Count;
     internal static bool Has(CollectionCard card) => Entries.ContainsKey(card.Id);
-    internal static string BodyFor(CollectionCard card)
+#if !NATIVE_SHELL
+    internal static string BodyFor(CollectionCard card) =>
+        BodyFor(card, Localization.Language, Localization.T);
+#endif
+
+    // The same authored English entries and German resource keys are shared by
+    // the WPF application and the WPF-free native host. A provided lookup keeps
+    // language selection per caller rather than using process-wide UI state.
+    internal static string BodyFor(CollectionCard card, UiLanguagePreference language,
+        Func<string, string> localizedText)
     {
+        ArgumentNullException.ThrowIfNull(localizedText);
         if (Entries.TryGetValue(card.Id, out string? body))
-            return Localization.Language == UiLanguagePreference.German
-                ? Localization.T($"Album.Lore.{card.Id}")
+            return language == UiLanguagePreference.German
+                ? localizedText($"Album.Lore.{card.Id}")
                 : body;
-        return Localization.Language == UiLanguagePreference.German
+        return language == UiLanguagePreference.German
             ? "Zu dieser Karte ist derzeit kein Archiveintrag verfügbar."
             : "An archive entry is currently unavailable for this card.";
     }

@@ -137,7 +137,7 @@ internal sealed class NativeLobbyController(NativePreviewRuntime runtime)
 
     internal NativeLobbyOutcome ClaimChallenge(string id) => Commit(() =>
     {
-        if (!ChallengeRegistry.All.Any(challenge => challenge.Id == id))
+        if (!ChallengeCatalog.All.Any(challenge => challenge.Id == id))
             return new(false, "Unknown challenge.");
         ChallengeClaimResult outcome = Progress.ClaimChallenge(id);
         return new(outcome.Success, outcome.Message);

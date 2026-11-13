@@ -46,7 +46,7 @@ internal sealed class NativeEmpireDetachedForm : Form
         {
             if (!ready || closing || runtime.LoungeRequiresRestart) return;
             runtime.TickEmpire();
-            Refresh();
+            RefreshEmpire();
             if (DateTimeOffset.UtcNow - lastSave >= TimeSpan.FromSeconds(30))
             {
                 runtime.Persist();
@@ -118,7 +118,7 @@ internal sealed class NativeEmpireDetachedForm : Form
             {
                 case "empire.ready":
                     listening = true;
-                    Refresh();
+                    RefreshEmpire();
                     break;
                 case "empire.ui-ready" when listening:
                     if (!msg.TryGetProperty("visitId", out JsonElement visit)
@@ -130,13 +130,13 @@ internal sealed class NativeEmpireDetachedForm : Form
                     Post("empire.visibility", new { Visible = true });
                     break;
                 case "empire.refresh" when listening:
-                    Refresh();
+                    RefreshEmpire();
                     break;
                 case "empire.close" when listening:
                     Close();
                     break;
                 case "empire.dismiss-offline" when listening:
-                    Refresh();
+                    RefreshEmpire();
                     break;
                 case "empire.command" when listening && ready
                     && WindowState != FormWindowState.Minimized:
@@ -148,7 +148,7 @@ internal sealed class NativeEmpireDetachedForm : Form
                     Post("empire.result", reply);
                     if (!intent.Preview)
                     {
-                        Refresh();
+                        RefreshEmpire();
                         parentChanged();
                     }
                     break;
@@ -170,7 +170,7 @@ internal sealed class NativeEmpireDetachedForm : Form
                 JsonSerializer.Serialize(new { type, data }, Json));
     }
 
-    internal void Refresh()
+    internal void RefreshEmpire()
     {
         if (!listening || closing || !runtime.EmpireStarted) return;
         Post("empire.snapshot", new

@@ -1295,7 +1295,7 @@ internal sealed class NativeShellForm : Form
         }
     }
 
-    private void Post(string type, object data)
+    private void Post(string type, object? data)
     {
         if (!closing && !browserFailed && browser?.CoreWebView2 is { } core)
             core.PostWebMessageAsJson(JsonSerializer.Serialize(new { type, data }, MessageJson));

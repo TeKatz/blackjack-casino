@@ -4,6 +4,7 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <UseWPF>false</UseWPF>
+    <DefineConstants>$(DefineConstants);NATIVE_SHELL</DefineConstants>
     <AssemblyName>BlackjackCasino.NativeShell</AssemblyName>
     <Description>Experimental WPF-free Windows/WebView2 casino host; not the Development release executable.</Description>
   </PropertyGroup>
@@ -66,11 +67,14 @@
     <Compile Include="../BlackjackCasino.Desktop/ModernMinesweeperProtocol.cs" Link="Shared/ModernMinesweeperProtocol.cs" />
     <Compile Include="../BlackjackCasino.Desktop/ModernMinesweeperService.cs" Link="Shared/ModernMinesweeperService.cs" />
     <Compile Include="../BlackjackCasino.Desktop/BrowserRecoverySession.cs" Link="Shared/BrowserRecoverySession.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/CollectionLore.cs" Link="Shared/CollectionLore.cs" />
   </ItemGroup>
   <ItemGroup>
     <!-- Compile the existing neutral and German Merge resources under this shell's own root namespace. -->
     <EmbeddedResource Include="../BlackjackCasino.Desktop/Resources/MergeStrings.resx" Link="Resources/MergeStrings.resx" />
     <EmbeddedResource Include="../BlackjackCasino.Desktop/Resources/MergeStrings.de.resx" Link="Resources/MergeStrings.de.resx" />
+    <EmbeddedResource Include="../BlackjackCasino.Desktop/Resources/AlbumLoreStrings.resx" Link="Resources/AlbumLoreStrings.resx" />
+    <EmbeddedResource Include="../BlackjackCasino.Desktop/Resources/AlbumLoreStrings.de.resx" Link="Resources/AlbumLoreStrings.de.resx" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="../../frontend/dist/**/*"

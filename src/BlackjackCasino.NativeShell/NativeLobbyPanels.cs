@@ -574,7 +574,7 @@ internal sealed class NativeLobbyPanels(NativePreviewRuntime runtime)
                         card.Number,
                         Rarity = card.Rarity.ToString(),
                         Owned = collection.OwnedCardIds.Contains(card.Id),
-                        Lore = collection.OwnedCardIds.Contains(card.Id) ? CollectionLore.BodyFor(card) : "",
+                        Lore = collection.OwnedCardIds.Contains(card.Id) ? CollectionLore.BodyFor(card, runtime.Preferences.Language, NativeLoreLocalization.Translate) : "",
                     }).ToArray(),
                 };
             }).ToArray(),
