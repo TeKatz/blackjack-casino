@@ -26,7 +26,7 @@ internal sealed record NativeMigrationManifest(
 /// </summary>
 internal static class NativeHostMigration
 {
-    private const int SchemaVersion = 1;
+    private const int SchemaVersion = 2;
     private const int MaxFiles = 128;
     private const long MaxFileBytes = 32L * 1024 * 1024;
     private const long MaxSnapshotBytes = 128L * 1024 * 1024;
@@ -165,8 +165,11 @@ internal static class NativeHostMigration
             throw new InvalidDataException("Candidate has not passed the verified staging operation.");
         NativeMigrationManifest? manifest =
             JsonSerializer.Deserialize<NativeMigrationManifest>(File.ReadAllBytes(marker), SaveJson);
-        if (manifest is null || manifest.Version != SchemaVersion
-            || manifest.Candidate != name || manifest.BrowserFiles is null
+        // v1 candidates created before browser-localStorage migration remain
+        // readable. Staging always writes v2 with an explicit browser manifest.
+        if (manifest is null || manifest.Version is not (1 or SchemaVersion)
+            || manifest.Candidate != name
+            || (manifest.Version == SchemaVersion && manifest.BrowserFiles is null)
             || manifest.Files.Length < RequiredFiles.Length
             || !RequiredFiles.All(required => manifest.Files.Any(f => f.Name == required))
             || RequiredFiles.Any(required => !File.Exists(Path.Combine(path, required))))
