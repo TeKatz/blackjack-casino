@@ -512,6 +512,19 @@ internal sealed class NativeShellForm : Form
             Dock = DockStyle.Fill,
             DefaultBackgroundColor = Color.FromArgb(4, 22, 17),
         };
+        // WebView2 processes F11 as a browser accelerator before it reaches
+        // the parent Form. Handle the real physical key in the WebView2
+        // control; the injected document shortcut remains a fallback for
+        // browsers that deliver F11 directly to JavaScript.
+        web.AcceleratorKeyPressed += (_, key) =>
+        {
+            if (key.VirtualKey != (int)Keys.F11) return;
+            key.Handled = true;
+            if (key.KeyEventKind == CoreWebView2KeyEventKind.KeyDown
+                && !key.PhysicalKeyStatus.WasKeyDown
+                && IsHandleCreated && !closing)
+                BeginInvoke(new Action(ToggleNativeFullscreen));
+        };
         browser = web;
         content.Controls.Clear();
         content.Controls.Add(web);
@@ -665,6 +678,19 @@ internal sealed class NativeShellForm : Form
             Dock = DockStyle.Fill,
             DefaultBackgroundColor = mode == "blackjack"
                 ? Color.FromArgb(6, 23, 20) : Color.FromArgb(12, 10, 25),
+        };
+        // WebView2 processes F11 as a browser accelerator before it reaches
+        // the parent Form. Handle the real physical key in the WebView2
+        // control; the injected document shortcut remains a fallback for
+        // browsers that deliver F11 directly to JavaScript.
+        web.AcceleratorKeyPressed += (_, key) =>
+        {
+            if (key.VirtualKey != (int)Keys.F11) return;
+            key.Handled = true;
+            if (key.KeyEventKind == CoreWebView2KeyEventKind.KeyDown
+                && !key.PhysicalKeyStatus.WasKeyDown
+                && IsHandleCreated && !closing)
+                BeginInvoke(new Action(ToggleNativeFullscreen));
         };
         browser = web;
         content.Controls.Add(web);
