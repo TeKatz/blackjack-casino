@@ -99,3 +99,5 @@ Windows integration and release approval are **not** asserted by source checks a
 - The embedded Casino Empire React page and native `EmpireService` bridge are now available in the test pilot with original session/revision validation and durable preferences snapshots. Detached windows remain a separate acceptance blocker.
 
 - The independent pilot now includes all eight Lounge game services and uses its own durable profile+wallet journal for progression completion. This remains preview-only and does not authorize a production-data import.
+
+- Native preview React account/shop/challenges/statistics/history/season/Vault/album/daily panels and Arcade receipt actions are wired to the original Core service methods and a single profile/wallet checkpoint. Production save migration and release updater replacement remain Phase C gates.

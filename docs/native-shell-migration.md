@@ -78,3 +78,11 @@ The native preview now links the original Empire protocol/snapshot and Core `Emp
 ## Phase B: Chill Lounge native services
 
 The independent NativeShell now links the existing Sudoku and variants, Solitaire, Word Search, Memory, Jigsaw, Tales from the Backroom, Tower Defense and Midnight Sweep C# services and versioned command sessions. The browser may only submit whitelisted intentions. Completion/profile and wallet rewards are protected by a dedicated preview-only aggregate checkpoint (pending before mirror projection, replayed on startup). A failed checkpoint disables subsequent Lounge commands until restart. The separate case-board window is implemented as an independent WinForms WebView2 view sharing the parent C# service. WPF fallback remains in the production app.
+
+## Phase B: native Casino Empire secondary window
+
+The React lobby now exposes the original Empire detached-window action. The native WinForms secondary surface has its own WebView2 session and command receipts, but shares a single authoritative Core Empire economy and preview storage with the main host. It restores focus, uses exact-page origin checks, and releases its timer and browser when closed. A detached window cannot be opened during an unresolved save or active blackjack wager.
+
+## Phase B: native React lobby, account and progression transactions
+
+The isolated pilot now uses the original React records/shop screens for account and title/frame cosmetics, seasons, challenge rewards, session statistics, history, the 16-theme album, shop packs, the Casino Vault and daily-login rewards. The same Core catalogs and progression classes used by WPF remain authoritative. Browser requests cannot supply balances or payouts. The preview's profile/wallet aggregate journal covers combined payouts before replacing either mirror, with restart recovery and a frozen writer after uncertain failure. The multi-game Arcade route reports terminal scores through the established Core receipt validation. The NativeShell can show the updater's status panel, but **must not** download or install updates through the production updater while it remains a test pilot.

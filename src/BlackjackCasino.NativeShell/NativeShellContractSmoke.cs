@@ -87,8 +87,45 @@ internal static class NativeShellContractSmoke
                     if (!root.GetProperty("nativePreview").GetBoolean()
                         || root.GetProperty("modes").GetArrayLength() != 11
                         || root.GetProperty("bankrollValue").GetDecimal() != session.Bankroll
-                        || root.GetProperty("dailyLogin").GetProperty("canClaim").GetBoolean())
+                        || !root.GetProperty("dailyLogin").GetProperty("canClaim").GetBoolean())
                         throw new InvalidOperationException("Native lobby emitted demo or invalid state.");
+                }
+
+                var nativeLobby = new NativeLobbyController(session);
+                var jsonOpts = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web);
+                foreach (string page in new[] { "challenges", "statistics", "profile",
+                    "history", "season", "vault", "album" })
+                {
+                    using var document = System.Text.Json.JsonDocument.Parse(
+                        System.Text.Json.JsonSerializer.Serialize(nativeLobby.Snapshot(page), jsonOpts));
+                    if (document.RootElement.ValueKind != System.Text.Json.JsonValueKind.Object)
+                        throw new InvalidOperationException("Missing native React record: " + page);
+                }
+                using (var nativeShop = System.Text.Json.JsonDocument.Parse(
+                    System.Text.Json.JsonSerializer.Serialize(nativeLobby.ShopSnapshot(), jsonOpts)))
+                {
+                    if (nativeShop.RootElement.GetProperty("items").GetArrayLength() == 0
+                        || nativeShop.RootElement.GetProperty("packs").GetArrayLength() != 5)
+                        throw new InvalidOperationException("Native cosmetic shop is using demo inventory.");
+                }
+                decimal beforeDaily = session.Bankroll;
+                NativeLobbyOutcome dailyPaid = nativeLobby.ClaimDaily();
+                if (!dailyPaid.Success
+                    || session.Bankroll <= beforeDaily
+                    || session.Preferences.DailyLoginClaims != 1
+                    || nativeLobby.ClaimDaily().Success)
+                    throw new InvalidOperationException("Daily reward was missing or paid twice.");
+                if (!nativeLobby.ActivateSeason(SeasonCatalog.Current.Id).Success)
+                    throw new InvalidOperationException("Core Season Pass activation failed.");
+                NativeLobbyOutcome secondDaily = nativeLobby.ClaimDaily();
+                if (secondDaily.Success)
+                    throw new InvalidOperationException("Duplicate daily receipt accepted.");
+                using (var postDaily = System.Text.Json.JsonDocument.Parse(
+                    System.Text.Json.JsonSerializer.Serialize(session.LobbySnapshot(), jsonOpts)))
+                {
+                    if (postDaily.RootElement.GetProperty("dailyLogin")
+                        .GetProperty("canClaim").GetBoolean())
+                        throw new InvalidOperationException("Daily claim remained available after a commit.");
                 }
 
                 decimal initial = session.Bankroll;
@@ -239,6 +276,9 @@ internal static class NativeShellContractSmoke
             // Receipt IDs persist across runtime lifetimes and browser restarts.
             using (var resumed = new NativePreviewRuntime(directory))
             {
+                if (resumed.Preferences.DailyLoginClaims != 1
+                    || new NativeLobbyController(resumed).ClaimDaily().Success)
+                    throw new InvalidOperationException("Daily login receipt replayed after restart.");
                 using var repeatBets = System.Text.Json.JsonDocument.Parse(
                     "[{\"key\":\"red\",\"amount\":100}]");
                 var receiptJournal = new NativeRouletteJournal(directory);

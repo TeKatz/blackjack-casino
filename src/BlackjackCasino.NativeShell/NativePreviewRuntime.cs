@@ -156,6 +156,33 @@ internal sealed class NativePreviewRuntime : IDisposable
         }
     }
 
+    internal void CommitLobbyAggregate(AppPreferences preferences, PlayerProfileState profile)
+    {
+        if (disposed || ManorRequiresRestart || rouletteRequiresRestart || loungeRequiresRestart)
+            throw new InvalidOperationException("Player transaction recovery requires restart.");
+        if (preferences.Bankroll < 0m)
+            throw new ArgumentOutOfRangeException(nameof(preferences));
+        try
+        {
+            loungeJournal.Commit(preferences, profile);
+            progression.AdoptManorProfile(profile);
+            table.Session.ResetBankroll(preferences.Bankroll);
+            Preferences = preferences;
+        }
+        catch
+        {
+            loungeRequiresRestart = true;
+            throw;
+        }
+    }
+
+    internal void CreditLoungeWallet(decimal amount)
+    {
+        if (amount < 0m) throw new ArgumentOutOfRangeException(nameof(amount));
+        AppPreferences candidate = Preferences with { Bankroll = checked(Bankroll + amount) };
+        CommitLobbyAggregate(candidate, Profile);
+    }
+
     internal void SaveLoungeAward(ProgressionAward award)
     {
         if (award == ProgressionAward.None) return;
@@ -195,12 +222,12 @@ internal sealed class NativePreviewRuntime : IDisposable
         Persist();
     }
 
-    internal object EmpireSnapshot() => new
+    internal object EmpireSnapshot(bool detached = false) => new
     {
         Language = Preferences.Language == UiLanguagePreference.German ? "de" : "en",
         AnimationsEnabled = Preferences.Presentation("casino-empire").AnimationsEnabled,
         SoundEnabled = Preferences.Presentation("casino-empire").SoundEnabled,
-        Detached = false,
+        Detached = detached,
         CanClaimDividend = !HandInProgress && !ManorRequiresRestart && !rouletteRequiresRestart,
         Economy = EmpireModernSnapshot.Create(empire),
     };

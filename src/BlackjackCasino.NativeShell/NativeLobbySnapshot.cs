@@ -45,9 +45,8 @@ internal static class NativeLobbySnapshot
             NativePreview = true,
             DailyLogin = new
             {
-                // Daily rewards are currently read-only in the preview. Do not
-                // offer a credit without a journal covering coins/packs/cash.
-                CanClaim = false,
+                // The daily claim now commits coins, packs and cash atomically.
+                CanClaim = daily.CanClaim,
                 daily.ClaimedToday,
                 daily.TotalClaims,
                 daily.ActiveStep,
@@ -92,7 +91,7 @@ internal static class NativeLobbySnapshot
             AlbumSoundEnabled = preferences.Presentation("album").SoundEnabled,
             MusicEnabled = preferences.MusicEnabled,
             MusicVolume = preferences.MusicVolume,
-            ShowEmpireBalance = false,
+            ShowEmpireBalance = preferences.ShowEmpireBalance,
             Language = preferences.Language == UiLanguagePreference.German ? "de" : "en",
             Modes = HostMigrationCatalog.CasinoRoutes.Select(mode => new
             {
@@ -101,7 +100,7 @@ internal static class NativeLobbySnapshot
                 Category = Category(mode.DesktopModeId),
                 Description = Description(mode.DesktopModeId),
                 Enabled = mode.HasPreviewBridge || (mode.HasNativeProcess && NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory)),
-                Secondary = false,
+                Secondary = mode.HasSecondaryWindow && mode.HasPreviewBridge,
             }).ToArray(),
         };
     }
@@ -130,8 +129,8 @@ internal static class NativeLobbySnapshot
         "midnight-manor" => "Haunted reels, free spins and rooms that remember your choices.",
         "midnight-merge" => "Restore the Midnight Club one room at a time.",
         "kniffel" => "Midnight Dice with saved sheets and casino AI.",
-        "casino-empire" => "Requires an independent Empire controller and detached window.",
-        "chill-lounge" => "Requires native bridges for all eight lounge games.",
+        "casino-empire" => "Build your estate in a native React window.",
+        "chill-lounge" => "Eight native-authoritative games and a detached case board.",
         "midnight-descent" => "Requires the external Godot launch lifecycle.",
         _ => "Not yet available in the independent native host.",
     };

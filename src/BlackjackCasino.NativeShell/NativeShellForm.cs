@@ -22,6 +22,9 @@ internal sealed class NativeShellForm : Form
     };
 
     private readonly NativePreviewRuntime runtime;
+    private readonly NativeLobbyController lobbyController;
+    private string? recordsPage;
+    private bool shopOpen, updatesOpen;
     private readonly Panel content = new() { Dock = DockStyle.Fill };
     private readonly Label status = new()
     {
@@ -47,6 +50,7 @@ internal sealed class NativeShellForm : Form
     private Process? descentProcess;
     private EmpireModernSession? empireEpoch;
     private NativeLoungeCaseBoardForm? loungeBoard;
+    private NativeEmpireDetachedForm? detachedEmpire;
     private readonly System.Windows.Forms.Timer loungeRefresh = new() { Interval = 1000 };
     private readonly System.Windows.Forms.Timer loungeTowerRefresh = new() { Interval = 100 };
     private readonly System.Windows.Forms.Timer empireRefresh = new() { Interval = 2000 };
@@ -59,6 +63,7 @@ internal sealed class NativeShellForm : Form
         previewDirectory ??= HostPreviewStorage.DefaultDirectory(localAppData);
         previewDirectory = HostPreviewStorage.RequireIsolatedDirectory(previewDirectory, localAppData);
         runtime = new NativePreviewRuntime(previewDirectory);
+        lobbyController = new NativeLobbyController(runtime);
         environment = new Lazy<Task<CoreWebView2Environment>>(() =>
             CoreWebView2Environment.CreateAsync(
                 userDataFolder: Path.Combine(previewDirectory, "WebView2")));
@@ -228,6 +233,7 @@ internal sealed class NativeShellForm : Form
         actions.Controls.Add(MakeButton("MIDNIGHT DICE", () => _ = OpenModeAsync("midnight-dice")));
         actions.Controls.Add(MakeButton("MIDNIGHT MANOR", () => _ = OpenModeAsync("midnight-manor")));
         actions.Controls.Add(MakeButton("CASINO EMPIRE", () => _ = OpenModeAsync("casino-empire")));
+        actions.Controls.Add(MakeButton("EMPIRE · SEPARATES FENSTER", OpenDetachedEmpire));
         actions.Controls.Add(MakeButton("CHILL LOUNGE", () => _ = OpenModeAsync("chill-lounge")));
         if (NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory))
             actions.Controls.Add(MakeButton("MIDNIGHT DESCENT", () => _ = OpenDescentAsync()));
@@ -243,6 +249,9 @@ internal sealed class NativeShellForm : Form
         }, 0, 3);
         content.Controls.Add(page);
         status.Text = "Lobby · Spielgeld: " + runtime.Bankroll.ToString("N2");
+        recordsPage = null;
+        shopOpen = false;
+        updatesOpen = false;
         if (lobbyShown && !lobbyBrowserDisabled) _ = OpenLobbyAsync();
     }
 
@@ -283,6 +292,43 @@ internal sealed class NativeShellForm : Form
             empireEpoch = null;
         }
         ShowHome();
+    }
+
+    private void OpenDetachedEmpire()
+    {
+        if (closing || runtime.ManorRequiresRestart || runtime.RouletteRequiresRestart
+            || runtime.LoungeRequiresRestart) return;
+        if (detachedEmpire is { IsDisposed: false })
+        {
+            detachedEmpire.Activate();
+            return;
+        }
+        if (runtime.HandInProgress)
+        {
+            status.Text = "Finish the current Blackjack hand first.";
+            return;
+        }
+        try
+        {
+            runtime.OpenEmpire();
+            var window = new NativeEmpireDetachedForm(
+                runtime, environment.Value, frontendFolder, RefreshLobbySnapshot)
+            {
+                Owner = this,
+            };
+            detachedEmpire = window;
+            window.FormClosed += (_, _) =>
+            {
+                if (ReferenceEquals(detachedEmpire, window)) detachedEmpire = null;
+                RefreshLobbySnapshot();
+            };
+            window.Show(this);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or InvalidDataException or InvalidOperationException)
+        {
+            status.Text = "Casino Empire could not open: " + ex.Message;
+        }
     }
 
     private async Task OpenDescentAsync()
@@ -390,6 +436,11 @@ internal sealed class NativeShellForm : Form
     private async Task OpenModeAsync(string mode)
     {
         if (closing || !HostMigrationCatalog.IsPreviewRoute(mode)) return;
+        if (mode == "casino-empire" && detachedEmpire is { IsDisposed: false })
+        {
+            detachedEmpire.Activate();
+            return;
+        }
         if (runtime.ManorRequiresRestart || runtime.LoungeRequiresRestart || runtime.RouletteRequiresRestart)
         {
             status.Text = "Manor journal recovery requires an application restart.";
@@ -568,6 +619,8 @@ internal sealed class NativeShellForm : Form
                     break;
                 case "lobby.refresh" when activeMode is null && listening:
                     RefreshLobbySnapshot();
+                    RefreshLobbyRecords();
+                    RefreshLobbyShop();
                     break;
                 case "lobby.open" when activeMode is null && listening && ready:
                 {
@@ -583,6 +636,12 @@ internal sealed class NativeShellForm : Form
                         BeginInvoke(new Action(() => { _ = OpenDescentAsync(); }));
                     break;
                 }
+                case "lobby.open-secondary" when activeMode is null && listening && ready:
+                    if (root.TryGetProperty("id", out JsonElement secondaryId)
+                        && secondaryId.ValueKind == JsonValueKind.String
+                        && secondaryId.GetString() == "casino-empire")
+                        BeginInvoke(new Action(OpenDetachedEmpire));
+                    break;
                 case "lobby.language.set" when activeMode is null && listening && ready:
                 {
                     if (!root.TryGetProperty("id", out JsonElement languageId)
@@ -817,6 +876,8 @@ internal sealed class NativeShellForm : Form
                 // Reel-stop and animation-complete signals are presentation cues,
                 // never outcome calculations; the preview has no sound router yet.
             }
+            if (activeMode is null && listening && ready)
+                HandleLobbyAction(message ?? string.Empty, root);
         }
         catch (JsonException) { }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
@@ -825,6 +886,239 @@ internal sealed class NativeShellForm : Form
             if (activeMode == "chill-lounge")
                 FailBrowser("Native Lounge save or gameplay error: " + ex.Message);
         }
+    }
+
+    private static string? ValidLobbyId(JsonElement root)
+    {
+        if (!root.TryGetProperty("id", out JsonElement value)) return null;
+        if (value.ValueKind != JsonValueKind.String) return null;
+        string? id = value.GetString();
+        return id is { Length: >= 1 and <= 80 }
+            && id.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' or ' ' or '\'')
+            ? id : null;
+    }
+
+    private void RefreshLobbyRecords()
+    {
+        if (recordsPage is { } page && activeMode is null && listening)
+            Post("lobby.records.snapshot", new { Page = page, Snapshot = lobbyController.Snapshot(page) });
+    }
+
+    private void RefreshLobbyShop()
+    {
+        if (shopOpen && activeMode is null && listening)
+            Post("lobby.shop.snapshot", lobbyController.ShopSnapshot());
+    }
+
+    private void SendLobbyResult(string id, NativeLobbyOutcome result) =>
+        Post("lobby.records.result", new { Id = id, result.Success, result.Message });
+
+    private void HandleLobbyAction(string action, JsonElement root)
+    {
+        string? id = ValidLobbyId(root);
+        switch (action)
+        {
+            case "lobby.records.open"
+                when id is "challenges" or "statistics" or "profile" or
+                    "history" or "season" or "vault" or "album":
+                shopOpen = false;
+                recordsPage = id;
+                RefreshLobbyRecords();
+                break;
+            case "lobby.records.close":
+                recordsPage = null;
+                break;
+            case "lobby.progression"
+                when id is "Season Pass" or "Cosmetic Shop" or "Collector's Album"
+                    or "Challenges" or "Statistics":
+            {
+                if (id == "Cosmetic Shop")
+                {
+                    recordsPage = null;
+                    shopOpen = true;
+                    Post("lobby.shop.show", (object?)null);
+                    RefreshLobbyShop();
+                }
+                else
+                {
+                    recordsPage = id switch
+                    {
+                        "Season Pass" => "season",
+                        "Collector's Album" => "album",
+                        "Challenges" => "challenges",
+                        _ => "statistics",
+                    };
+                    shopOpen = false;
+                    Post("lobby.records.show", new { Page = recordsPage });
+                    RefreshLobbyRecords();
+                }
+                break;
+            }
+            case "lobby.profile" or "lobby.profile.native":
+                shopOpen = false;
+                recordsPage = "profile";
+                Post("lobby.records.show", new { Page = recordsPage });
+                RefreshLobbyRecords();
+                break;
+            case "lobby.vault":
+                shopOpen = false;
+                recordsPage = "vault";
+                Post("lobby.records.show", new { Page = recordsPage });
+                RefreshLobbyRecords();
+                break;
+            case "lobby.shop.open":
+                recordsPage = null;
+                shopOpen = true;
+                RefreshLobbyShop();
+                break;
+            case "lobby.shop.close":
+                shopOpen = false;
+                break;
+            case "lobby.shop.action" when shopOpen && id is not null:
+            {
+                NativeLobbyOutcome result = lobbyController.PurchaseOrEquip(id);
+                Post("lobby.shop.result", new { Id = id, result.Success, result.Message });
+                RefreshLobbyShop();
+                RefreshLobbySnapshot();
+                break;
+            }
+            case "lobby.shop.pack" when shopOpen && id is not null:
+            {
+                NativeLobbyOutcome result = lobbyController.PurchasePack(id);
+                Post("lobby.shop.result", new { Id = id, result.Success, result.Message });
+                RefreshLobbyShop();
+                RefreshLobbySnapshot();
+                break;
+            }
+            case "lobby.album.open" when recordsPage == "album" && id is not null:
+            case "lobby.album.complete" when recordsPage == "album" && id is not null:
+            case "lobby.album.claim" when recordsPage == "album" && id is not null:
+            {
+                string operation = action["lobby.album.".Length..];
+                NativeLobbyOutcome result = operation switch
+                {
+                    "open" => lobbyController.OpenAlbumPack(id),
+                    "complete" => lobbyController.CompleteAlbumOpening(id),
+                    _ => lobbyController.ClaimAlbumTheme(id),
+                };
+                Post("lobby.album.result", new
+                {
+                    Operation = operation,
+                    Id = id,
+                    result.Success,
+                    result.Message,
+                    Pending = lobbyController.AlbumPending(),
+                });
+                RefreshLobbyRecords();
+                RefreshLobbySnapshot();
+                break;
+            }
+            case "lobby.records.claim" when recordsPage == "challenges" && id is not null:
+            {
+                SendLobbyResult(id, lobbyController.ClaimChallenge(id));
+                RefreshLobbyRecords();
+                RefreshLobbySnapshot();
+                break;
+            }
+            case "lobby.records.claim-all" when recordsPage == "challenges":
+                SendLobbyResult("all", lobbyController.ClaimAllChallenges());
+                RefreshLobbyRecords();
+                RefreshLobbySnapshot();
+                break;
+            case "lobby.profile.rename" when recordsPage == "profile":
+            {
+                if (!root.TryGetProperty("value", out JsonElement value)
+                    || value.ValueKind != JsonValueKind.String
+                    || value.GetString() is not { Length: <= 256 } playerName) break;
+                SendLobbyResult("rename", lobbyController.Rename(playerName));
+                RefreshLobbyRecords();
+                RefreshLobbySnapshot();
+                break;
+            }
+            case "lobby.profile.equip" when recordsPage == "profile" && id is not null:
+                SendLobbyResult(id, lobbyController.EquipProfile(id));
+                RefreshLobbyRecords();
+                RefreshLobbySnapshot();
+                break;
+            case "lobby.records.season.activate" when recordsPage == "season" && id is not null:
+                SendLobbyResult(id, lobbyController.ActivateSeason(id));
+                RefreshLobbyRecords();
+                RefreshLobbySnapshot();
+                break;
+            case "lobby.records.vault.open" when recordsPage == "vault":
+            {
+                NativeLobbyOutcome outcome = lobbyController.OpenVault();
+                Post("lobby.records.vault.result", new
+                {
+                    outcome.Success, outcome.Message, outcome.Reward,
+                });
+                RefreshLobbyRecords();
+                RefreshLobbySnapshot();
+                break;
+            }
+            case "lobby.daily.claim":
+                _ = lobbyController.ClaimDaily();
+                RefreshLobbySnapshot();
+                break;
+            case "lobby.arcade.run" when id is not null:
+            {
+                if (!root.TryGetProperty("score", out JsonElement scoreValue)
+                    || !scoreValue.TryGetInt32(out int score)
+                    || !root.TryGetProperty("seconds", out JsonElement secondsValue)
+                    || !secondsValue.TryGetInt32(out int seconds)
+                    || !root.TryGetProperty("runId", out JsonElement runValue)
+                    || runValue.ValueKind != JsonValueKind.String
+                    || !Guid.TryParse(runValue.GetString(), out Guid runId)) break;
+                NativeLobbyOutcome result = lobbyController.RecordArcade(id, score, seconds, runId);
+                if (result.Success)
+                {
+                    RefreshLobbySnapshot();
+                    RefreshLobbyRecords();
+                }
+                break;
+            }
+            case "lobby.settings.music" when id is "true" or "false":
+                runtime.UpdateLoungePreferences(p => p with { MusicEnabled = id == "true" });
+                RefreshLobbySnapshot();
+                break;
+            case "lobby.settings.empire" when id is "true" or "false":
+                runtime.UpdateLoungePreferences(p => p with { ShowEmpireBalance = id == "true" });
+                RefreshLobbySnapshot();
+                break;
+            case "lobby.settings.volume"
+                when int.TryParse(id, out int units) && units is >= 0 and <= 32:
+                runtime.UpdateLoungePreferences(p => p with { MusicVolume = units / 100d });
+                RefreshLobbySnapshot();
+                break;
+            case "lobby.updates.open":
+                updatesOpen = true;
+                RefreshNativeUpdates();
+                break;
+            case "lobby.updates.close":
+                updatesOpen = false;
+                break;
+            case "lobby.updates.check" or "lobby.updates.install" or
+                "lobby.updates.channel.set" when updatesOpen:
+                // This separate pilot is never a permitted target for the
+                // production updater. Phase C verifies the replacement package.
+                RefreshNativeUpdates();
+                break;
+        }
+    }
+
+    private void RefreshNativeUpdates()
+    {
+        if (!updatesOpen || activeMode is not null || !listening) return;
+        Post("lobby.updates.snapshot", new
+        {
+            InstalledVersion = typeof(NativeShellForm).Assembly.GetName().Version?.ToString() ?? "Preview",
+            Channel = "development",
+            Status = "NativeShell preview: updates remain in the existing production host until release migration.",
+            Busy = false,
+            CanCheck = false,
+            CanInstall = false,
+            UpdateAvailable = false,
+        });
     }
 
     private static bool LoungeMessageVersion(JsonElement message) =>
@@ -1118,6 +1412,8 @@ internal sealed class NativeShellForm : Form
         loungeTowerRefresh.Stop();
         loungeBoard?.Close();
         loungeBoard = null;
+        detachedEmpire?.Close();
+        detachedEmpire = null;
         DisposeBrowser();
         runtime.Dispose();
         empireRefresh.Dispose();
