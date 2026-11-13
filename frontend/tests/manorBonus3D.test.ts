@@ -50,13 +50,14 @@ describe('Godot 3D Manor bonus bridge', () => {
   it('keeps the 3D bonus embedded in the machine surface with safe explicit exit', () => {
     const markup = renderToStaticMarkup(createElement(ManorBonus3D, {
       active: true, demo: true, run: sample, language: 'de', reducedMotion: true, disabled: false,
-      onAction: () => {}, onExitDemo: () => {}, onFallback: () => {},
+      onAction: () => {}, onExitDemo: () => {},
     }));
     expect(markup).toContain('manor-godot-frame');
     expect(markup).toContain('./manor3d/index.html');
     expect(markup).toContain('ÜBUNG · OHNE EINSATZ');
     expect(markup).toContain('Übung verlassen');
     expect(markup).not.toContain('TEST BONUS GAME');
+    expect(markup).not.toContain('Normale 2D-Ansicht');
     expect(markup).toContain('is-active');
     expect(markup).toContain('phase-loading');
     expect(markup).not.toContain('manor-godot-portal');
@@ -69,15 +70,16 @@ describe('Godot 3D Manor bonus bridge', () => {
     expect(markup).toContain('MANOR-GRUNDRISS');
     expect(markup).toContain('UNBEKANNTE PRÄSENZ');
     expect(markup).toContain('Jetzt auszahlen');
-  });  it('keeps the iframe ready but never offers choices while warming behind the reels', () => {
+  });
+  it('does not retain any iframe or WebGL context when inactive', () => {
     const markup = renderToStaticMarkup(createElement(ManorBonus3D, {
       active: false, demo: false, run: null, language: 'en', reducedMotion: false,
-      disabled: false, onAction: () => {}, onExitDemo: () => {}, onFallback: () => {},
+      disabled: false, onAction: () => {}, onExitDemo: () => {},
     }));
     expect(markup).toContain('is-warming');
     expect(markup).toContain('phase-hidden');
     expect(markup).toContain('aria-hidden="true"');
-    expect(markup).toContain('manor-godot-frame');
+    expect(markup).not.toContain('manor-godot-frame');
     expect(markup).not.toContain('manor-godot-door-actions');
     expect(markup).not.toContain('Back to the slot');
   });
@@ -90,12 +92,14 @@ describe('Godot 3D Manor bonus bridge', () => {
     const markup = renderToStaticMarkup(createElement(ManorBonus3D, {
       active: true, demo: false, run: sample, conclusion: outcome,
       language: 'de', reducedMotion: false, disabled: false,
-      onAction: () => {}, onExitDemo: () => {}, onFallback: () => {},
+      onAction: () => {}, onExitDemo: () => {},
       onCloseResult: () => {},
     }));
     expect(markup).toContain('DER GEIST HAT DICH GEFUNDEN');
     expect(markup).toContain('$625.00');
     expect(markup).toContain('manor-godot-conclusion');
+    // The 3D graphics process is already released while the player reads the receipt.
+    expect(markup).not.toContain('manor-godot-frame');
     expect(markup).toContain('Zurück zu den Walzen');
     expect(markup).not.toContain('manor-godot-door-actions');
   });
@@ -110,7 +114,7 @@ describe('Godot 3D Manor bonus bridge', () => {
     const markup = renderToStaticMarkup(createElement(ManorBonus3D, {
       active: true, demo: true, run: practiceRun, language: 'en',
       reducedMotion: true, disabled: false,
-      onAction: () => {}, onExitDemo: () => {}, onFallback: () => {},
+      onAction: () => {}, onExitDemo: () => {},
     }));
     expect(markup).toContain('PRACTICE · NO WAGER');
     expect(markup).toContain('15×');
@@ -129,7 +133,7 @@ describe('Godot 3D Manor bonus bridge', () => {
     };
     const markup = renderToStaticMarkup(createElement(ManorBonus3D, {
       active: true, demo: false, run, language: 'de', reducedMotion: false,
-      disabled: false, onAction: () => {}, onExitDemo: () => {}, onFallback: () => {},
+      disabled: false, onAction: () => {}, onExitDemo: () => {},
     }));
     expect(markup).toContain('80×');
     expect(markup).toContain('25×');
@@ -142,6 +146,7 @@ describe('Godot 3D Manor bonus bridge', () => {
     expect(markup).toContain('Kerze');
     expect(markup).toContain('Schutzzauber');
     expect(markup).toContain('Jetzt auszahlen');
+    expect(markup).not.toContain('Normale 2D-Ansicht');
   });
 
 });

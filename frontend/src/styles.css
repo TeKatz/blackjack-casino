@@ -1469,3 +1469,12 @@ button.manor-godot-item.usable:focus-visible {
 @keyframes manor-side-fog{to{opacity:.4;transform:translateX(12%)}}
  .slot-viewport.no-motion .manor-side-rail *{animation:none!important}
 @media(prefers-reduced-motion:reduce){.manor-side-rail *{animation:none!important}}
+
+/* Godot-load recovery uses the existing C# actions, never a second bonus UI. */
+.manor-godot-recovery-actions{display:flex;flex-direction:column;align-items:center;gap:9px;
+  max-width:560px;width:100%;margin-top:8px}
+.manor-godot-recovery-actions>.ghost-button{min-width:170px}
+.manor-godot-recovery-settlement{display:flex;align-items:center;justify-content:center;
+  flex-wrap:wrap;gap:9px;width:100%}
+.manor-godot-recovery-settlement .manor-godot-auto-confirm{width:100%;max-width:430px}
+.manor-godot-recovery-actions button:focus-visible{outline:2px solid #f6ddb7;outline-offset:3px}
