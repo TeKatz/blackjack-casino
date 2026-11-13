@@ -59,6 +59,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private readonly Action dailyClaim;
     private readonly Action<string> languageChange;
     private readonly Action exit;
+    private readonly Action cancelExit;
     private readonly Action readyChanged;
     private readonly Func<object> updateSnapshot;
     private readonly Action<string> setUpdateChannel;
@@ -104,7 +105,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         Func<(bool Success, string Message)> claimAllChallenges, Action recordsClosed,
         Action<string> progression, Func<string, int, int, Guid, bool> arcadeRun,
         Action profile, Action vault, Action dailyClaim,
-        Action<string> languageChange, Action exit, Action readyChanged,
+        Action<string> languageChange, Action exit, Action cancelExit, Action readyChanged,
         Func<object> updateSnapshot, Action<string> setUpdateChannel,
         Func<Task> checkUpdate, Func<Task> installUpdate,
         Action<string, string?> presentationSetting)
@@ -140,6 +141,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         this.dailyClaim = dailyClaim;
         this.languageChange = languageChange;
         this.exit = exit;
+        this.cancelExit = cancelExit;
         this.readyChanged = readyChanged;
         this.updateSnapshot = updateSnapshot;
         this.setUpdateChannel = setUpdateChannel;
@@ -165,6 +167,13 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
             if (recordsPage is not null) RefreshRecords();
             RefreshUpdates();
         }
+    }
+
+    internal bool RequestExitConfirmation()
+    {
+        if (!Ready || !IsVisible || disposed || browser.CoreWebView2 is null) return false;
+        PostMessage("lobby.exit.show", null);
+        return true;
     }
 
     private void PostMessage(string type, object? data)
@@ -525,8 +534,13 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     presentationSetting(command!, null);
                     Refresh();
                     break;
-                case "lobby.exit":
+                case "lobby.exit" when ready && IsVisible:
+                    // React already confirmed: close the host without spawning
+                    // another confirmation WebView on top of the lobby.
                     exit();
+                    break;
+                case "lobby.exit.cancel" when ready && IsVisible:
+                    cancelExit();
                     break;
             }
         }

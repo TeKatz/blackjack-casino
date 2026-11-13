@@ -46,7 +46,10 @@ public partial class MainWindow
             ModernArcadeRun,
             OpenNativePlayerProfile, () => OpenModernProgression("vault"),
             () => { ClaimDailyLoginFromDrawer(); modernLobby?.Refresh(); },
-            SetModernLobbyLanguage, Close, OnModernLobbyStateChanged,
+            SetModernLobbyLanguage,
+            () => { exitConfirmationAccepted = true; Close(); },
+            () => exitConfirmationOpen = false,
+            OnModernLobbyStateChanged,
             GetModernUpdateSnapshot, SetModernUpdateChannel,
             () => CheckForUpdatesAsync(silent: false), InstallUpdateAsync,
             ChangeModernLobbyPresentation);

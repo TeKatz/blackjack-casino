@@ -54,6 +54,10 @@ public partial class MainWindow
 
     private void RequestCasinoExitConfirmation()
     {
+        // The running React lobby is already rendered and interactive. Use its
+        // in-page confirmation instead of cold-starting a second WebView2 window.
+        if (modernLobby?.RequestExitConfirmation() == true) return;
+
         InitializeCasinoExitOverlay();
         if (exitDialog is null || exitOverlay is null)
         {
