@@ -635,6 +635,11 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .native-lobby-boot{display:grid;place-items:center;min-height:100vh;background:#041611;color:#e8d5ac}.native-lobby-loading{font-size:1rem;letter-spacing:.14em}
 
 
+/* Keep React/Pixi scene identity across Lobby/Slots/Tables/Relaxed/Empire
+   filters: hidden tiles are not removed from the DOM, but must leave the grid
+   and keyboard navigation while another category is selected. */
+.lobby-game[hidden]{display:none!important}
+
 /* Final NativeShell polish: avoid re-entry animations that continuously change
    the GPU art bounds while a tab switch reconstructs the lobby layout. */
 .lobby-game-grid{animation:none!important}
