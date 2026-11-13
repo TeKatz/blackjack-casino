@@ -102,6 +102,12 @@ internal static class NativeShellContractSmoke
                     name.Name is "PresentationFramework" or "PresentationCore" or "WindowsBase"))
                 throw new InvalidOperationException("Native shell still references WPF assemblies.");
 
+            if (NativeHostAudio.TrackFor(null) != Soundtrack.Lobby
+                || NativeHostAudio.TrackFor("midnight-dice") != Soundtrack.DiceLounge
+                || NativeHostAudio.TrackFor("chill-lounge") != Soundtrack.ChillLounge
+                || NativeHostAudio.TrackFor("midnight-manor") != Soundtrack.Manor)
+                throw new InvalidOperationException("WPF-free native music routes are incomplete.");
+
             if (HostMigrationCatalog.PreviewRoutes.Count != 10
                 || HostMigrationCatalog.ApprovedForRelease
                 || !HostMigrationCatalog.IsPreviewRoute("midnight-manor")

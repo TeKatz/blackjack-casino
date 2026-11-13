@@ -23,6 +23,7 @@ internal sealed class NativeShellForm : Form
 
     private readonly NativePreviewRuntime runtime;
     private readonly NativeLobbyController lobbyController;
+    private readonly NativeHostAudio hostAudio = new();
     private string? recordsPage;
     private bool shopOpen, updatesOpen;
     private readonly Panel content = new() { Dock = DockStyle.Fill };
@@ -251,6 +252,7 @@ internal sealed class NativeShellForm : Form
         }, 0, 3);
         content.Controls.Add(page);
         status.Text = "Lobby · Spielgeld: " + runtime.Bankroll.ToString("N2");
+        hostAudio.Update(null, runtime.Preferences);
         recordsPage = null;
         shopOpen = false;
         updatesOpen = false;
@@ -338,6 +340,7 @@ internal sealed class NativeShellForm : Form
         if (closing || descentProcess is not null || runtime.HandInProgress) return;
 
         FormWindowState previousState = WindowState;
+        hostAudio.Suspend();
         Process? process = null;
         try
         {
@@ -369,6 +372,7 @@ internal sealed class NativeShellForm : Form
                     ? FormWindowState.Normal : previousState;
                 Activate();
                 RefreshLobbySnapshot();
+                hostAudio.Update(activeMode, runtime.Preferences);
             }
         }
     }
@@ -505,6 +509,7 @@ internal sealed class NativeShellForm : Form
         }
         DisposeBrowser();
         activeMode = mode;
+        hostAudio.Update(activeMode, runtime.Preferences);
         listening = ready = browserFailed = false;
         blackjackEpoch = mode == "blackjack" ? new BlackjackModernSession() : null;
         reelsEpoch = mode == "reels" ? new ModernReelsSession() : null;
@@ -1083,6 +1088,7 @@ internal sealed class NativeShellForm : Form
             }
             case "lobby.settings.music" when id is "true" or "false":
                 runtime.UpdateLoungePreferences(p => p with { MusicEnabled = id == "true" });
+                hostAudio.Update(activeMode, runtime.Preferences);
                 RefreshLobbySnapshot();
                 break;
             case "lobby.settings.empire" when id is "true" or "false":
@@ -1092,6 +1098,7 @@ internal sealed class NativeShellForm : Form
             case "lobby.settings.volume"
                 when int.TryParse(id, out int units) && units is >= 0 and <= 32:
                 runtime.UpdateLoungePreferences(p => p with { MusicVolume = units / 100d });
+                hostAudio.Update(activeMode, runtime.Preferences);
                 RefreshLobbySnapshot();
                 break;
             case "lobby.updates.open":
@@ -1420,6 +1427,8 @@ internal sealed class NativeShellForm : Form
         detachedEmpire = null;
         DisposeBrowser();
         runtime.Dispose();
+        hostAudio.Dispose();
+        CasinoAudio.Shutdown();
         empireRefresh.Dispose();
         loungeRefresh.Dispose();
         loungeTowerRefresh.Dispose();

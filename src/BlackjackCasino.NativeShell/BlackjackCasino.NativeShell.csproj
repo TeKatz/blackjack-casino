@@ -12,6 +12,14 @@
     <PackageReference Include="Microsoft.Web.WebView2" />
     <ProjectReference Include="../BlackjackCasino.Core/BlackjackCasino.Core.csproj" />
     <ProjectReference Include="../BlackjackCasino.Update/BlackjackCasino.Update.csproj" />
+    <!-- The original PCM renderer and synthesis are pure .NET / WinMM, not WPF. -->
+    <Compile Include="../BlackjackCasino.Desktop/AudioClip.cs" Link="Shared/AudioClip.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/AudioMixer.cs" Link="Shared/AudioMixer.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/CasinoAudio.cs" Link="Shared/CasinoAudio.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/CasinoMusicSynthesis.cs" Link="Shared/CasinoMusicSynthesis.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/DiceLoungeSynthesis.cs" Link="Shared/DiceLoungeSynthesis.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ChillLoungeSynthesis.cs" Link="Shared/ChillLoungeSynthesis.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/AdventureSynthesis.cs" Link="Shared/AdventureSynthesis.cs" />
   </ItemGroup>
   <ItemGroup>
     <!-- Link the EXACT domain and save contracts currently used by the WPF app.
@@ -75,6 +83,13 @@
     <EmbeddedResource Include="../BlackjackCasino.Desktop/Resources/MergeStrings.de.resx" Link="Resources/MergeStrings.de.resx" />
     <EmbeddedResource Include="../BlackjackCasino.Desktop/Resources/AlbumLoreStrings.resx" Link="Resources/AlbumLoreStrings.resx" />
     <EmbeddedResource Include="../BlackjackCasino.Desktop/Resources/AlbumLoreStrings.de.resx" Link="Resources/AlbumLoreStrings.de.resx" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="../BlackjackCasino.Desktop/Assets/Music/*.wav"
+      LogicalName="BlackjackCasino.Music.%(Filename)%(Extension)" />
+    <None Include="../BlackjackCasino.Desktop/Assets/Music/Licensed/*.mp3"
+      Link="Music/Licensed/%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="../../frontend/dist/**/*"

@@ -143,3 +143,16 @@ after completely closing the old casino and all WebView2 processes.
 The copy-only staging procedure rejects changed files, excessive size and
 symbolic links. If no legacy localStorage directory exists, it leaves that
 component empty rather than inventing scores.
+
+### Phase C: WPF-free NativeShell soundtrack
+The native host now links the original PCM synthesis, shared WinMM mixer, and
+the user's already licensed MP3 tracks. The candidate package includes
+`Music/Licensed/lobby.mp3`, `midnight-dice.mp3`, `midnight-manor.mp3`,
+and `chill-lounge.mp3`. Track routing follows the active casino mode.
+Music-enabled and global volume preferences are observed; synth fallback
+continues when an optional MP3 is unavailable or cannot be opened.
+Leaving a game stops its audio owner; launching Midnight Descent suspends
+the host music to avoid two soundtracks playing simultaneously.
+
+The host soundtrack is no longer silent. Individual per-action sound cue parity
+and the full original soundtrack/volume acceptance still require Windows review.
