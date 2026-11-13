@@ -90,6 +90,7 @@ public partial class MainWindow : Window
         Loaded += async (_, _) =>
         {
             RefreshGameUi();
+            InitializeCasinoExitOverlay();
             if (manorRecoveryNotice is not null) StatusText.Text = manorRecoveryNotice;
             if(!testSession) await CheckForUpdatesAsync(silent: true);
         };
@@ -101,16 +102,13 @@ public partial class MainWindow : Window
             // re-enter WPF shutdown. Cancel first, then show it on the dispatcher.
             if (exitConfirmationOpen) return;
             exitConfirmationOpen = true;
-            bool german = preferences.Language == UiLanguagePreference.German;
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 try
                 {
-                    if (!CasinoExitDialog.Confirm(this, german)) return;
-                    exitConfirmationAccepted = true;
-                    Close();
+                    RequestCasinoExitConfirmation();
                 }
-                finally { exitConfirmationOpen = false; }
+                catch { exitConfirmationOpen = false; throw; }
             }));
         };
         Closed += (_, _) =>
