@@ -121,3 +121,8 @@ scores, and the new host currently has no equivalent release updater or full
 audio/history/Windows acceptance. This is a **copy-only migration rehearsal**,
 not a single-writer production cutover. The candidate manifest explicitly
 records these outstanding gates.
+
+The candidate now explicitly loads and persists the imported Blackjack
+`hand-history.json` through a path-scoped writer. This prevents empty history
+screens after migration and keeps new candidate rounds outside the live WPF
+player-data directory.

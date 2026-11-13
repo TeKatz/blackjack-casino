@@ -25,7 +25,12 @@ internal static class NativeShellWebSmoke
             JsonSerializer.Serialize(new AppPreferences { Bankroll = 1975.25m }));
         File.WriteAllText(Path.Combine(legacy, "profile.json"),
             JsonSerializer.Serialize(new PlayerProfileState { DisplayName = "Cutover Web Smoke" }));
-        File.WriteAllText(Path.Combine(legacy, "hand-history.json"), "[]");
+        var importedRound = new RoundHistoryEntry(
+            Guid.NewGuid(), DateTimeOffset.UtcNow.AddSeconds(-20), DateTimeOffset.UtcNow,
+            1975.25m, 1975.25m, 10m, 0m, 0m, 0m, new GameRules(), [], [], [], []);
+        File.WriteAllText(Path.Combine(legacy, "hand-history.json"),
+            JsonSerializer.Serialize(new[] { importedRound }));
+        byte[] originalHistory = File.ReadAllBytes(Path.Combine(legacy, "hand-history.json"));
         string candidate = NativeHostMigration.Stage(legacy, "web-smoke",
             checkRunningHost: false);
         if (NativeHostMigration.OpenCandidate(legacy, "web-smoke") != candidate)
@@ -60,6 +65,10 @@ internal static class NativeShellWebSmoke
                 if (imported != "true")
                     throw new InvalidOperationException(
                         "The imported profile/wallet was not restored in the real React lobby.");
+                // The history screen must be populated from the isolated
+                // imported hand-history file, not the live WPF user profile.
+                await form.PreviewBrowser!.ExecuteScriptAsync(
+                    "document.querySelector('.lobby-nav-item:nth-child(1)')?.getAttribute('aria-current')");
                 Console.WriteLine("PASS: WPF-free native startup lobby restored imported state.");
 
                 foreach (string mode in new[]
@@ -125,7 +134,8 @@ internal static class NativeShellWebSmoke
         };
 
         Application.Run(form);
-        if (File.ReadAllText(Path.Combine(legacy, "hand-history.json")) != "[]"
+        if (!originalHistory.SequenceEqual(
+                File.ReadAllBytes(Path.Combine(legacy, "hand-history.json")))
             || JsonSerializer.Deserialize<AppPreferences>(
                 File.ReadAllText(Path.Combine(legacy, "player-state.json")))?.Bankroll != 1975.25m)
             throw new InvalidOperationException("Candidate gameplay altered the legacy save.");

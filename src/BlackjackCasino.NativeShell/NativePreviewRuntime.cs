@@ -79,7 +79,9 @@ internal sealed class NativePreviewRuntime : IDisposable
         rouletteJournal = new NativeRouletteJournal(directory);
         rouletteJournal.Recover();
         Preferences = PlayerStateStore.Load(directory);
-        progression = new PlayerProgressionController(LoadPreviewProfile(directory));
+        progression = new PlayerProgressionController(LoadPreviewProfile(directory),
+            initialHistory: PlayerProfileStore.LoadHistory(directory),
+            historySaver: entries => SavePreviewHistory(directory, entries));
         empire = new EmpireService(Preferences.Empire);
         empire.SetClaimedAchievements(Profile.ClaimedChallengeIds);
         empire.SetActivitySnapshot(EmpireActivitySnapshot.FromProfile(Profile));
@@ -1236,6 +1238,20 @@ internal sealed class NativePreviewRuntime : IDisposable
             // The preview must not touch the installed casino's profile.
         }
         return PlayerProfileStore.SanitizeProfile(new PlayerProfileState());
+    }
+
+    private static void SavePreviewHistory(string directory, IReadOnlyList<RoundHistoryEntry> history)
+    {
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, "hand-history.json");
+        string temp = path + ".native.tmp";
+        RoundHistoryEntry[] snapshot = PlayerProfileStore.CreateHistorySnapshot(history);
+        using (var stream = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            JsonSerializer.Serialize(stream, snapshot, ProfileJson);
+            stream.Flush(flushToDisk: true);
+        }
+        File.Move(temp, path, overwrite: true);
     }
 
     private static void SavePreviewProfile(string directory, PlayerProfileState profile)

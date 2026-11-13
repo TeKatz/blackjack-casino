@@ -47,18 +47,21 @@ internal static class PlayerProfileStore
         }
     }
 
-    public static IReadOnlyList<RoundHistoryEntry> LoadHistory()
+    public static IReadOnlyList<RoundHistoryEntry> LoadHistory(string? directory = null)
     {
-        FlushHistoryPending();
+        // Only the default WPF store owns the shared debounced writer.
+        // Native candidate imports must never flush or read live player data.
+        if (directory is null) FlushHistoryPending();
+        string path = directory is null ? HistoryPath : Path.Combine(directory, "hand-history.json");
 
         try
         {
-            if (!File.Exists(HistoryPath))
+            if (!File.Exists(path))
             {
                 return [];
             }
 
-            using var file = new FileStream(HistoryPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
             List<RoundHistoryEntry>? history = JsonSerializer.Deserialize<List<RoundHistoryEntry>>(file, JsonOptions);
             return history?
                 .Where(x => x.RoundId != Guid.Empty)

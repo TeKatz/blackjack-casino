@@ -22,10 +22,16 @@ internal static class NativeShellContractSmoke
             JsonSerializer.Serialize(new AppPreferences { Bankroll = expectedWallet }));
         File.WriteAllText(Path.Combine(production, "profile.json"),
             JsonSerializer.Serialize(new PlayerProfileState { DisplayName = "Candidate Import" }));
-        File.WriteAllText(Path.Combine(production, "hand-history.json"), "[]");
+        var round = new RoundHistoryEntry(
+            Guid.NewGuid(), DateTimeOffset.UtcNow.AddSeconds(-30), DateTimeOffset.UtcNow,
+            expectedWallet, expectedWallet, 10m, 0m, 0m, 0m,
+            new GameRules(), [], [], [], []);
+        File.WriteAllText(Path.Combine(production, "hand-history.json"),
+            JsonSerializer.Serialize(new[] { round }));
 
         byte[] sourcePreferences = File.ReadAllBytes(Path.Combine(production, "player-state.json"));
         byte[] sourceProfile = File.ReadAllBytes(Path.Combine(production, "profile.json"));
+        byte[] sourceHistory = File.ReadAllBytes(Path.Combine(production, "hand-history.json"));
         string candidate = NativeHostMigration.Stage(production, "smoke", checkRunningHost: false);
         if (candidate != NativeHostMigration.OpenCandidate(production, "smoke"))
             throw new InvalidOperationException("Candidate manifest not recognized.");
@@ -37,13 +43,17 @@ internal static class NativeShellContractSmoke
         using (var imported = new NativePreviewRuntime(candidate))
         {
             if (imported.Bankroll != expectedWallet
-                || imported.Profile.DisplayName != "Candidate Import")
+                || imported.Profile.DisplayName != "Candidate Import"
+                || imported.Progression.History.Count != 1
+                || imported.Progression.History[0].RoundId != round.RoundId)
                 throw new InvalidOperationException("Native host did not restore imported player state.");
         }
         if (!sourcePreferences.SequenceEqual(File.ReadAllBytes(
                 Path.Combine(production, "player-state.json")))
             || !sourceProfile.SequenceEqual(File.ReadAllBytes(
-                Path.Combine(production, "profile.json"))))
+                Path.Combine(production, "profile.json")))
+            || !sourceHistory.SequenceEqual(File.ReadAllBytes(
+                Path.Combine(production, "hand-history.json"))))
             throw new InvalidOperationException("Migration mutated the installed player's save.");
         try
         {

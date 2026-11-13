@@ -194,10 +194,14 @@ internal static class NativeHostMigration
             _ = new ManorPersistence(directory).Load();
         if (File.Exists(Path.Combine(directory, "hand-history.json")))
         {
-            using JsonDocument history = JsonDocument.Parse(
-                File.ReadAllBytes(Path.Combine(directory, "hand-history.json")));
+            byte[] bytes = File.ReadAllBytes(Path.Combine(directory, "hand-history.json"));
+            using JsonDocument history = JsonDocument.Parse(bytes);
             if (history.RootElement.ValueKind != JsonValueKind.Array)
                 throw new InvalidDataException("Hand history must be a JSON array.");
+            RoundHistoryEntry[]? parsed = JsonSerializer.Deserialize<RoundHistoryEntry[]>(
+                bytes, SaveJson);
+            if (parsed is null || parsed.Any(entry => entry is null || entry.RoundId == Guid.Empty))
+                throw new InvalidDataException("Hand history contains invalid round receipts.");
         }
     }
 

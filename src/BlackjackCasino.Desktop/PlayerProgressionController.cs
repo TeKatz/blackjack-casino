@@ -20,11 +20,15 @@ internal sealed class PlayerProgressionController : IDisposable
     private readonly Action<PlayerProfileState> saveChallengeProfile;
     private readonly Action<PlayerProfileState> saveKniffelProfile;
     private readonly bool persistKniffelRewards;
+    private readonly Action<IReadOnlyList<RoundHistoryEntry>>? saveIsolatedHistory;
 
     public PlayerProgressionController(PlayerProfileState? initialProfile = null, Action<PlayerProfileState>? challengeProfileSaver = null,
-        TimeProvider? timeProvider = null, Action<PlayerProfileState>? kniffelProfileSaver = null, Action<PlayerProfileState>? collectionProfileSaver = null)
+        TimeProvider? timeProvider = null, Action<PlayerProfileState>? kniffelProfileSaver = null, Action<PlayerProfileState>? collectionProfileSaver = null,
+        IEnumerable<RoundHistoryEntry>? initialHistory = null,
+        Action<IReadOnlyList<RoundHistoryEntry>>? historySaver = null)
     {
         this.timeProvider = timeProvider ?? TimeProvider.System;
+        saveIsolatedHistory = historySaver;
         sessionStartedAt = this.timeProvider.GetTimestamp();
         persist = initialProfile is null;
         saveCollectionProfile = collectionProfileSaver ?? PlayerProfileStore.SaveProfileOrThrow;
@@ -34,7 +38,10 @@ internal sealed class PlayerProgressionController : IDisposable
         persistKniffelRewards = persist || kniffelProfileSaver is not null;
         saveKniffelProfile = kniffelProfileSaver ?? PlayerProfileStore.SaveNormalizedProfileOrThrow;
         Service = new ProgressionService(initialProfile ?? PlayerProfileStore.LoadProfile());
-        history = initialProfile is null ? PlayerProfileStore.LoadHistory().ToList() : [];
+        history = initialHistory is not null
+            ? initialHistory.Where(entry => entry.RoundId != Guid.Empty)
+                .OrderBy(entry => entry.CompletedAt).TakeLast(1_000).ToList()
+            : initialProfile is null ? PlayerProfileStore.LoadHistory().ToList() : [];
         knownRoundIds = history.Select(x => x.RoundId).ToHashSet();
     }
 
@@ -476,9 +483,17 @@ internal sealed class PlayerProgressionController : IDisposable
     {
         AccruePlaytime();
         CasinoVaultService.SyncFromStatistics(Profile);
-        if (!persist) return;
-        PlayerProfileStore.SaveProfile(Profile);
-        PlayerProfileStore.SaveHistory(history);
+        if (persist)
+        {
+            PlayerProfileStore.SaveProfile(Profile);
+            PlayerProfileStore.SaveHistory(history);
+        }
+        else
+        {
+            // A native host may supply its own isolated history writer without
+            // allowing this controller to write to the original WPF profile.
+            saveIsolatedHistory?.Invoke(history);
+        }
     }
 
     public void Dispose()
