@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Threading;
+using System.Diagnostics;
 using System.Text.Json;
 using System.IO;
 using BlackjackCasino.Core.Hosting;
@@ -21,6 +22,46 @@ public partial class App : Application
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
             Shutdown(PackagedArtworkSmoke.Run(e.Args[1]));
             return;
+        }
+        // Development channel ONLY: the installed app's existing shortcut and
+        // updater still restart Desktop.exe. After a verified Dev package is
+        // installed, forward the ordinary launch to the WPF-free host. A
+        // standalone Stable or ordinary CI build has no signed-by-package
+        // marker and keeps the original WPF behavior. --legacy is the manual
+        // fallback when a native migration cannot run.
+        if (e.Args.Length == 0 && AppVersion.Current.PreRelease is not null)
+        {
+            string marker = Path.Combine(AppContext.BaseDirectory,
+                "native-development-default.flag");
+            string native = Path.Combine(AppContext.BaseDirectory,
+                "BlackjackCasino.NativeShell.exe");
+            if (File.Exists(marker) && File.Exists(native))
+            {
+                try
+                {
+                    var start = new ProcessStartInfo(native)
+                    {
+                        WorkingDirectory = AppContext.BaseDirectory,
+                        UseShellExecute = false,
+                    };
+                    start.ArgumentList.Add("--development");
+                    start.ArgumentList.Add("--wait-pid");
+                    start.ArgumentList.Add(Environment.ProcessId.ToString(
+                        System.Globalization.CultureInfo.InvariantCulture));
+                    _ = Process.Start(start)
+                        ?? throw new InvalidOperationException("Could not start NativeShell.");
+                    Shutdown(0);
+                    return;
+                }
+                catch (Exception ex) when (ex is IOException
+                    or UnauthorizedAccessException or InvalidOperationException
+                    or System.ComponentModel.Win32Exception)
+                {
+                    MessageBox.Show("NativeShell could not start; running WPF instead.\n"
+                        + ex.Message, "Development host fallback",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
         }
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;

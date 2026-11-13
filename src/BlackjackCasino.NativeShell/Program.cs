@@ -17,6 +17,71 @@ internal static class Program
             return NativeShellWebSmoke.Run();
         }
 
+        // A development package can be selected through the existing
+        // Desktop.exe shortcut. On the very first launch, import WPF saves to
+        // the durable native-development profile exactly once. Every later
+        // launch resumes that profile instead of reimporting stale WPF data.
+        if (args is ["--development"] or ["--development", "--wait-pid", _])
+        {
+            try
+            {
+                if (args is ["--development", "--wait-pid", var parentText])
+                {
+                    if (!int.TryParse(parentText, out int parentPid) || parentPid <= 0)
+                        throw new ArgumentException("Invalid parent process ID.");
+                    try
+                    {
+                        using var parent = System.Diagnostics.Process.GetProcessById(parentPid);
+                        if (!parent.WaitForExit(TimeSpan.FromSeconds(30)))
+                            throw new IOException("The previous desktop process has not exited.");
+                    }
+                    catch (ArgumentException) { /* Parent already exited. */ }
+                }
+                string root = NativeHostMigration.ProductionDirectory;
+                string saved = NativeHostMigration.CandidatePath(root, "development");
+                string destination;
+                if (Directory.Exists(saved))
+                    destination = NativeHostMigration.OpenCandidate(root, "development");
+                else if (File.Exists(Path.Combine(root, "player-state.json"))
+                    || File.Exists(Path.Combine(root, "profile.json")))
+                    destination = NativeHostMigration.Stage(root, "development");
+                else
+                    destination = BlackjackCasino.Core.Hosting.HostPreviewStorage.DefaultDirectory(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
+
+                System.Windows.Forms.Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
+                System.Windows.Forms.Application.EnableVisualStyles();
+                System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
+                System.Windows.Forms.Application.Run(new NativeShellForm(
+                    destination, migrationCandidate: false, managedDevelopment: true));
+                return 0;
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException
+                or System.Text.Json.JsonException or InvalidOperationException
+                or ArgumentException or System.ComponentModel.Win32Exception)
+            {
+                System.Windows.Forms.MessageBox.Show(
+                    "The NativeShell development launch was blocked to protect your data.\n\n"
+                    + error.Message + "\n\nThe old WPF host will be opened as a fallback.",
+                    "Safe host fallback", System.Windows.Forms.MessageBoxButtons.OK,
+                    System.Windows.Forms.MessageBoxIcon.Warning);
+                try
+                {
+                    string legacy = Path.Combine(AppContext.BaseDirectory,
+                        "BlackjackCasino.Desktop.exe");
+                    var start = new System.Diagnostics.ProcessStartInfo(legacy)
+                    {
+                        WorkingDirectory = AppContext.BaseDirectory,
+                        UseShellExecute = false,
+                    };
+                    start.ArgumentList.Add("--legacy");
+                    _ = System.Diagnostics.Process.Start(start);
+                }
+                catch (Exception) { /* Existing files remain intact. */ }
+                return 1;
+            }
+        }
+
         if (args is ["--stage-migration", var candidateName])
         {
             try

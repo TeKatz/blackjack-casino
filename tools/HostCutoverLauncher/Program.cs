@@ -122,6 +122,11 @@ internal static class Program
             };
             foreach (string argument in plan.Arguments)
                 info.ArgumentList.Add(argument);
+            // Without this argument the new Dev Desktop entry would delegate
+            // straight back to NativeShell, defeating explicit WPF fallback.
+            if (!plan.UsesNativeHost &&
+                File.Exists(Path.Combine(install, "native-development-default.flag")))
+                info.ArgumentList.Add("--legacy");
             using Process process = Process.Start(info)
                 ?? throw new InvalidOperationException("Windows could not start the selected host.");
             return true;

@@ -23,6 +23,7 @@ internal sealed class NativeShellForm : Form
     };
 
     private readonly NativePreviewRuntime runtime;
+    private readonly bool managedDevelopment;
     private readonly NativeLobbyController lobbyController;
     private readonly NativeHostAudio hostAudio = new();
     private string? recordsPage;
@@ -30,6 +31,7 @@ internal sealed class NativeShellForm : Form
     private readonly DesktopUpdateService updateService = new();
     private readonly CancellationTokenSource updateCancellation = new();
     private bool checkingUpdates, availableUpdates;
+    private UpdateManifest? pendingUpdate;
     private string updateStatus = "This isolated test candidate cannot install updates. You can check the published release status.";
     private readonly Panel content = new() { Dock = DockStyle.Fill };
     private readonly Label status = new()
@@ -63,8 +65,10 @@ internal sealed class NativeShellForm : Form
     private DateTimeOffset empireLastPersist = DateTimeOffset.UtcNow;
     private readonly string frontendFolder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
 
-    internal NativeShellForm(string? previewDirectory = null, bool migrationCandidate = false)
+    internal NativeShellForm(string? previewDirectory = null, bool migrationCandidate = false,
+        bool managedDevelopment = false)
     {
+        this.managedDevelopment = managedDevelopment;
         string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         previewDirectory ??= HostPreviewStorage.DefaultDirectory(localAppData);
         previewDirectory = HostPreviewStorage.RequireIsolatedDirectory(previewDirectory, localAppData);
@@ -74,9 +78,13 @@ internal sealed class NativeShellForm : Form
             CoreWebView2Environment.CreateAsync(
                 userDataFolder: Path.Combine(previewDirectory, "WebView2")));
 
-        Text = migrationCandidate
-            ? "Blackjack Casino — Isolated Host Migration Candidate"
-            : "Blackjack Casino — WPF-free Native Shell Preview";
+        Text = managedDevelopment
+            ? "Blackjack Casino — NativeShell Development"
+            : migrationCandidate
+                ? "Blackjack Casino — Isolated Host Migration Candidate"
+                : "Blackjack Casino — WPF-free Native Shell Preview";
+        if (managedDevelopment)
+            updateStatus = "Development NativeShell active. Updates can be installed through the bundled updater.";
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(940, 640);
         ClientSize = new Size(1360, 860);
@@ -114,7 +122,7 @@ internal sealed class NativeShellForm : Form
         navigation.Controls.Add(MakeButton("Chill Lounge", () => _ = OpenModeAsync("chill-lounge")));
         navigation.Controls.Add(new Label
         {
-            AutoSize = true, Text = "NATIVE HOST • PREVIEW",
+            AutoSize = true, Text = managedDevelopment ? "NATIVE HOST • DEVELOPMENT" : "NATIVE HOST • PREVIEW",
             ForeColor = Color.FromArgb(221, 192, 127),
             TextAlign = ContentAlignment.MiddleCenter,
             Padding = new Padding(16, 10, 0, 0),
@@ -1159,17 +1167,24 @@ internal sealed class NativeShellForm : Form
                         ? UpdateChannel.Stable : UpdateChannel.Development,
                 });
                 availableUpdates = false;
-                updateStatus = "Channel changed. You may check published updates, but installation remains disabled in this test candidate.";
+                pendingUpdate = null;
+                updateStatus = managedDevelopment
+                    ? "Development NativeShell updates are supported. Select Development and check again."
+                    : "Channel changed. You may check published updates, but installation remains disabled in this test candidate.";
                 RefreshNativeUpdates();
                 break;
             case "lobby.updates.check" when updatesOpen && !checkingUpdates:
                 _ = CheckNativeUpdatesAsync();
                 break;
             case "lobby.updates.install" when updatesOpen:
-                // A test candidate must NEVER pass a WPF package to an
-                // updater that would overwrite or restart the installed host.
-                updateStatus = "Installation is locked in the NativeShell candidate. Use the installed desktop app for updates.";
-                RefreshNativeUpdates();
+                if (managedDevelopment && pendingUpdate is not null
+                    && activeMode is null && !checkingUpdates)
+                    _ = InstallManagedDevelopmentUpdateAsync();
+                else
+                {
+                    updateStatus = "Only the managed Development host may install verified updates.";
+                    RefreshNativeUpdates();
+                }
                 break;
         }
     }
@@ -1185,7 +1200,11 @@ internal sealed class NativeShellForm : Form
             Status = updateStatus,
             Busy = checkingUpdates,
             CanCheck = !checkingUpdates,
-            CanInstall = false,
+            CanInstall = managedDevelopment && !checkingUpdates
+                && availableUpdates && pendingUpdate is not null
+                && (runtime.Preferences.UpdateChannel ?? UpdateChannel.Development)
+                    == UpdateChannel.Development
+                && UpdaterLauncher.IsAvailable,
             UpdateAvailable = availableUpdates,
         });
     }
@@ -1195,7 +1214,10 @@ internal sealed class NativeShellForm : Form
         if (closing || checkingUpdates) return;
         checkingUpdates = true;
         availableUpdates = false;
-        updateStatus = "Checking the published release manifest (read-only)…";
+        pendingUpdate = null;
+        updateStatus = managedDevelopment
+            ? "Checking Development update…"
+            : "Checking the published release manifest (read-only)…";
         RefreshNativeUpdates();
         try
         {
@@ -1207,11 +1229,14 @@ internal sealed class NativeShellForm : Form
                 channel, current, updateCancellation.Token);
             if (closing || IsDisposed) return;
             availableUpdates = result.UpdateAvailable;
+            pendingUpdate = managedDevelopment && channel == UpdateChannel.Development
+                && result.UpdateAvailable ? result.Manifest : null;
             updateStatus = result.UpdateAvailable
                 ? "A published " + channel.ToManifestValue() + " build is available ("
-                    + result.LatestVersion + "). This isolated NativeShell cannot install it."
+                    + result.LatestVersion + "). "
+                    + (pendingUpdate is not null ? "Ready to install." : "Installation is restricted.")
                 : "Published " + channel.ToManifestValue() + " releases checked. "
-                    + "No newer version detected; candidate installation is still disabled.";
+                    + (managedDevelopment ? "No newer build detected." : "Test candidate installation is disabled.");
         }
         catch (OperationCanceledException) when (closing || updateCancellation.IsCancellationRequested)
         {
@@ -1223,6 +1248,69 @@ internal sealed class NativeShellForm : Form
             if (closing || IsDisposed) return;
             updateStatus = ("Cannot check published releases: " + ex.Message)
                 .Substring(0, Math.Min(2048, ("Cannot check published releases: " + ex.Message).Length));
+        }
+        finally
+        {
+            checkingUpdates = false;
+            if (!closing && !IsDisposed) RefreshNativeUpdates();
+        }
+    }
+
+    private async Task InstallManagedDevelopmentUpdateAsync()
+    {
+        if (!managedDevelopment || checkingUpdates || pendingUpdate is null || closing
+            || activeMode is not null || !UpdaterLauncher.IsAvailable)
+            return;
+        checkingUpdates = true;
+        updateStatus = "Revalidating Development update…";
+        RefreshNativeUpdates();
+        try
+        {
+            string? productVersion = FileVersionInfo.GetVersionInfo(
+                Application.ExecutablePath).ProductVersion;
+            if (!SemanticVersion.TryParse(productVersion ?? "", out SemanticVersion installed))
+                throw new InvalidDataException("NativeShell version could not be verified.");
+            UpdateCheckResult latest = await updateService.CheckAsync(
+                UpdateChannel.Development, installed, updateCancellation.Token);
+            if (!latest.UpdateAvailable)
+            {
+                updateStatus = "Development build is already up to date.";
+                pendingUpdate = null;
+                availableUpdates = false;
+                return;
+            }
+            SemanticVersion updaterVersion = UpdaterLauncher.CurrentVersion ?? installed;
+            if (DesktopUpdateService.MinimumUpdaterVersion(latest.Manifest) > updaterVersion)
+                throw new InvalidOperationException("The installed updater is too old for this release.");
+            pendingUpdate = latest.Manifest;
+            updateStatus = "Downloading and verifying Development update…";
+            RefreshNativeUpdates();
+            string path = await updateService.DownloadAsync(
+                latest.Manifest.Package, cancellationToken: updateCancellation.Token);
+            // Mutable Development manifests can change during the download.
+            UpdateCheckResult check = await updateService.CheckAsync(
+                UpdateChannel.Development, installed, updateCancellation.Token);
+            if (!check.UpdateAvailable
+                || !Equals(check.Manifest.Package, latest.Manifest.Package))
+                throw new InvalidDataException(
+                    "The Development release changed while downloading. Check for updates again.");
+
+            updateStatus = "Update verified. Closing NativeShell for installation…";
+            RefreshNativeUpdates();
+            UpdaterLauncher.Launch(path, latest.Manifest.Package.Sha256);
+            // Updater waits for this PID before replacing the installation;
+            // the existing WPF launcher redirects back to managed NativeShell.
+            Close();
+        }
+        catch (OperationCanceledException) when (closing || updateCancellation.IsCancellationRequested)
+        {
+            // The main form is already shutting down.
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException
+            or HttpRequestException or InvalidDataException or InvalidOperationException
+            or System.ComponentModel.Win32Exception)
+        {
+            updateStatus = "NativeShell update failed: " + error.Message;
         }
         finally
         {
