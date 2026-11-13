@@ -289,6 +289,14 @@ internal static class NativeShellContractSmoke
             catch (IOException error) when (
                 error.Message.Contains("Simulated crash", StringComparison.Ordinal)) { }
 
+            if (failure.Fault == RollbackFault.AfterNewMove)
+            {
+                // A torn NEW save must not prevent the verified OLD WPF backup
+                // from being recovered; preserve the damaged new bytes.
+                string damaged = Path.Combine(NativeLegacyRollbackRehearsal.PathFor(
+                    production, failure.Name), "current", "player-state.json");
+                File.AppendAllText(damaged, "corrupted during outage");
+            }
             _ = NativeLegacyRollbackRehearsal.Recover(production, failure.Name);
             RollbackRehearsalJournal journal =
                 NativeLegacyRollbackRehearsal.Inspect(production, failure.Name);
