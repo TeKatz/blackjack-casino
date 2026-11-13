@@ -52,20 +52,40 @@ export function ArcadeExpansionTwoCardArt({id}:{id:ExpansionTwoId}){
   </g>
  </>);
  case 'circuit-rush':return scene(<>
-  <rect x="34" y="17" width="252" height="96" rx="12" fill="#0e293c" stroke="#718b8b" strokeWidth="1.7"/>
-  {[0,1,2,3,4].map(c=><g key={c}>
-   <rect x={48+c*46} y="40" width="37" height="44" rx="6" fill={c<3?'#1f575e':'#253b4f'}
-    stroke={c<3?mint:'#5d8290'} strokeWidth="1.6"/>
-   <path d={'M'+(66+c*46)+' 62h18'} stroke={c<3?gold:'#689fa2'} strokeWidth="5" strokeLinecap="round"/>
-   <circle cx={66+c*46} cy="62" r="5" fill={c<3?mint:'#4b747f'}/>
-  </g>)}
-  <g className="exp-two-circuit-current" fill="none" stroke="#ffe1aa" strokeWidth="4" strokeLinecap="round">
-   <path d="M16 62H67 M84 62H112 M130 62H158"/>
+  {/* A faithful 6×5 miniature of the actual mode, with distinct powered,
+      dormant and dangerous cells. The preview never suggests that the red
+      short-circuit is connected to the live source. */}
+  <rect x="55" y="6" width="210" height="118" rx="8"
+    fill="#102c3a" stroke="#74948c" strokeWidth="1.4"/>
+  <g className="exp-two-circuit-grid">
+   {Array.from({length:30},(_,i)=>{
+    const c=i%6,r=Math.floor(i/6),x=65+c*32,y=14+r*21;
+    const powered=new Set([13,14,15,20,21,22,23]).has(i);
+    const hazard=i===26;
+    const ports=hazard?[1,2]:i===13||i===14||i===20||i===21?[0,2]:
+       i===15||i===22?[1,2]:i===23?[0,3]:i%3===0?[1,3]:i%3===1?[0,2]:[2,3];
+    const tile=(<>
+     <rect x="-13" y="-9" width="26" height="18" rx="4"
+      fill={hazard?'#633b50':powered?'#245d62':'#243f51'}
+      stroke={hazard?'#ec8299':powered?'#a6e8cc':'#6c9eac'}
+      strokeWidth={powered?1.5:1.05}/>
+     <circle r="7.6" fill="#152f3f" stroke="#74979c" strokeWidth="1"/>
+     {ports.map((d,j)=><path key={j} d={'M0 0 '+['V-6','H6','V6','H-6'][d]}
+       stroke={hazard?'#f3a5ad':powered?'#a6ffe1':'#99bdc8'}
+       strokeWidth="3" strokeLinecap="round"/>)}
+     <circle r="3.1" fill={hazard?'#ecacb2':powered?'#b8ffdf':'#93acb7'}/>
+    </>);
+    return <g key={i} transform={'translate('+x+' '+y+')'}>
+     {i===17?<g className="exp-two-circuit-dial">{tile}</g>:tile}
+    </g>;
+   })}
   </g>
-  <g className="exp-two-circuit-turn" stroke={gold} strokeWidth="5" strokeLinecap="round" fill="none">
-   <path d="M205 62v-14"/>
+  <g className="exp-two-circuit-current" stroke="#9afbe1" strokeWidth="3"
+   strokeLinecap="round" fill="none">
+   <path d="M57 56H69M80 56H101M112 56H133M144 56H165"/>
   </g>
-  <circle cx="297" cy="62" r="9" fill="#355665" stroke={gold} strokeWidth="2"/>
+  <circle cx="45" cy="56" r="8" fill="#edd79a" stroke="#fbebc5" strokeWidth="1.3"/>
+  <circle cx="275" cy="56" r="8" fill="#315b67" stroke="#e3c18a" strokeWidth="1.3"/>
  </>);
  case 'shadow-heist':return scene(<>
   <rect x="15" y="10" width="290" height="110" rx="9" fill="#102b35" stroke="#a9ae92" strokeWidth="1.5"/>

@@ -25,23 +25,24 @@
 @keyframes exp-two-miner-drill{0%,30%,90%,100%{opacity:0}46%,83%{opacity:1}}
 @keyframes exp-two-miner-hit{0%,52%,90%,100%{opacity:0;scale:.7}68%{opacity:1;scale:1}}
 
+/* Only the preview changes; Circuit Rush gameplay renderer stays untouched.
+   A disconnected dial turns in 90-degree increments with mechanical stops.
+   The live wiring remains constant and never jumps into an impossible circuit. */
+.arcade-scene .exp-two-circuit-dial{transform-box:view-box;transform-origin:193px 35px}
+.arcade-game-card:is(:hover,:focus-visible) .exp-two-circuit-dial{
+ animation:exp-two-dial-turn 5s cubic-bezier(.2,.78,.25,1) infinite}
 .arcade-game-card:is(:hover,:focus-visible) .exp-two-circuit-current{
- animation:exp-two-electric 1.9s ease-in-out infinite;
+ animation:exp-two-current-flow 2.5s ease-in-out infinite}
+@keyframes exp-two-dial-turn{
+ 0%,9%{transform:rotate(0)}
+ 20%,32%{transform:rotate(90deg)}
+ 43%,54%{transform:rotate(180deg)}
+ 65%,76%{transform:rotate(270deg)}
+ 87%,100%{transform:rotate(360deg)}
 }
-.arcade-scene .exp-two-circuit-turn{transform-box:fill-box;transform-origin:center}
-.arcade-game-card:is(:hover,:focus-visible) .exp-two-circuit-turn{
- animation:exp-two-wire-turn 1.9s steps(1,end) infinite;
-}
-/* Rotate a real port smoothly first, then animate current once connected. */
-@keyframes exp-two-electric{
- 0%,43%{opacity:.12;stroke-dasharray:5 90}
- 58%,86%{opacity:1;stroke-dasharray:110 0}
- 100%{opacity:.12;stroke-dasharray:5 90}
-}
-@keyframes exp-two-wire-turn{
- 0%,23%{rotate:0deg;opacity:.55}
- 45%,86%{rotate:90deg;opacity:1}
- 100%{rotate:0deg;opacity:.55}
+@keyframes exp-two-current-flow{
+ 0%,100%{opacity:.55;filter:drop-shadow(0 0 1px #93e5ce)}
+ 50%{opacity:1;filter:drop-shadow(0 0 4px #92f8d8)}
 }
 
 .arcade-scene .exp-two-heist-cone{transform-box:view-box;transform-origin:155px 63px}

@@ -125,7 +125,15 @@ function App(){
  const state=snapshot?.state,game=state?.game;
  const lang=state?.language??'en',t=labels[lang];
  const animations=!!state?.animationsEnabled&&!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
- const blocked=!!pending||uncertain||rolling||!!celebration;
+ // Native commits remain serialized through pendingRef; a very brief save
+ // must NOT toggle every game's disabled/opacity styles for a whole frame.
+ const blocked=uncertain||rolling||!!celebration;
+ const [showSaving,setShowSaving]=useState(false);
+ useEffect(()=>{
+  if(!pending){setShowSaving(false);return;}
+  const timer=window.setTimeout(()=>setShowSaving(true),450);
+  return()=>window.clearTimeout(timer);
+ },[pending]);
  const waiting=state?.mode==='casino'&&state.table?.waiting;
  const finished=!!game&&(state?.mode==='casino'?!!state.table?.settled:game.isComplete);
  const receiptKey=game?.gameId+'-'+state?.mode+'-'+state?.table?.settled+'-'+state?.table?.forfeited;
@@ -314,7 +322,7 @@ function App(){
           {waiting&&<p className="md-waiting">{t.waiting} · Mara · Felix · June</p>}
         </div>}
         <div className="md-status" role="status" aria-live="polite">
-          <small>{t.status} {pending?' · SAVING':''}</small>
+          <small>{t.status} {showSaving?' · SAVING':''}</small>
           <strong data-testid="dice-notice">{message}</strong>
           {state.completionNotice&&<span className="md-xp-reward">{state.completionNotice}</span>}
           <p>{t.saved}</p>

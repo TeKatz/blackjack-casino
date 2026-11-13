@@ -38,8 +38,12 @@ export function RouletteWheel({number,spinId,motion,onStart,onDone}:{number:numb
     const ball=new Graphics().circle(2,4,8).fill({color:0x000000,alpha:.5}).circle(0,0,8).fill(0xf7e9c9).circle(-2,-3,3).fill(0xffffff);ball.position.set(Math.cos(restingBallAngle)*207,Math.sin(restingBallAngle)*207);root.addChild(ball);
     app.canvas.style.width='100%';app.canvas.style.height='auto';host.current?.appendChild(app.canvas);
     scene.current={wheel,ball,app};
-    // Reveal the first completed Pixi paint rather than an uninitialized canvas.
-    app.ticker.addOnce(()=>{if(!disposed)setReady(true);});
+    // Keep all loading frames invisible. First let Pixi paint the fully
+    // populated wheel, then reveal the production canvas on a later frame.
+    // The old HTML/CSS surrogate must never be displayed as a roulette wheel.
+    app.ticker.addOnce(()=>{requestAnimationFrame(()=>{
+      if(!disposed&&scene.current?.app===app)setReady(true);
+    });});
    }catch{if(!disposed)setFailed(true);if(initialized&&!disposed){app.destroy(true,{children:true});initialized=false;}}
   }void init();return()=>{disposed=true;scene.current=null;if(initialized)app.destroy(true,{children:true});};
  },[]);
@@ -68,8 +72,7 @@ export function RouletteWheel({number,spinId,motion,onStart,onDone}:{number:numb
   }frame=requestAnimationFrame(draw);return()=>{cancelled=true;cancelAnimationFrame(frame);};
  },[number,spinId,ready,failed,motion]);
  return <div className={'roulette-wheel'+(ready?' is-ready':'')+(motion?'':' no-motion')} ref={host} aria-label="Roulette wheel">
-  <div className="roulette-wheel-fallback" aria-hidden={ready}>
-   <span>✦</span>{failed&&number!==null&&<b>{number}</b>}
-  </div>
+  {!ready&&<span className="roulette-wheel-preparing" aria-hidden="true"/>}
+  {failed&&<span className="roulette-wheel-unavailable" role="status">Wheel unavailable</span>}
  </div>;
 }
