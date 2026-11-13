@@ -78,8 +78,8 @@ internal static class NativeShellContractSmoke
                     "[{\"key\":\"red\",\"amount\":100}]"))
                 {
                     var roundId = Guid.NewGuid();
-                    var receipt = session.ApplyRoulette(roundId, rouletteBets.RootElement);
-                    if (receipt is not NativeRouletteReceipt paid
+                    var rouletteReceipt = session.ApplyRoulette(roundId, rouletteBets.RootElement);
+                    if (rouletteReceipt is not NativeRouletteReceipt paid
                         || paid.RoundId != roundId || !paid.Success
                         || session.Bankroll != paid.Bankroll)
                         throw new InvalidOperationException("Native roulette did not settle.");
