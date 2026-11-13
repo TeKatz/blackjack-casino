@@ -1,0 +1,30 @@
+# One-time branch-name migration cleanup. Remove this workflow after it passes.
+name: Retire old develop2 branch (one-time)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/retire-develop2-once.yml'
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    if: github.event.head_commit.message == 'chore: retire old develop2 branch after rename'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verify dev is established and delete the obsolete ref
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          new_sha="$(gh api "repos/$REPOSITORY/git/ref/heads/dev" --jq '.object.sha')"
+          old_sha="$(gh api "repos/$REPOSITORY/git/ref/heads/develop2" --jq '.object.sha')"
+          test "$new_sha" = "64dcd28b868bf148835ba1f6aa8bd957b2fe2118"
+          test "$old_sha" = "edbc3a96689a2ccc78776d412fc3b02ea2ce8034"
+          ahead="$(gh api "repos/$REPOSITORY/compare/develop2...dev" --jq '.ahead_by')"
+          test "$ahead" -ge 1
+          gh api --method DELETE "repos/$REPOSITORY/git/refs/heads/develop2"
+          echo "Obsolete develop2 ref deleted; dev remains at $new_sha"
