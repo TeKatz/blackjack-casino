@@ -6,7 +6,6 @@ import {
 } from './bridge/protocol';
 import type { GameAction, ManorSnapshot, ManorRun } from './bridge/protocol';
 import { ManorStage } from './graphics/ManorStage';
-import { ManorBonusStage } from './graphics/ManorBonusStage';
 import { ManorBonus3D } from './graphics/ManorBonus3D';
 import { shouldMountManorGodot } from './graphics/manorGodotLoadPolicy';
 import { ManorHelp } from './ManorHelp';
@@ -32,8 +31,6 @@ function ManorApp() {
   const [revealingReels, setRevealingReels] = useState(false);
   const [languageOverride, setLanguageOverride] = useState<ManorLanguage | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [classicBonus, setClassicBonus] = useState(false);
-  const classicBonusRef = useRef(false);
   const [conclusionOpen, setConclusionOpen] = useState(false);
   const lastLiveRun = useRef<ManorRun | null>(null);
   const concludedRun = useRef<ManorRun | null>(null);
@@ -48,7 +45,6 @@ function ManorApp() {
   const [spinEpoch, setSpinEpoch] = useState(0);
   const [animating, setAnimating] = useState(false);
   const [rendererReady, setRendererReady] = useState(false);
-  const [godotWarmed, setGodotWarmed] = useState(false);
   const [reelSpeed, setReelSpeed] = useState<ReelSpeed>('normal');
   const [bet, setBet] = useState('25');
   const autoSpins = useRef<{ remaining: number; bet: string } | null>(null);
@@ -93,11 +89,7 @@ function ManorApp() {
     audio.current?.stopReels();
     setShownSnapshot(result);
     lastLiveRun.current = result.run;
-    if (result.run) {
-      classicBonusRef.current = false;
-      setClassicBonus(false);
-      setConclusionOpen(false);
-    }
+    if (result.run) setConclusionOpen(false);
     setMoment(settledSpinMoment(result));
     const cue = spinCue(result);
     if (cue) audio.current?.play(cue);
@@ -110,16 +102,12 @@ function ManorApp() {
       setSnapshot(next);
       if (!conceal && awaitingPresentation.current === null) {
         const precedingRun = lastLiveRun.current;
-        if (precedingRun && !next.run && next.lastRun && !classicBonusRef.current) {
+        if (precedingRun && !next.run && next.lastRun) {
           concludedRun.current = precedingRun;
           setConclusionOpen(true);
         }
         if (next.run) setConclusionOpen(false);
         lastLiveRun.current = next.run;
-        if (!next.run) {
-          classicBonusRef.current = false;
-          setClassicBonus(false);
-        }
         setShownSnapshot(next);
       }
       setBet(defaultBet(next.selectedBet));
@@ -172,9 +160,9 @@ function ManorApp() {
     if (embedded && connected && rendererReady) { finishModeBoot(); sendCommand('ui.ready'); }
   }, [connected, rendererReady]);
 
-  // Godot's WebAssembly + WebGL startup can occupy WebView2's UI thread for
-  // several seconds. NEVER initialize it on a timer during ordinary slot play.
-  // The first explicit 3D visit mounts it; later visits reuse the same iframe.
+  // The WebGL iframe must exist ONLY while the bonus is on screen.
+  // Keeping a hidden Godot context at 8 FPS starved the PixiJS reel renderer.
+  // Browser caching can still reuse downloaded WASM/PCK bytes on the next visit.
 
   const actions = availableActions(snapshot);
   const motionOff = lowMotion || !ambient || !snapshot.animationsEnabled;
@@ -186,11 +174,8 @@ function ManorApp() {
   const fundedBet = validBet && canAffordBet(snapshot.bankroll, bet);
   const run = shownSnapshot.run;
   const practice = shownSnapshot.practiceRun ?? null;
-  const godotVisible = Boolean(practice || (run && !classicBonus) || conclusionOpen);
+  const godotVisible = Boolean(practice || run || conclusionOpen);
   const bonusRun = practice ?? run ?? (conclusionOpen ? concludedRun.current : null);
-  useEffect(() => {
-    if (godotVisible) setGodotWarmed(true);
-  }, [godotVisible]);
 
   const language: ManorLanguage = languageOverride ?? snapshot.language;
   const visibleMoment = moment ? localizeMoment(moment, language) : null;
@@ -352,13 +337,7 @@ function ManorApp() {
 
                 onReady={() => setRendererReady(true)} />
             </div>
-            {run && classicBonus && <div className="slot-bonus-portal">
-              <div className="bonus-depth-tunnel" aria-hidden="true"><i/><i/><i/></div>
-              <ManorBonusStage run={run} language={language} disabled={disabled}
-                reducedMotion={motionOff}
-                onAction={(action, room) => act(action, room === undefined ? {} : { room })} />
-            </div>}
-            {shouldMountManorGodot(godotVisible, godotWarmed) && <ManorBonus3D
+            {shouldMountManorGodot(godotVisible) && <ManorBonus3D
               active={godotVisible} demo={Boolean(practice)} run={bonusRun}
               conclusion={conclusionOpen ? shownSnapshot.lastRun ?? null : null}
               language={language} reducedMotion={motionOff} disabled={disabled}
@@ -366,13 +345,6 @@ function ManorApp() {
               onCloseResult={() => {
                 concludedRun.current = null;
                 setConclusionOpen(false);
-              }}
-              onFallback={() => {
-                if (practice) act('practice.exit');
-                else {
-                  classicBonusRef.current = true;
-                  setClassicBonus(true);
-                }
               }}
               onAction={(action, room) => act(action, room === undefined ? {} : { room })} />}
             {!godotVisible && visibleMoment && visibleMoment.key !== 'loss' &&

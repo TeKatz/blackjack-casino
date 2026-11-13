@@ -1,8 +1,10 @@
 /**
- * Do NOT instantiate the Godot iframe during ordinary slot startup.
- * The single-threaded WebAssembly/WebGL bootstrap can block the WebView2 UI
- * for several seconds. First explicit use loads it once; later visits reuse it.
+ * A hidden Godot iframe still owns a WebGL context, GPU textures and
+ * a WebAssembly render loop, even when Engine.max_fps is reduced to 8.
+ * Mount only for a currently displayed 3D bonus. Unmount immediately
+ * on practice exit / acknowledged payout, never keep a warm iframe
+ * behind the PixiJS reels. Cached web assets may still reduce future loads.
  */
-export function shouldMountManorGodot(active: boolean, hasBeenOpened: boolean): boolean {
-  return active || hasBeenOpened;
+export function shouldMountManorGodot(active: boolean): boolean {
+  return active;
 }
