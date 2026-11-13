@@ -121,17 +121,17 @@ internal static class NativeLobbySnapshot
 
     private static string Description(string id) => id switch
     {
-        "blackjack" => "Blackjack with authoritative C# table rules.",
-        "roulette" => "European single-zero roulette, with persistent settlement receipts.",
-        "midnight-reels" => "Three-reel slot machine with native C# outcomes.",
-        "neon-vault" => "Five reels and Vault Break bonus rounds.",
-        "nine-lives" => "Five reels and nine lives to chase.",
-        "midnight-manor" => "Haunted reels, free spins and rooms that remember your choices.",
+        "blackjack" => "Classic blackjack. Play your hand at the table.",
+        "roulette" => "European roulette. Place your bets and spin.",
+        "midnight-reels" => "Three reels, timeless symbols and classic wins.",
+        "neon-vault" => "Five reels, wilds and electrifying vault bonuses.",
+        "nine-lives" => "Find lucky cats and unlock free spins.",
+        "midnight-manor" => "Haunted reels, hidden rooms and free spins.",
         "midnight-merge" => "Restore the Midnight Club one room at a time.",
-        "kniffel" => "Midnight Dice with saved sheets and casino AI.",
-        "casino-empire" => "Build your estate in a native React window.",
-        "chill-lounge" => "Eight native-authoritative games and a detached case board.",
-        "midnight-descent" => "Requires the external Godot launch lifecycle.",
+        "kniffel" => "Roll the dice, fill your sheet and beat the house.",
+        "casino-empire" => "Build and expand your own casino empire.",
+        "chill-lounge" => "Eight relaxing games and a mystery to solve.",
+        "midnight-descent" => "Descend into a dangerous roguelite adventure.",
         _ => "Not yet available in the independent native host.",
     };
 }
