@@ -120,7 +120,7 @@ Download a packaged Windows build from [GitHub Releases](https://github.com/TeKa
 
 The updater validates package size and SHA-256 before staged installation. Player data is stored outside the installation directory, in `%LOCALAPPDATA%\BlackjackCasino`. Keep a backup when validating changes to persistence or updating an older installation.
 
-**Branch model:** `main` is the tested integration baseline, and **`develop`** is the permanent source of the mutable Development updater. Only successfully verified builds from the [Development Release workflow](.github/workflows/development-release.yml) publish to the [existing in-app manifest](https://github.com/TeKatz/blackjack-casino/releases/download/development/update-manifest.json). Feature/PR builds are not in-app updates. `main` does not automatically publish a Stable release. See [branching policy](docs/branching-and-release-policy.md).
+**Branch model:** `main` is the tested integration baseline, and **`develop2`** is the active source of the mutable Development updater. Only successfully verified builds from the [Development Release workflow](.github/workflows/development-release.yml) publish to the [existing in-app manifest](https://github.com/TeKatz/blackjack-casino/releases/download/development/update-manifest.json). Feature/PR builds are not in-app updates. `main` does not automatically publish a Stable release. See [branching policy](docs/branching-and-release-policy.md).
 
 See [Development update delivery](docs/development-update-delivery.md) for release mechanics, versioning and verification.
 
@@ -177,7 +177,7 @@ All eight normal Chill Lounge routes are now registered by `ModernLoungeCatalog`
 - **Other game interfaces:** the Chill Lounge hub and all eight activities—Sudoku, six Midnight Solitaire variants, Word Search, Memory, Jigsaw, Tales from the Backroom, Midnight Bastion and Midnight Sweep—are React. The old Lounge/Jigsaw/Adventure WPF code remains as emergency fallback and regression coverage. Old Sudoku, Solitaire, Word Search and Memory presentations persist only for fallback and legacy regression checks, not normal navigation. The Midnight Dice WPF source remains for rollback and legacy visual tests, but its normal play route is React. The shared WPF host and emergency lobby remain until all destinations are accepted.
 - **Localization:** English/German shell support is present; some older game and adventure content still needs translation.
 - **Player data and financial outcomes:** preserve backward compatibility, deterministic payout tests and exactly-once committed transitions.
-- **Releases:** `develop` publishes the mutable Development channel after verification; Stable is an explicitly tagged release from the tested integrated code on `main`.
+- **Releases:** `develop2` publishes the mutable Development channel after verification; Stable is an explicitly tagged release from the tested integrated code on `main`.
 
 The roadmap tracks completed migration stages and outstanding quality gates; historical milestone notes are not separate active feature variants.
 
