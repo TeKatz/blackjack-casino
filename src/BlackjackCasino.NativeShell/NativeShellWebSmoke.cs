@@ -1,4 +1,7 @@
 using System.Windows.Forms;
+using System.Text.Json;
+using BlackjackCasino.Core;
+using BlackjackCasino.Desktop;
 
 namespace BlackjackCasino.NativeShell;
 
@@ -14,7 +17,20 @@ internal static class NativeShellWebSmoke
         string root = Path.Combine(Path.GetTempPath(),
             "blackjack-native-web-smoke-" + Guid.NewGuid().ToString("N"));
         int result = 1;
-        using var form = new NativeShellForm(root);
+        // Exercise the complete read-only legacy-import route before opening a
+        // real Windows WebView2 session. All files are synthetic and temporary.
+        string legacy = Path.Combine(root, "legacy");
+        Directory.CreateDirectory(legacy);
+        File.WriteAllText(Path.Combine(legacy, "player-state.json"),
+            JsonSerializer.Serialize(new AppPreferences { Bankroll = 1975.25m }));
+        File.WriteAllText(Path.Combine(legacy, "profile.json"),
+            JsonSerializer.Serialize(new PlayerProfileState { DisplayName = "Cutover Web Smoke" }));
+        File.WriteAllText(Path.Combine(legacy, "hand-history.json"), "[]");
+        string candidate = NativeHostMigration.Stage(legacy, "web-smoke",
+            checkRunningHost: false);
+        if (NativeHostMigration.OpenCandidate(legacy, "web-smoke") != candidate)
+            throw new InvalidDataException("Staged WebView2 candidate was not verified.");
+        using var form = new NativeShellForm(candidate, migrationCandidate: true);
 
         form.Shown += async (_, _) =>
         {
@@ -36,7 +52,15 @@ internal static class NativeShellWebSmoke
                 if (!startupLobbyReady)
                     throw new InvalidOperationException(
                         "Native React startup lobby did not acknowledge its UI within the watchdog.");
-                Console.WriteLine("PASS: WPF-free native startup lobby ready.");
+                string imported = await form.PreviewBrowser!.ExecuteScriptAsync(
+                    "(()=>{const p=document.querySelector('.profile-widget');"
+                    + "const b=document.querySelector('.lobby-finances');"
+                    + "return Boolean(p?.textContent?.includes('Cutover Web Smoke')"
+                    + "&&b?.textContent?.includes('1,975.25'))})()");
+                if (imported != "true")
+                    throw new InvalidOperationException(
+                        "The imported profile/wallet was not restored in the real React lobby.");
+                Console.WriteLine("PASS: WPF-free native startup lobby restored imported state.");
 
                 foreach (string mode in new[]
                     { "blackjack", "roulette", "reels", "neon-vault", "nine-lives", "casino-empire", "chill-lounge", "midnight-merge",
@@ -101,6 +125,10 @@ internal static class NativeShellWebSmoke
         };
 
         Application.Run(form);
+        if (File.ReadAllText(Path.Combine(legacy, "hand-history.json")) != "[]"
+            || JsonSerializer.Deserialize<AppPreferences>(
+                File.ReadAllText(Path.Combine(legacy, "player-state.json")))?.Bankroll != 1975.25m)
+            throw new InvalidOperationException("Candidate gameplay altered the legacy save.");
         try { Directory.Delete(root, recursive: true); }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
