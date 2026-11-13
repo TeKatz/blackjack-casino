@@ -144,7 +144,10 @@ internal static class NativeLegacyRollbackRehearsal
             VerifySide(previous, journal.OldFiles);
             if (Directory.Exists(current))
             {
-                VerifySide(current, journal.NewFiles);
+                // Even if an interrupted NEW side was corrupted by the crash,
+                // keep its bytes for diagnosis and restore the verified OLD
+                // side. Damage to the new candidate must not block recovery.
+                RequirePlainDirectory(current);
                 string interrupted = Path.Combine(path, "interrupted-new");
                 if (Directory.Exists(interrupted))
                     throw new IOException("Unresolved interrupted-native evidence already exists.");
