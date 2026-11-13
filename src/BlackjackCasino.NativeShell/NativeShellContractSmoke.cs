@@ -202,10 +202,15 @@ internal static class NativeShellContractSmoke
                 ex.Message.Contains("Close the NativeShell candidate", StringComparison.Ordinal)) { }
         }
 
+        // The isolated native profile can be normalized when its original
+        // controller closes. The rehearsal must copy the NATIVE checkpoint
+        // bytes, while the older sourceProfile remains the immutable WPF baseline.
+        byte[] nativeProfileAtCheckpoint = File.ReadAllBytes(
+            Path.Combine(candidate, "profile.json"));
         string promoted = NativeCutoverPromotion.Stage(production, "cutover1",
             "isolated-live", checkProcesses: false);
         if (NativeCutoverPromotion.Open(production, "isolated-live") != promoted
-            || !sourceProfile.SequenceEqual(File.ReadAllBytes(
+            || !nativeProfileAtCheckpoint.SequenceEqual(File.ReadAllBytes(
                 Path.Combine(promoted, "profile.json")))
             || !sourceBrowser.SequenceEqual(File.ReadAllBytes(Path.Combine(promoted,
                 "WebView2", "Default", "Local Storage", "leveldb", "000001.ldb"))))
