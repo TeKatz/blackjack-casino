@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Text.Json;
 using BlackjackCasino.Desktop;
+using BlackjackCasino.Core.Hosting;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
@@ -45,9 +46,9 @@ internal sealed class NativeShellForm : Form
 
     internal NativeShellForm(string? previewDirectory = null)
     {
-        previewDirectory ??= Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "BlackjackCasino", "NativeShellPreview");
+        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        previewDirectory ??= HostPreviewStorage.DefaultDirectory(localAppData);
+        previewDirectory = HostPreviewStorage.RequireIsolatedDirectory(previewDirectory, localAppData);
         runtime = new NativePreviewRuntime(previewDirectory);
         environment = new Lazy<Task<CoreWebView2Environment>>(() =>
             CoreWebView2Environment.CreateAsync(
@@ -226,8 +227,7 @@ internal sealed class NativeShellForm : Form
 
     private async Task OpenModeAsync(string mode)
     {
-        if (closing || mode is not ("blackjack" or "reels" or "neon-vault" or "nine-lives"
-            or "midnight-merge" or "midnight-dice" or "midnight-manor")) return;
+        if (closing || !HostMigrationCatalog.IsPreviewRoute(mode)) return;
         if (runtime.ManorRequiresRestart)
         {
             status.Text = "Manor journal recovery requires an application restart.";
@@ -339,17 +339,7 @@ internal sealed class NativeShellForm : Form
         }
     }
 
-    private static string PageFor(string mode) => mode switch
-    {
-        "blackjack" => "blackjack.html",
-        "reels" => "reels.html",
-        "neon-vault" => "neon-vault.html",
-        "nine-lives" => "nine-lives.html",
-        "midnight-merge" => "midnight-merge.html",
-        "midnight-dice" => "midnight-dice.html",
-        "midnight-manor" => "index.html",
-        _ => throw new ArgumentOutOfRangeException(nameof(mode)),
-    };
+    private static string PageFor(string mode) => HostMigrationCatalog.PreviewPageFor(mode);
 
     private static bool IsTrusted(string? mode, string? source) => mode switch
     {

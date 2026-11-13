@@ -1,3 +1,5 @@
+using BlackjackCasino.Core.Hosting;
+
 namespace BlackjackCasino.Desktop;
 
 /// <summary>
@@ -7,7 +9,7 @@ namespace BlackjackCasino.Desktop;
 internal sealed record CasinoMode(string Id,string Title,string Subtitle,string Description,string Accent,string Emblem,string Category,bool UseResourceKeys=false);
 
 /// <summary>Composition root registers modes; lobby rendering stays generic for primary and optional secondary actions.</summary>
-internal sealed class CasinoModeRegistry
+internal sealed class CasinoModeRegistry : IHostModeNavigator
 {
     private sealed record Entry(
         CasinoMode Mode,
@@ -52,6 +54,11 @@ internal sealed class CasinoModeRegistry
     {
         if (CanOpenSecondary(id)) entries[id].SecondaryOpen!.Invoke();
     }
+
+    bool IHostModeNavigator.CanOpen(string modeId) => CanOpen(modeId);
+    void IHostModeNavigator.Open(string modeId) => Open(modeId);
+    bool IHostModeNavigator.CanOpenSecondary(string modeId) => CanOpenSecondary(modeId);
+    void IHostModeNavigator.OpenSecondary(string modeId) => OpenSecondary(modeId);
 
     internal void NotifyStateChanged() => Changed?.Invoke();
 }

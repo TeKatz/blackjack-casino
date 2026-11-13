@@ -1,6 +1,6 @@
 # WPF-free native shell: implementation and parity gate
 
-**Integrated baseline:** `main`; **Development source:** `develop` (historical implementation: `feature/manor-modernization-phase-1`)  
+**Integrated baseline:** `main`; **Development source:** `dev` (historical implementation: `feature/manor-modernization-phase-1`)  
 **Status:** Independent WinForms/WebView2 executable with genuine native Blackjack, Midnight Reels, Neon Vault, Nine Lives, Midnight Merge, Midnight Dice and Midnight Manor game bridges. **Preview, not release replacement.** The production installer and auto-updater still package `BlackjackCasino.Desktop.exe` (WPF).
 
 ## What is already functional without WPF
@@ -58,3 +58,7 @@ This is still **preview-only**. Full production replay/save compatibility, brows
 The native pilot now hosts `index.html` via the existing strict V2 `ManorPreviewProtocol`, source-linked `ManorController` and `ManorModernGameService`. The wallet, profile, room decisions and optimistic revision token are committed together in the same write-ahead `ManorPersistence` journal that the existing WPF application uses. The journal is scoped exclusively to the pilot save directory. On launch, a pending journal is recovered **before** either player mirror is loaded. On uncertain commit errors, new game transactions are blocked until the preview restarts; stale normal saves cannot overwrite an authoritative unresolved journal. A headless test checks replay IDs and a real React/WebView2 test confirms Manor's `ui.ready` handshake.
 
 The view in the pilot is embedded in its new WinForms shell rather than a separate WPF Window. Detached-window parity and all Manor animations/sounds are still subject to the full UI acceptance suite before release cutover.
+
+## Phase A host parity protection
+
+The current canonical source-level parity matrix, preview route allowlist, host-neutral navigation port, preview storage boundary and CI gates are documented in [Host migration Phase A](host-phase-a-readiness.md). This does not authorize replacing the WPF release application.

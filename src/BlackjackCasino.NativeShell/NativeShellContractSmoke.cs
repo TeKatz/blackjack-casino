@@ -1,5 +1,6 @@
 using BlackjackCasino.Desktop;
 using BlackjackCasino.Core;
+using BlackjackCasino.Core.Hosting;
 
 namespace BlackjackCasino.NativeShell;
 
@@ -20,6 +21,27 @@ internal static class NativeShellContractSmoke
             if (assembly.GetReferencedAssemblies().Any(name =>
                     name.Name is "PresentationFramework" or "PresentationCore" or "WindowsBase"))
                 throw new InvalidOperationException("Native shell still references WPF assemblies.");
+
+            if (HostMigrationCatalog.PreviewRoutes.Count != 7
+                || HostMigrationCatalog.ApprovedForRelease
+                || !HostMigrationCatalog.IsPreviewRoute("midnight-manor")
+                || HostMigrationCatalog.IsPreviewRoute("casino-empire")
+                || HostMigrationCatalog.PreviewPageFor("reels") != "reels.html")
+                throw new InvalidOperationException("Host parity manifest is inconsistent.");
+            string live = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "BlackjackCasino");
+            try
+            {
+                HostPreviewStorage.RequireIsolatedDirectory(live,
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
+                throw new InvalidOperationException("Native preview accepted live player data.");
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message == "NativeShell preview cannot use production player storage.")
+            {
+                // Correct: production state must remain untouched.
+            }
 
             if (!BlackjackModernProtocol.Trusted("https://midnight-manor.local/blackjack.html")
                 || BlackjackModernProtocol.Trusted("https://midnight-manor.local/reels.html")

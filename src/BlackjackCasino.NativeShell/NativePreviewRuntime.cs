@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BlackjackCasino.Core;
+using BlackjackCasino.Core.Hosting;
 using BlackjackCasino.Core.MidnightMerge;
 using BlackjackCasino.Core.Kniffel;
 using BlackjackCasino.NativeShell;
@@ -56,7 +57,8 @@ internal sealed class NativePreviewRuntime : IDisposable
     internal NativePreviewRuntime(string previewDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(previewDirectory);
-        directory = Path.GetFullPath(previewDirectory);
+        directory = HostPreviewStorage.RequireIsolatedDirectory(previewDirectory,
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
         // Recover any interrupted aggregate Manor journal BEFORE loading either
         // player preference or profile mirrors, exactly as the regular app does.
         new ManorPersistence(directory).Recover();

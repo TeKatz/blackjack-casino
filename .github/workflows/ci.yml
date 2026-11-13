@@ -28,6 +28,9 @@ jobs:
       - name: React and legacy WPF separation audit
         run: python tools/check_ui_migration_boundaries.py
 
+      - name: Phase A host migration parity and isolation guard
+        run: python tools/check_host_phase_a.py
+
       - name: Setup Node for modern Manor frontend
         uses: actions/setup-node@v4
         with:
