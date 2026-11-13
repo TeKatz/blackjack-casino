@@ -246,14 +246,56 @@ internal static class NativeShellContractSmoke
                 }
 
                 session.OpenLounge();
-                foreach (string game in HostMigrationCatalog.LoungeGameIds)
+                // Every Lounge subgame must return to the shared selection
+                // screen after an acknowledged exit, not remain in the
+                // NativeShell snapshot and softlock subsequent navigation.
+                foreach (var game in new[]
                 {
-                    session.OpenLoungeGame(game);
-                    var lounge = System.Text.Json.JsonSerializer.Serialize(session.LoungeSnapshot(),
-                        new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
-                    if (!lounge.Contains("\"games\"", StringComparison.Ordinal)
-                        || !lounge.Contains("\""+game+"\"", StringComparison.Ordinal))
-                        throw new InvalidOperationException("Native Lounge missing game: " + game);
+                    (Id: "sudoku", Type: "lounge.sudoku.command", Prefix: "sudoku",
+                        Session: "session", Revision: "revision", Action: "sudoku.exit"),
+                    (Id: "solitaire", Type: "lounge.solitaire.command", Prefix: "solitaire",
+                        Session: "solitaireSession", Revision: "solitaireRevision", Action: "solitaire.exit"),
+                    (Id: "word-search", Type: "lounge.word-search.command", Prefix: "wordSearch",
+                        Session: "wordSearchSession", Revision: "wordSearchRevision", Action: "word-search.exit"),
+                    (Id: "memory", Type: "lounge.memory.command", Prefix: "memory",
+                        Session: "memorySession", Revision: "memoryRevision", Action: "memory.exit"),
+                    (Id: "jigsaw", Type: "lounge.jigsaw.command", Prefix: "jigsaw",
+                        Session: "jigsawSession", Revision: "jigsawRevision", Action: "jigsaw.exit"),
+                    (Id: "tales-backroom", Type: "lounge.adventure.command", Prefix: "adventure",
+                        Session: "adventureSession", Revision: "adventureRevision", Action: "adventure.exit"),
+                    (Id: "tower-defense", Type: "lounge.tower-defense.command", Prefix: "towerDefense",
+                        Session: "towerDefenseSession", Revision: "towerDefenseRevision", Action: "tower.exit"),
+                    (Id: "minesweeper", Type: "lounge.minesweeper.command", Prefix: "minesweeper",
+                        Session: "minesweeperSession", Revision: "minesweeperRevision", Action: "mine.exit"),
+                })
+                {
+                    session.OpenLoungeGame(game.Id);
+                    using var snapshot = System.Text.Json.JsonDocument.Parse(
+                        System.Text.Json.JsonSerializer.Serialize(session.LoungeSnapshot(), jsonOpts));
+                    var current = snapshot.RootElement;
+                    if (current.GetProperty(game.Prefix).ValueKind != System.Text.Json.JsonValueKind.Object)
+                        throw new InvalidOperationException("Native Lounge missing active game: " + game.Id);
+                    string commandJson = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        type = game.Type,
+                        version = 1,
+                        requestId = Guid.NewGuid().ToString("D"),
+                        session = current.GetProperty(game.Session).GetString(),
+                        expectedRevision = current.GetProperty(game.Revision).GetInt64(),
+                        action = game.Action,
+                    });
+                    NativeLoungeReply? reply = session.ApplyLounge(game.Type, commandJson);
+                    if (reply is null)
+                        throw new InvalidOperationException("Native Lounge exit was not handled: " + game.Id);
+                    using var acknowledged = System.Text.Json.JsonDocument.Parse(
+                        System.Text.Json.JsonSerializer.Serialize(reply.Data, jsonOpts));
+                    if (!acknowledged.RootElement.GetProperty("success").GetBoolean())
+                        throw new InvalidOperationException("Native Lounge exit failed: " + game.Id);
+                    using var restored = System.Text.Json.JsonDocument.Parse(
+                        System.Text.Json.JsonSerializer.Serialize(session.LoungeSnapshot(), jsonOpts));
+                    if (restored.RootElement.GetProperty(game.Prefix).ValueKind
+                        != System.Text.Json.JsonValueKind.Null)
+                        throw new InvalidOperationException("Native Lounge never returned to menu: " + game.Id);
                 }
                 session.CloseLounge();
                 session.OpenEmpire();
