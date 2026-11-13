@@ -46,6 +46,25 @@
     <Compile Include="../BlackjackCasino.Desktop/LobbyProgressSnapshot.cs" Link="Shared/LobbyProgressSnapshot.cs" />
     <Compile Include="../BlackjackCasino.Desktop/EmpireModernProtocol.cs" Link="Shared/EmpireModernProtocol.cs" />
     <Compile Include="../BlackjackCasino.Desktop/EmpireModernSnapshot.cs" Link="Shared/EmpireModernSnapshot.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernLoungeCatalog.cs" Link="Shared/ModernLoungeCatalog.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernSudokuProtocol.cs" Link="Shared/ModernSudokuProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernSudokuService.cs" Link="Shared/ModernSudokuService.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernSudokuVariants.cs" Link="Shared/ModernSudokuVariants.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernSolitaireProtocol.cs" Link="Shared/ModernSolitaireProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernSolitaireService.cs" Link="Shared/ModernSolitaireService.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernWordSearchProtocol.cs" Link="Shared/ModernWordSearchProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernWordSearchService.cs" Link="Shared/ModernWordSearchService.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernMemoryProtocol.cs" Link="Shared/ModernMemoryProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernMemoryService.cs" Link="Shared/ModernMemoryService.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernJigsawProtocol.cs" Link="Shared/ModernJigsawProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernJigsawService.cs" Link="Shared/ModernJigsawService.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernAdventureProtocol.cs" Link="Shared/ModernAdventureProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernAdventureService.cs" Link="Shared/ModernAdventureService.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernAdventureEncounter.cs" Link="Shared/ModernAdventureEncounter.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernTowerDefenseProtocol.cs" Link="Shared/ModernTowerDefenseProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernTowerDefenseService.cs" Link="Shared/ModernTowerDefenseService.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernMinesweeperProtocol.cs" Link="Shared/ModernMinesweeperProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernMinesweeperService.cs" Link="Shared/ModernMinesweeperService.cs" />
     <Compile Include="../BlackjackCasino.Desktop/BrowserRecoverySession.cs" Link="Shared/BrowserRecoverySession.cs" />
   </ItemGroup>
   <ItemGroup>

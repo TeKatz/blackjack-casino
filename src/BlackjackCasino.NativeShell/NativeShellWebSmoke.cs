@@ -39,7 +39,7 @@ internal static class NativeShellWebSmoke
                 Console.WriteLine("PASS: WPF-free native startup lobby ready.");
 
                 foreach (string mode in new[]
-                    { "blackjack", "roulette", "reels", "neon-vault", "nine-lives", "casino-empire", "midnight-merge",
+                    { "blackjack", "roulette", "reels", "neon-vault", "nine-lives", "casino-empire", "chill-lounge", "midnight-merge",
                         "midnight-dice", "midnight-manor" })
                 {
                     await form.OpenForAcceptanceAsync(mode);

@@ -48,7 +48,7 @@ public static class HostMigrationCatalog
             new("midnight-manor", "Midnight Manor", "midnight-manor", "index.html"),
             new("casino-empire", "Casino Empire", "casino-empire", "empire.html", true),
             new("midnight-merge", "Midnight Merge", "midnight-merge", "midnight-merge.html"),
-            new("chill-lounge", "Chill Lounge", null, null),
+            new("chill-lounge", "Chill Lounge", "chill-lounge", "lounge.html"),
             new("kniffel", "Midnight Dice", "midnight-dice", "midnight-dice.html"),
             new("midnight-descent", "Midnight Descent", null, null, HasNativeProcess: true),
         });

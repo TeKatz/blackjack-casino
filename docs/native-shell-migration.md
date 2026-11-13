@@ -74,3 +74,7 @@ The preview includes a WPF-free Godot launcher with a strict bundled `MidnightDe
 ## Phase B: Casino Empire embedded preview bridge
 
 The native preview now links the original Empire protocol/snapshot and Core `EmpireService` instead of introducing a new simulation. Its embedded `empire.html` route handles session/revision-bound commands, read-only previews, authoritative transactional management purchases and single-file owner-dividend/wallet commits. Idle accrual ticks every two seconds while visible, checkpoints at most every thirty seconds and persists on close; production user storage remains untouched. The pilot **does not yet support detached Empire windows**, production save migration or complete performance/audio acceptance. The React lobby exposes Empire only as an embedded primary action, with secondary action disabled.
+
+## Phase B: Chill Lounge native services
+
+The independent NativeShell now links the existing Sudoku and variants, Solitaire, Word Search, Memory, Jigsaw, Tales from the Backroom, Tower Defense and Midnight Sweep C# services and versioned command sessions. The browser may only submit whitelisted intentions. Completion/profile and wallet rewards are protected by a dedicated preview-only aggregate checkpoint (pending before mirror projection, replayed on startup). A failed checkpoint disables subsequent Lounge commands until restart. The separate case-board window is implemented as an independent WinForms WebView2 view sharing the parent C# service. WPF fallback remains in the production app.

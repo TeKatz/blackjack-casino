@@ -37,10 +37,10 @@ def main() -> int:
     preview = [(alias, page) for _, alias, page in routes if alias]
     expected = {
         "blackjack", "roulette", "reels", "neon-vault", "nine-lives",
-        "casino-empire",
+        "casino-empire", "chill-lounge",
         "midnight-merge", "midnight-dice", "midnight-manor",
     }
-    if len(preview) != 9 or {alias for alias, _ in preview} != expected:
+    if len(preview) != 10 or {alias for alias, _ in preview} != expected:
         issues.append("Unexpected NativeShell preview route manifest.")
     for alias, document in preview:
         if not (ROOT / "frontend" / document).is_file():

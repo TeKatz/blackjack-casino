@@ -21,6 +21,9 @@ internal sealed class NativePreviewRuntime : IDisposable
     private readonly PlayerProgressionController progression;
     private readonly NativeRouletteJournal rouletteJournal;
     private readonly EmpireService empire;
+    private readonly NativePlayerAggregateJournal loungeJournal;
+    private NativeLoungeRuntime? lounge;
+    private bool loungeRequiresRestart;
     private bool rouletteRequiresRestart;
     private readonly BlackjackTableController table;
     private SlotMachineSession? reelsMachine;
@@ -56,6 +59,9 @@ internal sealed class NativePreviewRuntime : IDisposable
     internal decimal Bankroll => table.Session.Bankroll;
     internal bool HandInProgress => table.Session.RoundInProgress;
     internal PlayerProfileState Profile => progression.Profile;
+    internal PlayerProgressionController Progression => progression;
+    internal bool LoungeRequiresRestart => loungeRequiresRestart;
+    internal void MarkLoungeRecoveryRequired() => loungeRequiresRestart = true;
     internal decimal EmpireCredits => empire.Started ? empire.Credits : 0m;
     internal bool EmpireStarted => empire.Started;
     internal string Status => status;
@@ -68,6 +74,8 @@ internal sealed class NativePreviewRuntime : IDisposable
         // Recover any interrupted aggregate Manor journal BEFORE loading either
         // player preference or profile mirrors, exactly as the regular app does.
         new ManorPersistence(directory).Recover();
+        loungeJournal = new NativePlayerAggregateJournal(directory);
+        loungeJournal.Recover();
         rouletteJournal = new NativeRouletteJournal(directory);
         rouletteJournal.Recover();
         Preferences = PlayerStateStore.Load(directory);
@@ -79,6 +87,93 @@ internal sealed class NativePreviewRuntime : IDisposable
         reelsBet = Math.Clamp(Preferences.SlotBet, SlotMachineRules.MinimumBet, SlotMachineRules.MaximumBet);
         neonBet = NeonVaultRules.Bets.OrderBy(bet => Math.Abs(bet - Preferences.NeonVaultBet)).First();
         nineBet = NineLivesRules.Bets.OrderBy(bet => Math.Abs(bet - Preferences.NineLivesBet)).First();
+    }
+
+    internal void OpenLounge()
+    {
+        if (disposed || HandInProgress || ManorRequiresRestart
+            || rouletteRequiresRestart || loungeRequiresRestart)
+            throw new InvalidOperationException("Finish the active game or recover the save first.");
+        lounge ??= new NativeLoungeRuntime(this);
+    }
+
+    internal void CloseLounge()
+    {
+        if (lounge is null) return;
+        try { lounge.Close(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or InvalidDataException)
+        {
+            loungeRequiresRestart = true;
+            status = "Lounge save interrupted: " + ex.Message;
+        }
+        finally { lounge = null; }
+    }
+
+    internal void OpenLoungeGame(string gameId) =>
+        (lounge ?? throw new InvalidOperationException("Lounge not started.")).Open(gameId);
+
+    internal object LoungeSnapshot(bool boardOnly = false) =>
+        (lounge ?? throw new InvalidOperationException("Lounge not started.")).Snapshot(boardOnly);
+
+    internal NativeLoungeReply? ApplyLounge(string type, string json, bool boardOnly = false) =>
+        lounge?.Execute(type, json, boardOnly);
+
+    internal bool LoungeCanOpenCaseBoard => lounge?.CanOpenBoard ?? false;
+    internal void SetLoungeBoardWindow(bool open) => lounge?.SetBoardWindow(open);
+
+    internal bool TickLounge() => lounge?.Tick() ?? false;
+    internal bool TickLoungeTower() => lounge?.TickTower() ?? false;
+
+    internal void UpdateLoungePreferences(Func<AppPreferences, AppPreferences> change)
+    {
+        if (disposed || loungeRequiresRestart) throw new InvalidOperationException("Lounge recovery required.");
+        AppPreferences previous = Preferences;
+        try
+        {
+            Preferences = change(Preferences);
+            Persist();
+        }
+        catch
+        {
+            Preferences = previous;
+            loungeRequiresRestart = true;
+            throw;
+        }
+    }
+
+    internal void SaveLoungeProfile()
+    {
+        if (disposed || loungeRequiresRestart) throw new InvalidOperationException("Lounge recovery required.");
+        try
+        {
+            loungeJournal.Commit(Preferences with { Bankroll = Bankroll }, Profile);
+        }
+        catch
+        {
+            loungeRequiresRestart = true;
+            throw;
+        }
+    }
+
+    internal void SaveLoungeAward(ProgressionAward award)
+    {
+        if (award == ProgressionAward.None) return;
+        if (disposed || loungeRequiresRestart) throw new InvalidOperationException("Lounge recovery required.");
+        try
+        {
+            decimal newBankroll = checked(Bankroll + award.BankrollEarned);
+            AppPreferences candidate = Preferences with { Bankroll = newBankroll };
+            // Wallet and all reward receipt IDs live in the SAME durable aggregate.
+            loungeJournal.Commit(candidate, Profile);
+            table.Session.ResetBankroll(newBankroll);
+            Preferences = candidate;
+        }
+        catch
+        {
+            loungeRequiresRestart = true;
+            throw;
+        }
     }
 
     internal void OpenEmpire()
@@ -1064,7 +1159,7 @@ internal sealed class NativePreviewRuntime : IDisposable
     {
         // A possibly committed Manor aggregate journal is authoritative. Do
         // not overwrite either mirror with stale in-memory state before restart.
-        if (disposed || ManorRequiresRestart || rouletteRequiresRestart) return;
+        if (disposed || ManorRequiresRestart || rouletteRequiresRestart || loungeRequiresRestart) return;
         table.NormalizeBet();
         Preferences = Preferences with
         {
@@ -1140,9 +1235,10 @@ internal sealed class NativePreviewRuntime : IDisposable
             if (mergeBoard is not null) CloseMerge();
             if (diceGame is not null) CloseDice();
             if (manorController is not null) CloseManor();
+            if (lounge is not null) CloseLounge();
             if (empire.Started && !ManorRequiresRestart && !rouletteRequiresRestart)
                 empire.Accrue(DateTimeOffset.UtcNow);
-            if (!ManorRequiresRestart && !rouletteRequiresRestart)
+            if (!ManorRequiresRestart && !rouletteRequiresRestart && !loungeRequiresRestart)
             {
                 AccountCompletedRound();
                 Persist();

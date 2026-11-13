@@ -22,11 +22,12 @@ internal static class NativeShellContractSmoke
                     name.Name is "PresentationFramework" or "PresentationCore" or "WindowsBase"))
                 throw new InvalidOperationException("Native shell still references WPF assemblies.");
 
-            if (HostMigrationCatalog.PreviewRoutes.Count != 9
+            if (HostMigrationCatalog.PreviewRoutes.Count != 10
                 || HostMigrationCatalog.ApprovedForRelease
                 || !HostMigrationCatalog.IsPreviewRoute("midnight-manor")
                 || !HostMigrationCatalog.IsPreviewRoute("roulette")
                 || !HostMigrationCatalog.IsPreviewRoute("casino-empire")
+                || !HostMigrationCatalog.IsPreviewRoute("chill-lounge")
 
                 || HostMigrationCatalog.PreviewPageFor("reels") != "reels.html")
                 throw new InvalidOperationException("Host parity manifest is inconsistent.");
@@ -116,6 +117,17 @@ internal static class NativeShellContractSmoke
                         throw new InvalidOperationException("Native roulette double-charged a replay.");
                 }
 
+                session.OpenLounge();
+                foreach (string game in HostMigrationCatalog.LoungeGameIds)
+                {
+                    session.OpenLoungeGame(game);
+                    var lounge = System.Text.Json.JsonSerializer.Serialize(session.LoungeSnapshot(),
+                        new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
+                    if (!lounge.Contains("\"games\"", StringComparison.Ordinal)
+                        || !lounge.Contains("\""+game+"\"", StringComparison.Ordinal))
+                        throw new InvalidOperationException("Native Lounge missing game: " + game);
+                }
+                session.CloseLounge();
                 session.OpenEmpire();
                 var empireSnapshot = System.Text.Json.JsonSerializer.Serialize(session.EmpireSnapshot(),
                     new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));

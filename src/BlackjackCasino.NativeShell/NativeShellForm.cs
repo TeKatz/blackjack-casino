@@ -46,6 +46,9 @@ internal sealed class NativeShellForm : Form
     private bool lobbyShown, lobbyBrowserDisabled;
     private Process? descentProcess;
     private EmpireModernSession? empireEpoch;
+    private NativeLoungeCaseBoardForm? loungeBoard;
+    private readonly System.Windows.Forms.Timer loungeRefresh = new() { Interval = 1000 };
+    private readonly System.Windows.Forms.Timer loungeTowerRefresh = new() { Interval = 100 };
     private readonly System.Windows.Forms.Timer empireRefresh = new() { Interval = 2000 };
     private DateTimeOffset empireLastPersist = DateTimeOffset.UtcNow;
     private readonly string frontendFolder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
@@ -95,6 +98,7 @@ internal sealed class NativeShellForm : Form
         navigation.Controls.Add(MakeButton("Midnight Dice", () => _ = OpenModeAsync("midnight-dice")));
         navigation.Controls.Add(MakeButton("Midnight Manor", () => _ = OpenModeAsync("midnight-manor")));
         navigation.Controls.Add(MakeButton("Casino Empire", () => _ = OpenModeAsync("casino-empire")));
+        navigation.Controls.Add(MakeButton("Chill Lounge", () => _ = OpenModeAsync("chill-lounge")));
         navigation.Controls.Add(new Label
         {
             AutoSize = true, Text = "NATIVE HOST • PREVIEW",
@@ -107,6 +111,17 @@ internal sealed class NativeShellForm : Form
         root.Controls.Add(content, 0, 1);
         root.Controls.Add(status, 0, 2);
         Controls.Add(root);
+        loungeRefresh.Tick += (_, _) =>
+        {
+            if (closing || activeMode != "chill-lounge" || !ready) return;
+            runtime.TickLounge();
+            RefreshGameSnapshot();
+        };
+        loungeTowerRefresh.Tick += (_, _) =>
+        {
+            if (closing || activeMode != "chill-lounge" || !ready) return;
+            if (runtime.TickLoungeTower()) RefreshGameSnapshot();
+        };
         empireRefresh.Tick += (_, _) =>
         {
             if (closing || activeMode != "casino-empire" || !ready) return;
@@ -213,6 +228,7 @@ internal sealed class NativeShellForm : Form
         actions.Controls.Add(MakeButton("MIDNIGHT DICE", () => _ = OpenModeAsync("midnight-dice")));
         actions.Controls.Add(MakeButton("MIDNIGHT MANOR", () => _ = OpenModeAsync("midnight-manor")));
         actions.Controls.Add(MakeButton("CASINO EMPIRE", () => _ = OpenModeAsync("casino-empire")));
+        actions.Controls.Add(MakeButton("CHILL LOUNGE", () => _ = OpenModeAsync("chill-lounge")));
         if (NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory))
             actions.Controls.Add(MakeButton("MIDNIGHT DESCENT", () => _ = OpenDescentAsync()));
         page.Controls.Add(actions, 0, 2);
@@ -252,6 +268,14 @@ internal sealed class NativeShellForm : Form
         }
         if (activeMode == "midnight-manor")
             runtime.CloseManor();
+        if (activeMode == "chill-lounge")
+        {
+            loungeRefresh.Stop();
+            loungeTowerRefresh.Stop();
+            loungeBoard?.Close();
+            loungeBoard = null;
+            runtime.CloseLounge();
+        }
         if (activeMode == "casino-empire")
         {
             empireRefresh.Stop();
@@ -366,7 +390,7 @@ internal sealed class NativeShellForm : Form
     private async Task OpenModeAsync(string mode)
     {
         if (closing || !HostMigrationCatalog.IsPreviewRoute(mode)) return;
-        if (runtime.ManorRequiresRestart)
+        if (runtime.ManorRequiresRestart || runtime.LoungeRequiresRestart || runtime.RouletteRequiresRestart)
         {
             status.Text = "Manor journal recovery requires an application restart.";
             return;
@@ -391,6 +415,14 @@ internal sealed class NativeShellForm : Form
         }
         if (activeMode == "midnight-manor" && mode != "midnight-manor")
             runtime.CloseManor();
+        if (activeMode == "chill-lounge" && mode != "chill-lounge")
+        {
+            loungeRefresh.Stop();
+            loungeTowerRefresh.Stop();
+            loungeBoard?.Close();
+            loungeBoard = null;
+            runtime.CloseLounge();
+        }
         if (activeMode == "casino-empire" && mode != "casino-empire")
         {
             empireRefresh.Stop();
@@ -403,6 +435,7 @@ internal sealed class NativeShellForm : Form
         if (mode == "midnight-merge") runtime.OpenMerge();
         if (mode == "midnight-dice") runtime.OpenDice();
         if (mode == "casino-empire") runtime.OpenEmpire();
+        if (mode == "chill-lounge") runtime.OpenLounge();
         if (mode == "midnight-manor")
         {
             try
@@ -493,6 +526,7 @@ internal sealed class NativeShellForm : Form
         "blackjack" => BlackjackModernProtocol.Trusted(source),
         "roulette" => string.Equals(source, "https://" + VirtualHost + "/roulette.html", StringComparison.Ordinal),
         "casino-empire" => EmpireModernProtocol.Trusted(source),
+        "chill-lounge" => string.Equals(source, "https://" + VirtualHost + "/lounge.html", StringComparison.Ordinal),
         "reels" => ModernReelsProtocol.Trusted(source),
         "neon-vault" => ModernNeonVaultProtocol.Trusted(source),
         "nine-lives" => ModernNineLivesProtocol.Trusted(source),
@@ -506,7 +540,8 @@ internal sealed class NativeShellForm : Form
     {
         if (closing || browserFailed || browser is null
             || !IsTrusted(activeMode, args.Source)
-            || args.WebMessageAsJson.Length > (activeMode is "roulette" or "casino-empire" ? 8192 : 4096)) return;
+            || args.WebMessageAsJson.Length > (activeMode is "roulette" or "casino-empire" ? 8192 :
+                activeMode == "chill-lounge" ? 2048 : 4096)) return;
         try
         {
             if (activeMode == "midnight-manor")
@@ -570,6 +605,50 @@ internal sealed class NativeShellForm : Form
                 case "lobby.exit" when activeMode is null && ready:
                     BeginInvoke(new Action(Close));
                     break;
+                case "lounge.ready" when activeMode == "chill-lounge":
+                    if (!LoungeMessageVersion(root)) break;
+                    listening = true;
+                    RefreshGameSnapshot();
+                    break;
+                case "lounge.ui-ready" when activeMode == "chill-lounge" && listening:
+                    if (!LoungeMessageVersion(root)) break;
+                    ready = true;
+                    watchdog.Stop();
+                    loungeRefresh.Start();
+                    loungeTowerRefresh.Start();
+                    status.Text = "Chill Lounge ready: eight native games.";
+                    break;
+                case "lounge.close" when activeMode == "chill-lounge" && ready:
+                    if (LoungeMessageVersion(root))
+                        BeginInvoke(new Action(ReturnToHome));
+                    break;
+                case "lounge.open" when activeMode == "chill-lounge" && listening && ready:
+                    if (!LoungeMessageVersion(root)
+                        || !root.TryGetProperty("id", out JsonElement loungeId)
+                        || loungeId.ValueKind != JsonValueKind.String) break;
+                    string? gameId = loungeId.GetString();
+                    if (!ModernLoungeCatalog.Contains(gameId)) break;
+                    runtime.OpenLoungeGame(gameId!);
+                    RefreshGameSnapshot();
+                    break;
+                case "lounge.adventure.board-window" when activeMode == "chill-lounge"
+                    && listening && ready:
+                    if (LoungeMessageVersion(root))
+                        BeginInvoke(new Action(OpenCaseBoardWindow));
+                    break;
+                case "lounge.sudoku.command" or "lounge.solitaire.command" or
+                    "lounge.word-search.command" or "lounge.memory.command" or
+                    "lounge.jigsaw.command" or "lounge.adventure.command" or
+                    "lounge.tower-defense.command" or "lounge.minesweeper.command"
+                    when activeMode == "chill-lounge" && listening && ready:
+                {
+                    NativeLoungeReply? reply = runtime.ApplyLounge(
+                        message!, args.WebMessageAsJson);
+                    if (reply is not null) Post(reply.Type, reply.Data);
+                    RefreshGameSnapshot();
+                    loungeBoard?.RefreshBoard();
+                    break;
+                }
                 case "empire.ready" when activeMode == "casino-empire":
                     listening = true;
                     RefreshGameSnapshot();
@@ -740,6 +819,42 @@ internal sealed class NativeShellForm : Form
             }
         }
         catch (JsonException) { }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or InvalidDataException or InvalidOperationException or OverflowException)
+        {
+            if (activeMode == "chill-lounge")
+                FailBrowser("Native Lounge save or gameplay error: " + ex.Message);
+        }
+    }
+
+    private static bool LoungeMessageVersion(JsonElement message) =>
+        message.TryGetProperty("version", out JsonElement version)
+        && version.ValueKind == JsonValueKind.Number
+        && version.TryGetInt32(out int number) && number == 1;
+
+    private void OpenCaseBoardWindow()
+    {
+        if (closing || activeMode != "chill-lounge" || !runtime.LoungeCanOpenCaseBoard)
+            return;
+        if (loungeBoard is { IsDisposed: false })
+        {
+            loungeBoard.Activate();
+            return;
+        }
+        var window = new NativeLoungeCaseBoardForm(
+            runtime, environment.Value, frontendFolder, RefreshGameSnapshot)
+        {
+            Owner = this,
+        };
+        loungeBoard = window;
+        runtime.SetLoungeBoardWindow(true);
+        window.FormClosed += (_, _) =>
+        {
+            if (ReferenceEquals(loungeBoard, window)) loungeBoard = null;
+            runtime.SetLoungeBoardWindow(false);
+            RefreshGameSnapshot();
+        };
+        window.Show(this);
     }
 
     private void RefreshGameSnapshot()
@@ -786,6 +901,8 @@ internal sealed class NativeShellForm : Form
                 Revision = runtime.MergeRevision,
                 State = runtime.MergeSnapshot(),
             });
+        else if (activeMode == "chill-lounge")
+            Post("lounge.snapshot", runtime.LoungeSnapshot());
         else if (activeMode == "casino-empire" && empireEpoch is not null)
             Post("empire.snapshot", new
             {
@@ -900,6 +1017,8 @@ internal sealed class NativeShellForm : Form
     {
         if (closing || browserFailed) return;
         empireRefresh.Stop();
+        loungeRefresh.Stop();
+        loungeTowerRefresh.Stop();
         if (activeMode is null)
         {
             // The native WinForms home remains the emergency route when React
@@ -995,9 +1114,15 @@ internal sealed class NativeShellForm : Form
             catch (System.ComponentModel.Win32Exception) { }
         }
         empireRefresh.Stop();
+        loungeRefresh.Stop();
+        loungeTowerRefresh.Stop();
+        loungeBoard?.Close();
+        loungeBoard = null;
         DisposeBrowser();
         runtime.Dispose();
         empireRefresh.Dispose();
+        loungeRefresh.Dispose();
+        loungeTowerRefresh.Dispose();
         watchdog.Dispose();
         base.OnFormClosing(e);
     }
