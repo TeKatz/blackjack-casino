@@ -98,7 +98,64 @@ internal static class NativeShellContractSmoke
         }
         catch (ArgumentException) { /* Expected. */ }
 
+        // An immutable, separate two-sided rollback point may be created only
+        // while the original WPF state still matches the imported baseline.
+        string backup = NativeCutoverCheckpoint.Prepare(production,
+            "smoke", "cutover1", checkProcesses: false);
+        CutoverCheckpoint report = NativeCutoverCheckpoint.Verify(production, "cutover1");
+        if (report.Version != 1 || report.ProductionActivated
+            || report.Native.Length == 0 || report.Legacy.Length == 0)
+            throw new InvalidOperationException("Cutover evidence was incomplete or activated.");
+        string restored = NativeCutoverCheckpoint.RestoreRehearsal(
+            production, "cutover1", "legacy", Path.Combine(root, "rollback-rehearsal"));
+        if (!sourcePreferences.SequenceEqual(File.ReadAllBytes(
+                Path.Combine(restored, "player-state.json")))
+            || !sourceProfile.SequenceEqual(File.ReadAllBytes(
+                Path.Combine(restored, "profile.json")))
+            || !sourceBrowser.SequenceEqual(File.ReadAllBytes(
+                Path.Combine(restored, "WebView2", "Default", "Local Storage", "leveldb",
+                    "000001.ldb"))))
+            throw new InvalidOperationException("Rollback rehearsal did not preserve the original bytes.");
+        try
+        {
+            _ = NativeCutoverCheckpoint.Prepare(production,
+                "smoke", "cutover1", checkProcesses: false);
+            throw new InvalidOperationException("Existing cutover backup was overwritten.");
+        }
+        catch (IOException) { /* Existing snapshots must never be overwritten. */ }
+        try
+        {
+            _ = NativeCutoverCheckpoint.RestoreRehearsal(
+                production, "cutover1", "legacy", restored);
+            throw new InvalidOperationException("Existing rollback destination was overwritten.");
+        }
+        catch (IOException) { /* Existing restoration must never be overwritten. */ }
+
+        // An altered installed WPF profile is a fork, not a safe single-writer
+        // cutover: never combine it with transactions made in NativeShell.
         File.WriteAllText(Path.Combine(production, "profile.json"), "{broken");
+        try
+        {
+            _ = NativeCutoverCheckpoint.Prepare(production,
+                "smoke", "divergent", checkProcesses: false);
+            throw new InvalidOperationException("Divergent WPF progress was silently merged.");
+        }
+        catch (InvalidOperationException ex) when (
+            ex.Message.Contains("changed since", StringComparison.Ordinal))
+        {
+            // Expected: preserve both copies, require a new import.
+        }
+        if (Directory.Exists(NativeCutoverCheckpoint.CheckpointPath(production, "divergent")))
+            throw new InvalidOperationException("Divergent checkpoint was published.");
+        // No checksum mismatch can be silently accepted by the verified rollback.
+        File.AppendAllText(Path.Combine(backup, "legacy", "player-state.json"), " ");
+        try
+        {
+            _ = NativeCutoverCheckpoint.Verify(production, "cutover1");
+            throw new InvalidOperationException("Tampered cutover backup passed verification.");
+        }
+        catch (InvalidDataException) { /* Expected SHA-256 rejection. */ }
+
         try
         {
             _ = NativeHostMigration.Stage(production, "corrupt", checkRunningHost: false);

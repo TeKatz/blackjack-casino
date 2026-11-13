@@ -213,3 +213,37 @@ Every NativeShell runtime now holds an exclusive OS file lock in its isolated
 save directory for its entire lifetime, preventing concurrent sessions from
 writing the same wallet, history or Manor checkpoints. Closing the process
 or a crash releases the lock without changing the original installed saves.
+
+## Phase E — two-sided production-data checkpoint (2026-11-13)
+
+The new production-cutover preparation commands operate **only on the existing
+legacy data and isolated native candidate**, never by assigning NativeShell a
+production write path. They do not change the installed executable or updater:
+
+```powershell
+.\BlackjackCasino.NativeShell.exe --prepare-cutover test2 before-switch
+.\BlackjackCasino.NativeShell.exe --verify-cutover before-switch
+.\BlackjackCasino.NativeShell.exe --rehearse-rollback before-switch legacy C:\CasinoRollbackRehearsal
+```
+
+Close **all** running casino processes and updater before preparation. A
+NativeShell candidate with an active writer lock, a pending Manor/roulette/player
+aggregate journal, or a corrupt wallet/profile cannot pass the checkpoint
+gate. Most importantly, if the WPF data changed since the original candidate
+import, preparation refuses to merge **divergent wallets or high scores**:
+stage a **new candidate** instead. A candidate imported before browser-storage
+manifest v2 must also be re-staged.
+
+A verified checkpoint is stored at
+`%LOCALAPPDATA%\BlackjackCasino\HostCutoverBackups\BACKUP_NAME`, preserving
+both the WPF-side snapshot and independent NativeShell candidate snapshot.
+Top-level JSON and WebView2 localStorage LevelDB data are captured with SHA-256
+evidence, and neither checkpoint names nor rollback destinations are overwritten.
+The rollback rehearsal restores to a **new external folder**, NEVER into the
+installed game. A backup stored on the same drive is not a substitute for a
+separate offline backup.
+
+**Still blocked:** production activation, dual-write/automatic save merging,
+updater restart switch, and overwrite-based rollback. These remain separate
+release gates; creating a checkpoint is not authorization to activate the new
+host against live data.
