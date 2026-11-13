@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BlackjackCasino.Core;
+using BlackjackCasino.Core.Hosting;
 using BlackjackCasino.Desktop;
 
 namespace BlackjackCasino.NativeShell;
@@ -66,6 +67,9 @@ internal static class NativeCutoverCheckpoint
         AssertPlainDirectory(candidate);
         AssertPlainDirectory(parent, required: false);
         if (checkProcesses) RequireCasinoClosed();
+        // Prevent the WPF owner from changing the original save while hashes
+        // and both sides of the checkpoint are being captured.
+        using var productionLease = HostWriterLease.Acquire(source);
 
         // Uses the same exclusive lease as a live NativePreviewRuntime.
         // An open NativeShell window cannot be snapshotted mid-transaction.
