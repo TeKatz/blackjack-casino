@@ -1,151 +1,148 @@
-# Midnight Manor — embedded Godot 3D bonus experiment
+# Midnight Manor — integrated Godot 3D Escape bonus
 
-## Status and scope — integrated 3D bonus
+## Current gameplay
 
-**Escape the Manor now opens in embedded Godot 3D automatically** whenever
-the reel outcome has at least two Bonus/Door symbols and C# starts a Manor run.
-The fixed-position cinematic experience uses 17 authored rooms and three
-physical doors per view. The complete always-revealed map offers every legal
-connection, including a fourth exit when appropriate. No free WASD movement
-or jumpscares are part of this bonus.
+The **only normal Escape the Manor bonus presentation** is Godot 4.5.1
+Compatibility/WebGL 2 embedded in Midnight Manor's existing local React/PixiJS
+WebView2 cabinet. Two or more Bonus/Door symbols start the native C# Manor
+run, followed by the 3D scene inside the slot viewport. There is no WASD
+control, free-roaming pursuit, second 2D bonus or jumpscare system.
 
-The native C# `ManorRun` and `ManorSession` remain the sole authority for
-wagers, room adjacency, ghost routing and speed, room rewards, items,
-checkpoints, timeout, settlement and balance. Every real move, candle action,
-recommended step, cashout and confirmed automatic resolution follows the
-revision-checked WebView2 protocol and the durable financial journal.
+All 17 playable canonical room IDs have authored Godot scene variants. Three
+physical doors show up to three legal destinations; a persistent, fully
+uncovered map in the upper right provides the complete C# room graph,
+including a fourth legal exit where applicable. The player chooses a door or
+a legal map node. A subtle first-person breathing animation can be disabled
+through reduced-motion preferences.
 
-A separate **Bonus üben · ohne Einsatz / Practise bonus · no wager** button
-under Display Settings opens an ephemeral C# practice run. The same
-`ManorRun` movement, ghost and item logic executes there, but the practice
-instance is never passed to the session's financial settlement, wallet,
-statistics, experience or journal. Practice offers restart and exit, and is
-not available during an unresolved real-money cycle.
+The React overlay shows the authoritative turn, current and banked
+multipliers, final gate target, and ghost distance clue. The key unlocks
+C#-gated shortcuts. A candle may reveal the actual ghost location without
+taking a turn, and a passive charm automatically prevents one catch. The
+C# engine owns ghost AI, room collection, checkpoints, maximum turns,
+cashout, auto-route and resolution.
 
-The original React 2D bonus remains a session-only fallback if Godot WebGL
-cannot start or the player deliberately chooses the standard view. The
-first 3D load occurs on explicit entry; subsequent entries reuse the iframe.
-No external game-server requests or separate native Godot process are used.
+A practice button, **Bonus üben · ohne Einsatz / Practise bonus · no wager**,
+runs the same C# ManorRun AI, items and room rules in an ephemeral state,
+never touching the financial journal, wallet or statistics. Practice can be
+restarted or exited. It cannot be used during an unresolved paid cycle.
 
-## Integration and packaging
+## Rendering lifecycle and the post-bonus FPS regression
 
-- `games/manor-bonus-3d/`: Godot 4.5.1 Compatibility/WebGL 2 with 17 deterministic room dressings: library shelves and books, study desk/globe, ballroom drapes, music room piano, winter garden plants/fountain, attic rafters, crypt tombs, outdoor gate, and individual corridor/landing details. A larger front-facing plaque and a React HTML label make each legal destination readable. The camera remains first-person but fixed, with a barely perceptible sinusoidal resting/breathing motion; reduced-motion disables this.
-- `frontend/src/graphics/ManorBonus3D.tsx`: same-origin iframe and permanent HUD. Godot first loads on explicit 3D bonus/practice entry and stays mounted for subsequent visits. Inactive WebGL runs at eight frames per second. All door and inventory commands are merely intent; actual C# snapshots drive the scene, map, multipliers, ghost warning, pickups and final C#-settled payout screen.
-- `frontend/src/graphics/manorGodotProtocol.ts`: same-origin message validation, strict legal room choice projection and read-only ghost proximity band for Godot lighting.
-- `tools/build_manor_bonus_web.ps1`: pinned Godot editor and official single-threaded Web export templates, actual scene smoke test, then HTML/JS/WASM/PCK export into `frontend/dist/manor3d/`.
-- `ci.yml` and `development-release.yml`: export the Godot files after Vite and before .NET build packaging. Development verifies the published paths. Web and Windows Godot templates are shared for the subsequent Midnight Descent export.
+The first implementation kept the Godot iframe mounted and throttled the
+inactive Godot runtime to eight frames per second after returning to the
+slot. That retained the 3D WebGL context, textures, WebAssembly runtime,
+compositor surfaces and a second render loop while the PixiJS slot was
+already running. This was identified as the likely cause of severe
+persistent slot FPS degradation *after* the first 3D use.
 
-Godot is packaged by the desktop project as `ModernFrontend/manor3d/` and served by the existing local virtual HTTPS host. Nothing is fetched from external game servers. **No C# Manor paytable, RTP, wallet, bet, checkpoint, financial save schema, or host protocol version changed.** Practice and final receipt are additive optional snapshot fields within protocol V2. The React 2D bonus and legacy WPF source remain intact.
+The current lifecycle deliberately trades faster warm re-entry for strict
+resource separation:
 
-## Limitations and acceptance
+1. **Reels active:** no Godot iframe exists; only PixiJS draws the slot.
+2. **Bonus/practice entered:** mount a fresh Godot iframe. Godot initializes
+   using local packaged assets and must send a trusted ready message before
+   physical door input is enabled.
+3. **Run finished:** C# commits the reward once; React shows its final
+   multiplier and paid amount. The iframe is removed as soon as this
+   conclusion is displayed, even before the user clicks back to the reels.
+4. **Practice exits / result acknowledged:** the bonus React overlay itself
+   unmounts. No hidden Godot iframe remains, no inactive 8-FPS render loop
+   is kept behind the reels.
+5. **Another bonus:** create a new WebGL context. HTTP/browser asset caching
+   may reduce transfer time, but the WASM runtime and graphics resources are
+   newly initialized. A cold-start loading screen is expected on each visit.
 
-The fixed first-person camera requires door clicks: there is no WASD, continuous pursuit or horror jumpscare system. All 17 playable canonical room IDs now select dedicated architectural furnishing variants, though the prototype still reuses the same three-door portal configuration and does not physically link the rooms in continuous space. The three physical doors are a presentation limit; the expanded map exposes every C#-legal exit. The standard 2D view remains a fallback. Camera movement is very subtle and independent of the payout model.
+This is a deterministic DOM/WebGL-lifecycle fix, not a claim of a measured
+device-specific FPS uplift. **An actual Win10/Win11 WebView2 extended-session
+test is required** to quantify recovery of FPS, frame time, CPU and GPU
+utilization and memory/VRAM after unloading.
 
-Godot Web uses the Compatibility renderer and can be slower than its native Windows build. The iframe initializes only on the first explicit real bonus or practice request, then stays alive between entries. This aims to remove the repeated approximately ten-second wait when opening the bonus after warmup. Cold starts may still take several seconds depending on WebView2 and the machine. No measured speedup is claimed until tested on actual Windows hardware. Godot's stretch aspect uses Expand so the scene covers non-16:9 slot areas instead of black side bars. The first Windows test still requires manual WebView2 checks for GPU support, iframe input focus, actual door selection, visual appearance, resizing, monitor scaling, audio handoff, cold/warm transition timings, the ambient impact of preloading, and frame-rate performance. If the WebGL content does not initialize, an explicit fallback/exit appears instead of changing any real game state.
+## Native authority, recovery and safety
 
-## Deferred WebGL startup and portal transitions (November 2026)
+C# `ManorRun`, `ManorSession`, `ManorModernGameService` and the durable
+journal remain authoritative for outcomes, bankroll, payouts, route legality,
+ghost moves, inventory and continuation. The iframe only proposes one of
+the C#-available destinations. Messages are origin/source checked and
+revisioned; the browser never claims a reward.
 
-The Godot WebAssembly runtime previously started automatically **1.1 seconds
-after Pixi reported its first frame**. Initializing single-threaded Godot in
-a hidden WebView2 iframe could monopolize the renderer's input thread for
-several seconds despite the slot's background animation continuing.
+The old React `ManorBonusStage`, `ManorRunMap`, `ManorRoomScene`, their
+tests and 2D-only styles have been removed, as has the switch back to that
+view. The independent historical WPF files are not opened by the modern
+Manor bonus. They are retained only for the native legacy project and
+repository-level compatibility coverage, not as a hidden replacement mode.
 
-**New load policy:** do not mount the Godot iframe while playing the ordinary
-Midnight Manor slot. Only an explicit no-wager practice request or an active
-real 3D bonus mounts it. Once mounted, the instance
-stays alive for subsequent entries and runs with its existing reduced inactive
-frame cap. The first bonus visit may therefore have an initial WebGL loading
-screen; normal slot startup no longer pays that cost. This removes the
-avoidable eager load, but an exact startup latency improvement must be
-measured in a real Windows WebView2 run rather than assumed.
+**If WebGL cannot initialize:** the user sees a retry action, not the
+retired bonus UI. For a genuine unresolved C# run, the same recovery panel
+offers a direct C# cashout or a separately confirmed C# automatic resolve,
+so an already-committed wager is not stranded. Practice offers exit.
+Neither path simulates payouts locally. On retry, the existing failed iframe
+is discarded and a fresh iframe/ready handshake is required.
 
-**Entry and exit:** once Godot sends its readiness handshake, a lightweight
-0.84-second CSS/DOM wooden-door opening and perspective transition reveals
-the first-person room. Leaving the demo, switching to the classic 2D bonus,
-or finishing a live C# run preserves the previous HUD/frame for a 0.64-second
-closing-door transition while the reels or standard bonus return behind it.
-Transitions have no JavaScript physics or WebGL shader overhead; movement
-controls are locked during them, and the reduced-motion setting skips both
-effects. Game commands are never issued by the transition itself.
+## Presentation and packaging
 
-The new `shouldMountManorGodot` contract is covered by tests to prevent
-regressions where routine slot opening accidentally starts the hidden
-WebAssembly engine again.
+- `games/manor-bonus-3d/`: 17-room procedural 3D art, lighting and door
+  transition, interactive doorway hit areas, seeded scene smoke and geometry
+  tests. The scene does not evaluate gambling outcomes.
+- `frontend/src/graphics/ManorBonus3D.tsx`: dynamic Godot iframe, permanent
+  bonus HUD, fully revealed map, ghost/item feedback, C# settlement receipt
+  and WebGL failure recovery.
+- `frontend/src/graphics/manorGodotLoadPolicy.ts`: asserts the iframe
+  must never exist in ordinary slot mode.
+- `frontend/src/graphics/manorGhostClue.ts`: classifies already-authorized
+  C# ghost clues for atmospheric feedback, not location prediction.
+- `tools/build_manor_bonus_web.ps1`: pinned Godot editor/export templates,
+  Godot headless checks and self-contained Web export to
+  `frontend/dist/manor3d/` before desktop packaging.
 
-## Permanent full floorplan and live bonus HUD (November 2026)
+All Web assets are bundled offline under the existing local virtual host;
+no separate process is launched. C# paytable, payout probabilities, bet
+limits, journal format, protocol version and save migration are unchanged.
+No 3D content is preloaded during ordinary reel play.
 
-The existing Godot 3D geometry and three-door model remain unchanged. All
-new presentation surfaces are React elements over the **same slot viewport**,
-placed using the Windows screenshot as the reference for clear sightlines.
+## Acceptance checklist
 
-- **Upper-left:** room and authoritative turn (maximum 24), live current
-  and checkpoint multipliers, exit target, and the localized C# ghost clue
-  with distant/approaching/near/revealed severity. A short, time-limited
-  narration panel appears below the status when an acknowledged C# run
-  message changes. This area is kept away from the physical door labels.
-- **Upper-right:** a persistent *fully uncovered* graph of all 17 playable
-  rooms and their 23 connections. It is rendered from the C# run snapshot,
-  not calculated by Godot. The player marker follows confirmed moves;
-  visited and legally available rooms update; locked shortcuts show a
-  lock symbol. Door hover highlights the same target on the map.
-- **Expanded floorplan:** offers complete room names, accessible route
-  choices, legend and key warnings. Certain nodes (for example Servants'
-  Corridor) have four valid exits but only three physical 3D door objects.
-  The fourth can be selected on this full map through the normal C#
-  revision-checked `run.move` command.
-- **Lower-left:** a compact inventory for acquired key, candle and charm.
-  The candle is clickable only when the authoritative run reports it
-  usable; charm and key are passive displays.
-- **Lower-right:** cash out with the current C# multiplier, open
-  **More actions** for one-step recommended route or explicitly confirmed
-  auto-resolve, or fall back to standard 2D. Practice gets the same
-  decisions but no financial result.
-  The three original door-choice buttons remain centered at the bottom.
+Automated checks cover frontend typing and UI/protocol tests, C# wallet and
+practice isolation, Godot scene/geometry smoke, Windows desktop packaging,
+host startup and presentation regressions.
 
-Exact ghost positions appear on the map only when the live C# clue is
-`Candle reveals: ROOM.`. A revealed ghost in an uncharted entrance node
-(e.g. Rear Foyer) is named without inventing an on-map position. Normal
-proximity/direction messaging never implies knowledge of an exact ghost
-room. No new ghost AI or payout probability was introduced.
+Manual Windows/WebView2 verification should run at native display scaling
+and again at 125%/150%:
 
-The old local, simulated no-ghost Test Bonus Game has been removed.
-A no-wager **C# practice run** now has the real 17-room graph, pursuit
-behavior, key-gated shortcuts, collected candles, passive charm and
-checkpoint rewards. It may be repeated with a new seed, but it never
-credits a bankroll or saves a checkpoint. The practice status is clearly
-labelled as no wager; fake payout figures are not shown as real winnings.
+- Open Midnight Manor without using the bonus. Verify responsive 60 FPS reel
+  rendering on hardware capable of 60 FPS and record CPU/GPU/VRAM baseline.
+- Open **practice**, move through several rooms, use a candle, then exit.
+  Confirm no Godot iframe remains and gameplay input is immediately usable.
+- Repeat practice entry/exit at least three times. Record cold-start delay
+  per visit and memory/VRAM before, during and after each run.
+- Trigger a real Door bonus or resume a previously journaled bonus. Confirm
+  map legality, ghost clues, items, checkpoint cashout and correct receipt.
+  The receipt must not issue a second reward.
+- Test practice cashout/restart, real cashout, ghost catch, full exit and
+  automatic resolution. Confirm the 3D renderer is released while each
+  terminal result is displayed and after returning to the reels.
+- Simulate missing/unsupported Godot Web assets. Ensure the retry action and
+  C# recovery buttons work; no old 2D gameplay screen appears.
+- After every bonus return, compare the reel FPS and 99th-percentile frame
+  time to its pre-bonus baseline over at least 30 seconds. Repeat with
+  sound, reduced-motion, different monitor scales and window sizes.
 
-A real bonus can now end in Escape, Catch, Cash-out or Exhaustion. Once the
-native journal has committed the actual award, the 3D result screen shows
-the C# multiplier and credited play-money amount. The player acknowledges
-this screen to return to the reels; no additional payout command is sent.
-Ghost proximity yields whole-room cold lighting and a restrained vignette;
-an item pickup, checkpoint or consumed charm receives event feedback.
-A candle reveals the exact position only when the native C# clue says so.
+A clean CI run does not substitute for this actual hardware performance
+verification. The prior reported roughly eight-FPS post-bonus behavior is
+the regression to validate against.
 
-## Room layout and WebGL material correction
-
-The second Manor 3D quality pass responds to tester reports for Candle Landing, Reading Room, Library, Grand Staircase, Moonlit Landing, Forbidden Wing, Courtyard, Secret Passage, Crypt, Winter Garden, Music Room, Servants' Corridor, and Moonlit Gate.
-
-- **Material fix:** All primitive geometry now uses the mesh's explicit repeating UVs, not world-triplanar sampling (which is visually expensive and produced inconsistent wall/stone/floor appearance under the Compatibility renderer). New tiled plaster, paving and cracked crypt-floor artwork complements the existing wood, stone and wallpaper resources. Materials are shared by material ID and tile scale rather than recreated for every box.
-- **Support heights:** Candle placement requires the real height of its tabletop/altar/shelf/plinth. Visible holders sit on the support and wax bodies rise above them. The new geometry test checks every candle base in all 17 locations.
-- **Navigable views:** Bookshelves face into the room and are anchored to the side walls, not sitting across the approach to doors. The Grand Staircase moves to a west-side stairwell, and the Secret Passage's two walls move outside the door clearance.
-- **Distinct interiors:** Moonlit Landing is a blue marble balcony with an orrery and open windows, not the attic reused with extra railings. The Forbidden Wing's dangling black rectangle becomes a carved wall relief with a supporting sill; stone vault braces are separated from the textured ceiling.
-- **Actual greenhouse windows:** The Winter Garden and Moonlit Landing side walls are segmented above, below and between the stained-glass openings. Glazing and leadwork now occupy real wall holes, not the face of opaque blocks.
-- **Supported instruments:** Three Music Room sheet stands have readable scores, legs and floor tripods; all remain outside the door route.
-- **Outdoor masonry:** Courtyard and Moonlit Gate paving, stone columns, parapets and gate lintels all have repeating, image-backed materials.
-
-`room_geometry_test.gd` is executed in the Windows CI *before* exporting the Godot Web package. It checks texture binding and non-triplanar UV mapping in all 17 rooms; supports and bottom heights for every candle; representative textured props; side shelves; glass openings; door clearance; vault/ceiling separation; Moonlit Landing uniqueness; and the existence of music stands' legs. The C# payout system and bankroll remain unchanged.
-
-## Local build sequence (Windows)
+## Local build (Windows)
 
 ```powershell
 cd frontend
 npm ci
+npm test
 npm run build
 cd ..
 ./tools/build_manor_bonus_web.ps1 -OutputDirectory frontend/dist/manor3d
 dotnet build BlackjackCasino.sln -c Release
+dotnet test BlackjackCasino.sln -c Release --no-build
 ```
 
-Development Release performs these steps automatically. The generated export must remain under `frontend/dist`, not committed as source.
+The Development workflow performs the full build, Windows smoke and package
+validation. The generated Godot web files are packaged, not committed.

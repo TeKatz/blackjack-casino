@@ -97,7 +97,7 @@ Windows smoke captures the three supported desktop sizes and detached hosting. A
 - Fixed play-money bets of $50, $100, $250, $1,000, $2,500 and $5,000 (manual stakes $1–$5,000)
 - 10/25/50/100 automatic paid-spin sessions with an immediate stop control; bonus games, free spins, insufficient balance and uncertain saves halt the queue
 - The original Manor soundtrack, continuous reel movement sounds and an ornate startup cover
-- Integrated Escape the Manor bonus with six room views, an interactive map, perspective entry and camera-like room transitions
+- Integrated 17-room Godot 3D Escape the Manor bonus with a permanent full map, ghost/item/checkpoint play and C#-committed payouts; the retired 2D bonus UI is gone. Godot is completely unloaded on bonus completion or exit to preserve PixiJS slot performance.
 - German and English game controls and rules
 - Shared virtual wallet, progression, saved bonus state and crash recovery
 - Original C# game logic for random outcomes, payouts, bet validation and player decisions

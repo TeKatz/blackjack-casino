@@ -1,5 +1,7 @@
 # Midnight Manor acceptance and delivery
 
+> The sections referring to six SVG/WPF room renderings document historical automated presentation coverage. The live React slot now uses the 17-room Godot 3D bonus exclusively. For current post-bonus performance, load/unload, payout and recovery acceptance, see [3D Manor bonus](manor-godot-bonus.md).
+
 ## Automated coverage
 
 - Baseline before edits: 72 existing tests passed on main `378a896`.
