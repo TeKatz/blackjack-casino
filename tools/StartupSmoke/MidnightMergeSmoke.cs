@@ -128,19 +128,24 @@ internal static class MidnightMergeSmoke
 
         window.Width = 1920; window.Height = 1080; window.UpdateLayout();
         await Task.Delay(250);
-        Require(await web.ExecuteScriptAsync(
+        string wideMetrics = await web.ExecuteScriptAsync(
             "(()=>{const board=document.querySelector('[data-testid=\\\"merge-board\\\"]');"
             + "const tiles=document.querySelectorAll('.merge-cell');"
             + "const room=document.querySelector('.merge-scene');"
             + "const root=document.querySelector('.merge-scroll');"
-            + "const columns=getComputedStyle(board).gridTemplateColumns.trim().split(/\\s+/);"
-            + "return Boolean(tiles.length===42&&columns.length===14"
-            + "&&tiles[0].getBoundingClientRect().width>=70"
-            + "&&tiles[41].getBoundingClientRect().height>=70"
-            + "&&room.getBoundingClientRect().height>=180"
-            + "&&getComputedStyle(root).overflowY==='hidden'"
-            + "&&root.scrollHeight<=root.clientHeight+4);})()") == "true",
-            "Wide Merge view must present all 42 cells in 14x3 at unchanged size, with larger panorama and no page scroll.");
+            + "const columns=board?getComputedStyle(board).gridTemplateColumns.trim().split(/\\s+/):[];"
+            + "const tw=tiles[0]?.getBoundingClientRect().width||0;"
+            + "const th=tiles[41]?.getBoundingClientRect().height||0;"
+            + "const roomHeight=room?.getBoundingClientRect().height||0;"
+            + "const overflow=root?getComputedStyle(root).overflowY:'';"
+            + "const scrollHeight=root?.scrollHeight||0,clientHeight=root?.clientHeight||0;"
+            + "return {width:innerWidth,height:innerHeight,tiles:tiles.length,columns:columns.length,"
+            + "tileWidth:tw,tileHeight:th,roomHeight,overflow,scrollHeight,clientHeight,"
+            + "ok:tiles.length===42&&columns.length===14&&tw>=70&&th>=70"
+            + "&&roomHeight>=180&&overflow==='hidden'&&scrollHeight<=clientHeight+4};})()");
+        using (JsonDocument metrics = JsonDocument.Parse(wideMetrics))
+            Require(metrics.RootElement.GetProperty("ok").GetBoolean(),
+                "Wide Merge layout invariant failed: " + wideMetrics);
         await Capture(web, Path.Combine(output, "merge-wide-14x3-1920x1080.png"));
 
         window.Width = 1080; window.Height = 720; window.UpdateLayout();
