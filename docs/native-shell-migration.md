@@ -167,3 +167,23 @@ transaction-dependent cues; reel-stop effects remain presentation-only.
 The existing independent browser effects (Blackjack, Roulette, Manor, Arcade,
 album packs) are not duplicated. The user's per-area sound setting is honored.
 Visual/audio mix and timing parity still require manual Windows testing.
+
+## Phase D: reversible dual-host package and offline rollback rehearsal (2026-11-13)
+
+The existing Development and stable updater payloads continue to package and restart
+`BlackjackCasino.Desktop.exe`. CI now also creates an **isolated, rehearsal-only**
+artifact with both published executables. The rehearsal verifies overlapping WPF
+and NativeShell assets by SHA-256, includes the existing updater and Godot game,
+and emits a checksum and an explicit `productionApproved=false` manifest.
+
+New disposable installer regression tests cover upgrading a WPF-only install to
+a dual-host install, selecting each restart executable, restoring the WPF-only
+package, rejecting a native-only payload from the legacy restart contract,
+and rolling back a deliberately failed in-place replacement of both binaries.
+Player JSON and browser records are fingerprinted and must remain unchanged.
+
+The rehearsal ZIP is **never** copied to `artifacts/app` or the mutable Development
+GitHub release. It is a separate Actions artifact, not a supported distribution
+channel. A production cutover still requires an explicit launch-selection
+contract, safe production-data promotion with one writer, cross-version save
+rollback, real updated-client restart coverage, and Windows 10/11 device testing.

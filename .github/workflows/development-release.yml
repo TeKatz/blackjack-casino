@@ -236,6 +236,18 @@ jobs:
             throw "Native host candidate lacks Midnight Descent"
           }
 
+      - name: Prepare reversible dual-host cutover rehearsal (not updater)
+        shell: pwsh
+        run: ./tools/build_host_cutover_rehearsal.ps1 -LegacyDirectory artifacts/app -NativeDirectory artifacts/native-host-candidate -OutputDirectory artifacts/host-cutover-rehearsal
+
+      - name: Upload dual-host cutover rehearsal (not updater release)
+        uses: actions/upload-artifact@v7
+        with:
+          name: blackjack-casino-dual-host-cutover-rehearsal-win-x64
+          path: artifacts/host-cutover-rehearsal
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Upload isolated native host candidate (not updater release)
         uses: actions/upload-artifact@v7
         with:
