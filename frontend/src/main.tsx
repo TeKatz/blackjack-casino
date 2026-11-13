@@ -6,6 +6,7 @@ import {
 } from './bridge/protocol';
 import type { GameAction, ManorSnapshot, ManorRun } from './bridge/protocol';
 import { ManorStage } from './graphics/ManorStage';
+import {ManorWindowVista} from './graphics/ManorWindowVista';
 import { ManorBonus3D } from './graphics/ManorBonus3D';
 import { shouldMountManorGodot } from './graphics/manorGodotLoadPolicy';
 import { ManorHelp } from './ManorHelp';
@@ -308,19 +309,7 @@ function ManorApp() {
             (godotVisible ? ' godot-active' : '') +
             (motionOff ? ' no-motion' : '')}>
             <div className="manor-room-dressing" aria-hidden="true">
-              {(['left','right'] as const).map(side=>
-                <div key={side} className={'manor-side-rail '+side}>
-                  <div className="manor-recess"/>
-                  <div className="manor-wall-pilaster"/>
-                  <div className="manor-lantern">
-                    <span className="manor-lantern-arm"/>
-                    <span className="manor-lantern-housing"/>
-                    <span className="manor-lantern-glass"/>
-                    <span className="manor-lantern-light"/>
-                  </div>
-                  <div className="manor-light-shaft"/>
-                  <div className="manor-wall-fog"/>
-                </div>)}
+              <ManorWindowVista animate={!motionOff&&!Boolean(run)}/>
             </div>
             <div className="slot-dust" aria-hidden="true">
               {Array.from({ length: 20 }, (_, i) => <i key={i} style={{

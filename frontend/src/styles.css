@@ -1187,3 +1187,15 @@ button.manor-godot-item.usable:focus-visible {
   flex-wrap:wrap;gap:9px;width:100%}
 .manor-godot-recovery-settlement .manor-godot-auto-confirm{width:100%;max-width:430px}
 .manor-godot-recovery-actions button:focus-visible{outline:2px solid #f6ddb7;outline-offset:3px}
+
+/* Both arched windows and their exterior weather are rasterized in one GPU
+   fragment surface. Previous SVG/CSS wall lanterns are intentionally removed. */
+.slot-viewport .manor-room-dressing{z-index:2;position:absolute;inset:0;
+ pointer-events:none;overflow:hidden;background:none!important;
+ box-shadow:none!important}
+.slot-viewport .manor-room-dressing::before,
+.slot-viewport .manor-room-dressing::after{display:none!important}
+.manor-window-vista{position:absolute;inset:0;width:100%;height:100%;
+ display:block;pointer-events:none;opacity:1}
+.slot-viewport.bonus-active .manor-window-vista{opacity:.35}
+@media(prefers-reduced-motion:reduce){.manor-window-vista{transition:none}}
