@@ -156,3 +156,14 @@ the host music to avoid two soundtracks playing simultaneously.
 
 The host soundtrack is no longer silent. Individual per-action sound cue parity
 and the full original soundtrack/volume acceptance still require Windows review.
+
+### Native synthesized sound effects
+The separate host now routes successful gameplay receipts and browser
+presentation events to the **original** WPF-independent PCM cue generators:
+SlotAudio, NineLivesAudio, CasinoSoundSynthesis (Dice), MergeSoundSynthesis,
+MemorySoundSynthesis and WordSearchSoundSynthesis. The listener validates the
+local WebView2 origin and authoritative command receipt before playing
+transaction-dependent cues; reel-stop effects remain presentation-only.
+The existing independent browser effects (Blackjack, Roulette, Manor, Arcade,
+album packs) are not duplicated. The user's per-area sound setting is honored.
+Visual/audio mix and timing parity still require manual Windows testing.

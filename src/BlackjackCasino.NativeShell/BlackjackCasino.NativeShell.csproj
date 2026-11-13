@@ -17,6 +17,12 @@
     <Compile Include="../BlackjackCasino.Desktop/AudioMixer.cs" Link="Shared/AudioMixer.cs" />
     <Compile Include="../BlackjackCasino.Desktop/CasinoAudio.cs" Link="Shared/CasinoAudio.cs" />
     <Compile Include="../BlackjackCasino.Desktop/CasinoMusicSynthesis.cs" Link="Shared/CasinoMusicSynthesis.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/CasinoSoundSynthesis.cs" Link="Shared/CasinoSoundSynthesis.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/SlotAudio.cs" Link="Shared/SlotAudio.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/NineLivesAudio.cs" Link="Shared/NineLivesAudio.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/MergeSoundSynthesis.cs" Link="Shared/MergeSoundSynthesis.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/MemorySoundSynthesis.cs" Link="Shared/MemorySoundSynthesis.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/WordSearchSoundSynthesis.cs" Link="Shared/WordSearchSoundSynthesis.cs" />
     <Compile Include="../BlackjackCasino.Desktop/DiceLoungeSynthesis.cs" Link="Shared/DiceLoungeSynthesis.cs" />
     <Compile Include="../BlackjackCasino.Desktop/ChillLoungeSynthesis.cs" Link="Shared/ChillLoungeSynthesis.cs" />
     <Compile Include="../BlackjackCasino.Desktop/AdventureSynthesis.cs" Link="Shared/AdventureSynthesis.cs" />

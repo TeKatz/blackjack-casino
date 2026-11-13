@@ -13,7 +13,12 @@ namespace BlackjackCasino.NativeShell;
 internal sealed class NativeHostAudio : IDisposable
 {
     private static readonly ConcurrentDictionary<Soundtrack, Lazy<Task<AudioClip>>> Tracks = new();
-    private static readonly AudioClip Cue = CreateCue();
+    private static readonly ConcurrentDictionary<TableCue, AudioClip> TableCues = new();
+    private static readonly ConcurrentDictionary<MergeCue, AudioClip> MergeCues = new();
+    private static readonly ConcurrentDictionary<MemoryCue, AudioClip> MemoryCues = new();
+    private static readonly ConcurrentDictionary<WordSearchCue, AudioClip> WordCues = new();
+    private readonly SlotAudio slotCues = new();
+    private readonly NineLivesAudio nineCues = new();
     private readonly object owner = new();
     private Soundtrack? current;
     private int generation;
@@ -115,26 +120,69 @@ internal sealed class NativeHostAudio : IDisposable
         }
     }
 
-    internal void PlayCue(bool allowed)
+    internal void PlayGameCue(string? mode, string action, bool allowed)
     {
         if (disposed || !allowed) return;
-        CasinoAudio.Play(Cue, owner, .15);
+        switch (mode)
+        {
+            case "reels":
+            case "neon-vault":
+                slotCues.Play(action switch
+                {
+                    "spin" => SlotSound.Start,
+                    "reel-stop" => SlotSound.Stop,
+                    "feature-impact" => SlotSound.Win,
+                    _ => SlotSound.Tick,
+                }, true);
+                break;
+            case "nine-lives":
+                nineCues.Play(action switch
+                {
+                    "spin" => NineLivesCue.Spin,
+                    "reel-stop" => NineLivesCue.ReelStop,
+                    "feature-impact" => NineLivesCue.Win,
+                    _ => NineLivesCue.Pounce,
+                }, true);
+                break;
+            case "midnight-merge":
+                PlayOriginal(MergeCues.GetOrAdd(action switch
+                {
+                    "merge" or "combine" => MergeCue.Merge,
+                    "order" or "order.claim" => MergeCue.Order,
+                    "spawn" or "produce" => MergeCue.Spawn,
+                    "move" or "place" => MergeCue.Drop,
+                    _ => MergeCue.PickUp,
+                }, MergeSoundSynthesis.Build));
+                break;
+            case "midnight-dice":
+                PlayOriginal(TableCues.GetOrAdd(
+                    action.Contains("roll", StringComparison.Ordinal) ? TableCue.DiceRoll : TableCue.Menu,
+                    CasinoSoundSynthesis.Build));
+                break;
+            case "chill-lounge" when action.StartsWith("memory.", StringComparison.Ordinal):
+                PlayOriginal(MemoryCues.GetOrAdd(action switch
+                {
+                    "memory.flip" => MemoryCue.Flip,
+                    "memory.match" => MemoryCue.Match,
+                    "memory.complete" => MemoryCue.Complete,
+                    _ => MemoryCue.Flip,
+                }, MemorySoundSynthesis.Build));
+                break;
+            case "chill-lounge" when action.StartsWith("word-search.", StringComparison.Ordinal):
+                if (action is "word-search.select" or "word-search.submit" or "word-search.found")
+                    PlayOriginal(WordCues.GetOrAdd(WordSearchCue.Found,
+                        WordSearchSoundSynthesis.Build));
+                break;
+            case "chill-lounge":
+            case "casino-empire":
+                PlayOriginal(TableCues.GetOrAdd(
+                    action.Contains("roll", StringComparison.Ordinal) ? TableCue.DiceRoll : TableCue.Menu,
+                    CasinoSoundSynthesis.Build));
+                break;
+        }
     }
 
-    private static AudioClip CreateCue()
-    {
-        const int length = AudioClip.Rate / 8;
-        var samples = new float[length * 2];
-        for (int i = 0; i < length; i++)
-        {
-            double t = i / (double)AudioClip.Rate;
-            double fall = Math.Pow(Math.Max(0, 1 - t * 8), 2);
-            double wave = (Math.Sin(2 * Math.PI * (420 + t * 900) * t) * .65
-                + Math.Sin(2 * Math.PI * 650 * t) * .23) * fall;
-            samples[i * 2] = samples[i * 2 + 1] = (float)wave;
-        }
-        return new AudioClip(samples);
-    }
+    private void PlayOriginal(AudioClip clip) => CasinoAudio.Play(clip, owner, .65);
 
     internal void Suspend() => Stop();
 
@@ -154,5 +202,7 @@ internal sealed class NativeHostAudio : IDisposable
         if (disposed) return;
         disposed = true;
         Stop();
+        slotCues.Dispose();
+        nineCues.Dispose();
     }
 }

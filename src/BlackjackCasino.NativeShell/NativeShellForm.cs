@@ -712,7 +712,15 @@ internal sealed class NativeShellForm : Form
                 {
                     NativeLoungeReply? reply = runtime.ApplyLounge(
                         message!, args.WebMessageAsJson);
-                    if (reply is not null) Post(reply.Type, reply.Data);
+                    if (reply is not null)
+                    {
+                        Post(reply.Type, reply.Data);
+                        if (SuccessfulLoungeAction(reply.Data)
+                            && root.TryGetProperty("action", out JsonElement loungeAction)
+                            && loungeAction.ValueKind == JsonValueKind.String)
+                            hostAudio.PlayGameCue(activeMode,
+                                loungeAction.GetString() ?? "", SoundEnabledForCurrentMode());
+                    }
                     RefreshGameSnapshot();
                     loungeBoard?.RefreshBoard();
                     break;
@@ -749,7 +757,13 @@ internal sealed class NativeShellForm : Form
                         runtime.CommitEmpire, runtime.EmpirePreview);
                     Post("empire.result", reply);
                     status.Text = reply.Message;
-                    if (!command.Preview) RefreshGameSnapshot();
+                    if (!command.Preview)
+                    {
+                        if (reply.Success)
+                            hostAudio.PlayGameCue(activeMode, command.Action,
+                                SoundEnabledForCurrentMode());
+                        RefreshGameSnapshot();
+                    }
                     break;
                 }
                 case "roulette.ready" when activeMode == "roulette":
@@ -830,6 +844,8 @@ internal sealed class NativeShellForm : Form
                     if (command is null || reelsEpoch is null) break;
                     ModernReelsReply reply = reelsEpoch.Execute(command, runtime.ApplyReels);
                     Post("reels.result", reply);
+                    if (reply.Success && command.Action is not ("sound.set" or "animations.set"))
+                        hostAudio.PlayGameCue(activeMode, command.Action, SoundEnabledForCurrentMode());
                     status.Text = reply.Message;
                     RefreshGameSnapshot();
                     break;
@@ -840,6 +856,8 @@ internal sealed class NativeShellForm : Form
                     if (command is null || neonEpoch is null) break;
                     ModernNeonVaultReply reply = neonEpoch.Execute(command, runtime.ApplyNeonVault);
                     Post("neon-vault.result", reply);
+                    if (reply.Success && command.Action is not ("sound.set" or "animations.set"))
+                        hostAudio.PlayGameCue(activeMode, command.Action, SoundEnabledForCurrentMode());
                     status.Text = reply.Message;
                     RefreshGameSnapshot();
                     break;
@@ -850,6 +868,8 @@ internal sealed class NativeShellForm : Form
                     if (command is null || nineEpoch is null) break;
                     ModernNineLivesReply reply = nineEpoch.Execute(command, runtime.ApplyNineLives);
                     Post("nine-lives.result", reply);
+                    if (reply.Success && command.Action is not ("sound.set" or "animations.set"))
+                        hostAudio.PlayGameCue(activeMode, command.Action, SoundEnabledForCurrentMode());
                     status.Text = reply.Message;
                     RefreshGameSnapshot();
                     break;
@@ -861,6 +881,8 @@ internal sealed class NativeShellForm : Form
                     ModernMergeReply reply = mergeEpoch.Execute(command,
                         runtime.MergeRevision, runtime.ApplyMerge);
                     Post("midnight-merge.result", reply);
+                    if (reply.Success && command.Action is not ("sound.set" or "animations.set"))
+                        hostAudio.PlayGameCue(activeMode, command.Action, SoundEnabledForCurrentMode());
                     status.Text = reply.Message;
                     RefreshGameSnapshot();
                     break;
@@ -871,6 +893,8 @@ internal sealed class NativeShellForm : Form
                     if (command is null || diceEpoch is null) break;
                     ModernDiceReply reply = diceEpoch.Execute(command, runtime.ApplyDice);
                     Post("midnight-dice.result", reply);
+                    if (reply.Success && command.Action is not ("sound.set" or "animations.set" or "music.set"))
+                        hostAudio.PlayGameCue(activeMode, command.Action, SoundEnabledForCurrentMode());
                     status.Text = reply.Message;
                     RefreshGameSnapshot();
                     if (runtime.DiceWaiting) _ = AdvanceDiceAiIfNeededAsync();
@@ -882,11 +906,25 @@ internal sealed class NativeShellForm : Form
                 case "midnight-dice.recover" when activeMode == "midnight-dice" && listening && ready:
                     ScheduleFailure("The game requested WebView2 recovery.");
                     break;
-                // Reel-stop and animation-complete signals are presentation cues,
-                // never outcome calculations; the preview has no sound router yet.
+                // Browser presentation cues never determine casino outcomes.
+                case "neon-vault.reel-stop" when activeMode == "neon-vault" && ready:
+                case "nine-lives.reel-stop" when activeMode == "nine-lives" && ready:
+                    hostAudio.PlayGameCue(activeMode, "reel-stop", SoundEnabledForCurrentMode());
+                    break;
+                case "neon-vault.feature-impact" when activeMode == "neon-vault" && ready:
+                case "nine-lives.feature-impact" when activeMode == "nine-lives" && ready:
+                    hostAudio.PlayGameCue(activeMode, "feature-impact", SoundEnabledForCurrentMode());
+                    break;
             }
             if (activeMode is null && listening && ready)
                 HandleLobbyAction(message ?? string.Empty, root);
+            else if (ready && message is "reels.command" or "neon-vault.command"
+                or "nine-lives.command" or "midnight-merge.command" or "midnight-dice.command"
+                or "lounge.sudoku.command" or "lounge.solitaire.command"
+                or "lounge.word-search.command" or "lounge.memory.command"
+                or "lounge.jigsaw.command" or "lounge.adventure.command"
+                or "lounge.tower-defense.command" or "lounge.minesweeper.command")
+                hostAudio.Update(activeMode, runtime.Preferences);
         }
         catch (JsonException) { }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
@@ -1131,6 +1169,32 @@ internal sealed class NativeShellForm : Form
             UpdateAvailable = false,
         });
     }
+
+    private bool SoundEnabledForCurrentMode()
+    {
+        string area = activeMode switch
+        {
+            null => "lobby",
+            "reels" => "midnight-reels",
+            "midnight-dice" => "kniffel",
+            _ => activeMode,
+        };
+        return runtime.Preferences.SoundEnabled
+            && runtime.Preferences.Presentation(area).SoundEnabled;
+    }
+
+    private static bool SuccessfulLoungeAction(object receipt) => receipt switch
+    {
+        ModernSudokuReply r => r.Success,
+        ModernSolitaireReply r => r.Success,
+        ModernWordSearchReply r => r.Success,
+        ModernMemoryReply r => r.Success,
+        ModernJigsawReply r => r.Success,
+        ModernAdventureReply r => r.Success,
+        ModernTowerDefenseReply r => r.Success,
+        ModernMinesweeperReply r => r.Success,
+        _ => false,
+    };
 
     private static bool LoungeMessageVersion(JsonElement message) =>
         message.TryGetProperty("version", out JsonElement version)
