@@ -28,7 +28,7 @@
 /* Only the preview changes; Circuit Rush gameplay renderer stays untouched.
    A disconnected dial turns in 90-degree increments with mechanical stops.
    The live wiring remains constant and never jumps into an impossible circuit. */
-.arcade-scene .exp-two-circuit-dial{transform-box:view-box;transform-origin:193px 35px}
+.arcade-scene .exp-two-circuit-dial{transform-box:fill-box;transform-origin:center}
 .arcade-game-card:is(:hover,:focus-visible) .exp-two-circuit-dial{
  animation:exp-two-dial-turn 5s cubic-bezier(.2,.78,.25,1) infinite}
 .arcade-game-card:is(:hover,:focus-visible) .exp-two-circuit-current{
