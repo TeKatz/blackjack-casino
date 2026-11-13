@@ -169,8 +169,19 @@ def main() -> int:
             issues.append("Independent shell must be WinForms/WebView2 without WPF.")
         if any(token in form for token in ("System.Windows.Controls", "System.Windows.Threading", "PresentationFramework")):
             issues.append("New native shell reintroduced WPF types.")
-        if any(page not in form for page in ("blackjack.html", "reels.html", "neon-vault.html", "nine-lives.html", "midnight-merge.html", "midnight-dice.html", "index.html")):
-            issues.append("Native shell lost a validated seven-game browser route.")
+        manifest_path = ROOT / "src/BlackjackCasino.Core/Hosting/HostMigrationContracts.cs"
+        if not manifest_path.is_file():
+            issues.append("Shared native-shell route manifest is missing.")
+        else:
+            manifest = text(manifest_path)
+            expected_documents = (
+                "blackjack.html", "reels.html", "neon-vault.html", "nine-lives.html",
+                "midnight-merge.html", "midnight-dice.html", "index.html",
+            )
+            if (any(page not in manifest for page in expected_documents)
+                    or "HostMigrationCatalog.IsPreviewRoute(mode)" not in form
+                    or "HostMigrationCatalog.PreviewPageFor(mode)" not in form):
+                issues.append("Native shell lost a validated seven-game browser route.")
         if "BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj" not in text(
                 ROOT / ".github/workflows/ci.yml"):
             issues.append("Windows CI no longer exercises the WPF-free host.")
