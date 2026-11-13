@@ -181,6 +181,44 @@ internal static class Program
             }
         }
 
+        if (args is ["--rehearse-wpf-return", var verifiedExport, var rollbackRehearsal])
+        {
+            try
+            {
+                string folder = NativeLegacyRollbackRehearsal.Run(
+                    NativeHostMigration.ProductionDirectory, verifiedExport, rollbackRehearsal);
+                System.Windows.Forms.MessageBox.Show(
+                    "The WPF-style return was tested in an isolated folder:\n" + folder
+                    + "\n\nPrevious WPF and latest NativeShell saves are preserved."
+                    + "\nNo installed saves were changed.", "WPF rollback rehearsal");
+                return 0;
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException
+                or System.Text.Json.JsonException or InvalidOperationException or ArgumentException)
+            {
+                System.Windows.Forms.MessageBox.Show(error.Message, "Rollback rehearsal blocked");
+                return 1;
+            }
+        }
+        if (args is ["--recover-wpf-rehearsal", var failedRehearsal])
+        {
+            try
+            {
+                _ = NativeLegacyRollbackRehearsal.Recover(
+                    NativeHostMigration.ProductionDirectory, failedRehearsal);
+                System.Windows.Forms.MessageBox.Show(
+                    "The previous WPF state was restored in the test folder."
+                    + "\nThe installed casino was not changed.", "Rollback test recovered");
+                return 0;
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException
+                or System.Text.Json.JsonException or InvalidOperationException or ArgumentException)
+            {
+                System.Windows.Forms.MessageBox.Show(error.Message, "Rollback recovery blocked");
+                return 1;
+            }
+        }
+
         string? candidateDirectory = null;
         if (args is ["--live-rehearsal", var workspaceNameToOpen])
         {
@@ -210,7 +248,7 @@ internal static class Program
         else if (args.Length != 0)
         {
             Console.Error.WriteLine(
-                "Usage: BlackjackCasino.NativeShell.exe [--smoke|--web-smoke|--stage-migration NAME|--candidate NAME|--prepare-cutover CANDIDATE BACKUP|--verify-cutover BACKUP|--rehearse-rollback BACKUP legacy\\|native DESTINATION|--stage-live-rehearsal BACKUP WORKSPACE|--live-rehearsal WORKSPACE|--stage-legacy-return WORKSPACE EXPORT|--verify-legacy-return EXPORT]");
+                "Usage: BlackjackCasino.NativeShell.exe [--smoke|--web-smoke|--stage-migration NAME|--candidate NAME|--prepare-cutover CANDIDATE BACKUP|--verify-cutover BACKUP|--rehearse-rollback BACKUP legacy\\|native DESTINATION|--stage-live-rehearsal BACKUP WORKSPACE|--live-rehearsal WORKSPACE|--stage-legacy-return WORKSPACE EXPORT|--verify-legacy-return EXPORT|--rehearse-wpf-return EXPORT NAME|--recover-wpf-rehearsal NAME]");
             return 2;
         }
 
