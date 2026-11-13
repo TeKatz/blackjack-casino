@@ -48,6 +48,8 @@ public partial class MainWindow : Window
     private UpdateManifest? pendingManifest;
     private bool updateOperationBusy;
     private bool exitingForVerifiedUpdate;
+    private bool exitConfirmationAccepted;
+    private bool exitConfirmationOpen;
     private bool suppressPreferenceEvents;
 
     private readonly PlayerProfileState? initialProfile;
@@ -93,9 +95,23 @@ public partial class MainWindow : Window
         };
         Closing += (_, e) =>
         {
-            if (testSession || exitingForVerifiedUpdate) return;
+            if (testSession || exitingForVerifiedUpdate || exitConfirmationAccepted) return;
+            e.Cancel = true;
+            // Opening an owned modal Window from within the Closing event can
+            // re-enter WPF shutdown. Cancel first, then show it on the dispatcher.
+            if (exitConfirmationOpen) return;
+            exitConfirmationOpen = true;
             bool german = preferences.Language == UiLanguagePreference.German;
-            e.Cancel = !CasinoExitDialog.Confirm(this, german);
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    if (!CasinoExitDialog.Confirm(this, german)) return;
+                    exitConfirmationAccepted = true;
+                    Close();
+                }
+                finally { exitConfirmationOpen = false; }
+            }));
         };
         Closed += (_, _) =>
         {

@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -183,7 +184,7 @@ internal sealed class CasinoExitDialog : Window
         var hover = new Trigger { Property = IsMouseOverProperty, Value = true };
         hover.Setters.Add(new Setter(BorderBrushProperty, Brush("#E9D8AC")));
         template.Triggers.Add(hover);
-        var pressed = new Trigger { Property = IsPressedProperty, Value = true };
+        var pressed = new Trigger { Property = ButtonBase.IsPressedProperty, Value = true };
         pressed.Setters.Add(new Setter(OpacityProperty, .79));
         template.Triggers.Add(pressed);
         button.Template = template;
