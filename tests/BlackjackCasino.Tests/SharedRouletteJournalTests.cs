@@ -66,7 +66,9 @@ public sealed class SharedRouletteJournalTests : IDisposable
             journal.Commit(id, result, state,
                 _ => throw new IOException("Simulated crash before wallet mirror.")));
         Assert.Throws<InvalidDataException>(() =>
-            NativeRouletteJournal.ValidateSettled(directory));
+        {
+            _ = NativeRouletteJournal.ValidateSettled(directory);
+        });
 
         // Either host can resume the same journal, finish the mirror, and
         // recognize the receipt without settling it a second time.
@@ -93,7 +95,9 @@ public sealed class SharedRouletteJournalTests : IDisposable
         Assert.Throws<InvalidDataException>(() =>
             new NativeRouletteJournal(directory));
         Assert.Throws<InvalidDataException>(() =>
-            NativeRouletteJournal.ValidateSettled(directory));
+        {
+            _ = NativeRouletteJournal.ValidateSettled(directory);
+        });
     }
 
     public void Dispose()
