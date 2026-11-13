@@ -21,7 +21,8 @@ public sealed record HostCasinoRoute(
     string DisplayName,
     string? PreviewModeId,
     string? PreviewDocument,
-    bool HasSecondaryWindow = false)
+    bool HasSecondaryWindow = false,
+    bool HasNativeProcess = false)
 {
     public bool HasPreviewBridge => PreviewModeId is not null && PreviewDocument is not null;
 }
@@ -49,7 +50,7 @@ public static class HostMigrationCatalog
             new("midnight-merge", "Midnight Merge", "midnight-merge", "midnight-merge.html"),
             new("chill-lounge", "Chill Lounge", null, null),
             new("kniffel", "Midnight Dice", "midnight-dice", "midnight-dice.html"),
-            new("midnight-descent", "Midnight Descent", null, null),
+            new("midnight-descent", "Midnight Descent", null, null, HasNativeProcess: true),
         });
 
     public static IReadOnlyList<string> LoungeGameIds { get; } = Array.AsReadOnly(new[]

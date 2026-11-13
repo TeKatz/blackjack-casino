@@ -230,10 +230,15 @@ jobs:
             -p:PublishSingleFile=true `
             -p:DebugType=None `
             --output artifacts/native-shell-preview
-          foreach ($name in @("blackjack.html", "reels.html", "neon-vault.html", "nine-lives.html", "midnight-merge.html", "midnight-dice.html", "index.html")) {
+          Copy-Item artifacts/preview-app/MidnightDescent artifacts/native-shell-preview/MidnightDescent -Recurse -Force
+          foreach ($name in @("lobby.html", "blackjack.html", "roulette.html", "reels.html", "neon-vault.html", "nine-lives.html", "midnight-merge.html", "midnight-dice.html", "index.html")) {
             if (!(Test-Path "artifacts/native-shell-preview/ModernFrontend/$name")) {
               throw "Native shell is missing packaged $name"
             }
+          }
+          if (!(Test-Path artifacts/native-shell-preview/MidnightDescent/MidnightDescent.exe) -or
+              !(Test-Path artifacts/native-shell-preview/MidnightDescent/MidnightDescent.pck)) {
+            throw "Native shell preview is missing packaged Midnight Descent Godot runtime"
           }
 
       - name: Upload independent WPF-free native shell preview

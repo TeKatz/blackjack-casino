@@ -20,6 +20,8 @@ public sealed class HostMigrationContractsTests
                 .Distinct(StringComparer.Ordinal).Count());
         Assert.True(HostMigrationCatalog.CasinoRoutes.Single(route =>
             route.DesktopModeId == "casino-empire").HasSecondaryWindow);
+        Assert.True(HostMigrationCatalog.CasinoRoutes.Single(route =>
+            route.DesktopModeId == "midnight-descent").HasNativeProcess);
     }
 
     [Theory]

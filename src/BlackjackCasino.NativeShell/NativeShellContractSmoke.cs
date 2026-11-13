@@ -29,6 +29,21 @@ internal static class NativeShellContractSmoke
                 || HostMigrationCatalog.IsPreviewRoute("casino-empire")
                 || HostMigrationCatalog.PreviewPageFor("reels") != "reels.html")
                 throw new InvalidOperationException("Host parity manifest is inconsistent.");
+            string descentFixture = Path.Combine(directory, "descent-fixture");
+            string descentPath = NativeDescentLaunch.Executable(descentFixture);
+            Directory.CreateDirectory(Path.GetDirectoryName(descentPath)!);
+            if (NativeDescentLaunch.IsPackaged(descentFixture))
+                throw new InvalidOperationException("Missing Godot pack was accepted.");
+            File.WriteAllText(descentPath, "fixture");
+            File.WriteAllText(Path.ChangeExtension(descentPath, ".pck"), "fixture");
+            var descentStart = NativeDescentLaunch.CreateStartInfo(descentFixture, german: true);
+            if (!descentStart.ArgumentList.SequenceEqual(
+                ["--fullscreen", "--", "--language=de"])
+                || descentStart.UseShellExecute
+                || !string.Equals(descentStart.WorkingDirectory,
+                    Path.GetDirectoryName(descentPath), StringComparison.Ordinal))
+                throw new InvalidOperationException("Godot launch flags/lifecycle are incorrect.");
+
             string live = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "BlackjackCasino");

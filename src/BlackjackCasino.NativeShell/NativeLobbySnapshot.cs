@@ -99,7 +99,7 @@ internal static class NativeLobbySnapshot
                 Title = mode.DisplayName,
                 Category = Category(mode.DesktopModeId),
                 Description = Description(mode.DesktopModeId),
-                Enabled = mode.HasPreviewBridge,
+                Enabled = mode.HasPreviewBridge || (mode.HasNativeProcess && NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory)),
                 Secondary = false,
             }).ToArray(),
         };

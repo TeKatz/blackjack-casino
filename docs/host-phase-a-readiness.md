@@ -93,3 +93,5 @@ Windows integration and release approval are **not** asserted by source checks a
 - Native React lobby boots with the existing Vite page, a real Core profile/wallet snapshot and per-route enabled state; unsupported account transactions show a clear preview-only notice.
 - Roulette uses the existing `Roulette.Settle` calculation with an on-disk pending/committed journal, exact WebView2 source checks, and replay-safe request IDs.
 - Read-only lounge/casino route inventories remain canonical; **Empire, Lounge, Midnight Descent, production import, updates and audio are not yet migrated.** This phase must not be treated as complete production parity.
+
+- The independent pilot now exposes Midnight Descent when its Godot `.exe` and `.pck` are bundled. This is an external process launcher, not a WebView route or a verified production replacement.

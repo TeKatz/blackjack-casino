@@ -66,3 +66,7 @@ The current canonical source-level parity matrix, preview route allowlist, host-
 ## Phase B: React casino lobby preview
 
 The NativeShell preview now attempts the existing `lobby.html` React surface on startup and after returning from a game, backed by a read-only snapshot of the **real pilot** wallet, profile, levels, cosmetics, album, challenges and vault. A true `nativePreview` capability flag blocks unavailable shop, account editing, records, daily payouts, updater and arcade rewards rather than displaying fictional financial state. Exact-document browser navigation and click-to-mode mapping continue to be enforced by C#. The WinForms home remains the explicit browser-failure fallback. This is not full lobby parity, since transactional subviews still require native controller adapters and journaled writes.
+
+## Phase B: Midnight Descent process adapter
+
+The preview includes a WPF-free Godot launcher with a strict bundled `MidnightDescent.exe` + `.pck` presence check, the same fullscreen/language arguments as production, and minimized-host restoration after process exit. The CI pilot artifact now includes the exported Godot executable. On machines where the export is absent (such as a local development build), the lobby tile stays unavailable. A headless smoke covers the launch-argument contract; complete real-window focus/audio acceptance is outstanding.

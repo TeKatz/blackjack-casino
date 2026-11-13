@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Diagnostics;
 using System.Text.Json;
 using BlackjackCasino.Desktop;
 using BlackjackCasino.Core.Hosting;
@@ -43,6 +44,7 @@ internal sealed class NativeShellForm : Form
     private string? activeMode;
     private bool listening, ready, browserFailed, closing;
     private bool lobbyShown, lobbyBrowserDisabled;
+    private Process? descentProcess;
     private readonly string frontendFolder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
 
     internal NativeShellForm(string? previewDirectory = null)
@@ -195,6 +197,8 @@ internal sealed class NativeShellForm : Form
         actions.Controls.Add(MakeButton("MIDNIGHT MERGE", () => _ = OpenModeAsync("midnight-merge")));
         actions.Controls.Add(MakeButton("MIDNIGHT DICE", () => _ = OpenModeAsync("midnight-dice")));
         actions.Controls.Add(MakeButton("MIDNIGHT MANOR", () => _ = OpenModeAsync("midnight-manor")));
+        if (NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory))
+            actions.Controls.Add(MakeButton("MIDNIGHT DESCENT", () => _ = OpenDescentAsync()));
         page.Controls.Add(actions, 0, 2);
         page.Controls.Add(new Label
         {
@@ -233,6 +237,46 @@ internal sealed class NativeShellForm : Form
         if (activeMode == "midnight-manor")
             runtime.CloseManor();
         ShowHome();
+    }
+
+    private async Task OpenDescentAsync()
+    {
+        if (closing || descentProcess is not null || runtime.HandInProgress) return;
+
+        FormWindowState previousState = WindowState;
+        Process? process = null;
+        try
+        {
+            bool german = runtime.Preferences.Language == UiLanguagePreference.German;
+            ProcessStartInfo start = NativeDescentLaunch.CreateStartInfo(
+                AppContext.BaseDirectory, german);
+            process = Process.Start(start)
+                ?? throw new InvalidOperationException("Godot could not be started.");
+            descentProcess = process;
+            Enabled = false;
+            WindowState = FormWindowState.Minimized;
+            status.Text = "Midnight Descent is running.";
+            await process.WaitForExitAsync();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            if (!closing && !IsDisposed)
+                status.Text = "Midnight Descent: " + ex.Message;
+        }
+        finally
+        {
+            if (ReferenceEquals(descentProcess, process)) descentProcess = null;
+            process?.Dispose();
+            if (!closing && !IsDisposed)
+            {
+                Enabled = true;
+                WindowState = previousState == FormWindowState.Minimized
+                    ? FormWindowState.Normal : previousState;
+                Activate();
+                RefreshLobbySnapshot();
+            }
+        }
     }
 
     private async Task OpenLobbyAsync()
@@ -468,6 +512,9 @@ internal sealed class NativeShellForm : Form
                         route => string.Equals(route.DesktopModeId, id, StringComparison.Ordinal));
                     if (mode?.PreviewModeId is { } alias)
                         BeginInvoke(new Action(() => { _ = OpenModeAsync(alias); }));
+                    else if (mode?.HasNativeProcess == true &&
+                             NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory))
+                        BeginInvoke(new Action(() => { _ = OpenDescentAsync(); }));
                     break;
                 }
                 case "lobby.language.set" when activeMode is null && listening && ready:
@@ -862,6 +909,12 @@ internal sealed class NativeShellForm : Form
             if (answer != DialogResult.Yes) { e.Cancel = true; return; }
         }
         closing = true;
+        if (descentProcess is { HasExited: false } process)
+        {
+            try { process.Kill(); }
+            catch (InvalidOperationException) { }
+            catch (System.ComponentModel.Win32Exception) { }
+        }
         DisposeBrowser();
         runtime.Dispose();
         watchdog.Dispose();
