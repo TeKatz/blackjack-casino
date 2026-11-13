@@ -609,6 +609,24 @@ button:disabled{opacity:.45;cursor:default}button:focus-visible,input:focus-visi
  .merge-header-tools{grid-column:1/-1;grid-row:3;justify-content:start}
  .merge-header>.merge-back{grid-column:2;grid-row:1}
 }
+
+/* Keep the compact desktop header on one row at real WebView2 720p sizes.
+   The long brand title must not force a second grid row beyond the fixed
+   58px header, and progress cards must fit its available content height. */
+@media(min-width:1000px) and (max-width:1270px){
+  .merge-header{grid-template-columns:minmax(190px,.65fr) minmax(300px,1.4fr) auto auto;
+    gap:6px;padding-inline:12px}
+  .merge-brand h1{font-size:clamp(17px,1.65vw,19px);line-height:1.1;
+    letter-spacing:.025em;white-space:nowrap}
+  .merge-eyebrow{font-size:8px;letter-spacing:.1em;white-space:nowrap}
+  .merge-brand small{white-space:nowrap}
+  .merge-top-stats{gap:4px}
+  .merge-stat-card{height:46px;padding:4px 5px;gap:5px}
+  .merge-stat-emblem{width:27px;height:27px;flex-basis:27px}
+  .merge-stat-emblem svg{width:19px;height:19px}
+  .merge-stat-content strong{font-size:18px}
+}
+
 @media(prefers-reduced-motion:reduce){
  .merge-header-help summary,.merge-header-tools button{transition:none!important}
 }
