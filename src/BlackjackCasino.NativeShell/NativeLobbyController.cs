@@ -115,6 +115,33 @@ internal sealed class NativeLobbyController(NativeCasinoRuntime runtime)
         return new(success, message);
     });
 
+    // Prestige is a single journaled aggregate transition. Never mutate the live
+    // profile before the durable commit, even when the user double-clicks.
+    internal NativeLobbyOutcome AscendPrestige()
+    {
+        if (runtime.HandInProgress || runtime.ManorRequiresRestart
+            || runtime.RouletteRequiresRestart || runtime.LoungeRequiresRestart)
+            return new(false, "Finish the active game or restart after save recovery.");
+        if (Profile.Level < ProgressionCurve.MaximumLevel)
+            return new(false, "Reach level 100 before entering Prestige.");
+
+        try
+        {
+            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
+            PrestigeResult result = new ProgressionService(candidate).Prestige();
+            if (!result.Success) return new(false, result.Message);
+            runtime.CommitLobbyAggregate(runtime.Preferences with { Bankroll = runtime.Bankroll }, candidate);
+            return new(true, result.Message, new { result.Prestige, result.CoinsEarned });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or InvalidDataException or InvalidOperationException or ArgumentException
+            or OverflowException)
+        {
+            runtime.MarkLoungeRecoveryRequired();
+            return new(false, "Prestige save requires recovery: " + ex.Message);
+        }
+    }
+
     internal NativeLobbyOutcome EquipProfile(string id) => Commit(() =>
     {
         CosmeticDefinition? item = CosmeticCatalog.TryGet(id);

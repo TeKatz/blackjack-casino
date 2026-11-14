@@ -68,6 +68,10 @@ internal sealed class NativeCasinoRuntime : IDisposable
     internal decimal Bankroll => table.Session.Bankroll;
     internal bool HandInProgress => table.Session.RoundInProgress;
     internal PlayerProfileState Profile => progression.Profile;
+    internal string ProfileDirectory => directory;
+    // Uses the same enum and property serialization as the native persisted profile.
+    // This is a user-requested, read-only export, not a backup import or save mutation.
+    internal string CreateProfileExport() => JsonSerializer.Serialize(Profile, ProfileJson);
     internal PlayerProgressionController Progression => progression;
     internal bool LoungeRequiresRestart => loungeRequiresRestart;
     internal void MarkLoungeRecoveryRequired() => loungeRequiresRestart = true;

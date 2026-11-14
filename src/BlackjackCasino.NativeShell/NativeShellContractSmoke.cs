@@ -356,6 +356,32 @@ internal static class NativeShellContractSmoke
                 if (PlayerStateStore.Load(faultDirectory).Bankroll != result.Bankroll)
                     throw new InvalidOperationException("Roulette recovery lost the paid settlement.");
             }
+            // The player-facing prestige button must commit once and survive restart.
+            // Tests use an isolated temporary native profile, never real player data.
+            string prestigeDirectory = Path.Combine(directory, "prestige-test");
+            using (var prestigeSession = new NativeCasinoRuntime(prestigeDirectory))
+            {
+                prestigeSession.Profile.Level = ProgressionCurve.MaximumLevel;
+                prestigeSession.Profile.Prestige = 3;
+                prestigeSession.Profile.Coins = 100;
+                var prestigeLobby = new NativeLobbyController(prestigeSession);
+                NativeLobbyOutcome ascended = prestigeLobby.AscendPrestige();
+                if (!ascended.Success || prestigeSession.Profile.Prestige != 4
+                    || prestigeSession.Profile.Level != 0 || prestigeSession.Profile.Coins != 600
+                    || !prestigeSession.Profile.Collection.Packs.Any(p => p.Value > 0)
+                    || prestigeLobby.AscendPrestige().Success)
+                    throw new InvalidOperationException("Native Prestige IV was missing or paid twice.");
+                using var exported = JsonDocument.Parse(prestigeSession.CreateProfileExport());
+                if (exported.RootElement.GetProperty("Prestige").GetInt32() != 4)
+                    throw new InvalidOperationException("Native profile export did not contain the earned prestige.");
+            }
+            using (var resumedPrestige = new NativeCasinoRuntime(prestigeDirectory))
+            {
+                if (resumedPrestige.Profile.Prestige != 4 || resumedPrestige.Profile.Level != 0
+                    || new NativeLobbyController(resumedPrestige).AscendPrestige().Success)
+                    throw new InvalidOperationException("Prestige IV transaction was not durable.");
+            }
+
             AppPreferences saved = PlayerStateStore.Load(directory);
             if (saved.Bankroll < 0 || !File.Exists(Path.Combine(directory, "profile.json")))
                 throw new InvalidOperationException("Isolated native-shell checkpoint was not stored.");
