@@ -1092,6 +1092,48 @@ internal sealed class NativeShellForm : Form
     private void SendLobbyResult(string id, NativeLobbyOutcome result) =>
         Post("lobby.records.result", new { Id = id, result.Success, result.Message });
 
+    private NativeLobbyOutcome ExportCurrentProfile()
+    {
+        try
+        {
+            using var dialog = new SaveFileDialog
+            {
+                Title = "Export Midnight Club player profile",
+                Filter = "JSON profile (*.json)|*.json",
+                FileName = "midnight-club-profile-" + DateTime.Now.ToString("yyyy-MM-dd") + ".json",
+                DefaultExt = "json",
+                AddExtension = true,
+                OverwritePrompt = true,
+                RestoreDirectory = true,
+            };
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return new(false, "Export cancelled. No file was changed.");
+            File.WriteAllText(dialog.FileName, runtime.CreateProfileExport(), System.Text.Encoding.UTF8);
+            return new(true, "Player profile exported successfully.");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or ArgumentException or InvalidOperationException)
+        {
+            return new(false, "Profile export failed: " + ex.Message);
+        }
+    }
+
+    private NativeLobbyOutcome OpenProfileFolder()
+    {
+        try
+        {
+            var start = new ProcessStartInfo("explorer.exe") { UseShellExecute = false };
+            start.ArgumentList.Add(runtime.ProfileDirectory);
+            _ = Process.Start(start) ?? throw new InvalidOperationException("File Explorer could not start.");
+            return new(true, "Opened the local player-data folder.");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            return new(false, "Could not open the profile folder: " + ex.Message);
+        }
+    }
+
     private void HandleLobbyAction(string action, JsonElement root)
     {
         string? id = ValidLobbyId(root);
@@ -1214,6 +1256,26 @@ internal sealed class NativeShellForm : Form
                 RefreshLobbySnapshot();
                 break;
             }
+            case "lobby.profile.prestige" when recordsPage == "profile":
+            {
+                NativeLobbyOutcome outcome = lobbyController.AscendPrestige();
+                Post("lobby.profile.prestige.result", new
+                {
+                    outcome.Success, outcome.Message,
+                    Prestige = runtime.Profile.Prestige,
+                    Level = runtime.Profile.Level,
+                    outcome.Reward,
+                });
+                RefreshLobbyRecords();
+                RefreshLobbySnapshot();
+                break;
+            }
+            case "lobby.profile.export" when recordsPage == "profile":
+                SendLobbyResult("export", ExportCurrentProfile());
+                break;
+            case "lobby.profile.folder" when recordsPage == "profile":
+                SendLobbyResult("folder", OpenProfileFolder());
+                break;
             case "lobby.profile.equip" when recordsPage == "profile" && id is not null:
                 SendLobbyResult(id, lobbyController.EquipProfile(id));
                 RefreshLobbyRecords();

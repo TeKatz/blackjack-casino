@@ -1,5 +1,24 @@
 # Table, profile and progression refresh
 
+## Native Player Profile (post-WPF cutover)
+
+The WPF-free React Player Profile now features an emerald-and-gold identity stage, a shared Prestige crest
+in the profile and lobby header, raised statistics tiles, and individual navigation cards. The new
+**Data & profile options** drawer uses native Windows actions: a Save File dialog exports the live
+profile as JSON and a button opens the currently active native save directory. A JSON profile export
+is **not** a complete installation backup (other saves, browser storage and preferences remain separate).
+The removed WPF "Export & advanced options" action must not return.
+
+At level 100, the profile exposes a two-step **Ascend to Prestige** confirmation. The existing C#
+PrestigeService rules remain authoritative: level resets to zero, accumulated coins and statistics
+are preserved, and 500 coins, one Legendary pack and two Epic packs are awarded. The native host
+clones the profile and commits the entire promotion through its aggregate journal before sending the
+success receipt. A duplicate request fails because the saved level is no longer 100. Only after
+acknowledged persistence does React play the special animated Prestige seal/rings ceremony.
+Reduced-motion settings and a skip button allow an immediate static result. Smoke tests
+exercise the transition, repeated requests, restart and exported JSON on isolated temporary profiles.
+
+
 - The decorative chip tray has been removed. Each player hand instead shows its actual wager as denomination-labelled casino chips, including doubles and split hands. Large stacks use a quantity marker to keep rendering bounded. Chips are presentation only; they cannot change wagers, payouts, bankroll or rules. Placement, stake changes and settlement respect the animation preference.
 - The player seat has additional clearance from the felt's curved betting line.
 - Profile and progression now navigate inside the casino host. Opening progression from the profile returns to the same profile; opening it from the lobby returns to the lobby. The underlying game and its keyboard actions stay covered until the page closes. Escape goes back one page; F11 still controls the main window.

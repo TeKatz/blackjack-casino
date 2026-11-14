@@ -25,7 +25,7 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .profile-widget{min-width:170px;gap:7px;}
 .profile-widget small{color:#7ce5b4;}
 .profile-widget em{display:block;color:#cf7ac7;font-size:10px;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.prestige-badge{margin-left:auto;flex:0 0 30px;text-align:center;color:#ffe29c;font-size:12px;line-height:1.05;border:1px solid #b68a33;padding:5px 3px;border-radius:6px;}
+
 .vault-widget{min-width:185px;}
 .vault-widget b{font-size:10px;}
 .lobby-meter{width:100%;height:5px;background:#35423d;border:1px solid #597967;border-radius:20px;margin-top:5px;overflow:hidden;}

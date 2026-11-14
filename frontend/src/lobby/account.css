@@ -1,0 +1,265 @@
+/* Premium Player Profile — native React/WebView2, no bitmap UI and no WPF fallback.
+   Ornament is CSS/DOM artwork; controls, values and portrait stay native and live. */
+.premium-account{--account-gold:#efd29a;--account-ivory:#ffedc5;--account-mint:#a5d5b9;
+ background:radial-gradient(ellipse at 57% -15%,#31664b 0%,transparent 49%),
+ linear-gradient(155deg,#0a231e,#041713 72%);border-color:#35624e;}
+.premium-account .account-scroll{padding:16px 20px 35px;}
+.account-cinematic-header{position:relative;display:flex;min-height:174px;align-items:center;padding:20px 30px;
+ overflow:hidden;border-radius:15px;border:1px solid #bc965b;
+ background:linear-gradient(90deg,#051c18f5 5%,#082b22e7 45%,#0c261fdc),
+ url('/lobby/art/hero.png') center 54%/cover no-repeat;
+ box-shadow:inset 0 1px #fff3cb51,0 10px 32px #0009,0 0 26px #d3a35516;}
+.account-cinematic-header::after{content:"";position:absolute;inset:7px;
+ border:1px solid #e3c28235;border-radius:10px;pointer-events:none;}
+.account-header-copy{position:relative;z-index:1;display:grid;justify-items:start;align-content:center;gap:7px;}
+.account-header-copy .account-back{color:#edd4a0;font-size:12px;padding:0 0 6px;}
+.account-header-copy .shop-eyebrow,.account-kicker{display:block;color:#e9c17a;
+ font:700 10px/1.5 "Segoe UI",sans-serif;letter-spacing:.18em;text-transform:uppercase;}
+.account-cinematic-header h1{font:normal clamp(30px,3.2vw,48px)/1.07 Georgia,serif;
+ text-shadow:0 3px 10px #000d,0 0 17px #c696513d;color:#ffeac0;margin:0;}
+.account-cinematic-header p{font-size:13px;color:#d2dfc9;margin:0;line-height:1.5;}
+.account-header-monogram{position:absolute;right:11%;top:-122px;color:#eac8831a;
+ font:normal 350px Georgia,serif;transform:rotate(-12deg);pointer-events:none;}
+.account-identity-stage{display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,1.25fr);
+ gap:0;min-height:248px;margin:14px 0 0;border:1px solid #b48b4c;border-radius:19px;
+ background:radial-gradient(ellipse at 23% 34%,#24684670,transparent 53%),
+ radial-gradient(ellipse at 84% 45%,#b0772844,transparent 48%),
+ linear-gradient(125deg,#10392c,#08251e 48%,#191b17 100%);
+ box-shadow:inset 0 1px #ffeeb266,0 15px 40px #000a,0 0 25px #d4a34b12;position:relative;isolation:isolate;}
+.account-identity-stage::before{content:"";position:absolute;inset:7px;border:1px solid #f1d49a29;
+ border-radius:14px;pointer-events:none;z-index:3;}
+.account-identity-core{display:flex;align-items:center;gap:18px;min-width:0;padding:24px 20px 24px 26px;
+ position:relative;overflow:hidden;}
+.account-identity-core::before{content:"";position:absolute;inset:0;
+ background:radial-gradient(ellipse at 20% 52%,#c59e5b2d,transparent 54%),
+ repeating-linear-gradient(120deg,transparent 0 34px,#afdcaa05 35px 36px,transparent 37px 74px);
+ pointer-events:none;}
+.account-portrait-showcase{position:relative;flex:0 0 clamp(106px,11vw,165px);width:clamp(106px,11vw,165px);
+ aspect-ratio:1;display:grid;place-items:center;border-radius:16px;
+ background:linear-gradient(140deg,#e3ba7a40,#031914 50%,#b6834833);
+ border:1px solid #f1d49e96;box-shadow:0 10px 22px #000a,0 0 28px #daac4f29,inset 0 0 0 4px #061a17;}
+.account-portrait-showcase .cosmetic-frame{max-width:100%;max-height:100%;}
+.account-portrait-showcase::after{content:"✦";position:absolute;top:-13px;left:calc(50% - 12px);
+ text-align:center;width:24px;color:#fae6af;font-size:26px;filter:drop-shadow(0 0 8px #e9b65a);pointer-events:none;}
+.account-identity-text{position:relative;flex:1;min-width:0;align-self:center;}
+.account-identity-text h2{font:normal clamp(27px,2.7vw,45px)/1.1 Georgia,serif;
+ color:#ffeabe;margin:10px 0 6px;text-shadow:0 4px 12px #000c;overflow-wrap:anywhere;}
+.account-player-title{font:bold clamp(14px,1.2vw,19px) Georgia,serif;filter:drop-shadow(0 0 8px #ca9a4a40);}
+.account-identity-ornament{margin-top:17px;color:#cda863;letter-spacing:.06em;font-size:14px;}
+.prestige-seal{position:relative;display:inline-flex;align-items:center;justify-content:center;
+ flex:none;isolation:isolate;filter:drop-shadow(0 7px 9px #000b);}
+.prestige-seal--large{width:117px;height:148px;}
+.prestige-seal__plate{display:flex;position:relative;flex-direction:column;align-items:center;justify-content:center;
+ width:84%;height:79%;padding:8px 2px 0;
+ color:#ffefb6;background:linear-gradient(138deg,#d0ac6882,#442521 33%,#261a24 66%,#8e5b2b);
+ clip-path:polygon(10% 0,90% 0,100% 12%,95% 75%,50% 100%,5% 75%,0 12%);
+ box-shadow:inset 0 0 20px #0009;}
+.prestige-seal__plate::before{content:"";position:absolute;inset:4px;z-index:-1;
+ clip-path:inherit;background:radial-gradient(ellipse at 50% 18%,#654e44,#23151e 76%);}
+.prestige-seal__crown{position:absolute;z-index:2;top:0;left:0;right:0;text-align:center;
+ font:normal 34px Georgia,serif;color:#ffe09b;text-shadow:0 2px 2px #583821,0 0 10px #eeae58;}
+.prestige-seal__label{font:700 9px/1 "Segoe UI",sans-serif;letter-spacing:.13em;color:#f3cf90;margin-bottom:4px;}
+.prestige-seal__plate b{font:normal 47px/1 Georgia,serif;color:#ffe4a4;
+ text-shadow:0 2px 0 #493124,0 0 18px #f5b758ba;}
+.prestige-seal__laurel{position:absolute;bottom:0;color:#e2bb70;font-size:25px;text-shadow:0 0 11px #f5bc62;}
+.prestige-seal--compact{width:48px;height:49px;min-width:48px!important;margin-left:5px;}
+.prestige-seal--compact .prestige-seal__crown{font-size:17px;top:-2px;}
+.prestige-seal--compact .prestige-seal__plate{width:84%;height:78%;padding:8px 2px 3px;
+ background:linear-gradient(140deg,#cba45c,#3c2a28 25%,#241820 78%,#b68b4d);}
+.prestige-seal--compact .prestige-seal__plate b{font:bold 17px/1 Georgia,serif;}
+.prestige-seal--ceremony{width:155px;height:186px;}
+.prestige-seal--ceremony .prestige-seal__plate b{font-size:65px;}
+.prestige-seal--ceremony .prestige-seal__crown{font-size:42px;}
+.prestige-seal--ceremony .prestige-seal__label{font-size:11px;}
+.profile-widget .prestige-seal--compact{flex:0 0 48px;}
+.account-ascend-card{display:grid;grid-template-columns:minmax(0,1fr) clamp(165px,17vw,250px);
+ min-width:0;position:relative;overflow:hidden;padding:19px 24px 16px 24px;
+ border-radius:90px 18px 18px 90px;border-left:1px solid #b58b498a;
+ background:radial-gradient(circle at 77% 30%,#f4bd5b32,transparent 38%),
+ linear-gradient(130deg,#211e18c7,#151f1baf 65%);}
+.account-ascend-copy{position:relative;z-index:1;align-self:center;min-width:0;}
+.account-ascend-copy h2{font:italic normal clamp(21px,1.9vw,31px)/1.14 Georgia,serif;
+ color:#ffe4b1;margin:8px 0 10px;text-shadow:0 3px 10px #000;}
+.account-ascend-copy p{font-size:12px;color:#e0dbc8;max-width:365px;line-height:1.5;margin:0 0 13px;}
+.account-prestige-rewards{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px;}
+.account-prestige-rewards span{font-size:10px;color:#f6deb0;background:#c8a35315;
+ padding:5px 7px;border-radius:5px;border:1px solid #b6975540;white-space:nowrap;}
+.account-ascend-button{display:inline-flex;align-items:center;justify-content:center;gap:10px;
+ min-height:45px;padding:9px 18px;border-radius:8px;
+ border:1px solid #ffe8a8;color:#251806;background:linear-gradient(180deg,#ffecaf 0%,#ecc16c 46%,#c48b36 100%);
+ box-shadow:inset 0 2px #fff8d0,0 3px 0 #684618,0 8px 16px #0008,0 0 19px #f2b85b72;
+ font:800 12px "Segoe UI",sans-serif;letter-spacing:.05em;text-align:center;
+ transition:filter .18s,transform .18s,box-shadow .18s;}
+.account-ascend-button>span{font-size:20px;}
+.account-ascend-button:hover:not(:disabled){filter:brightness(1.14);transform:translateY(-2px);
+ box-shadow:inset 0 2px #fff8d0,0 5px 0 #684618,0 12px 22px #0009,0 0 25px #ffd288;}
+.account-ascend-button:disabled{filter:grayscale(.35);opacity:.55;cursor:default;}
+.account-ascend-art{position:relative;min-height:204px;display:grid;place-items:center;isolation:isolate;}
+.account-ascend-art::before{content:"";position:absolute;width:94%;aspect-ratio:1;max-height:210px;
+ border-radius:50%;background:radial-gradient(circle,#ffd07a6e 0%,#c87e3960 18%,#9e64e628 36%,transparent 71%);
+ filter:blur(11px);z-index:-2;}
+.account-ascend-art .prestige-seal{z-index:2;transform:translateY(-7px);filter:drop-shadow(0 0 19px #f9b666a1);}
+.account-art-orbit{position:absolute;border-radius:50%;width:85%;aspect-ratio:1;
+ max-width:213px;border:2px solid #ffdf8ca3;box-shadow:0 0 16px #ffcb6f99,inset 0 0 15px #efbb5f88;
+ transform:rotate(-25deg) skew(7deg);}
+.account-art-orbit--inner{width:68%;border-color:#c18fdaab;transform:rotate(28deg) skew(-8deg);}
+.account-art-pedestal{position:absolute;bottom:3px;left:13%;right:13%;height:28px;border-radius:50%;
+ border:3px solid #ffdd8a;background:radial-gradient(ellipse,#fff2b2ad,#bb802682 52%,transparent 80%);
+ box-shadow:0 0 29px #e7b34dbb,0 12px 17px #000b;}
+.account-art-spark{position:absolute;color:#ffdf97;text-shadow:0 0 15px #f9cf73;font-size:28px;}
+.account-art-spark--one{top:4%;right:3%;}.account-art-spark--two{bottom:13%;left:0;}
+.account-ascend-card.is-eligible .account-art-orbit{animation:account-orbit 14s linear infinite;}
+.account-ascend-card.is-eligible .account-art-orbit--inner{animation:account-orbit-back 18s linear infinite;}
+.account-level-goal{position:relative;height:29px;max-width:285px;border:1px solid #ad9b69;
+ border-radius:20px;background:#0b1d1b;overflow:hidden;}
+.account-level-goal>span{display:block;height:100%;background:linear-gradient(90deg,#4c936d,#d6bd73);}
+.account-level-goal>b{position:absolute;inset:0;display:grid;place-items:center;color:#fff4d2;font-size:11px;text-shadow:0 1px 5px #000;}
+.account-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0;}
+.account-stat-card{min-height:89px;display:flex;align-items:center;gap:15px;min-width:0;
+ padding:12px 18px;border:1px solid #a27c448f;border-radius:13px;
+ background:radial-gradient(ellipse at 100% 100%,#39906d32,transparent 60%),
+ linear-gradient(140deg,#153e2d 0%,#0c2820 50%,#0b3326 100%);
+ box-shadow:inset 0 1px #d6e3ad3d,inset 0 -3px #030c0b9e,0 8px 16px #0007,0 0 12px #b5a65b17;
+ position:relative;overflow:hidden;}
+.account-stat-card::before{content:"";position:absolute;inset:5px;border:1px solid #c9b47d20;
+ border-radius:9px;pointer-events:none;}
+.account-stat-icon{color:#f2d48d;flex:0 0 56px;height:58px;display:grid;place-items:center;
+ font:normal 36px Georgia,serif;text-shadow:0 0 12px #e9b85e5d;}
+.account-stat-copy{display:grid;gap:5px;min-width:0;}
+.account-stat-copy small{font-size:11px;letter-spacing:.13em;color:#d9c99e;font-weight:750;}
+.account-stat-copy strong{font:normal clamp(20px,2vw,33px)/1.2 Georgia,serif;
+ color:#ffdfaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.account-progression{position:relative;margin:0;border-color:#a3804f;border-radius:17px;overflow:hidden;
+ padding:21px 22px 20px;background:radial-gradient(ellipse at 67% 0%,#27684a59,transparent 64%),
+ linear-gradient(140deg,#0c3227,#071e1a);
+ box-shadow:inset 0 1px #eed9ab59,0 12px 28px #0009;}
+.account-progression::before{content:"";position:absolute;right:-100px;bottom:-245px;
+ width:520px;height:520px;border:1px solid #d9b5742a;border-radius:50%;
+ box-shadow:0 0 0 37px #d9b5740b,0 0 0 74px #d9b57407;pointer-events:none;}
+.account-section-header{display:flex;justify-content:space-between;align-items:center;gap:14px;
+ position:relative;margin:0 0 17px;}
+.account-section-header h2{font:normal 30px Georgia,serif;margin:5px 0 6px;color:#ffe6b7;}
+.account-section-header p{font-size:12px;margin:0;color:#c6d6c4;}
+.account-section-header p strong{color:#e6c58a;font-weight:700;}
+.account-section-crest{font:normal 58px Georgia,serif;color:#d9bc7540;pointer-events:none;}
+.account-route-grid{position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;}
+.premium-account .account-route-card{display:flex;position:relative;flex-direction:column;justify-content:flex-end;
+ align-items:flex-start;min-width:0;min-height:121px;padding:11px 12px 13px;text-align:left;
+ border:1px solid #b29a6582;border-radius:13px;
+ background:radial-gradient(ellipse at 51% 20%,#57966b40,transparent 54%),
+ linear-gradient(145deg,#194533,#08251e 82%);
+ color:#f8deab;box-shadow:inset 0 1px #fff3c43f,0 5px 13px #0008;
+ transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;}
+.premium-account .account-route-card::before{content:"";position:absolute;inset:4px;border:1px solid #d3b46b23;
+ border-radius:8px;pointer-events:none;}
+.premium-account .account-route-card strong{font:normal clamp(14px,1.23vw,20px)/1.07 Georgia,serif;
+ margin-top:7px;max-width:95%;text-shadow:0 2px 5px #000;}
+.account-route-art{height:64px;width:100%;display:grid;place-items:center;color:#efcb83;
+ font:normal 53px Georgia,serif;filter:drop-shadow(0 6px 6px #000a) drop-shadow(0 0 11px #f3c66c51);
+ background:radial-gradient(ellipse,#eac6771e,transparent 67%);}
+.account-route--shop .account-route-art{color:#d8a9e9;}
+.account-route--album .account-route-art{color:#f1c276;}
+.account-route--edit .account-route-art{color:#e3dab5;}
+.account-route-arrow{position:absolute;right:11px;bottom:9px;color:#f4dba9;font-size:24px;}
+.premium-account .account-route-card:hover,.premium-account .account-route-card:focus-visible{
+ transform:translateY(-4px);border-color:#f5d591;
+ box-shadow:inset 0 1px #fff3c45d,0 11px 20px #000b,0 0 20px #d7aa543d;}
+.account-options-toggle{position:relative;display:flex;align-items:center;gap:12px;margin-top:15px;
+ padding:12px 19px;min-height:51px;min-width:256px;
+ border:1px solid #bc985d;border-radius:10px;
+ background:linear-gradient(160deg,#29553c,#092b22 80%);color:#f4dfb1;
+ font:normal 18px Georgia,serif;box-shadow:inset 0 1px #d3f0ad4a,0 6px 12px #0008;}
+.account-options-toggle span:first-child{font-size:25px;color:#eeca82;}
+.account-options-toggle span:last-child{font-size:25px;margin-left:auto;}
+.account-options-toggle:hover{border-color:#ffe2aa;background:linear-gradient(160deg,#36694b,#173b2d);}
+.account-data-options{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;
+ border-color:#ad9569;background:linear-gradient(145deg,#10362c,#081e1d);}
+.account-data-options h2{font-size:24px;margin:6px 0;}
+.account-data-options p{font-size:12px;margin:6px 0;max-width:640px;}
+.account-data-options .account-data-warning{color:#ecce96;}
+.account-data-buttons{display:flex;flex-wrap:wrap;gap:10px;}
+.account-data-buttons button{display:flex;align-items:center;gap:11px;min-height:48px;
+ border-radius:9px;border:1px solid #bca474;background:#1a4634;color:#ffe7b5;padding:8px 13px;font-size:13px;}
+.account-data-buttons button span{font-size:20px;}
+.account-data-buttons button:hover:not(:disabled){border-color:#fff0bc;background:#306448;}
+.account-data-buttons button:disabled{opacity:.5;}
+.account-data-notice{flex-basis:100%;color:#b6e8b4!important;}
+.account-data-notice.error{color:#f4ad99!important;}
+.account-ceremony-modal{width:min(600px,calc(100vw - 40px));max-height:min(92vh,790px);
+ border:1px solid #dcb568;border-radius:19px;color:#ffecd0;background:radial-gradient(circle at 50% 14%,#395e4a,#081d19 67%);
+ box-shadow:inset 0 1px #fff2c481,0 35px 75px #000e,0 0 64px #ebbb6759;
+ padding:0;overflow:auto;text-align:center;}
+.account-ceremony-modal::backdrop{background:#000c;backdrop-filter:blur(9px);}
+.account-ceremony-confirm{display:flex;align-items:center;flex-direction:column;gap:15px;padding:29px 36px 34px;}
+.account-ceremony-modal h2{font:italic normal clamp(25px,3vw,36px) Georgia,serif;color:#ffe4ad;margin:0;}
+.account-ceremony-modal p{font:normal 14px/1.7 "Segoe UI",sans-serif;color:#d6e2d4;margin:0;}
+.account-ceremony-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-top:12px;}
+.account-ceremony-actions>button:first-child{padding:10px 18px;background:#1a352b;
+ border:1px solid #79937a;color:#f1e1bc;border-radius:8px;}
+.account-ceremony-error{color:#f5b3a4!important;border:1px solid #d48a7b;padding:10px;border-radius:8px;}
+.account-ceremony-reveal{min-height:525px;display:flex;flex-direction:column;justify-content:center;align-items:center;
+ gap:12px;padding:30px 38px;position:relative;isolation:isolate;overflow:hidden;}
+.account-ceremony-reveal::before{content:"";position:absolute;inset:-90px;
+ background:conic-gradient(from 0deg,#f1be4912,transparent 14%,#f5df8f29,transparent 36%,#8e5bc52e,transparent 55%,#f8d58f24,transparent 83%);
+ animation:account-ascend-whorl 5s linear infinite;z-index:-2;}
+.account-ceremony-reveal::after{content:"";position:absolute;inset:15%;
+ border-radius:50%;background:radial-gradient(circle,#fff2b675,#a88f3c3a 26%,#6947a72b 49%,transparent 69%);
+ filter:blur(15px);z-index:-1;animation:account-ascend-pulse 1.7s ease-in-out 2;}
+.account-ceremony-reveal>.prestige-seal{animation:account-ascend-reveal 2.7s ease both;
+ filter:drop-shadow(0 0 25px #f6d180c7);}
+.account-ceremony-rings{position:absolute;top:5%;left:50%;transform:translateX(-50%);
+ width:355px;height:355px;max-width:95%;pointer-events:none;}
+.account-ceremony-rings i{position:absolute;inset:2%;border:2px solid #ffce73a8;border-radius:50%;
+ box-shadow:0 0 25px #f2bf66bc;animation:account-orbit 2.8s linear infinite;}
+.account-ceremony-rings i:nth-child(2){inset:12%;border-color:#b18ceb;animation:account-orbit-back 2.1s linear infinite;}
+.account-ceremony-rings i:nth-child(3){inset:21%;border-color:#fef0c9;animation:account-orbit 1.8s linear infinite;}
+.account-ceremony-flare{position:absolute;top:13%;font:normal 110px Georgia,serif;
+ color:#fff3bb;filter:drop-shadow(0 0 25px #ffe0a4);animation:account-ascend-flare 3.2s ease-out both;}
+.account-ceremony-reward-row{color:#ffdaa0;background:#daa34e20;border:1px solid #dfb97b6a;
+ padding:10px 15px;border-radius:8px;font-size:12px;}
+.account-ceremony-skip{margin-top:9px;border:0;background:transparent;text-decoration:underline;color:#d4d9c5;font-size:12px;}
+.account-ceremony-finish{margin-top:10px;}
+.account-ceremony-reveal.ceremony-done>.prestige-seal,.account-ceremony-reveal.ceremony-done .account-ceremony-flare,
+.account-ceremony-reveal.ceremony-done::before,.account-ceremony-reveal.ceremony-done::after,
+.account-ceremony-reveal.ceremony-done .account-ceremony-rings i{animation:none;}
+@keyframes account-orbit{to{transform:rotate(360deg) skew(7deg);}}
+@keyframes account-orbit-back{to{transform:rotate(-360deg) skew(-8deg);}}
+@keyframes account-ascend-whorl{to{transform:rotate(360deg);}}
+@keyframes account-ascend-pulse{50%{transform:scale(1.3);opacity:.6}}
+@keyframes account-ascend-flare{0%{transform:scale(.25);opacity:0}38%{opacity:1}100%{transform:scale(2.3);opacity:0}}
+@keyframes account-ascend-reveal{0%,23%{opacity:0;transform:translateY(28px) scale(.3) rotate(-12deg)}
+ 60%{opacity:1;transform:translateY(-9px) scale(1.22) rotate(3deg)}
+ 100%{opacity:1;transform:translateY(0) scale(1) rotate(0)}}
+@media(max-width:1500px){
+ .account-identity-stage{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);}
+ .account-identity-core{gap:11px;padding:17px;}
+ .account-ascend-card{padding:15px;}
+ .account-ascend-art{min-height:196px;}
+ .account-route-grid{grid-template-columns:repeat(4,minmax(0,1fr));}
+}
+@media(max-width:1200px){
+ .account-identity-stage{grid-template-columns:1fr;}
+ .account-ascend-card{border-left:0;border-top:1px solid #c99b577b;border-radius:15px;min-height:222px;}
+ .account-identity-core{min-height:185px;}
+ .account-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media(max-width:750px){
+ .premium-account .account-scroll{padding:10px;}
+ .account-cinematic-header{min-height:148px;padding:13px;}
+ .account-identity-core{flex-wrap:wrap;}
+ .account-identity-core>.prestige-seal{margin-left:auto;}
+ .account-ascend-card{grid-template-columns:minmax(0,1fr) 135px;}
+ .account-ascend-art{min-height:184px;}
+ .account-ascend-art .prestige-seal{transform:scale(.75);}
+ .account-route-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+ .account-options-toggle{min-width:0;width:100%;}
+ .account-stat-card{padding:10px;gap:7px;}
+ .account-stat-icon{flex-basis:38px;font-size:26px;}
+}
+@media(prefers-reduced-motion:reduce){
+ .account-ascend-art *, .account-ceremony-modal *, .account-ceremony-reveal::before,
+ .account-ceremony-reveal::after{animation:none!important;transition:none!important;}
+}
+[data-reduced=true] .account-ascend-art *,[data-reduced=true] .account-ceremony-modal *,
+[data-reduced=true] .account-ceremony-reveal::before,[data-reduced=true] .account-ceremony-reveal::after{
+ animation:none!important;transition:none!important;}
