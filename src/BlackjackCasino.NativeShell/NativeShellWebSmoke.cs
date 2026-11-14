@@ -175,6 +175,9 @@ internal static class NativeShellWebSmoke
                         "midnight-dice", "midnight-manor" })
                 {
                     await form.OpenForAcceptanceAsync(mode);
+                    if (!form.TransitionVisible)
+                        throw new InvalidOperationException(mode
+                            + " detached its WebView without the native transition veil.");
                     bool ready = false;
                     for (int attempt = 0; attempt < 180; attempt++)
                     {
@@ -195,10 +198,41 @@ internal static class NativeShellWebSmoke
                         + " && document.body.children.length>0)");
                     if (domReady != "true")
                         throw new InvalidOperationException(mode + " did not render its React document.");
+                    if (mode is "blackjack" or "roulette")
+                    {
+                        // The native veil must remain until WebView2 is ready
+                        // and then disappear; otherwise it can hide gameplay.
+                        await Task.Delay(750);
+                        if (form.TransitionVisible)
+                            throw new InvalidOperationException(mode
+                                + " left the native transition covering the ready game.");
+                        string htmlMask = await form.BrowserCore!.ExecuteScriptAsync(
+                            "document.getElementById('mode-boot')?.dataset.state==='ready'");
+                        if (htmlMask != "true")
+                            throw new InvalidOperationException(mode
+                                + " did not dismiss the unified in-document loading mask.");
+                    }
                     Console.WriteLine("PASS: WPF-free WebView2 React UI-ready: " + mode);
                     form.ReturnForAcceptance();
                     if (form.BrowserMode is not null)
                         throw new InvalidOperationException(mode + " could not return to the native lobby.");
+                    // Route switching is serialized. Wait for the React lobby
+                    // before attempting the next game rather than racing its
+                    // initializing WebView2 controller.
+                    bool returnedToLobby = false;
+                    for (int attempt = 0; attempt < 180; attempt++)
+                    {
+                        if (form.BrowserMode is null && form.BrowserReady
+                            && form.BrowserCore is not null)
+                        {
+                            returnedToLobby = true;
+                            break;
+                        }
+                        await Task.Delay(100);
+                    }
+                    if (!returnedToLobby)
+                        throw new InvalidOperationException(mode
+                            + " could not restore the ready React lobby.");
                 }
                 // Returning from a real game must show the real React lobby,
                 // not a dead WinForms test menu or an untrusted document.
