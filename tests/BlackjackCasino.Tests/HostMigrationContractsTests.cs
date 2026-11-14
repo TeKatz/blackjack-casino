@@ -14,13 +14,13 @@ public sealed class HostMigrationContractsTests
             "midnight-manor", "casino-empire", "midnight-merge", "chill-lounge",
             "kniffel", "midnight-descent",
         ];
-        Assert.Equal(expected, HostMigrationCatalog.CasinoRoutes.Select(route => route.DesktopModeId));
+        Assert.Equal(expected, NativeRouteCatalog.CasinoRoutes.Select(route => route.DesktopModeId));
         Assert.Equal(expected.Length,
-            HostMigrationCatalog.CasinoRoutes.Select(route => route.DesktopModeId)
+            NativeRouteCatalog.CasinoRoutes.Select(route => route.DesktopModeId)
                 .Distinct(StringComparer.Ordinal).Count());
-        Assert.True(HostMigrationCatalog.CasinoRoutes.Single(route =>
+        Assert.True(NativeRouteCatalog.CasinoRoutes.Single(route =>
             route.DesktopModeId == "casino-empire").HasSecondaryWindow);
-        Assert.True(HostMigrationCatalog.CasinoRoutes.Single(route =>
+        Assert.True(NativeRouteCatalog.CasinoRoutes.Single(route =>
             route.DesktopModeId == "midnight-descent").HasNativeProcess);
     }
 
@@ -35,44 +35,44 @@ public sealed class HostMigrationContractsTests
     [InlineData("midnight-merge", "midnight-merge.html")]
     [InlineData("midnight-dice", "midnight-dice.html")]
     [InlineData("midnight-manor", "index.html")]
-    public void PreviewRoutesHaveExactDocumentAllowlist(string id, string document)
+    public void NativeWebRoutesHaveExactDocumentAllowlist(string id, string document)
     {
-        Assert.True(HostMigrationCatalog.IsPreviewRoute(id));
-        Assert.Equal(document, HostMigrationCatalog.PreviewPageFor(id));
+        Assert.True(NativeRouteCatalog.IsWebRoute(id));
+        Assert.Equal(document, NativeRouteCatalog.WebPageFor(id));
     }
 
     [Fact]
-    public void PreviewIsNotPromotedToAProductionLobby()
+    public void NativeRouteAllowlistRejectsUnknownBrowserModes()
     {
-        Assert.Equal(10, HostMigrationCatalog.PreviewRoutes.Count);
-        Assert.True(HostMigrationCatalog.IsPreviewRoute("roulette"));
-        Assert.True(HostMigrationCatalog.IsPreviewRoute("casino-empire"));
-        Assert.True(HostMigrationCatalog.IsPreviewRoute("chill-lounge"));
-        Assert.False(HostMigrationCatalog.IsPreviewRoute("kniffel"));
-        Assert.False(HostMigrationCatalog.IsPreviewRoute("../lobby"));
-        Assert.False(HostMigrationCatalog.IsPreviewRoute(null));
+        Assert.Equal(10, NativeRouteCatalog.WebRoutes.Count);
+        Assert.True(NativeRouteCatalog.IsWebRoute("roulette"));
+        Assert.True(NativeRouteCatalog.IsWebRoute("casino-empire"));
+        Assert.True(NativeRouteCatalog.IsWebRoute("chill-lounge"));
+        Assert.False(NativeRouteCatalog.IsWebRoute("kniffel"));
+        Assert.False(NativeRouteCatalog.IsWebRoute("../lobby"));
+        Assert.False(NativeRouteCatalog.IsWebRoute(null));
         Assert.Throws<ArgumentOutOfRangeException>(() =>
-            HostMigrationCatalog.PreviewPageFor("lobby"));
-        Assert.Equal(8, HostMigrationCatalog.LoungeGameIds.Count);
-        Assert.Equal(8, HostMigrationCatalog.LoungeGameIds.Distinct(StringComparer.Ordinal).Count());
+            NativeRouteCatalog.WebPageFor("lobby"));
+        Assert.Equal(8, NativeRouteCatalog.LoungeGameIds.Count);
+        Assert.Equal(8, NativeRouteCatalog.LoungeGameIds.Distinct(StringComparer.Ordinal).Count());
     }
 
     [Fact]
     public void NativeRouteInventoryNeverOffersUnmappedOrDuplicateModes()
     {
-        Assert.Equal(11, HostMigrationCatalog.CasinoRoutes.Count);
-        Assert.Equal(10, HostMigrationCatalog.PreviewRoutes.Count);
-        Assert.All(HostMigrationCatalog.CasinoRoutes, route =>
+        Assert.Equal(11, NativeRouteCatalog.CasinoRoutes.Count);
+        Assert.Equal(10, NativeRouteCatalog.WebRoutes.Count);
+        Assert.All(NativeRouteCatalog.CasinoRoutes, route =>
         {
             Assert.False(string.IsNullOrWhiteSpace(route.DesktopModeId));
-            Assert.True(route.HasPreviewBridge ^ route.HasNativeProcess);
-            if (route.HasPreviewBridge)
-                Assert.Equal(route.PreviewDocument,
-                    HostMigrationCatalog.PreviewPageFor(route.PreviewModeId!));
+            Assert.True(route.HasWebPage ^ route.HasNativeProcess);
+            if (route.HasWebPage)
+                Assert.Equal(route.WebDocument,
+                    NativeRouteCatalog.WebPageFor(route.WebModeId!));
         });
-        Assert.Equal(HostMigrationCatalog.PreviewRoutes.Count,
-            HostMigrationCatalog.PreviewRoutes
-                .Select(route => route.PreviewModeId)
+        Assert.Equal(NativeRouteCatalog.WebRoutes.Count,
+            NativeRouteCatalog.WebRoutes
+                .Select(route => route.WebModeId)
                 .Distinct(StringComparer.Ordinal).Count());
     }
 

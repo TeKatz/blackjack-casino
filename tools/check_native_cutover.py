@@ -57,6 +57,12 @@ def main():
     require('if (args is ["--web-smoke"])' in source and
             'if (args is ["--smoke"])' in source,
             "Normal NativeShell acceptance commands must remain")
+    require((ROOT / "src/BlackjackCasino.NativeShell/NativeCasinoRuntime.cs").exists()
+            and not (ROOT / "src/BlackjackCasino.NativeShell/NativePreviewRuntime.cs").exists(),
+            "Production runtime must use the native class name, not the pilot class")
+    require((ROOT / "src/BlackjackCasino.HostShared/CasinoUpdateService.cs").exists()
+            and not (ROOT / "src/BlackjackCasino.HostShared/DesktopUpdateService.cs").exists(),
+            "Update transport must be host-neutral")
     require("InternalsVisibleTo" in read(
         "src/BlackjackCasino.NativeShell/AssemblyInfo.cs"),
         "Diagnostic tool must use explicit friend assembly access")

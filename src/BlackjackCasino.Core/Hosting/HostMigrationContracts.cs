@@ -19,19 +19,19 @@ public interface IHostModeNavigator
 public sealed record HostCasinoRoute(
     string DesktopModeId,
     string DisplayName,
-    string? PreviewModeId,
-    string? PreviewDocument,
+    string? WebModeId,
+    string? WebDocument,
     bool HasSecondaryWindow = false,
     bool HasNativeProcess = false)
 {
-    public bool HasPreviewBridge => PreviewModeId is not null && PreviewDocument is not null;
+    public bool HasWebPage => WebModeId is not null && WebDocument is not null;
 }
 
 /// <summary>
 /// Canonical route inventory shared by Core and the current NativeShell host.
-/// Historical property names are retained for save and protocol compatibility.
+/// Durable casino mode IDs and local WebView2 page mapping remain unchanged.
 /// </summary>
-public static class HostMigrationCatalog
+public static class NativeRouteCatalog
 {
     public const int Version = 1;
 
@@ -57,19 +57,19 @@ public static class HostMigrationCatalog
         "tales-backroom", "tower-defense", "minesweeper",
     });
 
-    public static IReadOnlyList<HostCasinoRoute> PreviewRoutes =>
-        CasinoRoutes.Where(route => route.HasPreviewBridge).ToArray();
+    public static IReadOnlyList<HostCasinoRoute> WebRoutes =>
+        CasinoRoutes.Where(route => route.HasWebPage).ToArray();
 
-    public static bool IsPreviewRoute(string? previewModeId) =>
-        previewModeId is not null && PreviewRoutes.Any(route =>
-            string.Equals(route.PreviewModeId, previewModeId, StringComparison.Ordinal));
+    public static bool IsWebRoute(string? previewModeId) =>
+        previewModeId is not null && WebRoutes.Any(route =>
+            string.Equals(route.WebModeId, webModeId, StringComparison.Ordinal));
 
-    public static string PreviewPageFor(string previewModeId)
+    public static string WebPageFor(string webModeId)
     {
-        HostCasinoRoute? route = PreviewRoutes.SingleOrDefault(route =>
-            string.Equals(route.PreviewModeId, previewModeId, StringComparison.Ordinal));
-        return route?.PreviewDocument ??
-            throw new ArgumentOutOfRangeException(nameof(previewModeId), "Unknown native preview route.");
+        HostCasinoRoute? route = WebRoutes.SingleOrDefault(route =>
+            string.Equals(route.WebModeId, previewModeId, StringComparison.Ordinal));
+        return route?.WebDocument ??
+            throw new ArgumentOutOfRangeException(nameof(webModeId), "Unknown native WebView2 route.");
     }
 
 }

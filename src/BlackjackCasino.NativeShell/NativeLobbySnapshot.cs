@@ -93,14 +93,14 @@ internal static class NativeLobbySnapshot
             MusicVolume = preferences.MusicVolume,
             ShowEmpireBalance = preferences.ShowEmpireBalance,
             Language = preferences.Language == UiLanguagePreference.German ? "de" : "en",
-            Modes = HostMigrationCatalog.CasinoRoutes.Select(mode => new
+            Modes = NativeRouteCatalog.CasinoRoutes.Select(mode => new
             {
                 Id = mode.DesktopModeId,
                 Title = mode.DisplayName,
                 Category = Category(mode.DesktopModeId),
                 Description = Description(mode.DesktopModeId),
-                Enabled = mode.HasPreviewBridge || (mode.HasNativeProcess && NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory)),
-                Secondary = mode.HasSecondaryWindow && mode.HasPreviewBridge,
+                Enabled = mode.HasWebPage || (mode.HasNativeProcess && NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory)),
+                Secondary = mode.HasSecondaryWindow && mode.HasWebPage,
             }).ToArray(),
         };
     }

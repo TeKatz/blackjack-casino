@@ -53,7 +53,7 @@ internal sealed class NativeShellForm : Form
                 : UpdateChannel.Development;
         }
     }
-    private readonly DesktopUpdateService updateService = new();
+    private readonly CasinoUpdateService updateService = new();
     private readonly CancellationTokenSource updateCancellation = new();
     private bool checkingUpdates, availableUpdates;
     private UpdateManifest? pendingUpdate;
@@ -555,7 +555,7 @@ internal sealed class NativeShellForm : Form
 
     private async Task OpenModeAsync(string mode)
     {
-        if (closing || !HostMigrationCatalog.IsPreviewRoute(mode)) return;
+        if (closing || !NativeRouteCatalog.IsWebRoute(mode)) return;
         if (mode == "casino-empire" && detachedEmpire is { IsDisposed: false })
         {
             detachedEmpire.Activate();
@@ -698,7 +698,7 @@ internal sealed class NativeShellForm : Form
         }
     }
 
-    private static string PageFor(string mode) => HostMigrationCatalog.PreviewPageFor(mode);
+    private static string PageFor(string mode) => NativeRouteCatalog.WebPageFor(mode);
 
     private static bool IsTrusted(string? mode, string? source) => mode switch
     {
@@ -758,9 +758,9 @@ internal sealed class NativeShellForm : Form
                     string? id = rawMode.GetString();
                     // External Godot modes have no React preview document, so they
                     // must be resolved against the full canonical route catalog.
-                    HostCasinoRoute? mode = HostMigrationCatalog.CasinoRoutes.FirstOrDefault(
+                    HostCasinoRoute? mode = NativeRouteCatalog.CasinoRoutes.FirstOrDefault(
                         route => string.Equals(route.DesktopModeId, id, StringComparison.Ordinal));
-                    if (mode?.PreviewModeId is { } alias)
+                    if (mode?.WebModeId is { } alias)
                         BeginInvoke(new Action(() => { _ = OpenModeAsync(alias); }));
                     else if (mode?.HasNativeProcess == true &&
                              NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory))
@@ -1403,7 +1403,7 @@ internal sealed class NativeShellForm : Form
                 return;
             }
             SemanticVersion updaterVersion = UpdaterLauncher.CurrentVersion ?? installed;
-            if (DesktopUpdateService.MinimumUpdaterVersion(latest.Manifest) > updaterVersion)
+            if (CasinoUpdateService.MinimumUpdaterVersion(latest.Manifest) > updaterVersion)
                 throw new InvalidOperationException("The installed updater is too old for this release.");
             pendingUpdate = latest.Manifest;
             updateStatus = "Downloading and verifying casino update…";

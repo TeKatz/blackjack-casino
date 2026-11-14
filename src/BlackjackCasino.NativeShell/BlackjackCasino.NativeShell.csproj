@@ -30,7 +30,7 @@
   <ItemGroup>
     <!-- Compile the shared, WPF-independent C# contracts directly into NativeShell. -->
     <Compile Include="../BlackjackCasino.HostShared/AppPreferences.cs" Link="Shared/AppPreferences.cs" />
-    <Compile Include="../BlackjackCasino.HostShared/DesktopUpdateService.cs" Link="Shared/DesktopUpdateService.cs" />
+    <Compile Include="../BlackjackCasino.HostShared/CasinoUpdateService.cs" Link="Shared/CasinoUpdateService.cs" />
     <Compile Include="../BlackjackCasino.HostShared/UpdaterLauncher.cs" Link="Shared/UpdaterLauncher.cs" />
     <Compile Include="../BlackjackCasino.HostShared/AreaPresentationSettings.cs" Link="Shared/AreaPresentationSettings.cs" />
     <Compile Include="../BlackjackCasino.HostShared/DebouncedPersistenceWriter.cs" Link="Shared/DebouncedPersistenceWriter.cs" />

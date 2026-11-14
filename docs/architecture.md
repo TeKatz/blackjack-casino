@@ -89,7 +89,7 @@ contracts. The published NativeShell no longer embeds these four workflows or
 their old command-line entrypoints. CI runs the synthetic migration/rollback
 rehearsal separately alongside the native casino smoke and real WebView2 tests.
 
-The production runtime is named `NativeCasinoRuntime`. This rename does **not**
+The production runtime is named `NativeCasinoRuntime`; navigation uses `NativeRouteCatalog` and update transport `CasinoUpdateService`. This rename does **not**
 change the existing `NativeShellPreview` on-disk save location, the
 `Candidates/development` import manifest, JSON fields, Frontend `nativePreview`
 capability, exact page origins or write-ahead journal format.

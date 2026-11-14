@@ -30,13 +30,13 @@ internal static class NativeShellContractSmoke
                 || NativeHostAudio.TrackFor("midnight-manor") != Soundtrack.Manor)
                 throw new InvalidOperationException("WPF-free native music routes are incomplete.");
 
-            if (HostMigrationCatalog.PreviewRoutes.Count != 10
-                || !HostMigrationCatalog.IsPreviewRoute("midnight-manor")
-                || !HostMigrationCatalog.IsPreviewRoute("roulette")
-                || !HostMigrationCatalog.IsPreviewRoute("casino-empire")
-                || !HostMigrationCatalog.IsPreviewRoute("chill-lounge")
+            if (NativeRouteCatalog.WebRoutes.Count != 10
+                || !NativeRouteCatalog.IsWebRoute("midnight-manor")
+                || !NativeRouteCatalog.IsWebRoute("roulette")
+                || !NativeRouteCatalog.IsWebRoute("casino-empire")
+                || !NativeRouteCatalog.IsWebRoute("chill-lounge")
 
-                || HostMigrationCatalog.PreviewPageFor("reels") != "reels.html")
+                || NativeRouteCatalog.WebPageFor("reels") != "reels.html")
                 throw new InvalidOperationException("Host parity manifest is inconsistent.");
             string descentFixture = Path.Combine(directory, "descent-fixture");
             string descentPath = NativeDescentLaunch.Executable(descentFixture);
