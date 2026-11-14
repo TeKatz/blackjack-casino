@@ -2,15 +2,15 @@ name: Midnight Descent Godot smoke
 
 on:
   push:
-    branches: [dev, main]
+    branches: [dev, main, "migration/**"]
     paths:
       - 'games/midnight-descent/**'
-      - 'src/BlackjackCasino.Desktop/MainWindow.MidnightDescent.cs'
+      - 'src/BlackjackCasino.NativeShell/NativeDescentLaunch.cs'
       - '.github/workflows/midnight-descent.yml'
   pull_request:
     paths:
       - 'games/midnight-descent/**'
-      - 'src/BlackjackCasino.Desktop/MainWindow.MidnightDescent.cs'
+      - 'src/BlackjackCasino.NativeShell/NativeDescentLaunch.cs'
       - '.github/workflows/midnight-descent.yml'
 
 permissions:
@@ -27,9 +27,9 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          launcher = Path("src/BlackjackCasino.Desktop/MainWindow.MidnightDescent.cs").read_text(encoding="utf-8")
+          launcher = Path("src/BlackjackCasino.NativeShell/NativeDescentLaunch.cs").read_text(encoding="utf-8")
           game = Path("games/midnight-descent/project.godot").read_text(encoding="utf-8")
-          assert launcher.count('start.ArgumentList.Add("--fullscreen");') == 1, "Casino host must request Godot fullscreen"
+          assert launcher.count('start.ArgumentList.Add("--fullscreen");') == 1, "NativeShell must request Godot fullscreen"
           assert launcher.index('start.ArgumentList.Add("--fullscreen");') < launcher.index('start.ArgumentList.Add("--");'), "Godot fullscreen engine argument must precede user-argument separator"
           assert "window/size/mode=3" in game, "Godot project must default to fullscreen as fallback"
           print("Midnight Descent fullscreen host launch contract PASS")
