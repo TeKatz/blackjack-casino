@@ -728,3 +728,70 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
  .lobby-hero-sheen{animation:none!important;opacity:0}
  .lobby-nav-selection-track,.lobby-nav-scroll .nav-icon{transition:none!important}
 }
+
+/*
+ * Multi-plane lobby hero. Atlas: three independent, aligned 896×299 layers,
+ * stacked in order background / lounge furniture / table foreground.
+ * Distinct sprite planes prevent the former duplicate-image tearing.
+ */
+.lobby-hero-art{position:absolute;inset:0;pointer-events:none;overflow:hidden;isolation:isolate;}
+.lobby-hero-layer{
+ position:absolute;left:50%;top:50%;
+ width:var(--hero-art-width,calc(100% + 34px));
+ aspect-ratio:896 / 299;
+ background-image:url('/lobby/art/hero-parallax.avif');
+ background-size:100% 300%;
+ background-repeat:no-repeat;
+ pointer-events:none;
+ backface-visibility:hidden;
+}
+.lobby-hero-layer-back{
+ background-position:center top;
+ transform:translate3d(calc(-50% + var(--hero-back-x,0px)),calc(-50% + var(--hero-back-y,0px)),0);
+}
+.lobby-hero-layer-mid{
+ background-position:center center;
+ transform:translate3d(calc(-50% + var(--hero-mid-x,0px)),calc(-50% + var(--hero-mid-y,0px)),0);
+}
+.lobby-hero-layer-front{
+ background-position:center bottom;
+ transform:translate3d(calc(-50% + var(--hero-front-x,0px)),calc(-50% + var(--hero-front-y,0px)),0);
+}
+/* Old hero.png remains a single-frame fallback if AVIF isn't supported. */
+@supports not (background-image:image-set(url('/lobby/art/hero-parallax.avif') type('image/avif'))){
+ .lobby-hero-layer-back{background-image:url('/lobby/art/hero.png');background-size:cover;background-position:center;}
+ .lobby-hero-layer-mid,.lobby-hero-layer-front{display:none;}
+}
+.lobby-hero-art .lobby-hero-light{
+ position:absolute;inset:-16% -4% -22% 40%;pointer-events:none;
+ background:radial-gradient(ellipse at 53% 55%,#f3ae4b1a,transparent 62%);
+ mix-blend-mode:screen;
+ transform:translate3d(var(--hero-light-x,0px),0,0);
+}
+.lobby-hero-art .lobby-hero-sheen{position:absolute;inset:0;pointer-events:none;}
+/* Override the previous masked duplicate of the flat hero.png. */
+.lobby-hero>.lobby-hero-picture,.lobby-hero>.lobby-hero-foreground{display:none;}
+.lobby-hero::after{z-index:2;}
+.lobby-hero .hero-copy{z-index:3;}
+
+/* Rounded outlines remain visible under the independent Pixi art canvas.
+ * Explicit thickness without replacing each game's existing accent colour. */
+.lobby-game{
+ border-width:2px;
+ border-style:solid;
+ border-radius:17px;
+ background-clip:padding-box;
+}
+.lobby-game .game-art-window{
+ border-radius:14px 14px 0 0;
+}
+/* The fallback image stays inside the new corner curve. */
+.lobby-game .game-art-window[data-pixi-art-ready="true"]{
+ border-radius:14px 14px 0 0;
+}
+@media(prefers-reduced-motion:reduce){
+ .lobby-hero-art .lobby-hero-sheen{animation:none!important;opacity:0}
+}
+.casino-lobby-shell[data-reduced="true"] .lobby-hero-art .lobby-hero-sheen{
+ animation:none!important;opacity:0;
+}

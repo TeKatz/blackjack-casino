@@ -38,6 +38,24 @@ export const MODE_PALETTES: Record<ModeSceneId,readonly number[]> = {
 export function coverSize(width:number,height:number,artWidth=960,artHeight=440):number {
   return Math.max(width/artWidth,height/artHeight);
 }
+/** Inner radius after the CSS card outline, also used for the WebGL mask. */
+export function tileArtTopRadius(width:number,height:number):number {
+  return Math.max(0,Math.min(14,width/2,height/2));
+}
+/** Top corners rounded; bottom edge stays square against the card's text. */
+function drawTileArtMask(mask:Graphics,x:number,y:number,width:number,height:number) {
+  const radius=tileArtTopRadius(width,height);
+  mask.clear()
+    .moveTo(x+radius,y)
+    .lineTo(x+width-radius,y)
+    .quadraticCurveTo(x+width,y,x+width,y+radius)
+    .lineTo(x+width,y+height)
+    .lineTo(x,y+height)
+    .lineTo(x,y+radius)
+    .quadraticCurveTo(x,y,x+radius,y)
+    .closePath()
+    .fill(0xffffff);
+}
 export function rectVisible(rect:DOMRect,root:DOMRect):boolean {
   return rect.width>=24 && rect.height>=22 &&
     rect.bottom>root.top && rect.top<root.bottom &&
@@ -294,7 +312,7 @@ export function createModeScenes(stage:Container,root:HTMLElement,motion:()=>boo
         s.group.alpha=Number.isFinite(alpha)?alpha:1;
         const x=rect.left-rootRect.left,y=rect.top-rootRect.top,w=rect.width,h=rect.height;
         if(Math.abs(x-s.x)>.5||Math.abs(y-s.y)>.5||Math.abs(w-s.w)>.5||Math.abs(h-s.h)>.5){
-          s.mask.clear().rect(x,y,w,h).fill(0xffffff);
+          drawTileArtMask(s.mask,x,y,w,h);
           s.group.position.set(x,y);
           s.x=x;s.y=y;s.w=w;s.h=h;
         }

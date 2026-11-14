@@ -2,7 +2,7 @@ import {describe,it,expect} from 'vitest';
 import {createMicroDetails,delayed,smooth,EMPIRE_WINDOW_COLUMNS,EMPIRE_WINDOW_WIDTH,
   MANOR_WINDOW_COLUMNS,MERGE_SLOT_CENTERS} from './LobbyMicroMotion';
 import {
-  MODE_SCENE_IDS,MODE_PALETTES,modeSceneAssets,coverSize,rectVisible
+  MODE_SCENE_IDS,MODE_PALETTES,modeSceneAssets,coverSize,rectVisible,tileArtTopRadius
 } from './ModeScenes';
 
 describe('custom PixiJS lobby key art',()=>{
@@ -93,5 +93,14 @@ describe('artist-authored alignment regression',()=>{
     for(const [i,left] of [179,348,657].entries()){
       expect(Math.abs(MERGE_SLOT_CENTERS[i]-(left+73))).toBeLessThan(1);
     }
+  });
+});
+
+describe('rounded PixiJS artwork boundaries',()=>{
+  it('keeps the top corners round without exceeding tiny art viewports',()=>{
+    expect(tileArtTopRadius(300,100)).toBe(14);
+    expect(tileArtTopRadius(16,12)).toBe(6);
+    expect(tileArtTopRadius(0,100)).toBe(0);
+    expect(tileArtTopRadius(100,0)).toBe(0);
   });
 });
