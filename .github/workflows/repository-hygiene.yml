@@ -2,7 +2,7 @@ name: Repository contract
 
 on:
   push:
-    branches: [main, dev, "feature/**", "fix/**"]
+    branches: [main, dev, "feature/**", "fix/**", "migration/**"]
   pull_request:
   workflow_dispatch:
 
@@ -22,9 +22,7 @@ jobs:
         uses: actions/checkout@v7
       - name: Repository documentation and release guard
         run: python3 tools/check_repo_contract.py
-      - name: React and legacy WPF separation audit
-        run: python3 tools/check_ui_migration_boundaries.py
-      - name: Phase A host migration parity and isolation guard
-        run: python3 tools/check_host_phase_a.py
+      - name: Native production host, package and updater contract
+        run: python3 tools/check_native_cutover.py
       - name: Casino music importer URL and destination self-test
         run: python3 tools/import_casino_music.py --self-test
