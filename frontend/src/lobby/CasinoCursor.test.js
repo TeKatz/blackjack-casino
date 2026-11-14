@@ -24,4 +24,19 @@ describe('two-state global casino pointer',()=>{
    expect(script).toContain("visibilitychange");
    expect(script).toContain("blur");
  });
+ it('disables decorative text selection globally without suppressing gameplay pointer events',()=>{
+   const css=read('public/cursor/casino-cursor.css');
+   expect(css).toContain('Shared selection policy');
+   expect(css).toMatch(/html,html body,html body \\*/);
+   expect(css).toContain('-webkit-user-select:none');
+   expect(css).toContain('user-select:none');
+   // Editable inputs, contenteditable widgets, and intentional text exports
+   // must never inherit the presentation-only restriction.
+   for(const selector of ['input','textarea','select','[contenteditable]','[role="textbox"]','[data-casino-selectable]']){
+     expect(css).toContain(selector);
+   }
+   expect(css).toContain('user-select:text');
+   expect(css).not.toContain('pointer-events:none');
+   expect(css).not.toContain('touch-action:none');
+ });
 });

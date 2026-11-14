@@ -12,3 +12,22 @@
 @media (forced-colors:active){
   html,html body,html body *,html body *::before,html body *::after{cursor:auto!important}
 }
+
+/*
+ * Shared selection policy: game copy is presentation, not draggable text.
+ * CSS only: never cancel pointer events, native input editing, focus, or
+ * PixiJS drag gestures. All Vite entrypoints already load this file before
+ * React, so the loading splash and every routed game get identical behavior.
+ */
+html,html body,html body *,html body *::before,html body *::after{
+  -webkit-user-select:none;
+  user-select:none;
+}
+/* Inputs and genuinely editable content must remain usable. Explicit opt-in
+ * supports future logs, export previews or other intentionally copyable text.
+ * Include descendants for WebView2/Chromium's user-select inheritance. */
+html body :is(input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"],[data-casino-selectable]),
+html body :is([contenteditable]:not([contenteditable="false"]),[role="textbox"],[data-casino-selectable]) *{
+  -webkit-user-select:text;
+  user-select:text;
+}
