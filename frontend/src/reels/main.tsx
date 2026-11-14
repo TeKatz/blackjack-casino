@@ -5,11 +5,16 @@ import {listenReels,sendReelsIntent} from './bridge';
 import type {ReelsIntent,ReelsSnapshot,ReelsSpin,ReelSymbol} from './bridge';
 import {ReelIcon} from './symbols';
 import {ReelsVfx} from './ReelsVfx';
+import {AnimatedReadout} from './AnimatedReadout';
+import {armReelsCelebrationAudio,disposeReelsCelebrationAudio,playReelsCelebrationAudio} from './reelsCelebrationAudio';
+import {AUTO_OPTIONS,SPEED_OPTIONS,SPEED_PRESETS,canQueueAutoSpin,readReelsSpeed,
+  reactionFromSpin,reelTravel,saveReelsSpeed} from './reelsMotion';
+import type {ReelsSpeed,ReelsReaction} from './reelsMotion';
 import './reels.css';
 import './reels-design.css';
+import './reels-reactive.css';
 
 const CHIPS=[1,5,25,100,500,1000];
-const STOP_DELAYS=[1550,2100,2650];
 const money=(value:string)=>'$'+Number(value).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const vocabulary={
   en:{back:'Casino lobby',tag:'THREE REELS · ONE PAYLINE · PLAY MONEY',balance:'SHARED BANKROLL',
@@ -23,7 +28,9 @@ const vocabulary={
     hint:'Choose a bet and spin. Space also works.',ready:'The reels are waiting.',
     noMatch:'No match this time.',push:'Two cherries · stake returned',win:'WIN',
     jackpot:'MIDNIGHT JACKPOT',out:'Not enough play money.',uncertain:'Confirmation missing. Reopen the mode before another spin.',
-    levelUp:'LEVEL UP',loading:'Preparing your slot cabinet…'},
+    levelUp:'LEVEL UP',loading:'Preparing your slot cabinet…',
+    auto:'AUTO SPINS',autoStop:'STOP AUTO',left:'LEFT',speed:'SLOT SPEED',
+    normal:'Normal',fast:'Fast',turbo:'Turbo'},
   de:{back:'Casino-Lobby',tag:'DREI WALZEN · EINE GEWINNLINIE · SPIELGELD',balance:'GEMEINSAMES GUTHABEN',
     wager:'EINSATZ PRO DREH',spin:'DREHEN',spinning:'DREHT…',paytable:'GEWINNTABELLE',
     paytableHint:'Drei gleiche Symbole auf der mittleren Gewinnlinie',returnStake:'Zwei Kirschen zahlen den Einsatz zurück.',
@@ -35,7 +42,9 @@ const vocabulary={
     hint:'Einsatz wählen und drehen. Leertaste funktioniert ebenfalls.',ready:'Die Walzen warten.',
     noMatch:'Diesmal kein Treffer.',push:'Zwei Kirschen · Einsatz zurück',win:'GEWINN',
     jackpot:'MIDNIGHT JACKPOT',out:'Nicht genug Spielgeld.',uncertain:'Bestätigung fehlt. Öffne den Modus vor einem weiteren Dreh erneut.',
-    levelUp:'LEVELAUFSTIEG',loading:'Der Spielautomat wird vorbereitet…'}
+    levelUp:'LEVELAUFSTIEG',loading:'Der Spielautomat wird vorbereitet…',
+    auto:'AUTO-DREHS',autoStop:'AUTO STOPP',left:'ÜBRIG',speed:'SPIELTEMPO',
+    normal:'Normal',fast:'Schnell',turbo:'Turbo'}
 };
 type Movement={base:number[];travel:number[];target:number[];cell:number;running:boolean;id:string};
 function ReelsApp(){
@@ -52,17 +61,42 @@ function ReelsApp(){
   const lastId=useRef<string|null>(null);
   const seenWin=useRef<string|null>(null);
   const [winBurst,setWinBurst]=useState<string|null>(null);
+  const [speed,setSpeed]=useState<ReelsSpeed>(readReelsSpeed);
+  const [autoActive,setAutoActive]=useState(false);
+  const [autoRemaining,setAutoRemaining]=useState(0);
+  const [revealedId,setRevealedId]=useState<string|null>(null);
+  const [reaction,setReaction]=useState<{id:string;kind:ReelsReaction}|null>(null);
+  const autoRef=useRef({active:false,remaining:0});
+  const animatingRef=useRef(false);
+  const autoTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const reactionTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
   const timers=useRef<ReturnType<typeof setTimeout>[]>([]);
   const cancelTimers=useCallback(()=>{for(const id of timers.current)clearTimeout(id);timers.current=[];},[]);
+  const stopAuto=useCallback(()=>{
+    autoRef.current={active:false,remaining:0};
+    if(autoTimer.current!==null){clearTimeout(autoTimer.current);autoTimer.current=null;}
+    setAutoActive(false);setAutoRemaining(0);
+  },[]);
   useEffect(()=>{
     const unsub=listenReels(event=>{
       if(event.type==='snapshot'){
-        if(!current.current)seenWin.current=event.data.state.lastSpin?.id??null;
+        if(!current.current){
+          // Reopening a mode must never replay a previously committed result.
+          const previous=event.data.state.lastSpin;
+          seenWin.current=previous?.id??null;
+          lastId.current=previous?.id??null;
+          shown.current=previous?.stops.slice()??[4,4,4];
+          setStops(shown.current.slice());
+          setRevealedId(previous?.id??null);
+        }
         if(current.current?.session===event.data.session&&event.data.revision<current.current.revision)return;
         current.current=event.data;setSnapshot(event.data);
       }else if(event.data.requestId===pendingRef.current){
         pendingRef.current=null;setPending(null);setUncertain(false);
-        if(!event.data.success){setAnimating(false);setMessage(event.data.message);}
+        if(!event.data.success){
+          animatingRef.current=false;setAnimating(false);stopAuto();
+          setMessage(event.data.message);
+        }
         else setMessage(null);
       }
     });
@@ -77,35 +111,46 @@ function ReelsApp(){
   useEffect(()=>{
     if(!pending)return;
     const timer=setTimeout(()=>{
-      setUncertain(true);setAnimating(false);
+      stopAuto();setUncertain(true);animatingRef.current=false;setAnimating(false);
       setMessage(vocabulary[current.current?.state.language??'en'].uncertain);
     },8000);
     return()=>clearTimeout(timer);
-  },[pending]);
+  },[pending,stopAuto]);
   const last=snapshot?.state.lastSpin;
   useEffect(()=>{
     if(!snapshot||!last||last.id===lastId.current)return;
     lastId.current=last.id;cancelTimers();
     const target=last.stops.slice();
     const finish=()=>{
-      shown.current=target;setStops(target);setMovement(null);setAnimating(false);
+      shown.current=target;setStops(target);setMovement(null);
+      animatingRef.current=false;setAnimating(false);setRevealedId(last.id);
+      const outcome=reactionFromSpin(last);
+      if(reactionTimer.current!==null)clearTimeout(reactionTimer.current);
+      if(outcome!=='push'&&outcome!=='none'){
+        setReaction({id:last.id,kind:outcome});
+        reactionTimer.current=setTimeout(()=>setReaction(v=>v?.id===last.id?null:v),1400);
+      }else setReaction(null);
+      if(outcome==='bigwin'&&snapshot.state.soundEnabled)
+        playReelsCelebrationAudio(last.multiplier>=50);
       window.chrome?.webview?.postMessage({type:'reels.animation-complete',spinId:last.id});
     };
     if(!snapshot.state.animationsEnabled||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){
       finish();return;
     }
     const from=shown.current.slice();
-    const travel=target.map((n,i)=>(2+i)*32+(n-from[i]+32)%32);
+    const travel=target.map((n,i)=>reelTravel(from[i],n));
     const cell=document.querySelector('.reels-symbol')?.getBoundingClientRect().height||104;
-    setAnimating(true);
+    animatingRef.current=true;setAnimating(true);
     setMovement({base:from,travel,target,cell,running:false,id:last.id});
-    const raf=window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>
-      setMovement(p=>p?.id===last.id?{...p,running:true}:p)));
-    STOP_DELAYS.forEach((delay,i)=>timers.current.push(setTimeout(()=>
+    let nextFrame=0;
+    const raf=window.requestAnimationFrame(()=>{nextFrame=window.requestAnimationFrame(()=>
+      setMovement(p=>p?.id===last.id?{...p,running:true}:p));});
+    const delays=SPEED_PRESETS[speed];
+    delays.forEach((delay,i)=>timers.current.push(setTimeout(()=>
       window.chrome?.webview?.postMessage({type:'reels.reel-stop',spinId:last.id,reel:i}),delay)));
-    timers.current.push(setTimeout(finish,STOP_DELAYS[2]+150));
-    return()=>{window.cancelAnimationFrame(raf);cancelTimers();};
-  },[last?.id,snapshot?.state.animationsEnabled,cancelTimers]);
+    timers.current.push(setTimeout(finish,delays[2]+70));
+    return()=>{window.cancelAnimationFrame(raf);window.cancelAnimationFrame(nextFrame);cancelTimers();};
+  },[last?.id,snapshot?.state.animationsEnabled,speed,cancelTimers]);
   useEffect(()=>{
     if(!snapshot||!last||animating||!snapshot.state.animationsEnabled)return;
     if(seenWin.current===last.id)return;
@@ -115,20 +160,76 @@ function ReelsApp(){
     const timer=window.setTimeout(()=>setWinBurst(id=>id===last.id?null:id),1700);
     return()=>window.clearTimeout(timer);
   },[snapshot?.state.lastSpin?.id,animating,snapshot?.state.animationsEnabled]);
-  const act=useCallback((intent:ReelsIntent)=>{
-    if(!current.current||pendingRef.current||uncertain||animating)return;
-    const id=sendReelsIntent(current.current,intent);
+  const act=useCallback((intent:ReelsIntent,fromAuto=false):boolean=>{
+    const state=current.current;
+    if(!state||pendingRef.current||uncertain||animatingRef.current)return false;
+    if(intent.action==='spin'&&(!state.state.canSpin||(autoRef.current.active&&!fromAuto)))return false;
+    if(intent.action==='spin'&&state.state.soundEnabled)armReelsCelebrationAudio();
+    const id=sendReelsIntent(state,intent);
     pendingRef.current=id;setPending(id);setMessage(null);
-    if(intent.action==='spin')setAnimating(true);
-  },[uncertain,animating]);
+    if(intent.action==='spin'){
+      animatingRef.current=true;setAnimating(true);setReaction(null);
+    }
+    return true;
+  },[uncertain]);
   const close=useCallback(()=>{
+    stopAuto();
     if(pendingRef.current)return;
     cancelTimers();window.chrome?.webview?.postMessage({type:'reels.close'});
-  },[cancelTimers]);
+  },[cancelTimers,stopAuto]);
+  const startAuto=useCallback((count:number)=>{
+    if(!current.current?.state.canSpin||pendingRef.current||animatingRef.current||uncertain
+      ||autoRef.current.active||!AUTO_OPTIONS.some(v=>v===count))return;
+    if(current.current.state.soundEnabled)armReelsCelebrationAudio();
+    autoRef.current={active:true,remaining:count};
+    setAutoActive(true);setAutoRemaining(count);
+  },[uncertain]);
+  useEffect(()=>{
+    if(!autoActive)return;
+    if(autoRemaining<=0){
+      if(!pendingRef.current&&!animatingRef.current)stopAuto();
+      return;
+    }
+    const currentState=current.current;
+    if(!currentState||uncertain){stopAuto();return;}
+    if(!currentState.state.canSpin&&!pendingRef.current&&!animatingRef.current){
+      stopAuto();return;
+    }
+    if(!canQueueAutoSpin({
+      active:autoRef.current.active,remaining:autoRef.current.remaining,
+      pending:!!pendingRef.current,animating:animatingRef.current,uncertain,
+      canSpin:currentState.state.canSpin,
+      latestId:currentState.state.lastSpin?.id??null,revealedId,
+    }))return;
+    // Deliberately pace sequential commits. A native receipt + final reel
+    // presentation must both finish before the next bet is ever sent.
+    const delay=speed==='turbo'?80:speed==='fast'?130:220;
+    autoTimer.current=setTimeout(()=>{
+      autoTimer.current=null;
+      const latest=current.current;
+      if(!latest||!canQueueAutoSpin({
+        active:autoRef.current.active,remaining:autoRef.current.remaining,
+        pending:!!pendingRef.current,animating:animatingRef.current,uncertain,
+        canSpin:latest.state.canSpin,
+        latestId:latest.state.lastSpin?.id??null,revealedId,
+      })){return;}
+      if(act({action:'spin'},true)){
+        autoRef.current.remaining--;
+        setAutoRemaining(autoRef.current.remaining);
+      }
+    },delay);
+    return()=>{
+      if(autoTimer.current!==null){clearTimeout(autoTimer.current);autoTimer.current=null;}
+    };
+  },[autoActive,autoRemaining,pending,animating,uncertain,snapshot?.revision,
+     revealedId,speed,act,stopAuto]);
+  useEffect(()=>()=>{stopAuto();if(reactionTimer.current!==null)clearTimeout(reactionTimer.current);
+    disposeReelsCelebrationAudio();},[stopAuto]);
   useEffect(()=>{
     const key=(e:KeyboardEvent)=>{
       if(e.repeat||e.ctrlKey||e.altKey||e.metaKey
-        ||e.target instanceof HTMLButtonElement||e.target instanceof HTMLInputElement)return;
+        ||e.target instanceof HTMLButtonElement||e.target instanceof HTMLInputElement
+        ||e.target instanceof HTMLSelectElement)return;
       if(e.key==='Escape'){e.preventDefault();close();}
       if(e.code==='Space'){e.preventDefault();act({action:'spin'});}
     };
@@ -141,6 +242,8 @@ function ReelsApp(){
   </div>;
   const s=snapshot.state,t=vocabulary[s.language],result:ReelsSpin|null=s.lastSpin;
   const locked=!!pending||uncertain||animating;
+  const readoutProps={spinId:result?.id??null,revealedId,
+    enabled:s.animationsEnabled,duration:speed==='turbo'?210:610};
   const feedback=result?.multiplier===100?t.jackpot+' · '+money(result.payout):
     result&&Number(result.net)>0?t.win+' · '+result.multiplier+'× · '+money(result.payout):
     result?.multiplier===1?t.push:result?t.noMatch:t.ready;
@@ -153,19 +256,22 @@ function ReelsApp(){
   return <div className="reels-app" lang={s.language} data-language={s.language}
     data-testid="reels-app" data-motion={s.animationsEnabled}
      data-win-tier={!animating&&result&&Number(result.net)>0?(result.multiplier>=25?'jackpot':'win'):'none'}
+     data-reaction={reaction?.kind??'none'} data-speed={speed} data-autospin={autoActive}
      data-animating={animating} data-bet-pending={!!pending&&!animating} data-spin-id={result?.id??''}>
     <header className="reels-header">
       <button className="reels-back" onClick={close}><span aria-hidden="true">‹</span> {t.back} <kbd>ESC</kbd></button>
       <div className="reels-header-signature" aria-label="The Midnight Club">
         <span aria-hidden="true">♠</span><small>THE MIDNIGHT CLUB</small>
       </div>
-      <div className="reels-header-wallet"><small>{t.balance}</small><strong>{money(s.bankroll)}</strong></div>
+      <div className="reels-header-wallet reels-reactive-wallet">
+        <small>{t.balance}</small><strong><AnimatedReadout value={s.bankroll} kind="money" {...readoutProps}/></strong>
+      </div>
     </header>
     <div className="reels-body">
       <main className="reels-cabinet">
         <div className="reels-atmosphere" aria-hidden="true"><i/><i/><i/><i/><i/><i/></div>
         <ReelsVfx enabled={s.animationsEnabled} spinning={animating} celebrationId={winBurst}
-          jackpot={!!result&&result.multiplier===100}/>
+          jackpot={!!result&&result.multiplier===100} speed={speed}/>
         <div className="reels-crown-engraving" aria-hidden="true"><i/><span>✧</span><i/></div>
         <div className="reels-brand">
           <span className="reels-brand-wing" aria-hidden="true">✦</span>
@@ -177,7 +283,8 @@ function ReelsApp(){
         </div>
         <p className="reels-tagline">{t.tag}</p>
         <div className={'reels-lightband'+(!animating&&result?.multiplier===100?' jackpot':'')} aria-hidden="true">
-          {Array.from({length:11},(_,i)=><i key={i}/>)}
+          {Array.from({length:11},(_,i)=><i key={i}
+            style={{'--lamp-index':i} as React.CSSProperties}/>)}
         </div>
         <div className="reels-stage" data-testid="reels-display">
           <div className="reels-stage-illumination" aria-hidden="true"><i/><i/><i/></div>
@@ -196,8 +303,10 @@ function ReelsApp(){
           <div className="reels-grid">
             {[0,1,2].map(i=><div className="reels-reel" key={i}>
               <div className="reels-strip" style={{
-                transform:movement?.running?'translateY(-'+(movement.travel[i]*movement.cell)+'px)':'translateY(0px)',
-                transition:movement?.running?'transform '+STOP_DELAYS[i]+'ms cubic-bezier(.13,.64,.18,1)':'none'
+                transform:movement?.running?
+                  'translate3d(0,-'+(movement.travel[i]*movement.cell)+'px,0)':'translate3d(0,0,0)',
+                transition:movement?.running?
+                  'transform '+SPEED_PRESETS[speed][i]+'ms cubic-bezier(.19,.61,.23,1)':'none'
               }}>
                 {columns(i).map((symbol,j)=><div className="reels-symbol" key={j} data-symbol={symbol}>
                   <ReelIcon symbol={symbol}/>
@@ -212,23 +321,43 @@ function ReelsApp(){
           <strong>{message??(animating?t.spinning:feedback)}</strong>
           <small>{!animating&&result?('+'+result.playerXp+' XP · +'+result.seasonXp+' Season XP'+(result.levelUp?' · '+t.levelUp:'')):t.hint}</small>
         </div>
+        <div className="reels-atmosphere-decor" aria-hidden="true">
+          <span className="reels-decor-ray"/><span className="reels-decor-crest">✦</span>
+          <span className="reels-decor-ray"/>
+        </div>
         <div className="reels-cabinet-footer">
           <div className="reels-balances">
-            <div><small>{t.balance}</small><strong>{money(s.bankroll)}</strong></div>
+            <div className="reels-reactive-wallet"><small>{t.balance}</small>
+              <strong><AnimatedReadout value={s.bankroll} kind="money" {...readoutProps}/></strong></div>
             <div><small>{t.wager}</small><strong>{money(s.bet)}</strong></div>
-            <div className="reels-last-return"><small>{t.win}</small><strong>{money(result?.payout??'0')}</strong></div>
+            <div className="reels-last-return"><small>{t.win}</small>
+              <strong><AnimatedReadout value={result?.payout??'0'} kind="money" {...readoutProps}/></strong></div>
           </div>
           <div className="reels-chips" role="group" aria-label={t.wager}>
             {CHIPS.map(value=><button key={value} className={Number(s.bet)===value?'selected':''}
-              disabled={locked||value>Number(s.bankroll)}
+              disabled={locked||autoActive||value>Number(s.bankroll)}
               onClick={()=>act({action:'bet.set',value:String(value)})}>
                 {'$'+value.toLocaleString('en-US')}
               </button>)}
           </div>
-          <button className="reels-spin" data-testid="reels-spin" disabled={locked||!s.canSpin}
-            onClick={()=>act({action:'spin'})}>
-            {animating?t.spinning:s.canSpin?t.spin:t.out}<kbd>SPACE</kbd>
+          <button className="reels-spin" data-testid="reels-spin"
+            aria-label={animating?t.spinning:s.canSpin?t.spin:t.out}
+            disabled={locked||autoActive||!s.canSpin} onClick={()=>act({action:'spin'})}>
+            {animating&&<span className="reels-spin-loader" aria-hidden="true"/>}
+            <span className="reels-spin-label">{s.canSpin?t.spin:t.out}</span>
+            {!animating&&<kbd>SPACE</kbd>}
           </button>
+          <div className="reels-auto-controls" role="group" aria-label={t.auto}>
+            <span className="reels-auto-heading">{t.auto}</span>
+            <div className="reels-auto-buttons">
+              {AUTO_OPTIONS.map(value=><button type="button" key={value} data-testid={'reels-auto-'+value}
+                disabled={locked||autoActive||!s.canSpin} onClick={()=>startAuto(value)}>{value}×</button>)}
+              <button type="button" className="reels-auto-stop" data-testid="reels-auto-stop"
+                disabled={!autoActive} onClick={stopAuto}>{t.autoStop}</button>
+            </div>
+            {autoActive&&<span className="reels-auto-counter" role="status">
+              {autoRemaining} {t.left}</span>}
+          </div>
         </div>
       </main>
       <aside className="reels-sidebar">
@@ -245,12 +374,17 @@ function ReelsApp(){
           <div className="reels-section-heading"><span aria-hidden="true">♠</span><h2>{t.stats}</h2></div>
           <div className="reels-level">PRESTIGE {s.profile.prestige} · LEVEL {s.profile.level} · ◆ {s.profile.coins.toLocaleString()}</div>
           <div className="reels-stats">
-            <div>{t.spins}<strong>{s.stats.spins.toLocaleString()}</strong></div>
-            <div>{t.wins}<strong>{s.stats.wins.toLocaleString()}</strong></div>
-            <div>{t.pushes}<strong>{s.stats.pushes.toLocaleString()}</strong></div>
-            <div>{t.net}<strong>{money(s.stats.netProfit)}</strong></div>
+            <div>{t.spins}<strong><AnimatedReadout value={String(s.stats.spins)}
+              kind="integer" {...readoutProps}/></strong></div>
+            <div>{t.wins}<strong><AnimatedReadout value={String(s.stats.wins)}
+              kind="integer" {...readoutProps}/></strong></div>
+            <div>{t.pushes}<strong><AnimatedReadout value={String(s.stats.pushes)}
+              kind="integer" {...readoutProps}/></strong></div>
+            <div>{t.net}<strong><AnimatedReadout value={s.stats.netProfit}
+              kind="money" {...readoutProps}/></strong></div>
           </div>
-          <p>{t.best}: <strong>{money(s.stats.biggestPayout)}</strong></p>
+          <p>{t.best}: <strong><AnimatedReadout value={s.stats.biggestPayout}
+            kind="money" {...readoutProps}/></strong></p>
           <small>{t.xp}</small>
         </section>
         <section className="reels-settings">
@@ -258,6 +392,17 @@ function ReelsApp(){
             onChange={e=>act({action:'sound.set',value:String(e.target.checked)})}/>{t.sound}</label>
           <label><input data-testid="reels-animation" type="checkbox" checked={s.animationsEnabled} disabled={locked}
             onChange={e=>act({action:'animations.set',value:String(e.target.checked)})}/>{t.animations}</label>
+          <label className="reels-speed-control" htmlFor="reels-speed">
+            <span>{t.speed}</span>
+            <select id="reels-speed" data-testid="reels-speed" value={speed}
+              disabled={locked||autoActive} onChange={event=>{
+                const next=event.target.value as ReelsSpeed;
+                if(!SPEED_OPTIONS.includes(next))return;
+                setSpeed(next);saveReelsSpeed(next);
+              }}>
+              {SPEED_OPTIONS.map(option=><option key={option} value={option}>{t[option]}</option>)}
+            </select>
+          </label>
           <small>{t.offline}</small>
         </section>
       </aside>
