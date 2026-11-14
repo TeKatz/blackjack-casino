@@ -1,6 +1,6 @@
 # Sudoku — React gameplay migration
 
-**Integrated baseline:** `main` · **Development source:** `develop` (historical implementation: `feature/manor-modernization-phase-1`)  
+**Current:** NativeShell + local React/WebView2; Development source: `dev` (Stable is separately tagged from `main`).
 **Normal presentation:** React/TypeScript within `frontend/lounge.html`  
 **Game rules and persistence:** `BlackjackCasino.Core.Sudoku` and the existing .NET profile store
 
@@ -30,14 +30,14 @@ Board mutations are computed on a cloned `SudokuBoard` that reuses the original 
 - Native xUnit tests: allow-listed protocol validation, revision/session/request replay safety, persistence failure rollback and completion semantics.
 - Frontend Vitest: full state and board shape validation, forged-grid and note rejection, receipt shape checks.
 - Windows startup smoke: real React Lounge navigation and Sudoku, six difficulties and Daily availability, 81-cell board, notes, undo/redo, native wrong-number/hint feedback, saved resume and return navigation. Screenshots in the startup smoke artifacts.
-- Legacy WPF Sudoku smoke continues to check original rollback behavior until native source deletion.
+- Native C# tests and real WebView2 smoke now cover the active Sudoku route; the WPF smoke program was retired.
 
 ## Remaining quality and cleanup gates
 
-The old `SudokuView`, `SudokuPremiumMenu` and associated native Lounge tests remain for emergency rollback and comparison only; they are not on the normal route. Before deletion, perform manual DPI, mouse/keyboard, accessibility, German/English, long-session and reduced-motion acceptance on actual Windows devices, then remove the WPF source and convert any test coverage not yet exercised against the React DOM. This is separate from the general WPF host removal.
+The former WPF Sudoku windows and associated UI-only tests were removed during the final NativeShell cutover. Device-level verification remains important for DPI, mouse/keyboard, accessibility, translations, long sessions and reduced-motion presentation.
 
 ## Exclusive Master Key portrait reward
 
-The existing `sudoku-master-1` / **Master Key** challenge now grants the unpurchasable `portrait-secret-guest` in addition to its original 250 cosmetic coins. Only an authoritative C# completion receipt for a Master-tier Sudoku advances the milestone. Either single claim or Claim All commits the portrait and coins in the existing transactional player-profile save; failed saves do not equip or grant it. The reward stays owned after reload and is equipable in both the modern account hub and the native fallback profile. Existing saves that claimed Master Key before the portrait was added receive the cosmetic during profile normalization without a second coin grant.
+The existing `sudoku-master-1` / **Master Key** challenge now grants the unpurchasable `portrait-secret-guest` in addition to its original 250 cosmetic coins. Only an authoritative C# completion receipt for a Master-tier Sudoku advances the milestone. Either single claim or Claim All commits the portrait and coins in the existing transactional player-profile save; failed saves do not equip or grant it. The reward stays owned after reload and is equipable in the current account/profile view. Existing saves that claimed Master Key before the portrait was added receive the cosmetic during profile normalization without a second coin grant.
 
-The initial artwork is an explicitly non-personal keyhole placeholder, rendered offline in both React and WPF. It is **not** a likeness. A later portrait asset can replace that artwork while keeping the same cosmetic and challenge IDs, preserving existing saves. The repository is public, so publishing an identifiable portrait requires the depicted person's permission. No photograph or personal image is bundled in this revision.
+The initial artwork is an explicitly non-personal keyhole placeholder, rendered offline in React. It is **not** a likeness. A later portrait asset can replace that artwork while keeping the same cosmetic and challenge IDs, preserving existing saves. The repository is public, so publishing an identifiable portrait requires the depicted person's permission. No photograph or personal image is bundled in this revision.

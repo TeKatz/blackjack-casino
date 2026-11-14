@@ -1,17 +1,17 @@
 # Modern Cosmetic Shop migration
 
-Integration baseline: `main`; Development source: `develop` (historical implementation branch: `feature/manor-modernization-phase-1`). The player-facing Cosmetic Shop is now an in-place React + TypeScript view in the same WebView2 used by the casino lobby. The retired WPF shop is retained as a fallback when the frontend is not available; it is not a second overlay in the normal client.
+**Current:** NativeShell + local React/WebView2; Development source: `dev` (Stable is separately tagged from `main`).
 
 ## Routing
 
 - Lobby Shop navigation opens ModernShop and requests an inventory snapshot from the native host.
-- A native Season Pass / Challenges / Profile progression tab routes to that same view. Any native meta-page stack is unwound *before* the React shop is revealed. The React route is selected while the browser is hidden to avoid one-frame lobby flashes.
+- Progression and lobby routes open the same authoritative React shop without introducing an independent legacy WPF window.
 - Back returns to the lobby, or restores the underlying game if Shop was opened from an in-game progression page.
-- Album/Season/Challenges and other native pages stay native during this phase and can still be accessed from the permanent React sidebar.
+- Album, Season, Challenges and profile views remain available through the current React lobby and native C# bridges.
 
 ## Authority and persistence
 
-The React bridge does not calculate prices, balances, prestige gates, owned flags or equipment rights. `MainWindow.ModernShop.cs` creates the inventory snapshot from `CosmeticCatalog` and the live `PlayerProfileState`. Purchase and equip requests are validated against the catalog and sent to `PlayerProgressionController.PurchaseCosmetic`, `EquipCosmetic` or `PurchaseCollectionPack`. These are the same transactional services used by the previous shop and persist the profile normally. After any action, the host sends authoritative state and a result message. Repeated equipment clicks never purchase an already-owned item again.
+The React bridge does not calculate prices, balances, prestige gates, owned flags or equipment rights. The native lobby controller builds the inventory snapshot from `CosmeticCatalog` and the live `PlayerProfileState`. Purchase and equip requests are validated against the catalog and sent to `PlayerProgressionController.PurchaseCosmetic`, `EquipCosmetic` or `PurchaseCollectionPack`. These are the same transactional services used by the previous shop and persist the profile normally. After any action, the host sends authoritative state and a result message. Repeated equipment clicks never purchase an already-owned item again.
 
 ## Presentation
 
@@ -23,8 +23,8 @@ The React bridge does not calculate prices, balances, prestige gates, owned flag
 ## Tests and safeguards
 
 - `shopBridge.test.ts` tests snapshot validation and filtering, including malformed costs and IDs.
-- `ModernShopSmoke` uses the real packaged React DOM in Windows WebView2 to buy/equip a cosmetic, verify the exact native coin debit, prevent double charging, purchase a pack, verify inventory, capture the shop and return to the lobby.
-- The Windows presentation regression tests both sidebar navigation and the native progression-tab redirect.
-- The old casino lobby remains transparent/noninteractive while React owns the scene, so it cannot reappear during shop transitions.
+- Native Windows/WebView2 smoke and C# progression tests cover purchase/equip receipts, coin debits, pack inventory and return navigation.
+- Windows presentation regression checks navigation and React lobby state restoration.
+- The current React lobby owns the visible navigation surface; no WPF lobby is retained.
 
 Do not merge this branch into main merely to ship development updates. The development channel publishes directly from the feature branch, as before.

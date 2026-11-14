@@ -1,6 +1,6 @@
 # Midnight Solitaire — React gameplay migration
 
-**Integrated baseline:** `main` · **Development source:** `develop` (historical implementation: `feature/manor-modernization-phase-1`)  
+**Current:** NativeShell + local React/WebView2; Development source: `dev` (Stable is separately tagged from `main`).
 **Presentation:** React in `frontend/lounge.html`  
 **Game rules, saves, achievements and payouts:** Existing `BlackjackCasino.Core.Solitaire` and progression services
 
@@ -34,9 +34,9 @@ The save schema and normal/deterministic deal numbers are unchanged. All eight t
 - Vitest validates the native snapshots, card/rank/suit bounds, the eight table configurations and receipt shapes.
 - Native xUnit checks the intent allow-list, one-time receipts, stale revision and session defense, full six-variant C# execution, numbered FreeCell determinism, save-failure rollback and abandonment.
 - Actual WebView2 startup smoke opens the React Solitaire cabinet, checks Klondike stock draw and durable resume, starts numbered FreeCell #617, exercises all Spider suit counts, Pyramid, Golf, and TriPeaks, captures table screenshots and navigates back through the React Lounge.
-- The earlier WPF Solitaire smoke remains as comparison/rollback coverage, **not** as the normal route.
+- The current native WebView2 and C# regression tests replace historical WPF-only checks.
 
-The old `SolitaireLoungeModule`, `SolitaireHubControl`, `SolitaireView`, WPF table art and their dependency chain are still retained for emergency fallback and historical comparison. Removing them requires a separate, validated cleanup task; the shared WPF host itself also remains. This phase does **not** claim WPF is eliminated from the app.
+The old WPF Solitaire view, emergency fallback and shared WPF host were removed during the final cutover. React is the sole player-facing Solitaire interface; the C# game/save and completion contracts remain.
 
 ## Central challenges and statistics (2026-11-07)
 

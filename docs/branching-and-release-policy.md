@@ -1,6 +1,6 @@
 # Branching, integration and releases
 
-**Current policy (2026-11-14):** The complete validated `develop` baseline was merged into `main` through [integration PR #59](https://github.com/TeKatz/blackjack-casino/pull/59). New work takes place on `dev`, the active long-lived Development branch descended from the validated `main` integration. The former `develop` and `dev` names are no longer active Development sources.
+**Current policy (November 2026):** `dev` is the active long-lived Development branch. `main` is the reviewed integration baseline for explicitly tagged Stable releases. The historical `develop` branch was consolidated through [PR #59](https://github.com/TeKatz/blackjack-casino/pull/59); it is not the current Development publisher.
 
 | Source | Responsibility |
 | --- | --- |
@@ -15,7 +15,7 @@ The Development workflow has a **single `dev` push filter and matching job-level
 
 The on-demand CC0 music importer is launched from default `main`, but it checks out/commits to `dev` and may explicitly dispatch Development Release on `dev`. A commit to `main` does not auto-publish Stable; an explicit version tag and release validation are required.
 
-The 2026-11-08 integration through PR #36 and the 2026-11-13 consolidation through PR #59 preserve the project history. The 2026-11-04 main revert of the early read-only Manor preview was part of the historical timeline. The later reviewed consolidation supersedes the reverted preview with the complete modern implementation while retaining subsequent main-only changes, including the music importer and robust Windows case-board smoke synchronization.
+**History:** The earlier frontend integration (PR #36) and branch consolidation (PR #59) led to the current NativeShell-only architecture. Further post-cutover cleanup runs on `dev`; old WPF host code is not an alternative release path. For its timeline, see the [migration archive](archive/native-shell-migration-phases.md).
 
 ## Integration checklist
 

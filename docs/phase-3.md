@@ -1,5 +1,7 @@
 # Phase 3 — Full Table
 
+**Historical development phase.** The feature work below was part of the original casino build-out. The current application is the native WinForms/WebView2 casino, not the WPF-era interface described in some early checkpoints. See the [product overview](../README.md) and [current architecture](architecture.md).
+
 Phase 3 turns the playable single-player table into an optional multi-seat casino table without removing the fast solo experience.
 
 ## Play modes

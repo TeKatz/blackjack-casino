@@ -1,6 +1,6 @@
 # Midnight Sweep — Chill Lounge
 
-**Route:** `minesweeper` (React Chill Lounge #8). **Branch:** desktop `develop`.
+**Route:** `minesweeper` (React Chill Lounge #8). **Current host:** NativeShell; Development source: `dev`.
 
 ## Gameplay
 
@@ -23,7 +23,7 @@ Each run has one optional Echo Scan once the first turn has been made. A scan is
 - `BlackjackCasino.Core/Minesweeper/MinesweeperGame.cs`: validated typed field, hazard generation, flood-fill, flag and chord rules, terminal completion, immutable snapshot boundary, timer, saved-run recovery.
 - `BlackjackCasino.Desktop/ModernMinesweeperService.cs`: commit-before-display persistence and reopening terminal receipts.
 - `BlackjackCasino.Desktop/ModernMinesweeperProtocol.cs`: allow-listed, revision-guarded, bounded commands and request-id receipts; duplicated requests cannot apply twice.
-- `MainWindow.ModernLounge.cs`: per-run `AppPreferences.Minesweeper` checkpoint, terminal `PlayerProfileState.Minesweeper` statistics, and correct lifecycle on closing the WebView2 mode.
+- `NativeCasinoRuntime` / native Lounge bridge: per-run `AppPreferences.Minesweeper` checkpoint, terminal `PlayerProfileState.Minesweeper` statistics, and correct lifecycle on closing the WebView2 mode.
 - `frontend/src/lounge/minesweeperBridge.ts`: validates browser snapshots and refuses unauthorized hazard disclosure.
 - `frontend/src/lounge/minesweeper.tsx`, `SweepField.tsx` and `minesweeper.css`: React game menu, accessible grid overlay, procedural vector PixiJS lighting and particle FX, responsive controls, win/loss overlay.
 - `frontend/src/lounge/minesweeperAudio.ts`: original local WebAudio synth cues (reveal, mark/unmark, echo, chord, start, win, loss); no network audio and no other mode's soundtrack assets copied.

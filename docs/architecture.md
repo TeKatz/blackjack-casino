@@ -89,7 +89,11 @@ contracts. The published NativeShell no longer embeds these four workflows or
 their old command-line entrypoints. CI runs the synthetic migration/rollback
 rehearsal separately alongside the native casino smoke and real WebView2 tests.
 
-The production runtime is named `NativeCasinoRuntime`; navigation uses `NativeRouteCatalog` and update transport `CasinoUpdateService`. This rename does **not**
+The production runtime is named `NativeCasinoRuntime`; navigation uses `NativeRouteCatalog` and update transport uses `CasinoUpdateService`. This internal naming cleanup does **not**
 change the existing `NativeShellPreview` on-disk save location, the
 `Candidates/development` import manifest, JSON fields, Frontend `nativePreview`
 capability, exact page origins or write-ahead journal format.
+
+## Documentation guide
+
+The [documentation index](index.md) separates current gameplay and engineering guides from preserved WPF migration history. The [project README](../README.md) intentionally focuses on player features, download and getting started, not individual migration milestones.

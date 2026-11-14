@@ -1,5 +1,7 @@
 # Sudoku Lounge – phase 2
 
+**Historical delivery phase.** The described assets and mechanics have been integrated into the current native React Sudoku game. The numbered phase is not a separate selectable game version. See [Sudoku](sudoku.md) and [current architecture](architecture.md).
+
 ## Playable variants
 
 | Mode | Board | Rules | Difficulty |

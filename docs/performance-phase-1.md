@@ -1,5 +1,7 @@
 # Performance update — Phase 1
 
+**Historical performance-phase record.** This page documents a specific optimization and its original measurement scope. It is not a guarantee of current FPS or GPU/CPU use. Consult [current presentation validation](presentation-regression.md) and the [quality roadmap](modernization-roadmap.md).
+
 Phase 1 focuses on routine persistence latency without changing gameplay, save formats, or transactional guarantees.
 
 ## Implemented first slice

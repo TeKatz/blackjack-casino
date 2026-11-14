@@ -1,51 +1,21 @@
-# German localization overhaul — three phases
+# English and German localization
 
-This plan is cumulative on `feature/casino-quality-phase-4`. The Development
-channel continues to use the existing release manifest URL and publisher.
+The casino supports **English and German** for the native host, game controls and major interfaces. Some long-form adventure and older content is still being expanded; passing core UI checks is not a claim that every story paragraph has a finished translation.
 
-## Phase 1 — shared foundation and casino shell
-- Add an explicit bilingual `ShellStrings` catalog, including window controls,
-  the welcome dashboard, player profile and table-rule setup.
-- Replace runtime-composed shell copy with stable `Localization.T/F` keys.
-- Identify blackjack table-rule labels by WPF control name instead of matching
-  English text, so rule changes still work after switching language.
-- Add a source-coverage audit: migrated shell surfaces fail CI when an English
-  literal has no resource; other screens generate a debt report.
-- Verify language switching, the welcome window and table-rule behavior with
-  Windows smoke tests.
+This page summarizes the present process. The original WPF-era localization rollout, including superseded XAML and feature-branch instructions, is available in the [historical localization plan](archive/localization-wpf-era.md).
 
-## Phase 2 — gameplay and casino management
-- Midnight Dice, Midnight Reels, Midnight Manor, Neon Vault and Nine Lives;
-  also Midnight Merge, Solitaire, Sudoku, Memory, Word Search UI and Empire.
-- The five game XAML screens have explicit de-DE resource coverage and now
-  participate in the strict `--strict-shell` gate. Phase-2 runtime C# modules
-  are inventoried separately because not all dynamic copies are localized yet.
-- The phase-2 resource catalog covers major gameplay prompts, memory and
-  lounge copy, Empire rooms, properties, research, managers and contracts.
-  Runtime-composed scores and counters use narrowly scoped German patterns.
-- Continue migrating the reported dynamic C# strings and verify live game
-  screens at multiple DPI/window sizes before treating phase 2 as complete.
-- Preserve all gameplay IDs, save schemas, visual assets, rules and payouts.
+## Current source and acceptance
 
-## Phase 3 — large content catalogs and full acceptance
-- Translate all authored Tales from the Backroom scenes, choices, locations,
-  character classes, encounter results and investigation content. Translate
-  204 challenge names/descriptions, cosmetic descriptions, all 84 existing
-  album lore texts, season copy and Memory labels.
-- Create language-specific Word Search **puzzle grids and solutions**, not only
-  translated target lists; maintain save-state compatibility across languages.
-- Localize generated release notes (or ship bilingual editorial entries);
-  changing the UI language must not show raw commit subjects in German.
-- Move all completed modules from report-only to strict coverage and run
-  a comprehensive German+English Windows UI regression suite.
+- English resource catalogs and their `.de.resx` counterparts live under `src/BlackjackCasino.HostShared/Resources/`.
+- Localized React interface strings and labels are bundled into the offline frontend; no runtime translation service is required.
+- `python tools/check_localization.py` verifies resource-key parity and nonempty values.
+- `python tools/check_localization_coverage.py --strict-shell` checks the designated shell coverage contract.
+- `python tools/check_adventure_localization.py` checks known adventure-language constraints.
 
-## Auditing
-`python tools/check_localization.py` verifies key parity and non-empty values.
-`python tools/check_adventure_localization.py` covers basic adventure sanity.
-`python tools/check_localization_coverage.py --strict-shell` checks the
-**migrated** Phase-1 shell and lists unlocalized legacy candidates. A green
-Phase-1 coverage check does **not** mean the whole program is fully translated.
-Do not put names, save identifiers, paths, non-display literals or gameplay
-rules into resource lookup. The source locale remains English, with de-DE as
-an explicit translation. Preset, scene, choice and item references must use
-stable IDs rather than their translated display names.
+When adding gameplay, ensure that both languages are reviewed in the actual interface for overflow, truncation and mixed-language errors. Maintain stable internal localization keys and save IDs. Product/game names such as Midnight Manor, Nine Lives and The Midnight Club ordinarily remain unchanged.
+
+## Outstanding work
+
+Review remaining story prose, item descriptions, older catalogs and device-specific layout behavior as content evolves. Localized UI and full story translation are distinct acceptance criteria; track them independently.
+
+See [contribution guide](../CONTRIBUTING.md), [architecture](architecture.md) and [Tales](adventure-engine.md).

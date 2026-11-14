@@ -2,7 +2,7 @@
 
 **Historical note:** All entries below describe the pre-cutover WPF application. On the final cutover branch, the WPF/XAML source tree and its legacy smoke executables have been removed. This document is retained solely for provenance; consult [current architecture](architecture.md) for active components.
 
-**Integrated baseline:** `main`. **Development source:** `develop`. **Historical implementation:** `feature/manor-modernization-phase-1`.
+**Historical baseline:** `main`; the then-active source was `develop`. **Current Development source:** `dev`. The implementation branch noted below is no longer a release source.
 **Scope:** React/WPF dependency separation, obsolete source cleanup and ongoing fallback inventory (modernization phase 4).
 
 ## Current status
@@ -41,7 +41,7 @@ The CI tool \`tools/check_ui_migration_boundaries.py\` scans all \`.cs\` and \`.
 4. Delete each now-unreferenced native UI family in a separate reversible commit, retain Core engines, and verify native tests, published ZIP, updates and rollback.
 5. After cleanup, proceed to a smaller, WPF-independent Windows shell (phase 5), followed by device QA (phase 6) and stable-channel readiness (phase 7).
 
-The historical feature-branch separation from `main` ended at integration PR #36. The permanent `develop` source now publishes Development; the existing update manifest URL is unchanged. Stable still needs an explicit release tag.
+The historical feature-branch separation from `main` ended at integration PR #36. The historical `develop` source then published Development; the existing update manifest URL is unchanged. Stable still needs an explicit release tag.
 
 ## Browser recovery decoupling (2026-11-06)
 

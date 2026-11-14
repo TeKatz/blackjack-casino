@@ -7,7 +7,7 @@ The Midnight Club is an offline-first, play-money Windows casino. Gameplay and v
 1. Inspect recent branches and open pull requests. The Development publisher is pinned to `dev`; `main` is the tested integration baseline. Verify both workflow guards before changing release routing.
 2. Start from the most recent validated `dev` baseline. Never overwrite another active workstream.
 3. Create a focused `feature/*` or `fix/*` branch for independent changes. Create focused feature/fix PRs from `dev` and merge them back into `dev` after checks. Keep PRs reviewable and avoid changing release pins as a side effect.
-4. Read [AGENTS.md](AGENTS.md), [branch policy](docs/branching-and-release-policy.md), [architecture](docs/architecture.md), [Development delivery](docs/development-update-delivery.md), and the relevant game-specific documentation.
+4. Read the [documentation index](docs/index.md), [AGENTS.md](AGENTS.md), [branch policy](docs/branching-and-release-policy.md), [architecture](docs/architecture.md), [Development delivery](docs/development-update-delivery.md), and the relevant game-specific documentation.
 
 ## Local validation (Windows)
 
@@ -53,4 +53,4 @@ Use `dev` for ongoing work, with reviewable feature/fix PRs. Integrate to `main`
 
 ## Modernization
 
-**Midnight Manor** was the first modernized game and remains the only player-facing Manor selection. React/PixiJS renders the game via WebView2 while the C# engine, persistent journal and player wallet remain authoritative. The legacy WPF Manor source has been removed; native receipts and rollback-compatible saves remain. The migration history is documented in the [modernization roadmap](docs/modernization-roadmap.md).
+**Midnight Manor** was the first modernized game and remains the only player-facing Manor selection. React/PixiJS renders the game via WebView2 while the C# engine, persistent journal and player wallet remain authoritative. The legacy WPF Manor source has been removed; native receipts and rollback-compatible saves remain. The retired host's history is preserved in the [migration archive](docs/archive/native-shell-migration-phases.md). The [current roadmap](docs/modernization-roadmap.md) focuses on quality verification and further maintenance.
