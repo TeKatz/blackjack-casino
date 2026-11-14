@@ -1,5 +1,7 @@
 # Phase 6 — Stats, Profile & Progression
 
+**Historical development phase.** The feature work below was part of the original casino build-out. The current application is the native WinForms/WebView2 casino, not the WPF-era interface described in some early checkpoints. See the [product overview](../README.md) and [current architecture](architecture.md).
+
 Phase 6 adds long-term progression without changing the laid-back casino loop. A player can still launch the game, choose a mode and play without opening any meta-system.
 
 ## Player level

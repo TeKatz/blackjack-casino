@@ -1,6 +1,6 @@
 # Memory — full React gameplay migration
 
-**Integrated baseline:** `main`; **Development source:** `develop` (historical branch: `feature/manor-modernization-phase-1`)  
+**Current:** NativeShell + local React/WebView2; Development source: `dev` (Stable is separately tagged from `main`).
 **Frontend:** `frontend/lounge.html` and `frontend/src/lounge/memory.tsx`  
 **Native game:** `BlackjackCasino.Core.Memory`
 
@@ -40,6 +40,6 @@ Every first/second flip, completion, chosen deck, mismatch resolution, and elaps
 - C# xUnit: original rule/reward tests plus all 20 difficulty/deck combinations, retained card seeds/IDs, privacy, strict commands and replay/revision rejection, disk-write failure, mismatch resolution and one-time completion.
 - TypeScript/Vitest: five table specs, all four decks, hidden card projection, validation of card counts and strict GUID receipts.
 - Windows WebView2 smoke: opening the actual Memory cabinet, selecting Animals, starting 4×4, verifying face-down symbols, flipping an initial card, saving/resuming it, finding an actual native pair, counting and resolving a wrong pair, finishing every pair, displaying the completion card and playing again.
-- Legacy WPF Memory smokes stay intact for comparison/rollback. Production navigation to Memory now stays in React. The shared WPF host and its emergency fallback have **not** been removed.
+- The old WPF Memory smoke and fallback were retired. Production navigation stays in React and native C# retains game progress and payouts.
 
 **Next Lounge conversions:** Jigsaw and Tales from the Backroom.

@@ -1,2 +1,4 @@
 # Menu & world polish
+
+**Historical implementation/polish snapshot.** The current Midnight Descent roguelite has expanded beyond this isolated pass. For live game systems and controls, see [Midnight Descent](midnight-descent.md); the old five-room prototype is not the current content limit.
 Landing page with persistent navigation, hero title, action tiles and profile strip; animated backdrop and page fades respect reduced motion. Six upgrade paths and 26 sequential rank nodes, explicit selection and purchase, existing four save keys retained. Arcane +3 starting special damage per rank and Fortune +5% expedition essence per rank, four ranks each. Room decor uses 18 original pixel props, deterministic seed placement, layered wall faces, biome decals, four additional local lights and service landmarks. Collision and trap mechanics remain unchanged. Manual Windows visual review is still required.

@@ -1,5 +1,7 @@
 # Phase 2 — Playable table
 
+**Historical development phase.** The feature work below was part of the original casino build-out. The current application is the native WinForms/WebView2 casino, not the WPF-era interface described in some early checkpoints. See the [product overview](../README.md) and [current architecture](architecture.md).
+
 Phase 2 turns the Phase 1 foundation into an actual offline blackjack game.
 
 ## First playable slice

@@ -36,7 +36,7 @@ Midnight Reels is left byte-for-byte intact. Shared speed/auto infrastructure is
 
 ## Release gate
 
-Modern Manor is part of the integrated `main` baseline; new in-app Development builds publish from `develop`. That workflow builds, tests and runs Windows startup and Manor smoke tests before publishing. The manifest URL and updater protocol remain unchanged. This section records earlier WPF acceptance work; the current source pin and SemVer policy are documented in [Development update delivery](development-update-delivery.md). A Stable rollout remains a separate gate requiring package, checksum, installed-updater and player-save verification.
+Modern Manor is part of the integrated `main` baseline; new in-app Development builds publish from `dev`. That workflow builds, tests and runs Windows startup and Manor smoke tests before publishing. The manifest URL and updater protocol remain unchanged. This section records earlier WPF acceptance work; the current source pin and SemVer policy are documented in [Development update delivery](development-update-delivery.md). A Stable rollout remains a separate gate requiring package, checksum, installed-updater and player-save verification.
 
 ## Modern Manor Phase 3 evidence and human gate
 
@@ -51,14 +51,14 @@ The Windows StartupSmoke tool opens the **packaged** WebView2 modern UI, verifie
 3. Play at 100%, 125%, 150% and 200% scaling; move the window between real monitors, check all original bonus chambers, visible font clipping, keyboard focus and route controls.
 4. Leave the modern view active for at least 30 minutes with multiple paid spins and bonuses. Note PC/GPU model, resolution, average/p95 frame intervals from the optional Pixi diagnostics panel, Task Manager RAM/VRAM, and any cumulative increase.
 5. Start a free-spin cycle and an Escape run, exit to the lobby, reopen Manor through its single modern entry, close/restart Windows, then verify exact bankroll, final reward and completed XP with no extra wager. Include candle/key/checkpoint/ghost warnings.
-6. Compare animation enabled, fast/turbo, reduced-motion and all six room perspectives; evaluate visual quality and audio mix. The old WPF interface is a source-level rollback only.
+6. Compare animation enabled, fast/turbo, reduced-motion and all six room perspectives; evaluate visual quality and audio mix. The former WPF interface has been removed. This section records historical pre-cutover acceptance.
 
-**Rollout state:** Modern Manor is already the sole selectable Manor game in Development, and its replacement commit passed CI and package validation. Manual hardware, audio, long-session performance and older-installation upgrade checks remain separate from this engineering validation. Neither a merge to `main` nor deletion of the WPF rollback source is part of the Development rollout.
+**Rollout state:** Modern Manor is already the sole selectable Manor game in Development, and its replacement commit passed CI and package validation. Manual hardware, audio, long-session performance and older-installation upgrade checks remain separate from this engineering validation. The WPF rollback source has since been retired; Stable still requires explicit verification and a reviewed tag.
 
 
 ## Current Development presentation and controls
 
-The single Manor lobby tile opens the modern presentation. The previous WPF cabinet remains in source for controlled rollback, not as a selectable game. The Manor-specific play-money stake range is **$1–$5,000**, with quick choices **$50 / $100 / $250 / $1,000 / $2,500 / $5,000**. Automatic paid spins are offered in batches of **10 / 25 / 50 / 100**, processed sequentially through the normal C# command journal. A bonus, saved free spins, low bankroll, uncertain response or Stop command prevents the next paid spin. No precommitted batch of wagers is stored.
+The single Manor lobby tile opens the modern presentation. The previous WPF cabinet has been removed; only the local WebView2 Manor cabinet is playable. The Manor-specific play-money stake range is **$1–$5,000**, with quick choices **$50 / $100 / $250 / $1,000 / $2,500 / $5,000**. Automatic paid spins are offered in batches of **10 / 25 / 50 / 100**, processed sequentially through the normal C# command journal. A bonus, saved free spins, low bankroll, uncertain response or Stop command prevents the next paid spin. No precommitted batch of wagers is stored.
 
 The modern host plays the existing original Manor soundtrack through the casino's Windows audio mixer. WebView sound effects and ambient visuals are separate, so the real music/sound switches remain authoritative. A native branded cover remains visible while WebView2 initializes, and only reveals the illustrated Pixi stage after complete readiness. The Escape bonus adds a perspective pull-in and animated chamber transitions while keeping every room decision and reward authorized by C#.
 

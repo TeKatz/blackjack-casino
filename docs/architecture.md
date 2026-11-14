@@ -1,8 +1,8 @@
 # Architecture
 
-**Current native architecture (November 2026).** The Windows casino runs directly as
+**Current Development architecture (November 2026).** The published Development casino runs directly as
 `BlackjackCasino.NativeShell.exe` (.NET 10 WinForms + offline WebView2), with no
-WPF, XAML or PresentationFramework references in the production build.
+WPF, XAML or PresentationFramework references in that Development package. The separate `main` integration baseline still contains earlier WPF code pending a reviewed Stable cutover.
 
 ## Layers and ownership
 
@@ -52,9 +52,7 @@ Historical offline rollback/rehearsal commands remain available but are
 ## Distribution
 
 Development publishes the WPF-free NativeShell directly from `dev`.
-Stable is explicitly tagged from reviewed `main`; it is not published by
-merging Development. Both packages also carry a small WPF-free legacy-name
-compatibility executable, because already-installed older updaters validate
+Stable requires an explicit reviewed tag from `main`, after the native changes have been integrated and verified there; merging Development alone does not publish Stable. The current **Development** package also carries a small WPF-free legacy-name compatibility executable, because already-installed older updaters validate
 the existence of `BlackjackCasino.Desktop.exe` before atomic activation.
 Modern updaters restart `BlackjackCasino.NativeShell.exe` directly.
 
@@ -89,7 +87,11 @@ contracts. The published NativeShell no longer embeds these four workflows or
 their old command-line entrypoints. CI runs the synthetic migration/rollback
 rehearsal separately alongside the native casino smoke and real WebView2 tests.
 
-The production runtime is named `NativeCasinoRuntime`; navigation uses `NativeRouteCatalog` and update transport `CasinoUpdateService`. This rename does **not**
+The production runtime is named `NativeCasinoRuntime`; navigation uses `NativeRouteCatalog` and update transport uses `CasinoUpdateService`. This internal naming cleanup does **not**
 change the existing `NativeShellPreview` on-disk save location, the
 `Candidates/development` import manifest, JSON fields, Frontend `nativePreview`
 capability, exact page origins or write-ahead journal format.
+
+## Documentation guide
+
+The [documentation index](index.md) separates current gameplay and engineering guides from preserved WPF migration history. The [project README](../README.md) intentionally focuses on player features, download and getting started, not individual migration milestones.

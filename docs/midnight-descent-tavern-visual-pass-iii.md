@@ -1,5 +1,7 @@
 # Midnight Descent — Threshold Tavern visual pass III (12 November 2026)
 
+**Historical implementation record.** This pass predates the final WPF-free host cutover. Its art and Godot behavior remain relevant; the original desktop adapter file no longer exists. See [current Midnight Descent](midnight-descent.md) and [architecture](architecture.md).
+
 This pass is coordinated with the canonical 1280×720 pixel-world geometry. It fixes the latest seven tavern presentation issues and the Windows fullscreen launch from the Blackjack desktop host.
 
 ## Seating and card-table anatomy
@@ -22,7 +24,7 @@ The anonymous block just to the left/behind the old portal is removed and replac
 
 ## Fullscreen when launched from Blackjack
 
-`MainWindow.MidnightDescent.cs` now passes Godot's engine command `--fullscreen` **before** the `--` separator used for localization arguments. This means the Blackjack host launches a genuinely fullscreen Windows game process while minimizing itself, and restores its own window when Midnight Descent exits. The game project also defaults to `display/window/size/mode=3` (fullscreen), including standalone launches.
+The current NativeShell Godot launcher passes the engine command `--fullscreen` **before** the `--` separator used for localization arguments. This means the Blackjack host launches a genuinely fullscreen Windows game process while minimizing itself, and restores its own window when Midnight Descent exits. The game project also defaults to `display/window/size/mode=3` (fullscreen), including standalone launches.
 
 ## Regression coverage
 

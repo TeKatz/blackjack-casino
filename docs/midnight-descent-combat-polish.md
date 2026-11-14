@@ -1,2 +1,4 @@
 # Combat polish
+
+**Historical implementation/polish snapshot.** The current Midnight Descent roguelite has expanded beyond this isolated pass. For live game systems and controls, see [Midnight Descent](midnight-descent.md); the old five-room prototype is not the current content limit.
 Collision-safe segmented spike plates render below obstacles and actors; warning, rise, hold and retract are timed. Original synthesized action-specific sounds are polyphonic, with menu hover/click and service cues. Four character families use different projectile/attack styling; Dealer, Arcanist and Soulbinder have independent pixel atlases. Damage numbers and distinct hit/death cues. The Hollow King's existing boss attack branch and Hexer's ranged movement are corrected. Audio is procedurally synthesized, not recorded; manual sound/visual mix review still required.

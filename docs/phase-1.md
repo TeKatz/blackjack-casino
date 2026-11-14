@@ -1,5 +1,7 @@
 # Phase 1 — Foundation
 
+**Historical development phase.** The feature work below was part of the original casino build-out. The current application is the native WinForms/WebView2 casino, not the WPF-era interface described in some early checkpoints. See the [product overview](../README.md) and [current architecture](architecture.md).
+
 ## Included in the initial foundation
 
 - .NET 10 solution structure

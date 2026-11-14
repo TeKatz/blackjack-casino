@@ -1,10 +1,12 @@
 # Midnight Manor — design and math, revision 2
 
+**Design specification, revision 2.** The current playable slot uses the native WebView2 renderer and the 17-room integrated Godot bonus. This reference records the original math and design rationale; consult [current 3D bonus](manor-godot-bonus.md) for the live presentation.
+
 This is an explicit, revisable balance specification for the first implementation, not inherited final commercial math. Revision 1 preceded UI implementation; revision 2 addresses Windows playtest feedback with a more frequent smaller Manor tier and stronger visual feedback. No real money, accounts, ads or purchasable currency. Blackjack and Midnight Reels stay intact and Casual Solo remains the default. Baseline: main 378a896; all 72 existing tests passed before implementation.
 
 ## Architecture and persistence assumptions
 
-Core is pure .NET; React/PixiJS/WebView2 presents the current Manor game, while WPF Manor is retained as source-only rollback. Existing bankroll is a decimal dollar balance; the public between-hand wallet operation preserves the Blackjack shoe/history. Profile XP uses existing grant APIs, never fabricated Blackjack hands. The new machine is a separate session with a serializable pending paid cycle, Free Spins and genuine Manor run state. A write-ahead aggregate checkpoint contains wallet, profile and machine state, is atomically replaced before projecting to existing files, and is replayed on startup if interrupted. Open features resume; closing is not a refund, forced loss or duplicate award.
+Core is pure .NET; React/PixiJS/WebView2 presents the current Manor game, the WPF Manor source and rollback view have been retired. Existing bankroll is a decimal dollar balance; the public between-hand wallet operation preserves the Blackjack shoe/history. Profile XP uses existing grant APIs, never fabricated Blackjack hands. The new machine is a separate session with a serializable pending paid cycle, Free Spins and genuine Manor run state. A write-ahead aggregate checkpoint contains wallet, profile and machine state, is atomically replaced before projecting to existing files, and is replayed on startup if interrupted. Open features resume; closing is not a refund, forced loss or duplicate award.
 
 A shared `SlotPlayController` owns busy/auto/speed semantics. Reels keeps its established presentation in this change; the new abstractions can support it later without a second autoplay implementation. Autoplay is never restarted merely by loading saved preferences. Unlimited means until stopped or funds/stop conditions intervene. Cancellation stops the next spin immediately, never a committed payout.
 

@@ -1,6 +1,6 @@
 # Custom cinematic lobby scenes
 
-**Status:** Modernisation branch, Development-channel candidate. Desktop user-testing remains required.
+**Status:** Packaged in the current NativeShell/React lobby. Asset and CI checks are active; subjective desktop animation, hover and GPU acceptance still requires device testing.
 
 ## Rendering boundary
 

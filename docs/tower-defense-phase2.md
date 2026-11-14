@@ -1,5 +1,7 @@
 # Midnight Bastion — Phase 2 visual and audio pass
 
+**Current feature guide with dated implementation sections.** This page includes subsequent campaign and mastery expansions beyond its original Phase 2 visuals. The current game is played in the React Chill Lounge with C# rules; the initial WPF host is retired. See the [product overview](../README.md).
+
 ## Delivered presentation
 
 The original Phase 1 15-wave C# rules and the same preferences save remain the source of truth. Phase 2 does not change enemy health, money, win/loss conditions, combat outcomes or persisted schema.

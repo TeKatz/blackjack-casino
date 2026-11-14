@@ -1,5 +1,7 @@
 # Performance Phase 6 — Hand-history persistence
 
+**Historical performance-phase record.** This page documents a specific optimization and its original measurement scope. It is not a guarantee of current FPS or GPU/CPU use. Consult [current presentation validation](presentation-regression.md) and the [quality roadmap](modernization-roadmap.md).
+
 Phase 6 removes the remaining full hand-history JSON serialization from the routine blackjack round-settlement path while preserving the existing history schema and persistence behavior.
 
 ## Previous hot path
