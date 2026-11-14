@@ -168,11 +168,11 @@ export function onRecordsMessage(handle:(message:RecordsMessage)=>void):()=>void
       &&typeof m.data.success==='boolean'&&str(m.data.message)
       &&m.data.message.length<800&&(m.data.reward===null||isVaultReward(m.data.reward)))
       handle({type:m.type,data:{success:m.data.success,message:m.data.message,reward:m.data.reward}});
-    if(m.type==='lobby.profile.prestige.result'&&isPrestigeOutcome(m.data))
-      handle({type:m.type,data:m.data});
     if(m.type==='lobby.records.result'
       &&typeof m.data.success==='boolean'&&str(m.data.message)&&m.data.message.length<800&&str(m.data.id))
       handle({type:m.type,data:{success:m.data.success,message:m.data.message,id:m.data.id}});
+    if(m.type==='lobby.profile.prestige.result'&&isPrestigeOutcome(m.data))
+      handle({type:m.type,data:m.data});
   };
   host.addEventListener('message',listener);
   return()=>host.removeEventListener('message',listener);
