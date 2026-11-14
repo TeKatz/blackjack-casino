@@ -16,22 +16,22 @@ This file is the repository-level instruction for coding assistants and ChatGPT 
 3. Define a bounded scope, acceptance criteria, rollback and the tests that should prove it works. Prefer small reversible changes and incremental PRs.
 4. Review architecture and feature-specific docs; update the README and documentation when they are stale. Write from the perspective of the project, not from a transcript of decisions.
 
-## Current coordination status (2026-11-08)
+## Current coordination status (2026-11-14)
 
 - The cumulative Manor/React modernization is consolidated through integration PR #36. `main` is the tested integration baseline; **`dev`** is the permanent Development publisher and base for new work. See [branching policy](docs/branching-and-release-policy.md).
 - The Development publisher's push filter and job guard both select `dev`; the in-app update-manifest URL, channel and Stable tag requirements remain unchanged. Feature branches cannot publish through the Development workflow.
-- Modern React/TypeScript/PixiJS local WebView2 surfaces cover the lobby, Manor, Blackjack, Midnight Dice, the seven Chill Lounge activities, collector album and more. C# continues to own outcomes, payouts, progression and persistent receipts; WPF remains the Windows host and some fallback routes.
+- Modern React/TypeScript/PixiJS local WebView2 surfaces cover the lobby and all casino games. The WinForms/WebView2 `BlackjackCasino.NativeShell` is the native Development release host. C# continues to own outcomes, payouts, progression and persistent receipts. WPF project, XAML and legacy WPF game fallbacks have been retired.
 - The historical Manor feature branch and the older PR #35 revert are retained for traceability, not as the new source of Development releases. Never rewrite or remove these refs without separate approval.
 - Device-specific visual/audio quality, DPI, extended performance and remaining localization still require validation.
 
 ## Architecture and modernization rules
 
 - `BlackjackCasino.Core` remains UI-independent and authoritative for game outcomes, bet settlement, progression and durable state; no WPF/DOM/Pixi types in Core.
-- Existing WPF is maintained for bug fixes while modes are migrated. For **new migrated presentation**, prefer TypeScript + React/HTML/CSS for text, controls and layout; PixiJS for sprite-based game visuals. Use WebView2 as the interim host, not a second game-rules engine.
+- Use TypeScript + React/HTML/CSS for text, controls and layout; PixiJS for sprite-based visuals, with local WebView2 in the native WinForms host. Do not reintroduce WPF, XAML or a second game-rules engine.
 - Build a versioned, validated bridge from frontend commands to the C# application layer. The client does not set balance or payouts. Round IDs and commands must be idempotent, crash-safe and replay/recovery tested.
 - RNG/outcome determination precedes visualization; no animation, skip, sound or speed preference may alter outcomes.
 - No full-window scaling of text UI as raster content. Check legibility, pointer targets, keyboard behavior, reduced-motion preferences, resize/DPI, and Win10/Win11 behavior where practical.
-- Do not move the complete casino to a new shell in one change. Run legacy and migrated modes side-by-side; remove WPF code only after acceptance and save-compatibility verification.
+- Maintain the WPF-free NativeShell, protected player-data import, receipt journals and old-updater-compatible executable alias. Do not reintroduce a silent legacy fallback or let a fresh import overwrite an existing native profile.
 
 ## Documentation style
 
@@ -45,7 +45,7 @@ This file is the repository-level instruction for coding assistants and ChatGPT 
 - Every functional change needs tests at the appropriate layer: unit/contract tests for logic, state and wallet; host/UI smoke and screenshots for rendering; localization parity and German/English review for strings.
 - For performance-sensitive UI, measure before/after and record environment, frame times, memory, CPU/GPU observations and resize scenarios. Never claim faster FPS without evidence.
 - Run `python tools/check_repo_contract.py` whenever workflow or docs files change.
-- On Windows, use `dotnet restore BlackjackCasino.sln`, `dotnet build BlackjackCasino.sln -c Release`, `dotnet test BlackjackCasino.sln -c Release --no-build`, and affected smoke tools. Do not claim unexecuted checks passed.
+- On Windows, use `python tools/check_native_cutover.py`, `dotnet restore BlackjackCasino.sln`, `dotnet build BlackjackCasino.sln -c Release`, `dotnet test BlackjackCasino.sln -c Release --no-build`, `dotnet run --project src/BlackjackCasino.NativeShell -- --smoke` and `--web-smoke` plus affected frontend tests. Do not claim unexecuted checks passed.
 - Review repository CI and the published artifact after changes; correct broken checks, do not merely disable them.
 - Any dependency or SDK upgrade is an isolated, verified change. Prefer reviewed updates over untested blanket version bumps.
 
