@@ -1,4 +1,5 @@
 using BlackjackCasino.Desktop;
+using BlackjackCasino.Core.Hosting;
 
 namespace BlackjackCasino.NativeShell;
 
@@ -37,15 +38,27 @@ internal static class Program
                 }
                 string root = NativeHostMigration.ProductionDirectory;
                 string saved = NativeHostMigration.CandidatePath(root, "development");
-                string destination;
-                if (Directory.Exists(saved))
-                    destination = NativeHostMigration.OpenCandidate(root, "development");
-                else if (File.Exists(Path.Combine(root, "player-state.json"))
-                    || File.Exists(Path.Combine(root, "profile.json")))
-                    destination = NativeHostMigration.Stage(root, "development");
-                else
-                    destination = BlackjackCasino.Core.Hosting.HostPreviewStorage.DefaultDirectory(
-                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
+                string currentNative = HostPreviewStorage.DefaultDirectory(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
+                // Preserve a pre-existing fresh-install NativeShell profile too:
+                // an older WPF save copied in later must never take precedence.
+                bool existingNativeSave =
+                    File.Exists(Path.Combine(currentNative, "player-state.json"))
+                    || File.Exists(Path.Combine(currentNative, "profile.json"));
+                bool existingLegacySave =
+                    File.Exists(Path.Combine(root, "player-state.json"))
+                    || File.Exists(Path.Combine(root, "profile.json"));
+                string destination = HostManagedProfilePolicy.Select(
+                    Directory.Exists(saved), existingNativeSave, existingLegacySave) switch
+                {
+                    ManagedProfileSource.Candidate =>
+                        NativeHostMigration.OpenCandidate(root, "development"),
+                    ManagedProfileSource.ExistingNative or ManagedProfileSource.FreshNative =>
+                        currentNative,
+                    ManagedProfileSource.ImportLegacy =>
+                        NativeHostMigration.Stage(root, "development"),
+                    _ => throw new InvalidOperationException("Unsupported NativeShell startup profile."),
+                };
 
                 System.Windows.Forms.Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
                 System.Windows.Forms.Application.EnableVisualStyles();
