@@ -37,7 +37,7 @@ internal static class CasinoWinCursor
         {
             if (Control.MouseButtons == MouseButtons.None) host.Cursor = Normal;
         };
-        node.ControlAdded += (_, e) => Attach(host, e.Control);
+        node.ControlAdded += (_, e) => { if (e.Control is { } child) Attach(host, child); };
         foreach (Control child in node.Controls) Attach(host, child);
     }
 
