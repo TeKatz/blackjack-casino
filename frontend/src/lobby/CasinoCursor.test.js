@@ -18,6 +18,13 @@ describe('two-state global casino pointer',()=>{
    expect(css).toContain('forced-colors:active');
    expect(css).toContain('casino-pressed.svg');
  });
+ it('has one stable cursor owner during React and WebView2 loading',()=>{
+   const css=read('public/cursor/casino-cursor.css');
+   expect(css).toContain("html {cursor:url('/cursor/casino-normal.svg')");
+   expect(css).toContain("html[data-casino-cursor='pressed']");
+   expect(css).toContain('cursor:inherit!important');
+   expect(css).not.toContain("html body *,html body *::before,html body *::after {\\n    cursor:url");
+ });
  it('releases the pressed cursor on cancelled pointer and lost window focus',()=>{
    const script=read('public/cursor/casino-cursor.js');
    expect(script).toContain("pointercancel");

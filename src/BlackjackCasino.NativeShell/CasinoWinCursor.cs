@@ -19,6 +19,11 @@ internal static class CasinoWinCursor
     private static Cursor Normal => IdleCursor.Value;
     private static Cursor Pressed => DownCursor.Value;
 
+    // Expose the exact cached instance to the native transition HWND.
+    // Creating a fresh HCURSOR during each WM_SETCURSOR is expensive and
+    // sometimes causes a transient black/standard cursor in WebView2 fades.
+    internal static Cursor ForState(bool pressed) => pressed ? Pressed : Normal;
+
     internal static void Install(Form host)
     {
         host.Cursor = Normal;

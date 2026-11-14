@@ -1,16 +1,19 @@
 /* Shared two-state cursor, active before React and Pixi initialize. */
 @media (hover:hover) and (pointer:fine){
-  html,html body,html body *,html body *::before,html body *::after {
-    cursor:url('/cursor/casino-normal.svg') 4 2,auto!important;
-  }
-  html[data-casino-cursor='pressed'],html[data-casino-cursor='pressed'] body,
-  html[data-casino-cursor='pressed'] body *,html[data-casino-cursor='pressed'] body *::before,
-  html[data-casino-cursor='pressed'] body *::after {
+  /* One stable cursor owner per document. Children inherit its *cached*
+     bitmap instead of each React/Pixi element resolving its own cursor URL
+     as the load mask unmounts or WebView2 rebuilds its DOM tree. */
+  html {cursor:url('/cursor/casino-normal.svg') 4 2,auto!important}
+  html[data-casino-cursor='pressed'] {
     cursor:url('/cursor/casino-pressed.svg') 4 2,auto!important;
+  }
+  html body,html body *,html body *::before,html body *::after {
+    cursor:inherit!important;
   }
 }
 @media (forced-colors:active){
-  html,html body,html body *,html body *::before,html body *::after{cursor:auto!important}
+  html {cursor:auto!important}
+  html body,html body *,html body *::before,html body *::after{cursor:inherit!important}
 }
 
 /*

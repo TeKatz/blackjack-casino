@@ -22,6 +22,36 @@ internal sealed class NativeRouteTransitionOverlay : Form
     private bool fading, reducedMotion;
     private long frameIndex;
 
+    // A zero-alpha layered window is omitted from Win32 hit-testing. During a
+    // WebView2 HWND replacement that lets WM_SETCURSOR bounce between the old
+    // browser, the native overlay and the new browser every fade frame.
+    // Keep the covering window hit-testable until it is fully hidden.
+    internal const double MinimumInteractiveOpacity = 0.02;
+    internal static double VisibleOpacity(double value) =>
+        Math.Clamp(value, MinimumInteractiveOpacity, 1);
+
+    protected override void WndProc(ref Message m)
+    {
+        const int WmNcHitTest = 0x0084;
+        const int WmSetCursor = 0x0020;
+        const int HtClient = 1;
+        if (Visible && !IsDisposed && m.Msg == WmNcHitTest)
+        {
+            m.Result = (IntPtr)HtClient;
+            return;
+        }
+        if (Visible && !IsDisposed && m.Msg == WmSetCursor)
+        {
+            // This HWND owns the pointer for the complete transition. A
+            // non-activating overlay does not get WebView2's CSS cursor updates.
+            Cursor.Current = CasinoWinCursor.ForState(
+                (Control.MouseButtons & MouseButtons.Left) == MouseButtons.Left);
+            m.Result = (IntPtr)1;
+            return;
+        }
+        base.WndProc(ref m);
+    }
+
     internal static string LabelFor(string? route) => route switch
     {
         null => "CASINO LOBBY",
@@ -91,7 +121,8 @@ internal sealed class NativeRouteTransitionOverlay : Form
         AlignToViewport();
         if (!Visible)
         {
-            Opacity = 0;
+            // Even the first visible frame must participate in hit-testing.
+            Opacity = MinimumInteractiveOpacity;
             Show(host);
             AlignToViewport();
         }
@@ -156,8 +187,9 @@ internal sealed class NativeRouteTransitionOverlay : Form
         fading = false;
         frames.Stop();
         if (IsDisposed) return;
-        Opacity = 0;
+        // Hide before zeroing alpha so WebView2 regains cursor ownership once.
         Hide();
+        Opacity = 0;
     }
 
     private void TickTransition()
@@ -169,7 +201,7 @@ internal sealed class NativeRouteTransitionOverlay : Form
         {
             double progress = Math.Clamp(clock.Elapsed.TotalMilliseconds / durationMs, 0, 1);
             double eased = progress * progress * (3 - 2 * progress);
-            Opacity = Math.Clamp(fromOpacity + (toOpacity - fromOpacity) * eased, 0, 1);
+            Opacity = VisibleOpacity(fromOpacity + (toOpacity - fromOpacity) * eased);
             if (progress >= 1)
             {
                 fading = false;
