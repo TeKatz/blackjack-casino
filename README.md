@@ -2,7 +2,7 @@
 
 **An atmospheric, offline single-player casino and game collection for Windows.**
 
-Play classic table games, original slot machines, puzzles, management games and an action roguelite in one connected experience. Everything uses **virtual credits**: no real-money gambling, payments, account registration, ads or online connection are required to play.
+Play classic table games, original slot machines, puzzles, management games and an action roguelite in one connected experience. **The feature list below reflects the current Development build.** Everything uses **virtual credits**: no real-money gambling, payments, account registration, ads or online connection are required to play.
 
 ## Games
 
@@ -32,7 +32,7 @@ Play classic table games, original slot machines, puzzles, management games and 
 
 ## Download and play
 
-Get a packaged Windows build from **[GitHub Releases](https://github.com/TeKatz/blackjack-casino/releases)**. A GitHub *Source code* archive is **not** a playable build.
+Get a packaged Windows build from **[GitHub Releases](https://github.com/TeKatz/blackjack-casino/releases)**. The currently available package is the **Development pre-release**; a native Stable build has not yet been publicly tagged. A GitHub *Source code* archive is **not** a playable build.
 
 1. Download the Windows `blackjack-casino-win-x64.zip` package for your chosen release.
 2. Extract it to a normal folder, keeping its contents together.
@@ -40,13 +40,13 @@ Get a packaged Windows build from **[GitHub Releases](https://github.com/TeKatz/
 
 The game is distributed as a self-contained Windows application. It uses the Microsoft Edge **WebView2 Runtime** for its local interface. Internet access is not required for ordinary gameplay; checking for and downloading updates does require a connection.
 
-**Release channels:** [Stable releases](https://github.com/TeKatz/blackjack-casino/releases) are intended for regular play. [Development](https://github.com/TeKatz/blackjack-casino/releases/tag/development) offers newer changes for early testing and may contain regressions. The in-game updater checks your selected channel and verifies downloaded packages before installation.
+**Release channels:** [Development](https://github.com/TeKatz/blackjack-casino/releases/tag/development) provides the currently published native casino and may contain regressions. Stable is reserved for explicitly reviewed, tagged builds and is not automatically published from Development. The in-game updater checks your selected channel and verifies downloaded packages before installation.
 
 Player profiles are stored separately from the application files under `%LOCALAPPDATA%\BlackjackCasino`. Existing NativeShell profiles and imported saves are preserved during updates. Back up that folder before testing experimental builds or making manual changes to saved data.
 
 ## Technology and project documentation
 
-The casino uses **.NET 10 / C#** for game logic, payouts, progression and saved transactions. A native **WinForms/WebView2** host displays locally bundled **React, TypeScript and PixiJS** interfaces; Godot powers Midnight Descent and the Manor 3D bonus. The former WPF interface is no longer shipped.
+The casino uses **.NET 10 / C#** for game logic, payouts, progression and saved transactions. A native **WinForms/WebView2** host displays locally bundled **React, TypeScript and PixiJS** interfaces; Godot powers Midnight Descent and the Manor 3D bonus. The current **Development package** contains no WPF interface; the older `main` source has not yet undergone this Stable-channel cutover.
 
 For contributors and curious players:
 

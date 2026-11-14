@@ -1,8 +1,8 @@
 # Architecture
 
-**Current native architecture (November 2026).** The Windows casino runs directly as
+**Current Development architecture (November 2026).** The published Development casino runs directly as
 `BlackjackCasino.NativeShell.exe` (.NET 10 WinForms + offline WebView2), with no
-WPF, XAML or PresentationFramework references in the production build.
+WPF, XAML or PresentationFramework references in that Development package. The separate `main` integration baseline still contains earlier WPF code pending a reviewed Stable cutover.
 
 ## Layers and ownership
 
@@ -52,9 +52,7 @@ Historical offline rollback/rehearsal commands remain available but are
 ## Distribution
 
 Development publishes the WPF-free NativeShell directly from `dev`.
-Stable is explicitly tagged from reviewed `main`; it is not published by
-merging Development. Both packages also carry a small WPF-free legacy-name
-compatibility executable, because already-installed older updaters validate
+Stable requires an explicit reviewed tag from `main`, after the native changes have been integrated and verified there; merging Development alone does not publish Stable. The current **Development** package also carries a small WPF-free legacy-name compatibility executable, because already-installed older updaters validate
 the existence of `BlackjackCasino.Desktop.exe` before atomic activation.
 Modern updaters restart `BlackjackCasino.NativeShell.exe` directly.
 

@@ -8,6 +8,8 @@
 | **Stable** | Reviewed `main` and explicit `vX.Y.Z` version tag | Stable release workflow; **not** triggered merely by merging `dev` |
 | **Feature branches** | `feature/*`, `fix/*`, other PR branches | CI previews only; **not** in-app updates |
 
+**Availability (November 2026):** The public Releases list currently offers the `development` pre-release, not a newly tagged native Stable build. Although `main` is the future Stable source, its host must be brought forward and verified before releasing the current native casino as Stable.
+
 The Development workflow in `.github/workflows/development-release.yml` has matching **`dev` push filter and job-level guard**. A failed CI/job/package verification is not a published Development update. The published in-app manifest remains:
 
 `https://github.com/TeKatz/blackjack-casino/releases/download/development/update-manifest.json`

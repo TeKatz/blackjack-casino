@@ -18,9 +18,9 @@ This file is the repository-level instruction for coding assistants and ChatGPT 
 
 ## Current coordination status (2026-11-14)
 
-- **`dev`** is the permanent Development publisher and base for new work; `main` is the reviewed Stable integration baseline. The WPF host and its first-run cutover have been completed, not merely piloted. See [branching policy](docs/branching-and-release-policy.md).
+- **`dev`** is the permanent Development publisher and base for new work; `main` is the reviewed Stable integration baseline. The WPF host and its first-run cutover have been completed on `dev`, not merely piloted. `main` retains the earlier host until a separately verified Stable integration. See [branching policy](docs/branching-and-release-policy.md).
 - The Development publisher's push filter and job guard both select `dev`; the in-app update-manifest URL, channel and Stable tag requirements remain unchanged. Feature branches cannot publish through the Development workflow.
-- Modern React/TypeScript/PixiJS local WebView2 surfaces cover the lobby and all casino games. The WinForms/WebView2 `BlackjackCasino.NativeShell` is the native Development release host. C# continues to own outcomes, payouts, progression and persistent receipts. WPF project, XAML and legacy WPF game fallbacks have been retired.
+- Modern React/TypeScript/PixiJS local WebView2 surfaces cover the lobby and all casino games. The WinForms/WebView2 `BlackjackCasino.NativeShell` is the native Development release host. C# continues to own outcomes, payouts, progression and persistent receipts. On `dev`, the WPF project, XAML and legacy WPF game fallbacks have been retired.
 - The four historical cutover/rollback tools live in `tools/NativeMigrationDiagnostics/` and run against synthetic data in CI; **they are not included in the shipped casino**. Existing player-data folders and the WPF-free compatibility launcher remain stable.
 - Device-specific visual/audio quality, DPI, extended performance and remaining localization still require validation.
 
