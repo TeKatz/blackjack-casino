@@ -44,7 +44,7 @@ internal sealed class NativeRouteTransitionOverlay : Form
         {
             // This HWND owns the pointer for the complete transition. A
             // non-activating overlay does not get WebView2's CSS cursor updates.
-            Cursor.Current = CasinoWinCursor.ForState(
+            System.Windows.Forms.Cursor.Current = CasinoWinCursor.ForState(
                 (Control.MouseButtons & MouseButtons.Left) == MouseButtons.Left);
             m.Result = (IntPtr)1;
             return;
