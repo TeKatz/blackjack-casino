@@ -9,29 +9,17 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-ART = ROOT / 'src/BlackjackCasino.Desktop/Assets/Empire'
-
-
-def resource_content_collisions(project: Path) -> set[Path]:
-    root = ET.parse(project).getroot()
-    def sources(kind: str) -> set[Path]:
-        files: set[Path] = set()
-        for item in root.findall('.//' + kind):
-            pattern = item.get('Include', '').replace('\\', '/')
-            if pattern:
-                files.update(path.resolve() for path in project.parent.glob(pattern) if path.is_file())
-        return files
-    return sources('Resource') & sources('Content')
+ART = ROOT / 'src/BlackjackCasino.Assets/Empire'
 
 
 def main():
-    project = ROOT / 'src/BlackjackCasino.Desktop/BlackjackCasino.Desktop.csproj'
-    collisions = resource_content_collisions(project)
-    assert not collisions, 'WPF Resource/Content collision breaks single-file pack URIs: ' + ', '.join(str(p.relative_to(ROOT)) for p in sorted(collisions))
     catalog = (ROOT / 'src/BlackjackCasino.Core/Empire/EmpireCatalog.cs').read_text(encoding='utf-8')
     rooms = set(re.findall(r'new\("([^"]+)",[^\n]+, [23], EmpireTag\.', catalog))
-    source = (ROOT / 'src/BlackjackCasino.Desktop/EmpireRoomArtwork.cs').read_text(encoding='utf-8')
-    mapping = dict(re.findall(r'\["([^"]+)"\] = "([^"]+)"', source))
+    source = (ROOT / 'frontend/src/empire/EmpireArtwork.tsx').read_text(encoding='utf-8')
+    art_line = next((line for line in source.splitlines() if line.startswith('const files:')), '')
+    assert art_line, 'Missing authoritative React room artwork mapping'
+    mapping = {quoted or plain: filename for quoted, plain, filename in
+               re.findall(r"(?:'([^']+)'|([A-Za-z][A-Za-z0-9-]*)):'([^']+)'", art_line)}
     assert rooms == set(mapping) and len(rooms) == 10, 'Upper/Resort room coverage changed'
     prompts = json.loads((ART / 'room-prompts.json').read_text(encoding='utf-8'))
     assert {entry['file'] for entry in prompts['images']} == {name + '.png' for name in mapping.values()}, 'Missing prompt/asset provenance'
@@ -59,7 +47,7 @@ def main():
         digest = hashlib.sha256(decoded).digest()
         assert digest not in pixels, f'{room}: duplicated room artwork'
         pixels.add(digest)
-    print('PASS: no WPF Resource/Content collisions; 10 individually assigned rooms, valid square PNGs, unique image data and recorded generation prompts.')
+    print('PASS: native React room mapping verified; 10 individually assigned rooms, valid square PNGs, unique image data and recorded generation prompts.')
 
 
 if __name__ == '__main__':

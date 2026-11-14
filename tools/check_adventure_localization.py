@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
-ROOT = Path(__file__).resolve().parent.parent / "src/BlackjackCasino.Desktop/Resources"
+ROOT = Path(__file__).resolve().parent.parent / "src/BlackjackCasino.HostShared/Resources"
 
 
 def load(name: str) -> dict[str, str]:

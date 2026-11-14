@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-RESOURCE_DIR = ROOT / "src" / "BlackjackCasino.Desktop" / "Resources"
+RESOURCE_DIR = ROOT / "src" / "BlackjackCasino.HostShared" / "Resources"
 LANGUAGES = ["de"]
 
 

@@ -7,7 +7,7 @@ import struct
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-ART = ROOT / 'src/BlackjackCasino.Desktop/Assets/CollectionArt'
+ART = ROOT / 'src/BlackjackCasino.Assets/CollectionArt'
 BROWSER_ATLASES = ROOT / 'frontend/public/album/atlas'
 BROWSER_MANIFEST = ROOT / 'frontend/src/lobby/albumArtManifest.json'
 
