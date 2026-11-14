@@ -24,6 +24,8 @@ export type StatisticsSnapshot={
   tables:{name:string;hands:string;net:string;positive:boolean;rounds:string;winRate:string}[];
 };
 export type CosmeticIdentityOption={id:string;name:string;description:string;visualVariant:string};
+export type PrestigeOutcome={success:boolean;message:string;prestige:number;level:number;
+ reward:{prestige:number;coinsEarned:number}|null;};
 export type AccountSnapshot={
  displayName:string;level:number;prestige:number;coins:string;title:string;portraitId:string;
  titleVariant?:string;portraitVariant?:string;frameVariant?:string;
@@ -55,6 +57,7 @@ export type RecordsMessage=
   {type:'lobby.records.snapshot';data:{page:'challenges';snapshot:ChallengesSnapshot}|{page:'statistics';snapshot:StatisticsSnapshot}|{page:'profile';snapshot:AccountSnapshot}|{page:'history';snapshot:HistorySnapshot}|{page:'season';snapshot:SeasonsSnapshot}|{page:'vault';snapshot:VaultSnapshot}|{page:'album';snapshot:AlbumSnapshot}}|
   {type:'lobby.records.result';data:{success:boolean;message:string;id:string}}|
   {type:'lobby.records.vault.result';data:{success:boolean;message:string;reward:VaultReward|null}}|
+  {type:'lobby.profile.prestige.result';data:PrestigeOutcome}|
   {type:'lobby.album.result';data:AlbumResult};
 export type ChallengeStatus='all'|'ready'|'progress'|'claimed'|'unclaimed';
 const obj=(x:unknown):x is Record<string,unknown>=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -116,6 +119,12 @@ export function isAccount(x:unknown):x is AccountSnapshot{
  return ['portraits','titles'].every(k=>Array.isArray(x[k])&&(x[k] as unknown[]).length<=500
     &&(x[k] as unknown[]).every(v=>obj(v)&&str(v.id)&&str(v.name)&&str(v.description)&&str(v.visualVariant)));
 }
+export function isPrestigeOutcome(x:unknown):x is PrestigeOutcome{
+ return obj(x)&&typeof x.success==='boolean'&&str(x.message)&&x.message.length<800
+   &&count(x.prestige)&&count(x.level)&&x.level<=100
+   &&(x.reward===null||(obj(x.reward)&&count(x.reward.prestige)&&count(x.reward.coinsEarned)
+     &&x.reward.coinsEarned<=500&&x.reward.prestige===x.prestige));
+}
 export function isHistory(x:unknown):x is HistorySnapshot{
  return obj(x)&&count(x.total)&&Array.isArray(x.entries)&&x.entries.length<=250
     &&x.entries.every((entry:unknown)=>obj(entry)
@@ -159,6 +168,8 @@ export function onRecordsMessage(handle:(message:RecordsMessage)=>void):()=>void
       &&typeof m.data.success==='boolean'&&str(m.data.message)
       &&m.data.message.length<800&&(m.data.reward===null||isVaultReward(m.data.reward)))
       handle({type:m.type,data:{success:m.data.success,message:m.data.message,reward:m.data.reward}});
+    if(m.type==='lobby.profile.prestige.result'&&isPrestigeOutcome(m.data))
+      handle({type:m.type,data:m.data});
     if(m.type==='lobby.records.result'
       &&typeof m.data.success==='boolean'&&str(m.data.message)&&m.data.message.length<800&&str(m.data.id))
       handle({type:m.type,data:{success:m.data.success,message:m.data.message,id:m.data.id}});

@@ -1,6 +1,6 @@
 import {describe,it,expect} from 'vitest';
 import {isAlbum,isAlbumResult,previewAlbum} from './albumBridge';
-import {filterChallenges,isChallenges,isStatistics,isAccount,isHistory,isVault,previewChallenges,previewStatistics,previewAccount,previewHistory,previewVault} from './recordsBridge';
+import {filterChallenges,isChallenges,isStatistics,isAccount,isPrestigeOutcome,isHistory,isVault,previewChallenges,previewStatistics,previewAccount,previewHistory,previewVault} from './recordsBridge';
 describe('Album bridge',()=>{
  it('rejects incomplete catalogues and forged pack receipts',()=>{
    expect(isAlbum(previewAlbum)).toBe(false);
@@ -14,6 +14,11 @@ describe('Challenges and Statistics bridge',()=>{
     expect(isChallenges(previewChallenges)).toBe(true);
     expect(isStatistics(previewStatistics)).toBe(true);
     expect(isAccount(previewAccount)).toBe(true);
+    expect(isPrestigeOutcome({success:true,message:'Prestige reached',prestige:4,level:0,
+      reward:{prestige:4,coinsEarned:500}})).toBe(true);
+    expect(isPrestigeOutcome({success:true,message:'Forged payout',prestige:4,level:0,
+      reward:{prestige:4,coinsEarned:500000}})).toBe(false);
+    expect(isPrestigeOutcome({success:'yes',message:'x',prestige:4,level:0,reward:null})).toBe(false);
     expect(isHistory(previewHistory)).toBe(true);
     expect(isVault(previewVault)).toBe(true);
     expect(isVault({...previewVault,progress:1.8})).toBe(false);

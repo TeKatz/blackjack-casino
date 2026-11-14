@@ -15,7 +15,7 @@ import {stableLobbyTiles} from './lobbyTiles';
 import { ModernShop } from './ModernShop';
 import { ModernChallenges } from './ModernChallenges';
 import { ModernStatistics } from './ModernStatistics';
-import { ModernAccount } from './ModernAccount';
+import { ModernAccount,PrestigeMark } from './ModernAccount';
 import { ModernHistory } from './ModernHistory';
 import { ModernVault } from './ModernVault';
 import { ModernAlbum } from './ModernAlbum';
@@ -26,7 +26,7 @@ import { ModernUpdates } from './ModernUpdates';
 import {fallbackUpdates,onUpdateSnapshot} from './updatesBridge';
 import type {LobbyUpdatesSnapshot} from './updatesBridge';
 import { onRecordsMessage, previewChallenges, previewStatistics, previewAccount, previewHistory, previewVault, previewSeasons } from './recordsBridge';
-import type { ChallengesSnapshot, StatisticsSnapshot, AccountSnapshot, HistorySnapshot, VaultSnapshot, VaultReward, SeasonsSnapshot, RecordsPage } from './recordsBridge';
+import type { ChallengesSnapshot, StatisticsSnapshot, AccountSnapshot, PrestigeOutcome, HistorySnapshot, VaultSnapshot, VaultReward, SeasonsSnapshot, RecordsPage } from './recordsBridge';
 import { onShopMessages, previewShop } from './shopBridge';
 import type { ShopSnapshot } from './shopBridge';
 import { embeddedLobby, fallbackLobby, lobbyCommand, onLobbySnapshot, renamePlayer } from './lobbyBridge';
@@ -184,6 +184,7 @@ function LobbyApp() {
   const [albumLoaded,setAlbumLoaded] = useState(!embeddedLobby);
   const [seasonsLoaded,setSeasonsLoaded] = useState(!embeddedLobby);
   const [recordsPending,setRecordsPending] = useState<string|null>(null);
+  const [profilePrestigeResult,setProfilePrestigeResult] = useState<PrestigeOutcome|null>(null);
   const [shopVisible,setShopVisible] = useState(false);
   const [shopLoaded,setShopLoaded] = useState(!embeddedLobby);
   const [shopPending,setShopPending] = useState<string|null>(null);
@@ -229,6 +230,8 @@ function LobbyApp() {
         setRecordsPending(null);
         setVaultNotice(message.data.message);
         if(message.data.success)setVaultReward(message.data.reward);
+      }else if(message.type==='lobby.profile.prestige.result'){
+        setRecordsPending(null);setProfilePrestigeResult(message.data);
       }else if(message.type==='lobby.records.result'){
         setRecordsPending(null);
         setShopNotice({success:message.data.success,message:message.data.message});
@@ -288,13 +291,13 @@ function LobbyApp() {
     ? 'Diese Funktion ist noch nicht mit der NativeShell-Vorschau verbunden. Spielstände werden nicht verändert.'
     : 'This feature is not connected to the NativeShell preview yet. Player data has not changed.');
   const closeRecords = () => {
-    setRecordsVisible(null);setRecordsPending(null);setShopNotice(null);setVaultReward(null);setVaultNotice(null);setAlbumResult(null);
+    setRecordsVisible(null);setRecordsPending(null);setShopNotice(null);setVaultReward(null);setVaultNotice(null);setAlbumResult(null);setProfilePrestigeResult(null);
     lobbyCommand('lobby.records.close');
   };
   const openRecords = (page:RecordsPage) => {
     setArcadeOpen(false);
     if(shopVisible)closeShop();
-    setRecordsVisible(page);setDailyOpen(false);setShopNotice(null);setRecordsPending(null);
+    setRecordsVisible(page);setDailyOpen(false);setShopNotice(null);setRecordsPending(null);setProfilePrestigeResult(null);
     if(page==='vault'){setVaultReward(null);setVaultNotice(null);}
     if(page==='album')setAlbumResult(null);
     if(page==='challenges')setChallengesLoaded(!embeddedLobby);
@@ -419,7 +422,7 @@ function LobbyApp() {
         <button className="header-widget profile-widget" onClick={()=>openRecords('profile')}>
           <PlayerPortrait portrait={data.portraitVariant} frame={data.frameVariant}/><span><b>{data.displayName}</b>
           <small>LV {data.level} · ◆ {data.coins}</small><em><CosmeticTitle variant={data.titleVariant}>{localizedSudokuTitleName(data.title,data.language)}</CosmeticTitle></em></span>
-          {data.prestige>0&&<span className="prestige-badge">✦<br/>P{data.prestige}</span>}
+          {data.prestige>0&&<PrestigeMark prestige={data.prestige} size="compact"/>}
         </button>
         <button className="header-widget vault-widget" onClick={()=>openRecords('vault')}>
           <VaultIcon tier={data.vaultTier}/><span>
@@ -480,12 +483,16 @@ function LobbyApp() {
         language={data.language} loaded={statisticsLoaded}
         onBack={()=>{closeRecords();setFilter('all');}}/>:
       recordsVisible==='profile'?<ModernAccount data={account} loaded={accountLoaded} pending={recordsPending}
+        notice={shopNotice} prestigeOutcome={profilePrestigeResult}
+        motionEnabled={!lowMotion&&data.animationsEnabled}
         language={data.language} onBack={()=>{closeRecords();setFilter('all');}}
         onRoute={route=>route==='shop'?openShop():route==='album'?openProgression("Collector's Album"):
           openRecords(route as RecordsPage)}
         onRename={name=>{setRecordsPending('rename');renamePlayer(name);}}
         onEquip={id=>{setRecordsPending(id);lobbyCommand('lobby.profile.equip',id);}}
-        onEdit={()=>lobbyCommand('lobby.profile.native')}/>:
+        onPrestige={()=>{setRecordsPending('prestige');lobbyCommand('lobby.profile.prestige');}}
+        onExport={()=>{setRecordsPending('export');lobbyCommand('lobby.profile.export');}}
+        onFolder={()=>{setRecordsPending('folder');lobbyCommand('lobby.profile.folder');}}/>:
       recordsVisible==='history'?<ModernHistory data={history} loaded={historyLoaded}
         language={data.language} onBack={()=>{closeRecords();setFilter('all');}}/>:
       recordsVisible==='album'?<ModernAlbum data={album} loaded={albumLoaded}
