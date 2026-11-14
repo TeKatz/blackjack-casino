@@ -301,6 +301,10 @@ export function createModeScenes(stage:Container,root:HTMLElement,motion:()=>boo
           s.art.dataset.pixiArtReady='true';
       }
     },
+    // Called when the native WebView2 host is collapsed or the browser is
+    // hidden and the ticker stops before observing zero-sized art windows.
+    // Its first resumed frame must still discard stale hover zoom.
+    invalidateVisibility(){for(const s of scenes.values())s.wasVisible=false;},
     destroy(){
       disposed=true;
       for(const s of scenes.values())disposeScene(stage,s);
