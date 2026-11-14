@@ -16,11 +16,17 @@ describe('two-state global casino pointer',()=>{
    }
    const css=read('public/cursor/casino-cursor.css');
    expect(css).toContain('forced-colors:active');
-   expect(css).toContain('casino-pressed.svg');
+   expect(css).toContain('casino-pressed.svg'); // vector source noted in CSS
+   // Cursor data must be ready with the stylesheet, without a subsequent
+   // SVG fetch while the native overlay fades in/out.
+   for (const state of ['normal','pressed']) {
+     const vector=read('public/cursor/casino-'+state+'.svg').trim();
+     expect(css).toContain('data:image/svg+xml,'+encodeURIComponent(vector));
+   }
  });
  it('has one stable cursor owner during React and WebView2 loading',()=>{
    const css=read('public/cursor/casino-cursor.css');
-   expect(css).toContain("html {cursor:url('/cursor/casino-normal.svg')");
+   expect(css).toContain('html {cursor:url("data:image/svg+xml,');
    expect(css).toContain("html[data-casino-cursor='pressed']");
    expect(css).toContain('cursor:inherit!important');
    expect(css).not.toContain("html body *,html body *::before,html body *::after {\\n    cursor:url");
