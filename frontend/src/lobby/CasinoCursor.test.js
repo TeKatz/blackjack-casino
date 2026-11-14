@@ -20,7 +20,7 @@ describe('two-state global casino pointer',()=>{
    // Cursor data must be ready with the stylesheet, without a subsequent
    // SVG fetch while the native overlay fades in/out.
    for (const state of ['normal','pressed']) {
-     const vector=read('public/cursor/casino-'+state+'.svg').trim();
+     const vector=read('public/cursor/casino-'+state+'.svg').replace(/\r\n/g,'\n').trim();
      expect(css).toContain('data:image/svg+xml,'+encodeURIComponent(vector));
    }
  });
