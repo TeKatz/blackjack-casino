@@ -29,6 +29,7 @@ dotnet build BlackjackCasino.sln -c Release
 dotnet test BlackjackCasino.sln -c Release --no-build
 dotnet run --project src/BlackjackCasino.NativeShell -- --smoke
 dotnet run --project src/BlackjackCasino.NativeShell -- --web-smoke
+dotnet run --project tools/NativeMigrationDiagnostics -- --rehearsal-smoke
 ```
 
 For affected visual surfaces, run the NativeShell real-Windows WebView2, receipt and game-specific regression tests. Automated tests and local review are complementary: test window sizes, DPI, animation-disabled mode, sound transitions, navigation, save/reopen, and German/English content where relevant.

@@ -8,11 +8,11 @@ namespace BlackjackCasino.NativeShell;
 internal sealed record NativeLobbyOutcome(bool Success, string Message, object? Reward = null);
 
 /// <summary>
-/// Authoritative preview account/shop/collection/season action adapter.
+/// Authoritative native account/shop/collection/season action adapter.
 /// No browser-supplied currency, rewards, level or profile state is accepted.
 /// All successful user-data transitions pass through one durable aggregate.
 /// </summary>
-internal sealed class NativeLobbyController(NativePreviewRuntime runtime)
+internal sealed class NativeLobbyController(NativeCasinoRuntime runtime)
 {
     private readonly NativeLobbyPanels panels = new(runtime);
     private PlayerProfileState Profile => runtime.Profile;

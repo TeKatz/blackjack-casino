@@ -133,6 +133,7 @@ See [Development update delivery](docs/development-update-delivery.md) for relea
 | `src/BlackjackCasino.HostShared/` | Shared C# save, protocol, audio and profile sources (compiled into NativeShell and tests) |
 | `src/BlackjackCasino.Assets/` | Original offline artwork, icons, licensed audio and provenance |
 | `src/BlackjackCasino.CompatLauncher/` | WPF-free launcher with the old executable filename for older upgrades |
+| `tools/NativeMigrationDiagnostics/` | CI-only historical WPF migration and rollback diagnostics, excluded from shipped casino |
 | `frontend/` | Modern lobby and Midnight Manor pages, local generated asset atlases and PixiJS effects |
 | `src/BlackjackCasino.Update/` | Update manifest, version and package validation |
 | `src/BlackjackCasino.Updater/` | Staged installation and restart helper |

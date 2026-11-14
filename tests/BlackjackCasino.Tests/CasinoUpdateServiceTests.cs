@@ -6,19 +6,19 @@ using BlackjackCasino.Update;
 
 namespace BlackjackCasino.Tests;
 
-public sealed class DesktopUpdateServiceTests
+public sealed class CasinoUpdateServiceTests
 {
     [Fact]
     public void ManifestUrisRemainPinnedToTheirReleaseChannels()
     {
         Assert.Equal(
             "https://github.com/TeKatz/blackjack-casino/releases/latest/download/update-manifest.json",
-            DesktopUpdateService.ManifestUri(UpdateChannel.Stable).AbsoluteUri);
+            CasinoUpdateService.ManifestUri(UpdateChannel.Stable).AbsoluteUri);
         Assert.Equal(
             "https://github.com/TeKatz/blackjack-casino/releases/download/development/update-manifest.json",
-            DesktopUpdateService.ManifestUri(UpdateChannel.Development).AbsoluteUri);
+            CasinoUpdateService.ManifestUri(UpdateChannel.Development).AbsoluteUri);
         Assert.Throws<ArgumentOutOfRangeException>(
-            () => DesktopUpdateService.ManifestUri((UpdateChannel)999));
+            () => CasinoUpdateService.ManifestUri((UpdateChannel)999));
     }
 
     [Theory]
@@ -28,7 +28,7 @@ public sealed class DesktopUpdateServiceTests
     public void MinimumUpdaterVersionIsPreserved(string minimum, string installed, bool compatible)
     {
         UpdateManifest manifest = Manifest("development") with { MinimumUpdaterVersion = minimum };
-        bool actual = DesktopUpdateService.MinimumUpdaterVersion(manifest)
+        bool actual = CasinoUpdateService.MinimumUpdaterVersion(manifest)
             <= SemanticVersion.Parse(installed);
         Assert.Equal(compatible, actual);
     }
@@ -38,13 +38,13 @@ public sealed class DesktopUpdateServiceTests
     {
         var handler = new ManifestHandler();
         using var http = new HttpClient(handler);
-        using var service = new DesktopUpdateService(http);
+        using var service = new CasinoUpdateService(http);
         UpdateCheckResult result = await service.CheckAsync(
             UpdateChannel.Development, SemanticVersion.Parse("0.6.0"));
 
         Assert.True(result.UpdateAvailable);
         Assert.Equal("development", result.Manifest.Channel);
-        Uri expected = DesktopUpdateService.ManifestUri(UpdateChannel.Development);
+        Uri expected = CasinoUpdateService.ManifestUri(UpdateChannel.Development);
         Assert.NotNull(handler.LastUri);
         Assert.Equal(expected.GetLeftPart(UriPartial.Path), handler.LastUri.GetLeftPart(UriPartial.Path));
         Assert.Matches(@"^\?revision=[0-9a-f]{32}$", handler.LastUri.Query);

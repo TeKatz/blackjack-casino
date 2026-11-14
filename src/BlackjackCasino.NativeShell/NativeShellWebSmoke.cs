@@ -54,8 +54,8 @@ internal static class NativeShellWebSmoke
                 bool startupLobbyReady = false;
                 for (int attempt = 0; attempt < 180; attempt++)
                 {
-                    if (form.PreviewMode is null && form.PreviewReady
-                        && form.PreviewBrowser is not null)
+                    if (form.BrowserMode is null && form.BrowserReady
+                        && form.BrowserCore is not null)
                     {
                         startupLobbyReady = true;
                         break;
@@ -65,7 +65,7 @@ internal static class NativeShellWebSmoke
                 if (!startupLobbyReady)
                     throw new InvalidOperationException(
                         "Native React startup lobby did not acknowledge its UI within the watchdog.");
-                string imported = await form.PreviewBrowser!.ExecuteScriptAsync(
+                string imported = await form.BrowserCore!.ExecuteScriptAsync(
                     "(()=>{const p=document.querySelector('.profile-widget');"
                     + "const b=document.querySelector('.lobby-finances');"
                     + "return Boolean(p?.textContent?.includes('Cutover Web Smoke')"
@@ -75,11 +75,11 @@ internal static class NativeShellWebSmoke
                         "The imported profile/wallet was not restored in the real React lobby.");
                 // The history screen must be populated from the isolated
                 // imported hand-history file, not the live WPF user profile.
-                await form.PreviewBrowser!.ExecuteScriptAsync(
+                await form.BrowserCore!.ExecuteScriptAsync(
                     "document.querySelector('.lobby-nav-item:nth-child(1)')?.getAttribute('aria-current')");
                 // Regression: navigating back to Lobby must not animate
                 // its entire art grid or show the former pixelated logo.
-                string lobbyLayout = await form.PreviewBrowser!.ExecuteScriptAsync(
+                string lobbyLayout = await form.BrowserCore!.ExecuteScriptAsync(
                     "(()=>{const grid=document.querySelector('.lobby-game-grid');"
                     + "const logo=document.querySelector('.brand-spade');"
                     + "return !!grid&&!!logo&&getComputedStyle(grid).animationName==='none'"
@@ -92,7 +92,7 @@ internal static class NativeShellWebSmoke
                 // the exact same DOM elements across a Slots -> Lobby filter trip.
                 // Recreating them invalidates DOM-keyed Pixi scenes and triggers
                 // the delayed fallback-art morph seen in production.
-                string captured = await form.PreviewBrowser!.ExecuteScriptAsync(
+                string captured = await form.BrowserCore!.ExecuteScriptAsync(
                     "(()=>{const tiles=[...document.querySelectorAll('.lobby-game')];"
                     + "const buttons=[...document.querySelectorAll('.lobby-nav-item')];"
                     + "const slots=buttons.find(x=>x.textContent?.trim()==='Slots');"
@@ -105,7 +105,7 @@ internal static class NativeShellWebSmoke
                     throw new InvalidOperationException(
                         "Could not capture the original React lobby tiles for Pixi identity regression.");
                 await Task.Delay(250);
-                string filtered = await form.PreviewBrowser.ExecuteScriptAsync(
+                string filtered = await form.BrowserCore.ExecuteScriptAsync(
                     "(()=>{const state=window.__nativeTileIdentitySmoke;"
                     + "if(!state||state.tiles.length!==document.querySelectorAll('.lobby-game').length)return false;"
                     + "return state.tiles.every(x=>x.isConnected)&&"
@@ -113,11 +113,11 @@ internal static class NativeShellWebSmoke
                 if (filtered != "true")
                     throw new InvalidOperationException(
                         "Lobby Slots tab remounted tiles or did not hide non-slot modes.");
-                await form.PreviewBrowser.ExecuteScriptAsync(
+                await form.BrowserCore.ExecuteScriptAsync(
                     "([...document.querySelectorAll('.lobby-nav-item')]"
                     + ".find(x=>x.textContent?.trim()==='Lobby'))?.click()");
                 await Task.Delay(250);
-                string restoredTiles = await form.PreviewBrowser.ExecuteScriptAsync(
+                string restoredTiles = await form.BrowserCore.ExecuteScriptAsync(
                     "(()=>{const state=window.__nativeTileIdentitySmoke;"
                     + "if(!state)return false;const now=[...document.querySelectorAll('.lobby-game')];"
                     + "const same=now.length===state.tiles.length&&"
@@ -133,7 +133,7 @@ internal static class NativeShellWebSmoke
                 // The real WebView2 document owns focus. Simulate its F11
                 // keyboard dispatch and require the native window to toggle
                 // in BOTH directions without a WinForms toolbar.
-                await form.PreviewBrowser.ExecuteScriptAsync(
+                await form.BrowserCore.ExecuteScriptAsync(
                     "window.dispatchEvent(new KeyboardEvent('keydown',"
                     + "{key:'F11',bubbles:true,cancelable:true}))");
                 bool full = false;
@@ -149,7 +149,7 @@ internal static class NativeShellWebSmoke
                 }
                 if (!full) throw new InvalidOperationException(
                     "React/WebView2 F11 did not toggle the native host to fullscreen.");
-                await form.PreviewBrowser.ExecuteScriptAsync(
+                await form.BrowserCore.ExecuteScriptAsync(
                     "window.dispatchEvent(new KeyboardEvent('keydown',"
                     + "{key:'F11',bubbles:true,cancelable:true}))");
                 bool restored = false;
@@ -178,8 +178,8 @@ internal static class NativeShellWebSmoke
                     bool ready = false;
                     for (int attempt = 0; attempt < 180; attempt++)
                     {
-                        if (form.PreviewMode == mode && form.PreviewReady
-                            && form.PreviewBrowser is not null)
+                        if (form.BrowserMode == mode && form.BrowserReady
+                            && form.BrowserCore is not null)
                         {
                             ready = true;
                             break;
@@ -190,14 +190,14 @@ internal static class NativeShellWebSmoke
                         throw new InvalidOperationException(
                             $"{mode} did not acknowledge its React UI within the startup watchdog.");
 
-                    string domReady = await form.PreviewBrowser!.ExecuteScriptAsync(
+                    string domReady = await form.BrowserCore!.ExecuteScriptAsync(
                         "Boolean(document.readyState==='complete' && document.body"
                         + " && document.body.children.length>0)");
                     if (domReady != "true")
                         throw new InvalidOperationException(mode + " did not render its React document.");
                     Console.WriteLine("PASS: WPF-free WebView2 React UI-ready: " + mode);
                     form.ReturnForAcceptance();
-                    if (form.PreviewMode is not null)
+                    if (form.BrowserMode is not null)
                         throw new InvalidOperationException(mode + " could not return to the native lobby.");
                 }
                 // Returning from a real game must show the real React lobby,
@@ -205,8 +205,8 @@ internal static class NativeShellWebSmoke
                 bool lobbyReady = false;
                 for (int attempt = 0; attempt < 180; attempt++)
                 {
-                    if (form.PreviewMode is null && form.PreviewReady
-                        && form.PreviewBrowser is not null)
+                    if (form.BrowserMode is null && form.BrowserReady
+                        && form.BrowserCore is not null)
                     {
                         lobbyReady = true;
                         break;
@@ -215,7 +215,7 @@ internal static class NativeShellWebSmoke
                 }
                 if (!lobbyReady)
                     throw new InvalidOperationException("Native React lobby was not ready.");
-                string lobbyDom = await form.PreviewBrowser!.ExecuteScriptAsync(
+                string lobbyDom = await form.BrowserCore!.ExecuteScriptAsync(
                     "Boolean(document.querySelector('.casino-lobby-shell'))");
                 if (lobbyDom != "true")
                     throw new InvalidOperationException("Native lobby did not render React.");

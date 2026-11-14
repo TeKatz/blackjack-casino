@@ -11,11 +11,11 @@ using BlackjackCasino.NativeShell;
 namespace BlackjackCasino.HostShared;
 
 /// <summary>
-/// First WPF-independent composition root. Isolated preview storage deliberately
-/// prevents an incomplete host from overwriting the installed casino's saves.
-/// It uses the very same validated blackjack/reels protocols and Core engines.
+/// Production C# game runtime, with exclusive profile writer lock and durable
+/// receipts. The existing NativeShell profile folder remains separate from the
+/// older legacy save root to protect users upgrading from WPF.
 /// </summary>
-internal sealed class NativePreviewRuntime : IDisposable
+internal sealed class NativeCasinoRuntime : IDisposable
 {
     private readonly string directory;
     // Prevent two native processes from modifying the same candidate journal,
@@ -75,10 +75,10 @@ internal sealed class NativePreviewRuntime : IDisposable
     internal bool EmpireStarted => empire.Started;
     internal string Status => status;
 
-    internal NativePreviewRuntime(string previewDirectory)
+    internal NativeCasinoRuntime(string profileDirectory)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(previewDirectory);
-        directory = HostPreviewStorage.RequireIsolatedDirectory(previewDirectory,
+        ArgumentException.ThrowIfNullOrWhiteSpace(profileDirectory);
+        directory = HostPreviewStorage.RequireIsolatedDirectory(profileDirectory,
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
         Directory.CreateDirectory(directory);
         try
@@ -102,9 +102,9 @@ internal sealed class NativePreviewRuntime : IDisposable
         rouletteJournal = new NativeRouletteJournal(directory);
         rouletteJournal.Recover();
         Preferences = PlayerStateStore.Load(directory);
-        progression = new PlayerProgressionController(LoadPreviewProfile(directory),
+        progression = new PlayerProgressionController(LoadProfileFromDisk(directory),
             initialHistory: PlayerProfileStore.LoadHistory(directory),
-            historySaver: entries => SavePreviewHistory(directory, entries));
+            historySaver: entries => SaveHistoryToDisk(directory, entries));
         empire = new EmpireService(Preferences.Empire);
         empire.SetClaimedAchievements(Profile.ClaimedChallengeIds);
         empire.SetActivitySnapshot(EmpireActivitySnapshot.FromProfile(Profile));
@@ -354,7 +354,7 @@ internal sealed class NativePreviewRuntime : IDisposable
     {
         object Reject(string message) => new { RoundId = roundId, Success = false, Message = message };
         if (disposed || rouletteRequiresRestart || ManorRequiresRestart)
-            return Reject("Preview save recovery requires restart.");
+            return Reject("Casino save recovery requires restart.");
         if (roundId == Guid.Empty) return Reject("Invalid round ID.");
         if (rouletteJournal.TryReceipt(roundId, out NativeRouletteReceipt? replay))
             return replay!;
@@ -395,7 +395,7 @@ internal sealed class NativePreviewRuntime : IDisposable
             or JsonException or InvalidDataException or InvalidOperationException)
         {
             rouletteRequiresRestart = true;
-            status = "Roulette checkpoint uncertain. Restart this preview before another wager.";
+            status = "Roulette checkpoint uncertain. Restart the casino before another wager.";
             return Reject(status + " " + ex.Message);
         }
     }
@@ -1236,9 +1236,9 @@ internal sealed class NativePreviewRuntime : IDisposable
             MidnightMerge = mergeBoard?.Snapshot ?? Preferences.MidnightMerge,
             Empire = empire.Snapshot,
         };
-        // This isolated preview directory is NEVER the production save folder.
+        // This native profile directory is intentionally separate from the legacy root.
         PlayerStateStore.SaveOrThrow(Preferences, directory);
-        SavePreviewProfile(directory, Profile);
+        SaveProfileToDisk(directory, Profile);
     }
 
     private static readonly JsonSerializerOptions ProfileJson = CreateProfileJson();
@@ -1250,7 +1250,7 @@ internal sealed class NativePreviewRuntime : IDisposable
         return options;
     }
 
-    private static PlayerProfileState LoadPreviewProfile(string directory)
+    private static PlayerProfileState LoadProfileFromDisk(string directory)
     {
         string path = Path.Combine(directory, "profile.json");
         try
@@ -1264,12 +1264,12 @@ internal sealed class NativePreviewRuntime : IDisposable
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {
-            // The preview must not touch the installed casino's profile.
+            // Do not mutate the legacy profile when native profile loading fails.
         }
         return PlayerProfileStore.SanitizeProfile(new PlayerProfileState());
     }
 
-    private static void SavePreviewHistory(string directory, IReadOnlyList<RoundHistoryEntry> history)
+    private static void SaveHistoryToDisk(string directory, IReadOnlyList<RoundHistoryEntry> history)
     {
         Directory.CreateDirectory(directory);
         string path = Path.Combine(directory, "hand-history.json");
@@ -1283,7 +1283,7 @@ internal sealed class NativePreviewRuntime : IDisposable
         File.Move(temp, path, overwrite: true);
     }
 
-    private static void SavePreviewProfile(string directory, PlayerProfileState profile)
+    private static void SaveProfileToDisk(string directory, PlayerProfileState profile)
     {
         Directory.CreateDirectory(directory);
         string path = Path.Combine(directory, "profile.json");

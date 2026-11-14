@@ -9,11 +9,11 @@ namespace BlackjackCasino.NativeShell;
 /// <summary>
 /// WPF-free detached Empire controller, independently mounted WebView2 epoch.
 /// Both embedded and detached windows share exactly one authoritative
-/// EmpireService and preview store; never fork or simulate estate currencies.
+/// EmpireService and durable native profile; never fork or simulate estate currencies.
 /// </summary>
 internal sealed class NativeEmpireDetachedForm : Form
 {
-    private readonly NativePreviewRuntime runtime;
+    private readonly NativeCasinoRuntime runtime;
     private readonly Task<CoreWebView2Environment> environment;
     private readonly string folder;
     private readonly Action parentChanged;
@@ -29,7 +29,7 @@ internal sealed class NativeEmpireDetachedForm : Form
     private bool listening, ready, closing;
     private DateTimeOffset lastSave = DateTimeOffset.UtcNow;
 
-    internal NativeEmpireDetachedForm(NativePreviewRuntime runtime,
+    internal NativeEmpireDetachedForm(NativeCasinoRuntime runtime,
         Task<CoreWebView2Environment> environment, string folder,
         Action parentChanged)
     {

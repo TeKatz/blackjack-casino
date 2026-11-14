@@ -13,7 +13,7 @@ namespace BlackjackCasino.NativeShell;
 internal sealed class NativeLoungeCaseBoardForm : Form
 {
     private const string Host = "midnight-manor.local";
-    private readonly NativePreviewRuntime runtime;
+    private readonly NativeCasinoRuntime runtime;
     private readonly Task<CoreWebView2Environment> environment;
     private readonly string folder;
     private readonly Action parentChanged;
@@ -26,7 +26,7 @@ internal sealed class NativeLoungeCaseBoardForm : Form
     private bool closing;
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
-    internal NativeLoungeCaseBoardForm(NativePreviewRuntime runtime,
+    internal NativeLoungeCaseBoardForm(NativeCasinoRuntime runtime,
         Task<CoreWebView2Environment> environment, string folder,
         Action parentChanged)
     {

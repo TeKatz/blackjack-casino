@@ -7,13 +7,13 @@ using BlackjackCasino.HostShared;
 namespace BlackjackCasino.NativeShell;
 
 /// <summary>
-/// Read-only projection of the preview's genuine C# financial and profile state
+/// Read-only projection of the casino's genuine C# financial and profile state
 /// into the existing React lobby wire contract. No mock account balances or
 /// synthetic progress; unavailable sub-systems stay disabled.
 /// </summary>
 internal static class NativeLobbySnapshot
 {
-    internal static object Create(NativePreviewRuntime session)
+    internal static object Create(NativeCasinoRuntime session)
     {
         PlayerProfileState player = session.Profile;
         AppPreferences preferences = session.Preferences;
@@ -93,14 +93,14 @@ internal static class NativeLobbySnapshot
             MusicVolume = preferences.MusicVolume,
             ShowEmpireBalance = preferences.ShowEmpireBalance,
             Language = preferences.Language == UiLanguagePreference.German ? "de" : "en",
-            Modes = HostMigrationCatalog.CasinoRoutes.Select(mode => new
+            Modes = NativeRouteCatalog.CasinoRoutes.Select(mode => new
             {
                 Id = mode.DesktopModeId,
                 Title = mode.DisplayName,
                 Category = Category(mode.DesktopModeId),
                 Description = Description(mode.DesktopModeId),
-                Enabled = mode.HasPreviewBridge || (mode.HasNativeProcess && NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory)),
-                Secondary = mode.HasSecondaryWindow && mode.HasPreviewBridge,
+                Enabled = mode.HasWebPage || (mode.HasNativeProcess && NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory)),
+                Secondary = mode.HasSecondaryWindow && mode.HasWebPage,
             }).ToArray(),
         };
     }

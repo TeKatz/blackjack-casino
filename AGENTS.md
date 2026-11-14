@@ -45,7 +45,7 @@ This file is the repository-level instruction for coding assistants and ChatGPT 
 - Every functional change needs tests at the appropriate layer: unit/contract tests for logic, state and wallet; host/UI smoke and screenshots for rendering; localization parity and German/English review for strings.
 - For performance-sensitive UI, measure before/after and record environment, frame times, memory, CPU/GPU observations and resize scenarios. Never claim faster FPS without evidence.
 - Run `python tools/check_repo_contract.py` whenever workflow or docs files change.
-- On Windows, use `python tools/check_native_cutover.py`, `dotnet restore BlackjackCasino.sln`, `dotnet build BlackjackCasino.sln -c Release`, `dotnet test BlackjackCasino.sln -c Release --no-build`, `dotnet run --project src/BlackjackCasino.NativeShell -- --smoke` and `--web-smoke` plus affected frontend tests. Do not claim unexecuted checks passed.
+- On Windows, use `python tools/check_native_cutover.py`, `dotnet restore BlackjackCasino.sln`, `dotnet build BlackjackCasino.sln -c Release`, `dotnet test BlackjackCasino.sln -c Release --no-build`, `dotnet run --project src/BlackjackCasino.NativeShell -- --smoke` and `--web-smoke`, `dotnet run --project tools/NativeMigrationDiagnostics -- --rehearsal-smoke` (synthetic data only) plus affected frontend tests. Do not claim unexecuted checks passed.
 - Review repository CI and the published artifact after changes; correct broken checks, do not merely disable them.
 - Any dependency or SDK upgrade is an isolated, verified change. Prefer reviewed updates over untested blanket version bumps.
 

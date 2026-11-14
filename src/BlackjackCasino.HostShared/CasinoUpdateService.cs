@@ -7,12 +7,12 @@ namespace BlackjackCasino.HostShared;
 /// WPF-independent desktop update transport. The shell owns prompts, progress display,
 /// updater launch and shutdown; this service keeps channel and package verification native.
 /// </summary>
-internal sealed class DesktopUpdateService : IDisposable
+internal sealed class CasinoUpdateService : IDisposable
 {
     private readonly HttpClient httpClient;
     private readonly bool ownsClient;
 
-    internal DesktopUpdateService(HttpClient? httpClient = null)
+    internal CasinoUpdateService(HttpClient? httpClient = null)
     {
         ownsClient = httpClient is null;
         this.httpClient = httpClient ?? new HttpClient { Timeout = TimeSpan.FromSeconds(20) };

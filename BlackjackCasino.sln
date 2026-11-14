@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackjackCasino.NativeShell
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackjackCasino.Tests", "tests\BlackjackCasino.Tests\BlackjackCasino.Tests.csproj", "{E5555555-5555-4555-8555-555555555555}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackjackCasino.MigrationDiagnostics", "tools\NativeMigrationDiagnostics\BlackjackCasino.MigrationDiagnostics.csproj", "{BC0D44F2-E881-4C5A-836A-2118DC274BED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,5 +46,9 @@ Global
 		{CCBA77B7-1551-44BA-9E11-32B7D0977F91}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CCBA77B7-1551-44BA-9E11-32B7D0977F91}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CCBA77B7-1551-44BA-9E11-32B7D0977F91}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC0D44F2-E881-4C5A-836A-2118DC274BED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC0D44F2-E881-4C5A-836A-2118DC274BED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC0D44F2-E881-4C5A-836A-2118DC274BED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC0D44F2-E881-4C5A-836A-2118DC274BED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

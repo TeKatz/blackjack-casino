@@ -58,7 +58,7 @@
     <Compile Include="../../src/BlackjackCasino.HostShared/LobbyProgressSnapshot.cs" Link="Presentation/LobbyProgressSnapshot.cs" />
     <Compile Include="../../src/BlackjackCasino.HostShared/AreaPresentationSettings.cs" Link="Persistence/AreaPresentationSettings.cs" />
     <Compile Include="../../src/BlackjackCasino.HostShared/AppPreferences.cs" Link="Persistence/AppPreferences.cs" />
-    <Compile Include="../../src/BlackjackCasino.HostShared/DesktopUpdateService.cs" Link="Infrastructure/DesktopUpdateService.cs" />
+    <Compile Include="../../src/BlackjackCasino.HostShared/CasinoUpdateService.cs" Link="Infrastructure/CasinoUpdateService.cs" />
     <Compile Include="../../src/BlackjackCasino.HostShared/CasinoHostPreferences.cs" Link="Infrastructure/CasinoHostPreferences.cs" />
     <Compile Include="../../src/BlackjackCasino.HostShared/DebouncedPersistenceWriter.cs" Link="Persistence/DebouncedPersistenceWriter.cs" />
     <Compile Include="../../src/BlackjackCasino.HostShared/PlayerStateStore.cs" Link="Persistence/PlayerStateStore.cs" />

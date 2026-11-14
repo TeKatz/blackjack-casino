@@ -77,6 +77,9 @@ jobs:
       - name: Verify native receipt and save state
         run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --smoke
 
+      - name: Historical save migration and rollback safety rehearsal
+        run: dotnet run --project tools/NativeMigrationDiagnostics/BlackjackCasino.MigrationDiagnostics.csproj --configuration Release --no-build -- --rehearsal-smoke
+
       - name: Verify native WebView2 interaction
         run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --web-smoke
 
@@ -130,6 +133,9 @@ jobs:
         run: |
           foreach ($executable in @("BlackjackCasino.NativeShell.exe", "BlackjackCasino.Desktop.exe", "tools/updater/BlackjackCasino.Updater.exe")) {
             if (!(Test-Path "artifacts/app/$executable")) { throw "Native package lacks: $executable" }
+          }
+          if (Test-Path artifacts/app/BlackjackCasino.MigrationDiagnostics.exe) {
+            throw "The offline migration diagnostic executable must not be packaged."
           }
           $index = "artifacts/app/ModernFrontend/index.html"
           $assets = "artifacts/app/ModernFrontend/assets"
