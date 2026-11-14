@@ -510,7 +510,76 @@ internal static partial class Program
         Require(texturesReady,"Cannot capture lobby artwork: one or more Pixi key-art textures failed.");
         await core.ExecuteScriptAsync(
             "document.querySelector('dialog.casino-news:modal .lobby-gold-button')?.click()");
-        await Task.Delay(220);
+        // Live WebView2 regression: switching categories must not replace the
+        // original art-window nodes or clear their Pixi first-frame readiness.
+        // The previous implementation remounted every filtered tile and visibly
+        // morphed from its CSS fallback into a freshly constructed GPU scene.
+        // Each ExecuteScriptAsync runs a synchronous probe. WebView2 does not
+        // guarantee that an async JavaScript IIFE is awaited before its result
+        // is JSON-serialized, so use host-side delays between navigation steps.
+        string before=await core.ExecuteScriptAsync("""
+            (()=>{
+              const arts=[...document.querySelectorAll('.lobby-game .game-art-window[data-mode-art]')];
+              window.__lobbyTileSmoke=new Map(arts.map(art=>[art.dataset.modeArt,art]));
+              return {initialCount:arts.length,initialReady:document.querySelectorAll(
+                '.lobby-game .game-art-window[data-pixi-art-ready="true"]').length,
+                navigation:[...document.querySelectorAll('.lobby-nav-item')]
+                  .map(button=>button.textContent?.trim())};
+            })()
+            """);
+        string slotsClick=await core.ExecuteScriptAsync("""
+            (()=>{
+              const slots=[...document.querySelectorAll('.lobby-nav-item')]
+                .find(button=>button.textContent?.trim()==='Slots');
+              if(!slots)return false;
+              slots.click();
+              return true;
+            })()
+            """);
+        await Task.Delay(200);
+        string filtered=await core.ExecuteScriptAsync("""
+            (()=>{
+              const ids=[...document.querySelectorAll('.lobby-game:not([hidden]) .game-art-window')]
+                .map(art=>art.dataset.modeArt).sort();
+              const expected=['midnight-reels','midnight-manor','neon-vault','nine-lives'].sort();
+              return {match:JSON.stringify(ids)===JSON.stringify(expected),ids};
+            })()
+            """);
+        string lobbyClick=await core.ExecuteScriptAsync("""
+            (()=>{
+              const lobby=[...document.querySelectorAll('.lobby-nav-item')]
+                .find(button=>button.textContent?.trim()==='Lobby');
+              if(!lobby)return false;
+              lobby.click();
+              return true;
+            })()
+            """);
+        await Task.Delay(200);
+        string returned=await core.ExecuteScriptAsync("""
+            (()=>{
+              const initial=window.__lobbyTileSmoke;
+              const retained=initial instanceof Map&&[...initial].every(([id,art])=>
+                document.querySelector('.game-art-window[data-mode-art="'+id+'"]')===art);
+              const visible=document.querySelectorAll('.lobby-game:not([hidden])').length;
+              const ready=document.querySelectorAll(
+                '.lobby-game .game-art-window[data-pixi-art-ready="true"]').length;
+              return {retained,visible,ready,initialSize:initial?.size};
+            })()
+            """);
+        await core.ExecuteScriptAsync("delete window.__lobbyTileSmoke");
+        using var filterStatus=System.Text.Json.JsonDocument.Parse(filtered);
+        using var returnStatus=System.Text.Json.JsonDocument.Parse(returned);
+        var returnRoot=returnStatus.RootElement;
+        bool stableTiles=slotsClick=="true"&&lobbyClick=="true"
+            &&filterStatus.RootElement.GetProperty("match").GetBoolean()
+            &&returnRoot.GetProperty("retained").GetBoolean()
+            &&returnRoot.GetProperty("visible").GetInt32()==returnRoot.GetProperty("initialSize").GetInt32()
+            &&returnRoot.GetProperty("ready").GetInt32()==9;
+        Require(stableTiles,
+            "Lobby category navigation reconstructed Pixi artwork or lost ready state. "
+            + $"Before={before}; SlotsClick={slotsClick}; Filtered={filtered}; "
+            + $"LobbyClick={lobbyClick}; Returned={returned}");
+        await Task.Delay(120);
         using var file=File.Create(Path.Combine(output,name+".png"));
         await core.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png,file);
         Require(file.Length>15_000,"WebView2 lobby capture unexpectedly empty.");

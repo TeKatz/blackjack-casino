@@ -69,8 +69,10 @@ export function LobbyAmbient({motionEnabled}:{motionEnabled:boolean}){
           }
         });
         syncVisibility=()=>{
-          if(document.hidden||!hostVisible)instance.ticker.stop();
-          else instance.ticker.start();
+          if(document.hidden||!hostVisible){
+            scene.invalidateVisibility();
+            instance.ticker.stop();
+          }else instance.ticker.start();
         };
         document.addEventListener('visibilitychange',syncVisibility);
         syncVisibility();
