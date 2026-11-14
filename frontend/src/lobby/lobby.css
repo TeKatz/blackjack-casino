@@ -739,7 +739,8 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
  position:absolute;left:50%;top:50%;
  width:var(--hero-art-width,calc(100% + 34px));
  aspect-ratio:896 / 299;
- background-image:url('/lobby/art/hero-parallax.avif');
+ background-image:var(--hero-atlas,url('/lobby/art/hero-parallax.avif'));
+ image-rendering:auto;
  background-size:100% 300%;
  background-repeat:no-repeat;
  pointer-events:none;

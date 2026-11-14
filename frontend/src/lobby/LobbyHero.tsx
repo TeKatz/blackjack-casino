@@ -1,4 +1,5 @@
 import {useEffect,useRef} from 'react';
+import {enhancedHeroAtlas} from './heroResolution';
 
 /**
  * The club banner uses three independently authored image plates, not three
@@ -55,6 +56,22 @@ export function LobbyHero({de,motionEnabled}:{de:boolean;motionEnabled:boolean})
         element.style.removeProperty(name);
     };
   },[motionEnabled]);
+  useEffect(()=>{
+    // Upgrade off the critical first paint. If image decode or Canvas fails,
+    // the original atlas remains visible with no navigation impact.
+    let live=true;
+    const job=window.setTimeout(()=>{
+      void enhancedHeroAtlas().then(url=>{
+        if(live&&url&&host.current)
+          host.current.style.setProperty('--hero-atlas',`url("${url}")`);
+      });
+    },350);
+    return ()=>{
+      live=false;
+      window.clearTimeout(job);
+      host.current?.style.removeProperty('--hero-atlas');
+    };
+  },[]);
   return <div ref={host} className="lobby-hero">
     <div className="lobby-hero-art" aria-hidden="true">
       <div className="lobby-hero-layer lobby-hero-layer-back"/>
