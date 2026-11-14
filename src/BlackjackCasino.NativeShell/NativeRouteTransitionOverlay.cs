@@ -1,0 +1,258 @@
+using System.Diagnostics;
+using System.Drawing.Drawing2D;
+
+namespace BlackjackCasino.NativeShell;
+
+/// <summary>
+/// A real owned, non-activating native window above WebView2's child HWND.
+/// Unlike a WinForms sibling Panel or CSS on the departing document it remains
+/// painted while WebView2 controllers are disposed and re-created. It never
+/// receives game intents or touches saved data.
+/// </summary>
+internal sealed class NativeRouteTransitionOverlay : Form
+{
+    private readonly Form host;
+    private readonly Control viewport;
+    private readonly System.Windows.Forms.Timer frames = new() { Interval = 16 };
+    private readonly Stopwatch clock = new();
+    private TaskCompletionSource<bool>? covering;
+    private string destination = "CASINO LOBBY";
+    private double fromOpacity, toOpacity;
+    private int durationMs, requestVersion;
+    private bool fading, reducedMotion;
+    private long frameIndex;
+
+    internal static string LabelFor(string? route) => route switch
+    {
+        null => "CASINO LOBBY",
+        "blackjack" => "BLACKJACK",
+        "roulette" => "ROULETTE",
+        "reels" => "MIDNIGHT REELS",
+        "neon-vault" => "NEON VAULT",
+        "nine-lives" => "NINE LIVES",
+        "midnight-merge" => "MIDNIGHT MERGE",
+        "midnight-dice" => "MIDNIGHT DICE",
+        "midnight-manor" => "MIDNIGHT MANOR",
+        "casino-empire" => "CASINO EMPIRE",
+        "chill-lounge" => "CHILL LOUNGE",
+        _ => "THE MIDNIGHT CLUB",
+    };
+
+    internal NativeRouteTransitionOverlay(Form host, Control viewport)
+    {
+        this.host = host;
+        this.viewport = viewport;
+        FormBorderStyle = FormBorderStyle.None;
+        ShowInTaskbar = false;
+        StartPosition = FormStartPosition.Manual;
+        BackColor = Color.FromArgb(7, 27, 24);
+        ForeColor = Color.FromArgb(239, 214, 168);
+        DoubleBuffered = true;
+        SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
+                 ControlStyles.OptimizedDoubleBuffer, true);
+        frames.Tick += (_, _) => TickTransition();
+    }
+
+    // WS_EX_NOACTIVATE keeps focus in the casino window; WS_EX_TOOLWINDOW
+    // prevents a second Alt+Tab/taskbar entry. The window itself blocks clicks
+    // while its destination is loading, preventing accidental duplicate bets.
+    protected override bool ShowWithoutActivation => true;
+    protected override CreateParams CreateParams
+    {
+        get
+        {
+            CreateParams parameters = base.CreateParams;
+            parameters.ExStyle |= 0x08000000 | 0x00000080;
+            return parameters;
+        }
+    }
+
+    private void AlignToViewport()
+    {
+        if (!host.IsHandleCreated || !viewport.IsHandleCreated
+            || host.WindowState == FormWindowState.Minimized) return;
+        Rectangle bounds = viewport.RectangleToScreen(viewport.ClientRectangle);
+        if (bounds.Width > 0 && bounds.Height > 0 && Bounds != bounds)
+            Bounds = bounds;
+    }
+
+    /// <summary>Fade over the old, still-valid WebView before any HWND removal.</summary>
+    internal Task CoverAsync(string? route, bool useReducedMotion, bool instant = false)
+    {
+        if (IsDisposed || !host.IsHandleCreated || host.IsDisposed)
+            return Task.CompletedTask;
+
+        ++requestVersion; // Invalidate a pending old-page reveal.
+        covering?.TrySetResult(true);
+        covering = null;
+        reducedMotion = useReducedMotion;
+        destination = LabelFor(route);
+        AlignToViewport();
+        if (!Visible)
+        {
+            Opacity = 0;
+            Show(host);
+            AlignToViewport();
+        }
+        if (useReducedMotion || instant)
+        {
+            fading = false;
+            Opacity = 1;
+            frames.Interval = 50;
+            frames.Start();
+            Invalidate();
+            return Task.CompletedTask;
+        }
+
+        covering = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        StartFade(1, 185);
+        return covering.Task;
+    }
+
+    private void StartFade(double target, int milliseconds)
+    {
+        fromOpacity = Opacity;
+        toOpacity = target;
+        durationMs = milliseconds;
+        fading = true;
+        clock.Restart();
+        frames.Interval = 16;
+        frames.Start();
+    }
+
+    /// <summary>
+    /// The real UI-ready acknowledgement occurs just as each document's own
+    /// 240 ms splash fades out. Wait until that splash finishes before revealing
+    /// the game, so no second title or blank intermediate frame peeks through.
+    /// </summary>
+    internal void RevealAfterReady()
+    {
+        if (!Visible || IsDisposed) return;
+        int version = ++requestVersion;
+        covering?.TrySetResult(true);
+        covering = null;
+        _ = RevealWhenPaintedAsync(version);
+    }
+
+    private async Task RevealWhenPaintedAsync(int version)
+    {
+        await Task.Delay(reducedMotion ? 40 : 270);
+        if (IsDisposed || !Visible || version != requestVersion) return;
+        if (reducedMotion)
+        {
+            Dismiss();
+            return;
+        }
+        StartFade(0, 245);
+    }
+
+    internal void Dismiss()
+    {
+        ++requestVersion;
+        covering?.TrySetResult(true);
+        covering = null;
+        fading = false;
+        frames.Stop();
+        if (IsDisposed) return;
+        Opacity = 0;
+        Hide();
+    }
+
+    private void TickTransition()
+    {
+        if (IsDisposed || !Visible) { frames.Stop(); return; }
+        AlignToViewport();
+        ++frameIndex;
+        if (fading)
+        {
+            double progress = Math.Clamp(clock.Elapsed.TotalMilliseconds / durationMs, 0, 1);
+            double eased = progress * progress * (3 - 2 * progress);
+            Opacity = Math.Clamp(fromOpacity + (toOpacity - fromOpacity) * eased, 0, 1);
+            if (progress >= 1)
+            {
+                fading = false;
+                if (toOpacity >= 1)
+                {
+                    covering?.TrySetResult(true);
+                    covering = null;
+                }
+                else
+                {
+                    Dismiss();
+                    return;
+                }
+                frames.Interval = 50;
+            }
+        }
+        // Small branded activity dots are cheap while the browser loads.
+        if (frameIndex % (fading ? 2 : 3) == 0) Invalidate();
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        base.OnPaint(e);
+        Graphics g = e.Graphics;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+        Rectangle rect = ClientRectangle;
+        if (rect.Width <= 0 || rect.Height <= 0) return;
+        g.Clear(Color.FromArgb(7, 27, 24));
+
+        using (var glow = new PathGradientBrush(new[]
+        {
+            new Point(rect.Width / 2, Math.Max(0, rect.Height / 5)),
+            new Point(rect.Width, rect.Height),
+            new Point(0, rect.Height),
+        }))
+        {
+            glow.CenterColor = Color.FromArgb(43, 91, 70);
+            glow.SurroundColors = new[] { Color.FromArgb(7, 27, 24) };
+            g.FillRectangle(glow, rect);
+        }
+
+        float middleX = rect.Width / 2f;
+        float middleY = rect.Height / 2f;
+        float scale = Math.Clamp(Math.Min(rect.Width / 1300f, rect.Height / 820f), .65f, 1.30f);
+        float titleSize = Math.Clamp(destination.Length > 16 ? 34f : 41f, 25f, 44f) * scale;
+        using Font markFont = new("Georgia", 38f * scale, FontStyle.Regular, GraphicsUnit.Pixel);
+        using Font brandFont = new("Segoe UI", 12f * scale, FontStyle.Bold, GraphicsUnit.Pixel);
+        using Font headingFont = new("Georgia", titleSize, FontStyle.Regular, GraphicsUnit.Pixel);
+        using SolidBrush gold = new(Color.FromArgb(235, 204, 153));
+        using SolidBrush cream = new(Color.FromArgb(249, 231, 191));
+        using Pen rule = new(Color.FromArgb(120, 151, 107), Math.Max(1f, scale));
+        using StringFormat centered = new() { Alignment = StringAlignment.Center };
+
+        g.DrawString("♠", markFont, gold,
+            new RectangleF(0, middleY - 115f * scale, rect.Width, 58f * scale), centered);
+        g.DrawString("THE MIDNIGHT CLUB", brandFont, gold,
+            new RectangleF(0, middleY - 48f * scale, rect.Width, 25f * scale), centered);
+        g.DrawString(destination, headingFont, cream,
+            new RectangleF(12f, middleY - 9f * scale, rect.Width - 24f, 60f * scale), centered);
+
+        float width = 175f * scale, lineY = middleY + 82f * scale;
+        g.DrawLine(rule, middleX - width / 2f, lineY, middleX + width / 2f, lineY);
+        for (int i = 0; i < 5; i++)
+        {
+            float radius = (i == (int)(frameIndex / 8 % 5) ? 4.2f : 2.25f) * scale;
+            float x = middleX + (i - 2) * 28f * scale;
+            using SolidBrush dot = new(i == (int)(frameIndex / 8 % 5)
+                ? Color.FromArgb(255, 227, 165) : Color.FromArgb(107, 154, 134));
+            g.FillEllipse(dot, x - radius, lineY + 16f * scale - radius,
+                2 * radius, 2 * radius);
+        }
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            ++requestVersion;
+            covering?.TrySetResult(true);
+            covering = null;
+            frames.Stop();
+            frames.Dispose();
+        }
+        base.Dispose(disposing);
+    }
+}
