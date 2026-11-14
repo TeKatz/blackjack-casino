@@ -4,7 +4,9 @@ import {createRoot} from 'react-dom/client';
 import {listenReels,sendReelsIntent} from './bridge';
 import type {ReelsIntent,ReelsSnapshot,ReelsSpin,ReelSymbol} from './bridge';
 import {ReelIcon} from './symbols';
+import {ReelsVfx} from './ReelsVfx';
 import './reels.css';
+import './reels-design.css';
 
 const CHIPS=[1,5,25,100,500,1000];
 const STOP_DELAYS=[1550,2100,2650];
@@ -153,22 +155,34 @@ function ReelsApp(){
      data-win-tier={!animating&&result&&Number(result.net)>0?(result.multiplier>=25?'jackpot':'win'):'none'}
      data-animating={animating} data-bet-pending={!!pending&&!animating} data-spin-id={result?.id??''}>
     <header className="reels-header">
-      <button className="reels-back" onClick={close}>← {t.back} <kbd>ESC</kbd></button>
-
+      <button className="reels-back" onClick={close}><span aria-hidden="true">‹</span> {t.back} <kbd>ESC</kbd></button>
+      <div className="reels-header-signature" aria-label="The Midnight Club">
+        <span aria-hidden="true">♠</span><small>THE MIDNIGHT CLUB</small>
+      </div>
       <div className="reels-header-wallet"><small>{t.balance}</small><strong>{money(s.bankroll)}</strong></div>
     </header>
     <div className="reels-body">
       <main className="reels-cabinet">
-        <div className="reels-atmosphere" aria-hidden="true">
-          <i/><i/><i/><i/><i/><i/>
+        <div className="reels-atmosphere" aria-hidden="true"><i/><i/><i/><i/><i/><i/></div>
+        <ReelsVfx enabled={s.animationsEnabled} spinning={animating} celebrationId={winBurst}
+          jackpot={!!result&&result.multiplier===100}/>
+        <div className="reels-crown-engraving" aria-hidden="true"><i/><span>✧</span><i/></div>
+        <div className="reels-brand">
+          <span className="reels-brand-wing" aria-hidden="true">✦</span>
+          <div className="reels-brand-name">
+            <small>THE MIDNIGHT CLUB</small>
+            <h2>MIDNIGHT <em>REELS</em></h2>
+          </div>
+          <span className="reels-brand-wing" aria-hidden="true">✦</span>
         </div>
-        <div className="reels-brand"><span>✦</span><h2>M I D N I G H T</h2><span>✦</span></div>
         <p className="reels-tagline">{t.tag}</p>
         <div className={'reels-lightband'+(!animating&&result?.multiplier===100?' jackpot':'')} aria-hidden="true">
           {Array.from({length:11},(_,i)=><i key={i}/>)}
         </div>
         <div className="reels-stage" data-testid="reels-display">
           <div className="reels-stage-illumination" aria-hidden="true"><i/><i/><i/></div>
+          <div className="reels-stage-etching" aria-hidden="true"><span>Ⅰ</span><span>Ⅱ</span><span>Ⅲ</span></div>
+          <div className="reels-stage-glass" aria-hidden="true"/>
           {winBurst===result?.id&&<div key={winBurst} className={'reels-win-burst'+
              (result&&result.multiplier>=25?' jackpot':'')} aria-hidden="true">
              {Array.from({length:16},(_,i)=><i key={i} style={{
@@ -199,8 +213,11 @@ function ReelsApp(){
           <small>{!animating&&result?('+'+result.playerXp+' XP · +'+result.seasonXp+' Season XP'+(result.levelUp?' · '+t.levelUp:'')):t.hint}</small>
         </div>
         <div className="reels-cabinet-footer">
-          <div className="reels-balances"><div><small>{t.balance}</small><strong>{money(s.bankroll)}</strong></div>
-            <div><small>{t.wager}</small><strong>{money(s.bet)}</strong></div></div>
+          <div className="reels-balances">
+            <div><small>{t.balance}</small><strong>{money(s.bankroll)}</strong></div>
+            <div><small>{t.wager}</small><strong>{money(s.bet)}</strong></div>
+            <div className="reels-last-return"><small>{t.win}</small><strong>{money(result?.payout??'0')}</strong></div>
+          </div>
           <div className="reels-chips" role="group" aria-label={t.wager}>
             {CHIPS.map(value=><button key={value} className={Number(s.bet)===value?'selected':''}
               disabled={locked||value>Number(s.bankroll)}
@@ -216,7 +233,8 @@ function ReelsApp(){
       </main>
       <aside className="reels-sidebar">
         <section className="reels-paytable">
-          <h2>{t.paytable}</h2><p>{t.paytableHint}</p>
+          <div className="reels-section-heading"><span aria-hidden="true">✧</span><h2>{t.paytable}</h2></div>
+          <p>{t.paytableHint}</p>
           {s.paytable.slice().reverse().map(item=><div className="reels-payrow" key={item.id}>
             <div className="reels-payicon"><ReelIcon symbol={item.id}/></div>
             <span>{item.name} × 3</span><strong>{item.tripleMultiplier}×</strong>
@@ -224,7 +242,7 @@ function ReelsApp(){
           <p>{t.returnStake}</p><p>{t.rules}</p><p>{t.rtp}</p>
         </section>
         <section className="reels-profile">
-          <h2>{t.stats}</h2>
+          <div className="reels-section-heading"><span aria-hidden="true">♠</span><h2>{t.stats}</h2></div>
           <div className="reels-level">PRESTIGE {s.profile.prestige} · LEVEL {s.profile.level} · ◆ {s.profile.coins.toLocaleString()}</div>
           <div className="reels-stats">
             <div>{t.spins}<strong>{s.stats.spins.toLocaleString()}</strong></div>
