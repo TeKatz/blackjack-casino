@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Shell.Window.Minimize" xml:space="preserve"><value>Minimize</value></data>
+  <data name="Shell.Window.MaxRestore" xml:space="preserve"><value>Maximize / Restore</value></data>
+  <data name="Shell.Window.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Shell.Shell.EmpireCreditHelp" xml:space="preserve"><value>Casino Empire construction credits. Your casino keeps earning while you play.</value></data>
+  <data name="Shell.Shell.ExitGame" xml:space="preserve"><value>EXIT GAME</value></data>
+  <data name="Shell.Shell.ExitHelp" xml:space="preserve"><value>Close Blackjack Casino</value></data>
+  <data name="Shell.Welcome.WindowTitle" xml:space="preserve"><value>Welcome to The Midnight Club</value></data>
+  <data name="Shell.Welcome.TopBar" xml:space="preserve"><value>THE MIDNIGHT CLUB   ·   WELCOME</value></data>
+  <data name="Shell.Welcome.Version" xml:space="preserve"><value>VERSION {0}</value></data>
+  <data name="Shell.Welcome.Back" xml:space="preserve"><value>Welcome back, {0}.</value></data>
+  <data name="Shell.Welcome.Intro" xml:space="preserve"><value>The tables are ready. Here is your club at a glance before the night begins.</value></data>
+  <data name="Shell.Welcome.Player" xml:space="preserve"><value>PLAYER</value></data>
+  <data name="Shell.Welcome.PlayerDetail" xml:space="preserve"><value>Prestige &amp; current level</value></data>
+  <data name="Shell.Welcome.Playtime" xml:space="preserve"><value>PLAYTIME</value></data>
+  <data name="Shell.Welcome.PlaytimeDetail" xml:space="preserve"><value>Lifetime at the club</value></data>
+  <data name="Shell.Welcome.Wagered" xml:space="preserve"><value>WAGERED</value></data>
+  <data name="Shell.Welcome.WageredDetail" xml:space="preserve"><value>Across casino games</value></data>
+  <data name="Shell.Welcome.Net" xml:space="preserve"><value>CASINO NET</value></data>
+  <data name="Shell.Welcome.NetProfit" xml:space="preserve"><value>Lifetime profit</value></data>
+  <data name="Shell.Welcome.NetResult" xml:space="preserve"><value>Lifetime result</value></data>
+  <data name="Shell.Welcome.Cosmetics" xml:space="preserve"><value>◆ {0:N0} cosmetic coins   ·   {1:N0} cosmetics owned</value></data>
+  <data name="Shell.Welcome.WhatsNew" xml:space="preserve"><value>WHAT'S NEW</value></data>
+  <data name="Shell.Welcome.Changes" xml:space="preserve"><value>Tonight's changes</value></data>
+  <data name="Shell.Welcome.Enter" xml:space="preserve"><value>ENTER THE CLUB  →</value></data>
+  <data name="Shell.Welcome.Ready" xml:space="preserve"><value>Your progress is loaded locally and ready.</value></data>
+  <data name="Shell.Welcome.NotesMissingTitle" xml:space="preserve"><value>Release notes unavailable</value></data>
+  <data name="Shell.Welcome.NotesMissingBody" xml:space="preserve"><value>No version-matched changelog was bundled with {0}.</value></data>
+  <data name="Shell.Profile.WindowTitle" xml:space="preserve"><value>Player profile · Blackjack Casino</value></data>
+  <data name="Shell.Profile.Back" xml:space="preserve"><value>← Back</value></data>
+  <data name="Shell.Profile.Header" xml:space="preserve"><value>BLACKJACK CASINO / PLAYER PROFILE</value></data>
+  <data name="Shell.Profile.Identity" xml:space="preserve"><value>Your casino identity</value></data>
+  <data name="Shell.Profile.DisplayName" xml:space="preserve"><value>DISPLAY NAME</value></data>
+  <data name="Shell.Profile.NameHelp" xml:space="preserve"><value>Profile name, up to 24 characters</value></data>
+  <data name="Shell.Profile.SaveName" xml:space="preserve"><value>Save name</value></data>
+  <data name="Shell.Profile.Progression" xml:space="preserve"><value>Progression &amp; shop →</value></data>
+  <data name="Shell.Profile.Statistics" xml:space="preserve"><value>Statistics →</value></data>
+  <data name="Shell.Profile.HandHistory" xml:space="preserve"><value>Hand History →</value></data>
+  <data name="Shell.Profile.Export" xml:space="preserve"><value>Save Progress…</value></data>
+  <data name="Shell.Profile.CollectionHeader" xml:space="preserve"><value>YOUR COLLECTION · PORTRAITS &amp; TITLES</value></data>
+  <data name="Shell.Profile.SearchHelp" xml:space="preserve"><value>Search owned portraits and titles</value></data>
+  <data name="Shell.Profile.Portraits" xml:space="preserve"><value>PORTRAITS</value></data>
+  <data name="Shell.Profile.Titles" xml:space="preserve"><value>EARNED TITLES</value></data>
+  <data name="Shell.Profile.LevelSummary" xml:space="preserve"><value>Level {0} · Prestige {1}
+◆ {2:N0} cosmetic coins</value></data>
+  <data name="Shell.Profile.CollectionSummary" xml:space="preserve"><value>{0} portraits · {1} titles · Choose your casino signature</value></data>
+  <data name="Shell.Profile.Equipped" xml:space="preserve"><value>Equipped</value></data>
+  <data name="Shell.Profile.UseTitle" xml:space="preserve"><value>Use title</value></data>
+  <data name="Shell.Profile.UsePortrait" xml:space="preserve"><value>Use portrait</value></data>
+  <data name="Shell.Profile.Using" xml:space="preserve"><value>Using {0}.</value></data>
+  <data name="Shell.Profile.NoTitles" xml:space="preserve"><value>No titles match your search.</value></data>
+  <data name="Shell.Profile.NoPortraits" xml:space="preserve"><value>No portraits match your search.</value></data>
+  <data name="Shell.Profile.ExportTitle" xml:space="preserve"><value>Save Player Progress</value></data>
+  <data name="Shell.Profile.ExportFilter" xml:space="preserve"><value>JSON progress export (*.json)|*.json</value></data>
+  <data name="Shell.Profile.Exported" xml:space="preserve"><value>Progress exported to {0}</value></data>
+  <data name="Shell.Profile.ExportFailed" xml:space="preserve"><value>Export failed: {0}</value></data>
+  <data name="Shell.Table.Preset" xml:space="preserve"><value>Table preset</value></data>
+  <data name="Shell.Table.Custom" xml:space="preserve"><value>Custom</value></data>
+  <data name="Shell.Table.Advanced" xml:space="preserve"><value>Advanced table setup…</value></data>
+  <data name="Shell.Table.CasualHelp" xml:space="preserve"><value>Casual Solo stays the default: no setup is required to just sit down and play.</value></data>
+  <data name="Shell.Table.BetweenHands" xml:space="preserve"><value>Table rules can only be changed between hands.</value></data>
+  <data name="Shell.Table.FinishHand" xml:space="preserve"><value>Finish the current hand before changing table rules.</value></data>
+  <data name="Shell.Table.Ready" xml:space="preserve"><value>{0} table ready. Place a bet to begin.</value></data>
+  <data name="Shell.Table.Preset.Casual.Name" xml:space="preserve"><value>Casual 3:2</value></data>
+  <data name="Shell.Table.Preset.Casual.Description" xml:space="preserve"><value>Relaxed default table: six decks, S17, 3:2 blackjack and forgiving actions.</value></data>
+  <data name="Shell.Table.Preset.LasVegasStrip.Name" xml:space="preserve"><value>Las Vegas Strip</value></data>
+  <data name="Shell.Table.Preset.LasVegasStrip.Description" xml:space="preserve"><value>A modern six-deck H17 table with peek, DAS and a conventional 3:2 payout.</value></data>
+  <data name="Shell.Table.Preset.DowntownVegas.Name" xml:space="preserve"><value>Downtown Vegas</value></data>
+  <data name="Shell.Table.Preset.DowntownVegas.Description" xml:space="preserve"><value>A punchier two-deck H17 game with 3:2 blackjack and no surrender.</value></data>
+  <data name="Shell.Table.Preset.AtlanticCity.Name" xml:space="preserve"><value>Atlantic City</value></data>
+  <data name="Shell.Table.Preset.AtlanticCity.Description" xml:space="preserve"><value>Eight decks, S17, 3:2 blackjack, DAS and late surrender.</value></data>
+  <data name="Shell.Table.Preset.European.Name" xml:space="preserve"><value>European No-Hole-Card</value></data>
+  <data name="Shell.Table.Preset.European.Description" xml:space="preserve"><value>Six-deck S17 ENHC: the dealer takes the second card only after player actions.</value></data>
+  <data name="Shell.Table.Preset.SingleDeck.Name" xml:space="preserve"><value>Single Deck</value></data>
+  <data name="Shell.Table.Preset.SingleDeck.Description" xml:space="preserve"><value>One deck, H17, 3:2 blackjack and tighter doubling/splitting rules.</value></data>
+  <data name="Shell.Table.Dialog.Title" xml:space="preserve"><value>Advanced table setup</value></data>
+  <data name="Shell.Table.Dialog.BarTitle" xml:space="preserve"><value>  ·  TABLE SETUP</value></data>
+  <data name="Shell.Table.Dialog.Peek" xml:space="preserve"><value>Dealer peeks for blackjack</value></data>
+  <data name="Shell.Table.Dialog.Insurance" xml:space="preserve"><value>Insurance available</value></data>
+  <data name="Shell.Table.Dialog.Surrender" xml:space="preserve"><value>Late surrender</value></data>
+  <data name="Shell.Table.Dialog.DoubleAfterSplit" xml:space="preserve"><value>Double after split (DAS)</value></data>
+  <data name="Shell.Table.Dialog.ResplitAces" xml:space="preserve"><value>Resplit aces</value></data>
+  <data name="Shell.Table.Dialog.HitSplitAces" xml:space="preserve"><value>Hit split aces</value></data>
+  <data name="Shell.Table.Dialog.S17" xml:space="preserve"><value>Stand on soft 17 (S17)</value></data>
+  <data name="Shell.Table.Dialog.H17" xml:space="preserve"><value>Hit soft 17 (H17)</value></data>
+  <data name="Shell.Table.Dialog.UsHole" xml:space="preserve"><value>US hole card</value></data>
+  <data name="Shell.Table.Dialog.EuroHole" xml:space="preserve"><value>European no-hole-card (ENHC)</value></data>
+  <data name="Shell.Table.Dialog.AnyTwo" xml:space="preserve"><value>Any first two cards</value></data>
+  <data name="Shell.Table.Dialog.NineEleven" xml:space="preserve"><value>Totals 9–11 only</value></data>
+  <data name="Shell.Table.Dialog.TenEleven" xml:space="preserve"><value>Totals 10–11 only</value></data>
+  <data name="Shell.Table.Dialog.Heading" xml:space="preserve"><value>Advanced table rules</value></data>
+  <data name="Shell.Table.Dialog.Description" xml:space="preserve"><value>These settings are optional. Casual Solo remains available as a one-click preset.</value></data>
+  <data name="Shell.Table.Dialog.Decks" xml:space="preserve"><value>Decks</value></data>
+  <data name="Shell.Table.Dialog.Dealer17" xml:space="preserve"><value>Dealer 17</value></data>
+  <data name="Shell.Table.Dialog.DealerCards" xml:space="preserve"><value>Dealer cards</value></data>
+  <data name="Shell.Table.Dialog.Payout" xml:space="preserve"><value>Blackjack pays</value></data>
+  <data name="Shell.Table.Dialog.Double" xml:space="preserve"><value>Double</value></data>
+  <data name="Shell.Table.Dialog.MaxSplit" xml:space="preserve"><value>Maximum split hands</value></data>
+  <data name="Shell.Table.Dialog.Penetration" xml:space="preserve"><value>Shoe penetration</value></data>
+  <data name="Shell.Table.Dialog.MinBet" xml:space="preserve"><value>Minimum bet</value></data>
+  <data name="Shell.Table.Dialog.MaxBet" xml:space="preserve"><value>Maximum bet</value></data>
+  <data name="Shell.Table.Dialog.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Shell.Table.Dialog.Apply" xml:space="preserve"><value>Use custom rules</value></data>
+  <data name="Shell.Table.Dialog.BetError" xml:space="preserve"><value>Minimum and maximum bet must be valid numbers (for example 5 or 2500).</value></data>
+  <data name="Shell.Profile.NameSaved" xml:space="preserve"><value>Profile name saved.</value></data>
+  <data name="Shell.Profile.NameRequired" xml:space="preserve"><value>Enter a profile name.</value></data>
+  <data name="Shell.Profile.NameTooLong" xml:space="preserve"><value>Use at most 24 characters.</value></data>
+  <data name="Shell.Table.CustomDescription" xml:space="preserve"><value>Your saved custom rules. Advanced setup changes only this profile.</value></data>
+  <data name="Shell.Table.Late" xml:space="preserve"><value>Late</value></data>
+  <data name="Shell.Table.Off" xml:space="preserve"><value>Off</value></data>
+  <data name="Shell.Table.Pays32" xml:space="preserve"><value>BLACKJACK PAYS 3 TO 2</value></data>
+  <data name="Shell.Table.Pays65" xml:space="preserve"><value>BLACKJACK PAYS 6 TO 5</value></data>
+  <data name="Shell.Table.DealerS17" xml:space="preserve"><value>DEALER STANDS ON ALL 17</value></data>
+  <data name="Shell.Table.DealerH17" xml:space="preserve"><value>DEALER HITS SOFT 17</value></data>
+  <data name="Shell.Table.Dialog.ErrorDecks" xml:space="preserve"><value>DeckCount must be between 1 and 8.</value></data>
+  <data name="Shell.Table.Dialog.ErrorSplit" xml:space="preserve"><value>MaxSplitHands must be between 1 and 8.</value></data>
+  <data name="Shell.Table.Dialog.ErrorPayout" xml:space="preserve"><value>BlackjackPayout must be positive.</value></data>
+  <data name="Shell.Table.Dialog.ErrorPenetration" xml:space="preserve"><value>Penetration must be between 0 and 1 (exclusive).</value></data>
+  <data name="Shell.Table.Dialog.ErrorMinBet" xml:space="preserve"><value>MinimumBet must be positive.</value></data>
+  <data name="Shell.Table.Dialog.ErrorMaxBet" xml:space="preserve"><value>MaximumBet must be greater than or equal to MinimumBet.</value></data>
+</root>

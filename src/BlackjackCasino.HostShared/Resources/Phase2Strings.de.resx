@@ -1,0 +1,585 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Phase2.KniffelView.001" xml:space="preserve"><value>THE MIDNIGHT CLUB  /  WÜRFEL-LOUNGE</value></data>
+  <data name="Phase2.KniffelView.002" xml:space="preserve"><value>Midnight Dice</value></data>
+  <data name="Phase2.KniffelView.003" xml:space="preserve"><value>ENTSPANNT · SOLO</value></data>
+  <data name="Phase2.KniffelView.004" xml:space="preserve"><value>Partieergebnisse</value></data>
+  <data name="Phase2.KniffelView.005" xml:space="preserve"><value>Neues Spiel</value></data>
+  <data name="Phase2.KniffelView.006" xml:space="preserve"><value>← Casino</value></data>
+  <data name="Phase2.KniffelView.007" xml:space="preserve"><value>DEIN WÜRFELTISCH</value></data>
+  <data name="Phase2.KniffelView.008" xml:space="preserve"><value>GESAMTPUNKTZAHL</value></data>
+  <data name="Phase2.KniffelView.009" xml:space="preserve"><value>Würfel anklicken, um sie zu behalten oder freizugeben</value></data>
+  <data name="Phase2.KniffelView.010" xml:space="preserve"><value>Punkteblätter der Gegner ansehen</value></data>
+  <data name="Phase2.KniffelView.011" xml:space="preserve"><value>Würfeln</value></data>
+  <data name="Phase2.KniffelView.012" xml:space="preserve"><value>Bis zu 3 Würfe · 13 Runden · kein Einsatz</value></data>
+  <data name="Phase2.KniffelView.013" xml:space="preserve"><value>Leuchtende Felder zeigen deine möglichen Punkte.
+Wähle ein Feld auf dem Punkteblatt und bestätige deine Wertung.</value></data>
+  <data name="Phase2.KniffelView.014" xml:space="preserve"><value>Dein Punkteblatt</value></data>
+  <data name="Phase2.KniffelView.015" xml:space="preserve"><value>PUNKTE</value></data>
+  <data name="Phase2.KniffelView.016" xml:space="preserve"><value>Punkte eintragen</value></data>
+  <data name="Phase2.KniffelView.017" xml:space="preserve"><value>Streichen</value></data>
+  <data name="Phase2.KniffelView.018" xml:space="preserve"><value>Dieses Feld mit null Punkten füllen</value></data>
+  <data name="Phase2.KniffelView.019" xml:space="preserve"><value>Neues Spiel beginnen?</value></data>
+  <data name="Phase2.KniffelView.020" xml:space="preserve"><value>Dadurch wird deine aktuelle Partie ersetzt. Du kannst jederzeit zum Casino zurückkehren und später weiterspielen.</value></data>
+  <data name="Phase2.KniffelView.021" xml:space="preserve"><value>Neues Spiel beginnen</value></data>
+  <data name="Phase2.KniffelView.022" xml:space="preserve"><value>Partie fortsetzen</value></data>
+  <data name="Phase2.SlotMachine.001" xml:space="preserve"><value>Midnight Reels · Blackjack Casino</value></data>
+  <data name="Phase2.SlotMachine.002" xml:space="preserve"><value>CASINO / SPIELAUTOMATEN</value></data>
+  <data name="Phase2.SlotMachine.003" xml:space="preserve"><value>MIDNIGHT REELS</value></data>
+  <data name="Phase2.SlotMachine.004" xml:space="preserve"><value>← Casino-Lobby  [Esc]</value></data>
+  <data name="Phase2.SlotMachine.005" xml:space="preserve"><value>DREI WALZEN · EINE GEWINNLINIE · SPIELGELD</value></data>
+  <data name="Phase2.SlotMachine.006" xml:space="preserve"><value>Deine kleine Auszeit.</value></data>
+  <data name="Phase2.SlotMachine.007" xml:space="preserve"><value>Wähle einen Einsatz und drehe die Walzen. Auch die Leertaste funktioniert.</value></data>
+  <data name="Phase2.SlotMachine.008" xml:space="preserve"><value>GEMEINSAMES GUTHABEN</value></data>
+  <data name="Phase2.SlotMachine.009" xml:space="preserve"><value>EINSATZ PRO DREHUNG</value></data>
+  <data name="Phase2.SlotMachine.010" xml:space="preserve"><value>DREHEN  [LEERTASTE]</value></data>
+  <data name="Phase2.SlotMachine.011" xml:space="preserve"><value>GEWINNTABELLE</value></data>
+  <data name="Phase2.SlotMachine.012" xml:space="preserve"><value>Drei gleiche Symbole auf der mittleren Linie</value></data>
+  <data name="Phase2.SlotMachine.013" xml:space="preserve"><value>Zwei Kirschen zahlen das 1-Fache deines Einsatzes.</value></data>
+  <data name="Phase2.SlotMachine.014" xml:space="preserve"><value>Gewinne enthalten den Einsatz. Nur die mittlere Linie zählt; alle anderen Kombinationen zahlen 0 $.</value></data>
+  <data name="Phase2.SlotMachine.015" xml:space="preserve"><value>Unabhängige, gewichtete Walzen · theoretische Auszahlungsquote 97,05 %.</value></data>
+  <data name="Phase2.SlotMachine.016" xml:space="preserve"><value>Pro Drehung: 20 XP + 15 Saison-XP.
+Bei Gewinn: +5 XP und +5 Saison-XP.
+Die Einsatzhöhe verändert die XP nicht.</value></data>
+  <data name="Phase2.SlotMachine.017" xml:space="preserve"><value>Automatengeräusche</value></data>
+  <data name="Phase2.SlotMachine.018" xml:space="preserve"><value>Walzen- und Lichtanimationen</value></data>
+  <data name="Phase2.SlotMachine.019" xml:space="preserve"><value>Nur kostenloses Offline-Spielgeld.</value></data>
+  <data name="Phase2.Manor.001" xml:space="preserve"><value>Midnight Manor · Blackjack Casino</value></data>
+  <data name="Phase2.Manor.002" xml:space="preserve"><value>BLACKJACK CASINO  /  EINE ANDERE ART VON NACHT</value></data>
+  <data name="Phase2.Manor.003" xml:space="preserve"><value>MIDNIGHT MANOR</value></data>
+  <data name="Phase2.Manor.004" xml:space="preserve"><value>GEMEINSAMES SPIELGELDGUTHABEN</value></data>
+  <data name="Phase2.Manor.006" xml:space="preserve"><value>DAS HAUS ERINNERT SICH</value></data>
+  <data name="Phase2.Manor.007" xml:space="preserve"><value>20 FESTE GEWINNLINIEN · FÜNF WALZEN · EINE SPUKNACHT</value></data>
+  <data name="Phase2.Manor.008" xml:space="preserve"><value>Eine stille Einladung.</value></data>
+  <data name="Phase2.Manor.009" xml:space="preserve"><value>Drei Monde: Freispielrunden. Zwei Türen: Betritt das Anwesen.</value></data>
+  <data name="Phase2.Manor.010" xml:space="preserve"><value>GESAMTEINSATZ</value></data>
+  <data name="Phase2.Manor.011" xml:space="preserve"><value>TEMPO</value></data>
+  <data name="Phase2.Manor.012" xml:space="preserve"><value>Normal</value></data>
+  <data name="Phase2.Manor.013" xml:space="preserve"><value>Schnell</value></data>
+  <data name="Phase2.Manor.014" xml:space="preserve"><value>Turbo</value></data>
+  <data name="Phase2.Manor.016" xml:space="preserve"><value>Unbegrenzt</value></data>
+  <data name="Phase2.Manor.017" xml:space="preserve"><value>AUTO STARTEN</value></data>
+  <data name="Phase2.Manor.018" xml:space="preserve"><value>STOPP</value></data>
+  <data name="Phase2.Manor.019" xml:space="preserve"><value>Gewinne</value></data>
+  <data name="Phase2.Manor.020" xml:space="preserve"><value>Einstellungen</value></data>
+  <data name="Phase2.Manor.021" xml:space="preserve"><value>Statistiken</value></data>
+  <data name="Phase2.Manor.022" xml:space="preserve"><value>3 / 4 / 5 GLEICHE SYMBOLE VON LINKS</value></data>
+  <data name="Phase2.Manor.023" xml:space="preserve"><value>Linienpunkte × Gesamteinsatz ÷ 20</value></data>
+  <data name="Phase2.Manor.024" xml:space="preserve"><value>Wild ersetzt reguläre Symbole. Pro Linie zählt nur der höchste Gewinn. Gewinne enthalten den Einsatz.
+
+3 / 4 / 5 Monde: 8 / 12 / 20 Freispiele mit doppelten Liniengewinnen. Während der Freispiele werden keine weiteren Features ausgelöst.
+
+2 Türen: Besuch im Anwesen, Ausgang 25× (alle Raumgewinne auf ein Zehntel reduziert). 3 / 4 / 5 Türen: volle Gewinne, Ausgang 250× / 500× / 1000×.
+Eintritt ins Anwesen: ungefähr einmal in 50 bezahlten Drehungen; unabhängige Zufallsziehungen, keine Garantie.
+
+Theoretische Auszahlungsquote bei Referenzstrategie: 95,0228 %. Manuelle Entscheidungen können Risiko und Ertrag verändern.</value></data>
+  <data name="Phase2.Manor.025" xml:space="preserve"><value>DEINE NACHT, DEIN TEMPO</value></data>
+  <data name="Phase2.Manor.026" xml:space="preserve"><value>Escape the Manor selbst spielen</value></data>
+  <data name="Phase2.Manor.027" xml:space="preserve"><value>Auto nutzt dieselbe Karte und dieselben Geisterregeln und folgt der Empfehlung. Keine Überspringgebühr und keine gekürzten Gewinne. Eigene Wege verändern Risiko und Ertrag.</value></data>
+  <data name="Phase2.Manor.028" xml:space="preserve"><value>Auto bei großem Gewinn stoppen (ab 25×)</value></data>
+  <data name="Phase2.Manor.029" xml:space="preserve"><value>Auto nach Anwesen-Bonus stoppen</value></data>
+  <data name="Phase2.Manor.030" xml:space="preserve"><value>Mindestguthaben für Auto ($)</value></data>
+  <data name="Phase2.Manor.031" xml:space="preserve"><value>Soundeffekte</value></data>
+  <data name="Phase2.Manor.032" xml:space="preserve"><value>Anwesen-Atmosphäre / Musik</value></data>
+  <data name="Phase2.Manor.033" xml:space="preserve"><value>Animationen</value></data>
+  <data name="Phase2.Manor.034" xml:space="preserve"><value>Die Lautstärke übernimmt die gespeicherte Casino-Einstellung. Beim Schließen bleiben aktive Features erhalten. Auto startet nach dem nächsten Öffnen niemals selbstständig.
+
+Anwesenregeln: Der Geist folgt den kürzesten Wegen, auch durch verschlossene Türen. Zwei Züge lang bewegt er sich langsam, danach einen Raum, gelegentlich mit kurzen Ausbrüchen; ab Spukstufe 6 zieht er zwei Räume. Jede Bewegung auf deiner Route lässt Zeit verstreichen. Die Kerze deckt auf, das Amulett wehrt einen Fangversuch ab und Kontrollpunkte sichern den aktuellen Multiplikator. Sobald du das Tor erreichst, endet die Verfolgung.</value></data>
+  <data name="Phase2.Manor.035" xml:space="preserve"><value>MIDNIGHT MANOR · STATISTIK</value></data>
+  <data name="Phase2.Manor.036" xml:space="preserve"><value>ESCAPE THE MANOR</value></data>
+  <data name="Phase2.Manor.037" xml:space="preserve"><value>AKTUELL / KONTROLLPUNKT</value></data>
+  <data name="Phase2.Manor.038" xml:space="preserve"><value>SPUK / 8</value></data>
+  <data name="Phase2.Manor.039" xml:space="preserve"><value>EMPFEHLUNG FOLGEN  [R]</value></data>
+  <data name="Phase2.Manor.040" xml:space="preserve"><value>KERZE  [C]</value></data>
+  <data name="Phase2.Manor.041" xml:space="preserve"><value>ANWESEN VERLASSEN  [L]</value></data>
+  <data name="Phase2.Manor.042" xml:space="preserve"><value>Nur Spielgeld · Einstellungen und offene Features werden automatisch gespeichert.</value></data>
+  <data name="Phase2.NeonVault.001" xml:space="preserve"><value>Neon Vault</value></data>
+  <data name="Phase2.NeonVault.002" xml:space="preserve"><value>←  LOBBY</value></data>
+  <data name="Phase2.NeonVault.003" xml:space="preserve"><value>NEON VAULT</value></data>
+  <data name="Phase2.NeonVault.004" xml:space="preserve"><value>BRICH DAS SYSTEM  ·  KNACKE DEN TRESOR</value></data>
+  <data name="Phase2.NeonVault.005" xml:space="preserve"><value>ZUGANGSSTUFE I</value></data>
+  <data name="Phase2.NeonVault.006" xml:space="preserve"><value>MINI</value></data>
+  <data name="Phase2.NeonVault.007" xml:space="preserve"><value>ZUGANGSSTUFE II</value></data>
+  <data name="Phase2.NeonVault.008" xml:space="preserve"><value>KLEIN</value></data>
+  <data name="Phase2.NeonVault.009" xml:space="preserve"><value>ZUGANGSSTUFE III</value></data>
+  <data name="Phase2.NeonVault.010" xml:space="preserve"><value>GROSS</value></data>
+  <data name="Phase2.NeonVault.011" xml:space="preserve"><value>ZUGANGSSTUFE IV</value></data>
+  <data name="Phase2.NeonVault.012" xml:space="preserve"><value>HAUPTTRESOR</value></data>
+  <data name="Phase2.NeonVault.013" xml:space="preserve"><value>SYSTEMSTATUS</value></data>
+  <data name="Phase2.NeonVault.014" xml:space="preserve"><value>TRESOR ONLINE</value></data>
+  <data name="Phase2.NeonVault.015" xml:space="preserve"><value>1.024 GEWINNWEGE AKTIV</value></data>
+  <data name="Phase2.NeonVault.016" xml:space="preserve"><value>FEATURE-MATRIX</value></data>
+  <data name="Phase2.NeonVault.017" xml:space="preserve"><value>WILD-AUSWEITUNG</value></data>
+  <data name="Phase2.NeonVault.018" xml:space="preserve"><value>BLACKOUT / ÜBERLASTUNG</value></data>
+  <data name="Phase2.NeonVault.019" xml:space="preserve"><value>TRESORBRUCH-FREISPIELE</value></data>
+  <data name="Phase2.NeonVault.020" xml:space="preserve"><value>JACKPOT-ZUGANGSSCHLÜSSEL</value></data>
+  <data name="Phase2.NeonVault.021" xml:space="preserve"><value>EINSATZKLASSE</value></data>
+  <data name="Phase2.NeonVault.022" xml:space="preserve"><value>STANDARDZUGANG</value></data>
+  <data name="Phase2.NeonVault.023" xml:space="preserve"><value>High-Roller-Darstellung ab 10.000 $. Tresorklasse ab 100.000 $.</value></data>
+  <data name="Phase2.NeonVault.024" xml:space="preserve"><value>TRESORENERGIE</value></data>
+  <data name="Phase2.NeonVault.025" xml:space="preserve"><value>Während der Freispiele aufladen, um die SICHERHEITSUMGEHUNG zu aktivieren.</value></data>
+  <data name="Phase2.NeonVault.026" xml:space="preserve"><value>TRESORBRUCH</value></data>
+  <data name="Phase2.NeonVault.027" xml:space="preserve"><value>KEINE FREISPIELE</value></data>
+  <data name="Phase2.NeonVault.028" xml:space="preserve"><value>Wilds auf den Walzen 2–4 breiten sich im Bonus automatisch aus.</value></data>
+  <data name="Phase2.NeonVault.029" xml:space="preserve"><value>LETZTER GEWINN</value></data>
+  <data name="Phase2.NeonVault.030" xml:space="preserve"><value>Zugang bereit.</value></data>
+  <data name="Phase2.NeonVault.031" xml:space="preserve"><value>EINSATZ</value></data>
+  <data name="Phase2.NeonVault.032" xml:space="preserve"><value>MAX</value></data>
+  <data name="Phase2.NeonVault.033" xml:space="preserve"><value>1.024 GEWINNWEGE  ·  FÜNF WALZEN  ·  VIER REIHEN</value></data>
+  <data name="Phase2.NeonVault.034" xml:space="preserve"><value>System bereit. Wähle deinen Einsatz.</value></data>
+  <data name="Phase2.NeonVault.035" xml:space="preserve"><value>Ausweitende Wilds · Blackout · Freispiele · Tresor-Jackpots</value></data>
+  <data name="Phase2.NeonVault.036" xml:space="preserve"><value>SOUND</value></data>
+  <data name="Phase2.NeonVault.037" xml:space="preserve"><value>ANIMATIONEN</value></data>
+  <data name="Phase2.NeonVault.039" xml:space="preserve"><value>SYSTEMEREIGNIS</value></data>
+  <data name="Phase2.NeonVault.040" xml:space="preserve"><value>BLACKOUT</value></data>
+  <data name="Phase2.NeonVault.041" xml:space="preserve"><value>SICHERHEITSGITTER OFFLINE</value></data>
+  <data name="Phase2.NeonVault.042" xml:space="preserve"><value>GROSSGEWINN</value></data>
+  <data name="Phase2.NineLives.001" xml:space="preserve"><value>Nine Lives</value></data>
+  <data name="Phase2.NineLives.002" xml:space="preserve"><value>←  CASINO</value></data>
+  <data name="Phase2.NineLives.003" xml:space="preserve"><value>Zurück zum Casino (Esc)</value></data>
+  <data name="Phase2.NineLives.004" xml:space="preserve"><value>NINE LIVES</value></data>
+  <data name="Phase2.NineLives.005" xml:space="preserve"><value>HOHE VOLATILITÄT · 3×3 · FÜNF LINIEN</value></data>
+  <data name="Phase2.NineLives.006" xml:space="preserve"><value>EINSTELLEN</value></data>
+  <data name="Phase2.NineLives.007" xml:space="preserve"><value>Einstellungen für Nine Lives</value></data>
+  <data name="Phase2.NineLives.008" xml:space="preserve"><value>DAS SPIEL</value></data>
+  <data name="Phase2.NineLives.009" xml:space="preserve"><value>Eine gefährliche Katze. Fünf Linien. Keine kleinen Siege.</value></data>
+  <data name="Phase2.NineLives.010" xml:space="preserve"><value>SPRUNG-WILD</value></data>
+  <data name="Phase2.NineLives.011" xml:space="preserve"><value>Die schwarze Katze kann nach dem Walzenstopp ein zweites Feld treffen.</value></data>
+  <data name="Phase2.NineLives.012" xml:space="preserve"><value>Drei Bonussymbole erwecken neun Freispiele.</value></data>
+  <data name="Phase2.NineLives.013" xml:space="preserve"><value>VOLLES RASTER</value></data>
+  <data name="Phase2.NineLives.014" xml:space="preserve"><value>Ein vollständiges 3×3-Raster mit gleichen Symbolen zahlt 5.000×.</value></data>
+  <data name="Phase2.NineLives.015" xml:space="preserve"><value>GEWINNE</value></data>
+  <data name="Phase2.NineLives.016" xml:space="preserve"><value>Gewinnsymbole leuchten, während die gesamte Gewinnlinie über das Raster gleitet.</value></data>
+  <data name="Phase2.NineLives.017" xml:space="preserve"><value>TISCHINFO</value></data>
+  <data name="Phase2.NineLives.018" xml:space="preserve"><value>GEWINNLINIEN</value></data>
+  <data name="Phase2.NineLives.019" xml:space="preserve"><value>FREISPIELE</value></data>
+  <data name="Phase2.NineLives.020" xml:space="preserve"><value>VOLATILITÄT</value></data>
+  <data name="Phase2.NineLives.021" xml:space="preserve"><value>HOCH</value></data>
+  <data name="Phase2.NineLives.022" xml:space="preserve"><value>HÖCHSTGEWINN</value></data>
+  <data name="Phase2.NineLives.023" xml:space="preserve"><value>MITTERNACHTSGLÜCK</value></data>
+  <data name="Phase2.NineLives.024" xml:space="preserve"><value>✦  LEGENDÄRE TREFFER</value></data>
+  <data name="Phase2.NineLives.025" xml:space="preserve"><value>Gewinnsymbole leuchten auf der Walze und zeichnen ihre Gewinnlinie nach.</value></data>
+  <data name="Phase2.NineLives.026" xml:space="preserve"><value>Fünf Linien. Drei Walzen. Eine gefährliche Katze.</value></data>
+  <data name="Phase2.NineLives.027" xml:space="preserve"><value>GEWINNTABELLE</value></data>
+  <data name="Phase2.NineLives.028" xml:space="preserve"><value>Gewinntabelle</value></data>
+  <data name="Phase2.NineLives.029" xml:space="preserve"><value>Einsatz verringern</value></data>
+  <data name="Phase2.NineLives.031" xml:space="preserve"><value>Einsatz erhöhen</value></data>
+  <data name="Phase2.NineLives.032" xml:space="preserve"><value>AUTO ×20</value></data>
+  <data name="Phase2.NineLives.033" xml:space="preserve"><value>Automatisch drehen</value></data>
+  <data name="Phase2.NineLives.034" xml:space="preserve"><value>DREHEN</value></data>
+  <data name="Phase2.NineLives.035" xml:space="preserve"><value>Drehen</value></data>
+  <data name="Phase2.NineLives.036" xml:space="preserve"><value>MAX. EINSATZ</value></data>
+  <data name="Phase2.NineLives.037" xml:space="preserve"><value>Höchstmöglicher Einsatz</value></data>
+  <data name="Phase2.NineLives.038" xml:space="preserve"><value>LETZTER GEWINN</value></data>
+  <data name="Phase2.NineLives.039" xml:space="preserve"><value>← CASINO</value></data>
+  <data name="Phase2.NineLives.040" xml:space="preserve"><value>Zurück zum Casino</value></data>
+  <data name="Phase2.NineLives.041" xml:space="preserve"><value>EINSTELLUNGEN</value></data>
+  <data name="Phase2.NineLives.042" xml:space="preserve"><value>Ton</value></data>
+  <data name="Phase2.NineLives.044" xml:space="preserve"><value>NINE LIVES · GEWINNTABELLE</value></data>
+  <data name="Phase2.NineLives.045" xml:space="preserve"><value>Fünf Gewinnlinien · hohe Volatilität · Höchstgewinn 5.000×</value></data>
+  <data name="Phase2.NineLives.046" xml:space="preserve"><value>GRUNDSPIEL</value></data>
+  <data name="Phase2.NineLives.047" xml:space="preserve"><value>Drei waagerechte Reihen und beide Diagonalen zahlen von links nach rechts über das ganze 3×3-Raster. Wild ersetzt reguläre Symbole.</value></data>
+  <data name="Phase2.NineLives.048" xml:space="preserve"><value>Ein gelandetes Wild kann nach dem Walzenstopp auf ein zweites Feld springen und in letzter Sekunde eine Gewinnlinie bilden.</value></data>
+  <data name="Phase2.NineLives.049" xml:space="preserve"><value>NINE-LIVES-BONUS</value></data>
+  <data name="Phase2.NineLives.050" xml:space="preserve"><value>Drei Nine-Lives-Symbole geben neun Freispiele. Sie verwenden den auslösenden Einsatz und kosten kein zusätzliches Guthaben.</value></data>
+  <data name="Phase2.NineLives.051" xml:space="preserve"><value>VOLLES-RASTER-FIEBER</value></data>
+  <data name="Phase2.NineLives.052" xml:space="preserve"><value>Fülle das gesamte 3×3-Raster mit einem einzigen regulären Symbol für den seltenen Höchstgewinn von 5.000×.</value></data>
+  <data name="Phase2.NineLives.053" xml:space="preserve"><value>ZURÜCK ZUM SPIEL</value></data>
+  <data name="Phase2.Static.001" xml:space="preserve"><value>Wähle deinen Würfelabend</value></data>
+  <data name="Phase2.Static.002" xml:space="preserve"><value>Zwei Spielweisen. Deine entspannte Partie und der Casinotisch werden getrennt gespeichert.</value></data>
+  <data name="Phase2.Static.003" xml:space="preserve"><value>Ein Spiel in deinem Tempo</value></data>
+  <data name="Phase2.Static.004" xml:space="preserve"><value>Kein Eintritt · XP beim Abschluss · keine Gegner</value></data>
+  <data name="Phase2.Static.005" xml:space="preserve"><value>Würfle, halte Würfel fest und fülle dein Blatt in deinem eigenen Tempo.</value></data>
+  <data name="Phase2.Static.006" xml:space="preserve"><value>Gespeicherte Partie fortsetzen</value></data>
+  <data name="Phase2.Static.007" xml:space="preserve"><value>Neue entspannte Partie</value></data>
+  <data name="Phase2.Static.008" xml:space="preserve"><value>Eine neue Partie ersetzt dieses entspannte Punkteblatt.</value></data>
+  <data name="Phase2.Static.009" xml:space="preserve"><value>Noch keine entspannte Partie aktiv.</value></data>
+  <data name="Phase2.Static.010" xml:space="preserve"><value>CASINO · DU + 3 KI</value></data>
+  <data name="Phase2.Static.011" xml:space="preserve"><value>Nimm am Tisch Platz</value></data>
+  <data name="Phase2.Static.012" xml:space="preserve"><value>Mara · ausgewogen   /   Felix · Sammler   /   June · risikofreudig</value></data>
+  <data name="Phase2.Static.013" xml:space="preserve"><value>Je 13 Runden · gleiche Regeln · eigene Würfel</value></data>
+  <data name="Phase2.Static.014" xml:space="preserve"><value>EINTRITTSGEBÜHR</value></data>
+  <data name="Phase2.Static.015" xml:space="preserve"><value>Preise enthalten den Einsatz. Bei Gleichstand werden die Preise der belegten Plätze geteilt und auf Cent abgerundet.</value></data>
+  <data name="Phase2.Static.016" xml:space="preserve"><value>Eintritt zahlen &amp; Partie starten</value></data>
+  <data name="Phase2.Static.017" xml:space="preserve"><value>Eine bezahlte Partie läuft bereits</value></data>
+  <data name="Phase2.Static.018" xml:space="preserve"><value>Tischpartie aufgeben…</value></data>
+  <data name="Phase2.Static.019" xml:space="preserve"><value>Aufgabe bestätigen</value></data>
+  <data name="Phase2.Static.020" xml:space="preserve"><value>Beim Aufgeben verlierst du den Einsatz und erhältst weder Preis noch XP. Zurück zum Spiel erhält die Partie.</value></data>
+  <data name="Phase2.Static.021" xml:space="preserve"><value>Einmal bezahlt. Beim Verlassen wird deine Partie pausiert.</value></data>
+  <data name="Phase2.Static.022" xml:space="preserve"><value>Zurück zum Spiel</value></data>
+  <data name="Phase2.Static.023" xml:space="preserve"><value>Casinotisch · Punkteblätter der Gegner</value></data>
+  <data name="Phase2.Static.024" xml:space="preserve"><value>Zurück zum Tisch</value></data>
+  <data name="Phase2.Static.025" xml:space="preserve"><value>THE MIDNIGHT CLUB  /  PARTIEERGEBNIS</value></data>
+  <data name="Phase2.Static.026" xml:space="preserve"><value>Tischpartie aufgegeben</value></data>
+  <data name="Phase2.Static.027" xml:space="preserve"><value>Dein Punkteblatt ist vollständig</value></data>
+  <data name="Phase2.Static.028" xml:space="preserve"><value>Tabellenspitze</value></data>
+  <data name="Phase2.Static.029" xml:space="preserve"><value>Ein letzter Blick auf den Tisch</value></data>
+  <data name="Phase2.Static.030" xml:space="preserve"><value>EINTRITT BEZAHLT</value></data>
+  <data name="Phase2.Static.031" xml:space="preserve"><value>PREIS AUSGEZAHLT</value></data>
+  <data name="Phase2.Static.032" xml:space="preserve"><value>NETTOGEWINN</value></data>
+  <data name="Phase2.Static.033" xml:space="preserve"><value>NETTOVERLUST</value></data>
+  <data name="Phase2.Static.034" xml:space="preserve"><value>AUSGEGLICHEN</value></data>
+  <data name="Phase2.Static.035" xml:space="preserve"><value>Ausgezahlter Preis abzüglich Eintritt</value></data>
+  <data name="Phase2.Static.036" xml:space="preserve"><value>Aktuelles Casino-Guthaben: </value></data>
+  <data name="Phase2.Static.037" xml:space="preserve"><value> · Geld bereits gespeichert</value></data>
+  <data name="Phase2.Static.038" xml:space="preserve"><value>Bei Punktegleichstand werden die Preise der belegten Plätze geteilt und auf Cent abgerundet.</value></data>
+  <data name="Phase2.Static.039" xml:space="preserve"><value>Entspanntes Spiel · kein Eintritt und keine Geldprämie</value></data>
+  <data name="Phase2.Static.040" xml:space="preserve"><value>PUNKTSTAND BEIM VERLASSEN</value></data>
+  <data name="Phase2.Static.041" xml:space="preserve"><value>ENDSTAND &amp; PUNKTEÜBERSICHT</value></data>
+  <data name="Phase2.Static.042" xml:space="preserve"><value>Gewertete Kombinationen: </value></data>
+  <data name="Phase2.Static.043" xml:space="preserve"><value>Keine Abschluss-XP · für aufgegebene Partien gibt es keine Abschlussbelohnung.</value></data>
+  <data name="Phase2.Static.044" xml:space="preserve"><value>Zurück zum Punkteblatt</value></data>
+  <data name="Phase2.Static.045" xml:space="preserve"><value>Spieleinstellungen</value></data>
+  <data name="Phase2.Static.046" xml:space="preserve"><value>Zurück zum Casino</value></data>
+  <data name="Phase2.Static.047" xml:space="preserve"><value>Würfle zuerst, halte Würfel fest und würfle erneut oder wähle eine Wertung. Deine Partie wird automatisch gespeichert.</value></data>
+  <data name="Phase2.Static.048" xml:space="preserve"><value>Die Partie konnte nicht gespeichert werden. Deine letzte Aktion wurde nicht übernommen; versuche es erneut.</value></data>
+  <data name="Phase2.Static.049" xml:space="preserve"><value>CASINO · 4 SPIELER</value></data>
+  <data name="Phase2.Static.050" xml:space="preserve"><value>Tisch geschlossen</value></data>
+  <data name="Phase2.Static.051" xml:space="preserve"><value>Deine Punkte wurden gespeichert. Mara, Felix und June spielen ihre Runden …</value></data>
+  <data name="Phase2.Static.052" xml:space="preserve"><value>Die Würfel rollen …</value></data>
+  <data name="Phase2.Static.053" xml:space="preserve"><value>Partie beendet</value></data>
+  <data name="Phase2.Static.054" xml:space="preserve"><value>Alle 13 Felder sind ausgefüllt.</value></data>
+  <data name="Phase2.Static.055" xml:space="preserve"><value>Würfel rollen …</value></data>
+  <data name="Phase2.Static.056" xml:space="preserve"><value>Partie beendet</value></data>
+  <data name="Phase2.Static.057" xml:space="preserve"><value>Erneut würfeln</value></data>
+  <data name="Phase2.Static.058" xml:space="preserve"><value>Feld auswählen</value></data>
+  <data name="Phase2.Static.059" xml:space="preserve"><value>Fünf Würfel. Deine Entscheidung.</value></data>
+  <data name="Phase2.Static.060" xml:space="preserve"><value>Neue Partie. Viel Glück beim Würfeln!</value></data>
+  <data name="Phase2.Static.061" xml:space="preserve"><value>Die Walzen drehen sich …</value></data>
+  <data name="Phase2.Static.062" xml:space="preserve"><value>Eine mittlere Gewinnlinie. Los geht's.</value></data>
+  <data name="Phase2.Static.063" xml:space="preserve"><value>DREHT SICH …</value></data>
+  <data name="Phase2.Static.064" xml:space="preserve"><value>Kein Spielgeld mehr. Setze dein Guthaben am Blackjack-Tisch zurück.</value></data>
+  <data name="Phase2.Static.065" xml:space="preserve"><value>Wähle einen kleineren Einsatz, um weiterzuspielen.</value></data>
+  <data name="Phase2.Static.066" xml:space="preserve"><value>TRESORBRUCH AKTIV</value></data>
+  <data name="Phase2.Static.067" xml:space="preserve"><value>WALZEN AKTIVIERT</value></data>
+  <data name="Phase2.Static.068" xml:space="preserve"><value>Freispiel wird ausgewertet …</value></data>
+  <data name="Phase2.Static.069" xml:space="preserve"><value>Tresorwalzen drehen sich …</value></data>
+  <data name="Phase2.Static.070" xml:space="preserve"><value>Ergebnis steht fest. Die Walzen zeigen jetzt den Gewinn.</value></data>
+  <data name="Phase2.Static.071" xml:space="preserve"><value>SYSTEM STABIL</value></data>
+  <data name="Phase2.Static.072" xml:space="preserve"><value>AUTOMATISCHE FREISPIELFOLGE</value></data>
+  <data name="Phase2.Static.073" xml:space="preserve"><value>SPANNUNGSMODUS</value></data>
+  <data name="Phase2.Static.074" xml:space="preserve"><value>WIRD AUSGEWERTET …</value></data>
+  <data name="Phase2.Static.075" xml:space="preserve"><value>Der gewählte Einsatz übersteigt dein aktuelles Spielgeldguthaben.</value></data>
+  <data name="Phase2.Static.076" xml:space="preserve"><value>Dein Guthaben reicht für diesen Einsatz nicht aus.</value></data>
+  <data name="Phase2.Static.077" xml:space="preserve"><value>Zwei Leben leuchten. Ein weiteres kann die Nacht eröffnen …</value></data>
+  <data name="Phase2.Static.078" xml:space="preserve"><value>SPRUNG-WILD – die schwarze Katze ist auf ein weiteres Feld gesprungen.</value></data>
+  <data name="Phase2.Static.079" xml:space="preserve"><value>Automatische Drehungen beendet.</value></data>
+  <data name="Phase2.Static.080" xml:space="preserve"><value>FREISPIEL</value></data>
+  <data name="Phase2.Static.081" xml:space="preserve"><value>Dein gespeichertes Feature wird fortgesetzt. Es wurde kein neuer Einsatz abgebucht.</value></data>
+  <data name="Phase2.Static.082" xml:space="preserve"><value> Dein letzter gespeicherter Kontrollpunkt bleibt erhalten.</value></data>
+  <data name="Phase2.Static.083" xml:space="preserve"><value>SPUKNACHT · DOPPELTE LINIENGEWINNE</value></data>
+  <data name="Phase2.Static.084" xml:space="preserve"><value>Die Walzen erwachen …</value></data>
+  <data name="Phase2.Static.085" xml:space="preserve"><value>EIN BESUCH IM ANWESEN</value></data>
+  <data name="Phase2.Static.086" xml:space="preserve"><value>Automatisch mit derselben Karte und denselben Geisterregeln abgeschlossen</value></data>
+  <data name="Phase2.Static.087" xml:space="preserve"><value>Bereits besucht</value></data>
+  <data name="Phase2.Static.088" xml:space="preserve"><value>1000× · DAS MONDLICHTTOR</value></data>
+  <data name="Phase2.Static.089" xml:space="preserve"><value>Auto gestoppt. Alle gespeicherten Features bleiben erhalten.</value></data>
+  <data name="Phase2.Static.090" xml:space="preserve"><value>FEATURE FORTSETZEN</value></data>
+  <data name="Phase2.Static.091" xml:space="preserve"><value> · ANWESEN PAUSIERT</value></data>
+  <data name="Phase2.Static.092" xml:space="preserve"><value>CHILL LOUNGE · MEMORY</value></data>
+  <data name="Phase2.Static.093" xml:space="preserve"><value>Finde die Paare. Lass dir alle Zeit, die du brauchst.</value></data>
+  <data name="Phase2.Static.094" xml:space="preserve"><value>PAARE GEFUNDEN</value></data>
+  <data name="Phase2.Static.095" xml:space="preserve"><value>BESTE SERIE</value></data>
+  <data name="Phase2.Static.096" xml:space="preserve"><value>AKTUELLES SPIELFELD</value></data>
+  <data name="Phase2.Static.097" xml:space="preserve"><value>KARTENSET</value></data>
+  <data name="Phase2.Static.098" xml:space="preserve"><value>SO FUNKTIONIERT'S</value></data>
+  <data name="Phase2.Static.099" xml:space="preserve"><value>Decke zwei Karten auf. Ein passendes Paar bleibt sichtbar, ein Fehlversuch wird wieder umgedreht. Aufeinanderfolgende Treffer erhöhen deine Serie.</value></data>
+  <data name="Phase2.Static.100" xml:space="preserve"><value>Wähle eine Feldgröße oder setze deine aktuelle Partie fort.</value></data>
+  <data name="Phase2.Static.101" xml:space="preserve"><value>Setze die aktuelle Partie fort oder beende sie, bevor du eine neue beginnst.</value></data>
+  <data name="Phase2.Static.102" xml:space="preserve"><value>TREFFERSERIE</value></data>
+  <data name="Phase2.Static.103" xml:space="preserve"><value>Paare in Folge ohne Fehlversuch.</value></data>
+  <data name="Phase2.Static.104" xml:space="preserve"><value>SPIELNOTIZEN</value></data>
+  <data name="Phase2.Static.105" xml:space="preserve"><value>Eine Karte ist aufgedeckt · finde ihr Gegenstück.</value></data>
+  <data name="Phase2.Static.106" xml:space="preserve"><value>Kein Paar · merk dir die Positionen.</value></data>
+  <data name="Phase2.Static.107" xml:space="preserve"><value>Decke zwei Karten auf und finde alle Paare.</value></data>
+  <data name="Phase2.Static.108" xml:space="preserve"><value>Karte aufdecken</value></data>
+  <data name="Phase2.Static.109" xml:space="preserve"><value>PARTIE FORTSETZEN</value></data>
+  <data name="Phase2.Static.110" xml:space="preserve"><value>Finde alle Paare</value></data>
+  <data name="Phase2.Static.111" xml:space="preserve"><value>Perfektes Gedächtnis</value></data>
+  <data name="Phase2.Static.112" xml:space="preserve"><value>Feld abgeschlossen</value></data>
+  <data name="Phase2.Static.113" xml:space="preserve"><value>ABSCHLUSSBELONUNG</value></data>
+  <data name="Phase2.Static.114" xml:space="preserve"><value>FREECELL-PARTIE #</value></data>
+  <data name="Phase2.Static.115" xml:space="preserve"><value>Notizen, Rückgängig/Wiederholen, optionale Hinweise und automatisches Speichern. Jede Schwierigkeit im freien Spiel behält ihr eigenes pausiertes Rätsel. Tägliche Rätsel haben eine separate Bibliothek.</value></data>
+  <data name="Phase2.Static.116" xml:space="preserve"><value>Deine bisherige Spielzeit bleibt immer im Spielstand erhalten.</value></data>
+  <data name="Phase2.Static.117" xml:space="preserve"><value>WÖRTER ZU FINDEN</value></data>
+  <data name="Phase2.Static.118" xml:space="preserve"><value>HINWEIS · Anfangsbuchstaben aufdecken</value></data>
+  <data name="Phase2.Static.119" xml:space="preserve"><value>Auf dieser Linie liegt keines der gesuchten Wörter. Such weiter.</value></data>
+  <data name="Phase2.Static.120" xml:space="preserve"><value>Alle Wörter wurden bereits gefunden.</value></data>
+  <data name="Phase2.Static.121" xml:space="preserve"><value>Ziehe in beliebiger Richtung über ein gesuchtes Wort.</value></data>
+  <data name="Phase2.Static.122" xml:space="preserve"><value>Dein Casino arbeitet weiter. Wähle einen Raum, um ihn zu eröffnen oder auszubauen.</value></data>
+  <data name="Phase2.Static.123" xml:space="preserve"><value>Geld abholen</value></data>
+  <data name="Phase2.Static.124" xml:space="preserve"><value>Vollständig ausgebaut</value></data>
+  <data name="Phase2.Static.125" xml:space="preserve"><value>Prestige noch nicht beansprucht</value></data>
+  <data name="Phase2.Static.126" xml:space="preserve"><value>PRESTIGE GESPERRT</value></data>
+  <data name="Phase2.Static.127" xml:space="preserve"><value>WILLKOMMEN ZURÜCK, BOSS</value></data>
+  <data name="Phase2.Static.128" xml:space="preserve"><value>Das Casino hat weitergearbeitet.</value></data>
+  <data name="Phase2.Static.129" xml:space="preserve"><value>Offline für </value></data>
+  <data name="Phase2.Static.130" xml:space="preserve"><value>AUSGEWÄHLTES ANWESEN · RAUMEINNAHMEN</value></data>
+  <data name="Phase2.Static.131" xml:space="preserve"><value>Die Offline-Produktion hat das </value></data>
+  <data name="Phase2.Static.132" xml:space="preserve"><value>EINSAMMELN &amp; FORTFAHREN</value></data>
+  <data name="Phase2.Static.133" xml:space="preserve"><value>Änderungen werden sofort gespeichert. Alle Boni gelten nur innerhalb des Empire-Modus.</value></data>
+  <data name="Phase2.Static.134" xml:space="preserve"><value>← Anwesenübersicht</value></data>
+  <data name="Phase2.Static.135" xml:space="preserve"><value>Projekte &amp; Immobilien</value></data>
+  <data name="Phase2.Static.136" xml:space="preserve"><value>Alle Stufen abgeschlossen</value></data>
+  <data name="Phase2.Static.137" xml:space="preserve"><value>ABGESCHLOSSEN · DAUERHAFT</value></data>
+  <data name="Phase2.Static.138" xml:space="preserve"><value>Deaktivieren</value></data>
+  <data name="Phase2.Static.139" xml:space="preserve"><value>Automatische Ausbauten aktivieren</value></data>
+  <data name="Phase2.Static.140" xml:space="preserve"><value>Prioritätswarteschlange</value></data>
+  <data name="Phase2.Static.141" xml:space="preserve"><value>Wird im Prioritätenmodus verwendet. Wähle eine Abteilung, um sie zu verschieben oder zu entfernen.</value></data>
+  <data name="Phase2.Static.142" xml:space="preserve"><value>Nach oben</value></data>
+  <data name="Phase2.Static.143" xml:space="preserve"><value>Nach unten</value></data>
+  <data name="Phase2.Static.144" xml:space="preserve"><value>Automatik speichern</value></data>
+  <data name="Phase2.Static.145" xml:space="preserve"><value>Gib gültige Zahlen für Reserve, Budget und Zielstufe ein.</value></data>
+  <data name="Phase2.Static.146" xml:space="preserve"><value>Automatik bereit · Entscheidungen alle 30 Produktionssekunden.</value></data>
+  <data name="Phase2.Static.147" xml:space="preserve"><value>Gesperrt · baue die Geschäftsführung und erforsche die Verwaltungsautomatik.</value></data>
+  <data name="Phase2.Static.148" xml:space="preserve"><value>Ereignis starten</value></data>
+  <data name="Phase2.Static.149" xml:space="preserve"><value>Erfüllten Auftrag abholen</value></data>
+  <data name="Phase2.Static.150" xml:space="preserve"><value>Auftrag annehmen</value></data>
+  <data name="Phase2.Static.151" xml:space="preserve"><value>Anwesen verwalten</value></data>
+  <data name="Phase2.Static.152" xml:space="preserve"><value>Immobilie kaufen</value></data>
+  <data name="Phase2.Static.153" xml:space="preserve"><value>Wähle einen Knoten zur Ansicht. Die Linien zeigen die genauen Voraussetzungen. Forschungen kosten Vermächtnispunkte aus dem Prestige.</value></data>
+  <data name="Phase2.Static.154" xml:space="preserve"><value>◆ VORAUSSETZUNG ERFORDERLICH</value></data>
+  <data name="Phase2.Static.155" xml:space="preserve"><value>● BEREIT ZUR FORSCHUNG</value></data>
+  <data name="Phase2.Static.156" xml:space="preserve"><value>◇ VERMÄCHTNISPUNKTE SPAREN</value></data>
+  <data name="Phase2.Static.157" xml:space="preserve"><value>Dauerhaft gemeistert</value></data>
+  <data name="Phase2.Static.158" xml:space="preserve"><value>Nächsten Rang erforschen  ✦</value></data>
+  <data name="Phase2.Static.159" xml:space="preserve"><value>Voraussetzungen nicht erfüllt</value></data>
+  <data name="Phase2.Static.160" xml:space="preserve"><value>ANWESENÜBERSICHT</value></data>
+  <data name="Phase2.Static.161" xml:space="preserve"><value>Zeige mit der Maus auf eine Aktion, um die Kosten zu sehen</value></data>
+  <data name="Phase2.Static.162" xml:space="preserve"><value>Alle eigenen Immobilien · laufende Produktion</value></data>
+  <data name="Phase2.Static.163" xml:space="preserve"><value>Wähle oben einen Raum, um Ausbau, Betrieb, Verbindungen und Leistung zu untersuchen.</value></data>
+  <data name="Phase2.Static.164" xml:space="preserve"><value>Spezialisten wechseln</value></data>
+  <data name="Phase2.Static.165" xml:space="preserve"><value>Alle Meilensteine abgeschlossen.</value></data>
+  <data name="Phase2.Static.166" xml:space="preserve"><value>Der nächste Ausbau ist bezahlbar.</value></data>
+  <data name="Phase2.Static.167" xml:space="preserve"><value>Kein aktiver Spezialist in diesem Raum.</value></data>
+  <data name="Phase2.Static.168" xml:space="preserve"><value>Automatik pausieren</value></data>
+  <data name="Phase2.Static.169" xml:space="preserve"><value>Automatik fortsetzen</value></data>
+  <data name="Phase2.Static.170" xml:space="preserve"><value>(Basis einschließlich Stufenmeilensteinen) × Prestige × Erfolge × (1 + begrenzter Strategiebonus). Die endgültige Raumproduktion ist auf 100 Qi Credits/Sek. gedeckelt. Die Automatik kauft Ausbauten und verdient Ansehen.</value></data>
+  <data name="Phase2.Static.171" xml:space="preserve"><value>Zukünftiger Verbund · Etage muss erst freigeschaltet werden</value></data>
+  <data name="Phase2.Static.172" xml:space="preserve"><value>Alle Stufen aktiv.</value></data>
+  <data name="Phase2.Static.173" xml:space="preserve"><value>Noch keine Verbünde beeinflussen diesen Raum.</value></data>
+  <data name="Phase2.Static.174" xml:space="preserve"><value>VORSCHAU / keine Baukosten</value></data>
+  <data name="Phase2.Static.175" xml:space="preserve"><value>Keine Räume entsprechen diesem Filter. Wähle Alle Räume, um die Etage zu sehen.</value></data>
+  <data name="Phase2.Static.176" xml:space="preserve"><value>Casino Empire</value></data>
+  <data name="Phase2.Static.177" xml:space="preserve"><value>Produktion aller eigenen Immobilien. Zeige mit der Maus auf eine Aktion, um die Auswirkungen zu sehen.</value></data>
+  <data name="Phase2.Static.178" xml:space="preserve"><value>Bauguthaben im ausgewählten Anwesen.</value></data>
+  <data name="Phase2.Static.179" xml:space="preserve"><value>AUSGEWÄHLTER RAUM / AKTIONEN</value></data>
+  <data name="Phase2.Static.180" xml:space="preserve"><value>IN DIESEN RAUM INVESTIEREN</value></data>
+  <data name="Phase2.Static.181" xml:space="preserve"><value>NÄCHSTER PRODUKTIONSMEILENSTEIN</value></data>
+  <data name="Phase2.Static.182" xml:space="preserve"><value>Detaillierte Casino-Empire-Statistiken öffnen</value></data>
+  <data name="Phase2.Static.183" xml:space="preserve"><value>ZURÜCK ZUM EMPIRE</value></data>
+  <data name="Phase2.Static.184" xml:space="preserve"><value>CASINO EMPIRE / STATISTIKEN</value></data>
+  <data name="Phase2.Static.185" xml:space="preserve"><value>Anwesenbuch</value></data>
+  <data name="Phase2.Static.186" xml:space="preserve"><value>Dauerhafte Leistung, aktueller Durchlauf und Raumproduktion.</value></data>
+  <data name="Phase2.Static.187" xml:space="preserve"><value>ANWESENFORTSCHRITT</value></data>
+  <data name="Phase2.Static.188" xml:space="preserve"><value>IMMOBILIEN &amp; VERMÄCHTNIS</value></data>
+  <data name="Phase2.Empire.001" xml:space="preserve"><value>Spielautomatengalerie</value></data>
+  <data name="Phase2.Empire.002" xml:space="preserve"><value>Warmes Licht, Messinggehäuse und der erste Herzschlag deines Casinos.</value></data>
+  <data name="Phase2.Empire.003" xml:space="preserve"><value>Kartensalon</value></data>
+  <data name="Phase2.Empire.004" xml:space="preserve"><value>Samtbezogene Tische und frische Kartendecks. Ein ruhiger Raum, dessen Ruf wächst.</value></data>
+  <data name="Phase2.Empire.005" xml:space="preserve"><value>Midnight Bar</value></data>
+  <data name="Phase2.Empire.006" xml:space="preserve"><value>Poliertes Glas, sanfter Jazz und ein guter Grund, noch eine Runde zu bleiben.</value></data>
+  <data name="Phase2.Empire.007" xml:space="preserve"><value>Roulette-Saal</value></data>
+  <data name="Phase2.Empire.008" xml:space="preserve"><value>Ein drehendes Roulette-Rad verleiht der Etage zusätzlichen Glanz.</value></data>
+  <data name="Phase2.Empire.009" xml:space="preserve"><value>VIP-Lounge</value></data>
+  <data name="Phase2.Empire.010" xml:space="preserve"><value>Private Nischen, goldene Details und die vornehmste Ecke deines Imperiums.</value></data>
+  <data name="Phase2.Empire.011" xml:space="preserve"><value>High-Limit-Automaten</value></data>
+  <data name="Phase2.Empire.012" xml:space="preserve"><value>Private Automaten, persönlicher Service und eine Etage für die ganz großen Nächte.</value></data>
+  <data name="Phase2.Empire.013" xml:space="preserve"><value>Pokerraum</value></data>
+  <data name="Phase2.Empire.014" xml:space="preserve"><value>Tische nur auf Einladung, an denen sich Geduld, Ruf und lange Partien auszahlen.</value></data>
+  <data name="Phase2.Empire.015" xml:space="preserve"><value>Gehobene Gastronomie</value></data>
+  <data name="Phase2.Empire.016" xml:space="preserve"><value>Ein Spitzenrestaurant, das anspruchsvolle Gäste in deinem Anwesen hält.</value></data>
+  <data name="Phase2.Empire.017" xml:space="preserve"><value>Große Bühne</value></data>
+  <data name="Phase2.Empire.018" xml:space="preserve"><value>Live-Unterhaltung macht die Casino-Etage zum Mittelpunkt eines ganzen Abends.</value></data>
+  <data name="Phase2.Empire.019" xml:space="preserve"><value>Privater Spielsalon</value></data>
+  <data name="Phase2.Empire.020" xml:space="preserve"><value>Der exklusivste Raum des Hauses: diskret, kostspielig und außerordentlich produktiv.</value></data>
+  <data name="Phase2.Empire.021" xml:space="preserve"><value>Luxushotel</value></data>
+  <data name="Phase2.Empire.022" xml:space="preserve"><value>Ein Urlaubsziel, das alle Bereiche des Resorts miteinander verbindet.</value></data>
+  <data name="Phase2.Empire.023" xml:space="preserve"><value>Spa &amp; Wellness</value></data>
+  <data name="Phase2.Empire.024" xml:space="preserve"><value>Ein friedlicher Rückzugsort mit erstklassiger Gastfreundschaft.</value></data>
+  <data name="Phase2.Empire.025" xml:space="preserve"><value>Sky-Bar</value></data>
+  <data name="Phase2.Empire.026" xml:space="preserve"><value>Drinks und Musik hoch über den Lichtern der Stadt.</value></data>
+  <data name="Phase2.Empire.027" xml:space="preserve"><value>Kongresshalle</value></data>
+  <data name="Phase2.Empire.028" xml:space="preserve"><value>Ein dauerhafter Treffpunkt für große Casino-Veranstaltungen.</value></data>
+  <data name="Phase2.Empire.029" xml:space="preserve"><value>Penthouse-Club</value></data>
+  <data name="Phase2.Empire.030" xml:space="preserve"><value>Eine exklusive Adresse über deinem wachsenden Imperium.</value></data>
+  <data name="Phase2.Empire.031" xml:space="preserve"><value>Spielbetrieb</value></data>
+  <data name="Phase2.Empire.032" xml:space="preserve"><value>Gastfreundschaft</value></data>
+  <data name="Phase2.Empire.033" xml:space="preserve"><value>Unterhaltung</value></data>
+  <data name="Phase2.Empire.034" xml:space="preserve"><value>Resort</value></data>
+  <data name="Phase2.Empire.035" xml:space="preserve"><value>Hauptetage</value></data>
+  <data name="Phase2.Empire.036" xml:space="preserve"><value>Obergeschoss</value></data>
+  <data name="Phase2.Empire.037" xml:space="preserve"><value>Resort-Etage</value></data>
+  <data name="Phase2.Empire.038" xml:space="preserve"><value>The Midnight Club</value></data>
+  <data name="Phase2.Empire.039" xml:space="preserve"><value>Ein ausgewogenes Anwesen. Hier begann deine Casino-Karriere.</value></data>
+  <data name="Phase2.Empire.040" xml:space="preserve"><value>Neon Bay Resort</value></data>
+  <data name="Phase2.Empire.041" xml:space="preserve"><value>Eine Küstensilhouette, geprägt von modernen Spielautomaten.</value></data>
+  <data name="Phase2.Empire.042" xml:space="preserve"><value>Crown Palace</value></data>
+  <data name="Phase2.Empire.043" xml:space="preserve"><value>Private Tische, diskreter Service und eine königliche Gästeliste.</value></data>
+  <data name="Phase2.Empire.044" xml:space="preserve"><value>Aurora International</value></data>
+  <data name="Phase2.Empire.045" xml:space="preserve"><value>Ein Ort für Gastfreundschaft, Unterhaltung und große Anlässe.</value></data>
+  <data name="Phase2.Empire.046" xml:space="preserve"><value>High-Roller-Verbund</value></data>
+  <data name="Phase2.Empire.047" xml:space="preserve"><value>Errichte gemeinsam den VIP-Verbund.</value></data>
+  <data name="Phase2.Empire.048" xml:space="preserve"><value>Ausgehnacht</value></data>
+  <data name="Phase2.Empire.049" xml:space="preserve"><value>Ein ganzer Abend: Drinks, Abendessen und eine Live-Show.</value></data>
+  <data name="Phase2.Empire.050" xml:space="preserve"><value>Klassisches Casino</value></data>
+  <data name="Phase2.Empire.051" xml:space="preserve"><value>Erhalte die ursprüngliche Casino-Etage als Herzstück des Anwesens.</value></data>
+  <data name="Phase2.Empire.052" xml:space="preserve"><value>Reiseziel-Resort</value></data>
+  <data name="Phase2.Empire.053" xml:space="preserve"><value>Ein ausgewogenes Resort belohnt jede Abteilung.</value></data>
+  <data name="Phase2.Empire.054" xml:space="preserve"><value>Effizienter Ausbau</value></data>
+  <data name="Phase2.Empire.055" xml:space="preserve"><value>Ausbaukosten −2 % je Rang (bis zu −6 %).</value></data>
+  <data name="Phase2.Empire.056" xml:space="preserve"><value>Nachtschicht</value></data>
+  <data name="Phase2.Empire.057" xml:space="preserve"><value>Offline-Speicher +2 Stunden je Rang (bis zu 12 Stunden).</value></data>
+  <data name="Phase2.Empire.058" xml:space="preserve"><value>Verstärktes Wachstum</value></data>
+  <data name="Phase2.Empire.059" xml:space="preserve"><value>+8 % je Rang bei den Raumschwellen 50 / 100 / 150.</value></data>
+  <data name="Phase2.Empire.060" xml:space="preserve"><value>Verwaltungsautomatik</value></data>
+  <data name="Phase2.Empire.061" xml:space="preserve"><value>Schaltet automatische Ausbauten frei; benötigt die Geschäftsführung.</value></data>
+  <data name="Phase2.Empire.062" xml:space="preserve"><value>Vorstand</value></data>
+  <data name="Phase2.Empire.063" xml:space="preserve"><value>Ein zusätzlicher Platz für aktive Manager.</value></data>
+  <data name="Phase2.Empire.064" xml:space="preserve"><value>Tischkompetenz</value></data>
+  <data name="Phase2.Empire.065" xml:space="preserve"><value>Tischabteilungen produzieren +8 % je Rang.</value></data>
+  <data name="Phase2.Empire.066" xml:space="preserve"><value>Mechanisches Imperium</value></data>
+  <data name="Phase2.Empire.067" xml:space="preserve"><value>Automatenabteilungen produzieren +8 % je Rang.</value></data>
+  <data name="Phase2.Empire.068" xml:space="preserve"><value>High-Roller-Netzwerk</value></data>
+  <data name="Phase2.Empire.069" xml:space="preserve"><value>VIP-/High-Limit-Produktion +5 % je Rang für jeweils 50 Raumstufen.</value></data>
+  <data name="Phase2.Empire.070" xml:space="preserve"><value>Bleib noch eine Nacht</value></data>
+  <data name="Phase2.Empire.071" xml:space="preserve"><value>Gastfreundschaft und Unterhaltung produzieren +8 % je Rang.</value></data>
+  <data name="Phase2.Empire.072" xml:space="preserve"><value>Unterhaltung auf Stufe 50 erhöht die Spielproduktion um +5 % je Rang.</value></data>
+  <data name="Phase2.Empire.073" xml:space="preserve"><value>Premiumgäste</value></data>
+  <data name="Phase2.Empire.074" xml:space="preserve"><value>Eigentümerrate +5 % und Reserve +40 Geld je Rang, global begrenzt.</value></data>
+  <data name="Phase2.Empire.075" xml:space="preserve"><value>Betrieb</value></data>
+  <data name="Phase2.Empire.076" xml:space="preserve"><value>Großer Eingang</value></data>
+  <data name="Phase2.Empire.077" xml:space="preserve"><value>Dauerhaft +5 % Anwesenproduktion. Benötigt insgesamt 250 Raumstufen.</value></data>
+  <data name="Phase2.Empire.078" xml:space="preserve"><value>Erhöht die gemeinsame Eigentümerreserve um 160 $; im gesamten Empire auf 640 $ begrenzt.</value></data>
+  <data name="Phase2.Empire.079" xml:space="preserve"><value>Luxusatrium</value></data>
+  <data name="Phase2.Empire.080" xml:space="preserve"><value>Gastfreundschaft +20 %; Bar und Gastronomie müssen jeweils Stufe 50 erreichen.</value></data>
+  <data name="Phase2.Empire.081" xml:space="preserve"><value>High-Roller-Aufzug</value></data>
+  <data name="Phase2.Empire.082" xml:space="preserve"><value>VIP/High Limit +10 % und ein stärkerer High-Roller-Verbund.</value></data>
+  <data name="Phase2.Empire.083" xml:space="preserve"><value>Geschäftsführung</value></data>
+  <data name="Phase2.Empire.084" xml:space="preserve"><value>Schaltet einen aktiven Manager frei; Forschung kann die Automatik aktivieren.</value></data>
+  <data name="Phase2.Empire.085" xml:space="preserve"><value>Kongresszentrum</value></data>
+  <data name="Phase2.Empire.086" xml:space="preserve"><value>Produktionsboni aus Events sind 25 % stärker. Große Bühne auf Stufe 100 erforderlich.</value></data>
+  <data name="Phase2.Empire.087" xml:space="preserve"><value>Penthouse-Suiten</value></data>
+  <data name="Phase2.Empire.088" xml:space="preserve"><value>VIP +15 % und Eigentümerrate +5 %. VIP-Lounge auf Stufe 100 erforderlich.</value></data>
+  <data name="Phase2.Empire.089" xml:space="preserve"><value>Resortflügel</value></data>
+  <data name="Phase2.Empire.090" xml:space="preserve"><value>Öffnet dauerhaft die Resort-Etage mit fünf Räumen. Zuerst den Großen Eingang fertigstellen.</value></data>
+  <data name="Phase2.Empire.091" xml:space="preserve"><value>Immobilienbüro Skyline</value></data>
+  <data name="Phase2.Empire.092" xml:space="preserve"><value>Erlaubt den Kauf zusätzlicher eigenständiger Immobilien.</value></data>
+  <data name="Phase2.Empire.093" xml:space="preserve"><value>Etagenmanagerin</value></data>
+  <data name="Phase2.Empire.094" xml:space="preserve"><value>Zugewiesene Abteilung: +15 % Produktion.</value></data>
+  <data name="Phase2.Empire.095" xml:space="preserve"><value>High-Roller-Betreuer</value></data>
+  <data name="Phase2.Empire.096" xml:space="preserve"><value>VIP-/High-Limit-Abteilungen: +12 % Produktion.</value></data>
+  <data name="Phase2.Empire.097" xml:space="preserve"><value>Unterhaltungsdirektorin</value></data>
+  <data name="Phase2.Empire.098" xml:space="preserve"><value>Synergien Ausgehnacht / Resort sind 25 % stärker.</value></data>
+  <data name="Phase2.Empire.099" xml:space="preserve"><value>Betriebsdirektor</value></data>
+  <data name="Phase2.Empire.100" xml:space="preserve"><value>Ausbaukosten der zugewiesenen Abteilung: −8 %.</value></data>
+  <data name="Phase2.Empire.101" xml:space="preserve"><value>Blackjack-Meisterschaft</value></data>
+  <data name="Phase2.Empire.102" xml:space="preserve"><value>Tischabteilungen veranstalten ein halbstündiges Turnier. Spiele zehn Blackjack-Runden für eine Zugabe.</value></data>
+  <data name="Phase2.Empire.103" xml:space="preserve"><value>Midnight-Dice-Liga</value></data>
+  <data name="Phase2.Empire.104" xml:space="preserve"><value>Ein gemeinsamer Würfelabend für Tische und Unterhaltung. Schließe eine Würfelpartie für eine Zugabe ab.</value></data>
+  <data name="Phase2.Empire.105" xml:space="preserve"><value>Neonnächte</value></data>
+  <data name="Phase2.Empire.106" xml:space="preserve"><value>High-Limit-Automaten +75 %, andere VIP-Räume +25 %. Spiele 25 Neon-Vault-Drehungen für eine Zugabe.</value></data>
+  <data name="Phase2.Empire.107" xml:space="preserve"><value>Spuk-Halloween</value></data>
+  <data name="Phase2.Empire.108" xml:space="preserve"><value>Ein schauriger Abend für Gastfreundschaft und Unterhaltung. Spiele 20 Manor-Drehungen für eine Zugabe.</value></data>
+  <data name="Phase2.Empire.109" xml:space="preserve"><value>Ruhiger Sonntag</value></data>
+  <data name="Phase2.Empire.110" xml:space="preserve"><value>Ein entspannter Abend für die Gastronomie. Löse ein Sudoku für eine Zugabe.</value></data>
+  <data name="Phase2.Empire.111" xml:space="preserve"><value>Touristenwochenende</value></data>
+  <data name="Phase2.Empire.112" xml:space="preserve"><value>Produziere 5 Mio. Credits durch Gastfreundschaft in deinem eigenen Tempo.</value></data>
+  <data name="Phase2.Empire.113" xml:space="preserve"><value>Gastfreundschaft +15 % für zwei Produktionsstunden</value></data>
+  <data name="Phase2.Empire.114" xml:space="preserve"><value>High-Roller-Einladung</value></data>
+  <data name="Phase2.Empire.115" xml:space="preserve"><value>Produziere 20 Mio. VIP-Credits; der Auftrag bleibt bis zum Abschluss bestehen.</value></data>
+  <data name="Phase2.Empire.116" xml:space="preserve"><value>VIP +15 % für zwei Produktionsstunden</value></data>
+  <data name="Phase2.Empire.117" xml:space="preserve"><value>Ausbauoffensive</value></data>
+  <data name="Phase2.Empire.118" xml:space="preserve"><value>Kaufe nach Annahme des Auftrags 50 Raumstufen.</value></data>
+  <data name="Phase2.Empire.119" xml:space="preserve"><value>Baukosten −5 % für zwei Produktionsstunden</value></data>
+  <data name="Phase2.Static.189" xml:space="preserve"><value>Einser</value></data>
+  <data name="Phase2.Static.190" xml:space="preserve"><value>Zweier</value></data>
+  <data name="Phase2.Static.191" xml:space="preserve"><value>Dreier</value></data>
+  <data name="Phase2.Static.192" xml:space="preserve"><value>Vierer</value></data>
+  <data name="Phase2.Static.193" xml:space="preserve"><value>Fünfer</value></data>
+  <data name="Phase2.Static.194" xml:space="preserve"><value>Sechser</value></data>
+  <data name="Phase2.Static.195" xml:space="preserve"><value>Dreierpasch</value></data>
+  <data name="Phase2.Static.196" xml:space="preserve"><value>Viererpasch</value></data>
+  <data name="Phase2.Static.197" xml:space="preserve"><value>Full House</value></data>
+  <data name="Phase2.Static.198" xml:space="preserve"><value>Kleine Straße</value></data>
+  <data name="Phase2.Static.199" xml:space="preserve"><value>Große Straße</value></data>
+  <data name="Phase2.Static.200" xml:space="preserve"><value>Fünferpasch</value></data>
+  <data name="Phase2.Static.201" xml:space="preserve"><value>Chance</value></data>
+  <data name="Phase2.Static.202" xml:space="preserve"><value>Noch ein Fünferpasch! Eine Wertung bringt +50 Bonuspunkte und den Höchstwert in jedem freien Feld.</value></data>
+  <data name="Phase2.Static.203" xml:space="preserve"><value>Sammle Punkte oder ziele auf eine Kombination</value></data>
+  <data name="Phase2.Static.204" xml:space="preserve"><value>← Spiele</value></data>
+  <data name="Phase2.Static.205" xml:space="preserve"><value>Memory</value></data>
+  <data name="Phase2.Static.206" xml:space="preserve"><value>← LOUNGE</value></data>
+  <data name="Phase2.Static.207" xml:space="preserve"><value>Fortsetzen</value></data>
+  <data name="Phase2.Static.208" xml:space="preserve"><value>WÄHLE EIN SOLITAIRE-SPIEL</value></data>
+  <data name="Phase2.Static.209" xml:space="preserve"><value>PARTIE # STARTEN</value></data>
+  <data name="Phase2.Static.210" xml:space="preserve"><value>Alle Karten sichtbar · nummerierte und wiederholbare Partien.</value></data>
+  <data name="Phase2.Static.211" xml:space="preserve"><value>1 FARBE</value></data>
+  <data name="Phase2.Static.212" xml:space="preserve"><value>2 FARBEN</value></data>
+  <data name="Phase2.Static.213" xml:space="preserve"><value>4 FARBEN</value></data>
+  <data name="Phase2.Static.214" xml:space="preserve"><value>Sechs Spielweisen, um die Karten zur Ruhe kommen zu lassen.</value></data>
+  <data name="Phase2.Static.215" xml:space="preserve"><value>EINE RUHIGE ECKE</value></data>
+  <data name="Phase2.Static.216" xml:space="preserve"><value>Finde deinen Rhythmus.</value></data>
+  <data name="Phase2.Static.217" xml:space="preserve"><value>Keine Einsätze, keine Eile. Jedes gefundene Wort ist ein kleiner Sieg.</value></data>
+  <data name="Phase2.Static.218" xml:space="preserve"><value>Finde die Wörter.
+Bestimme dein Tempo.</value></data>
+  <data name="Phase2.Static.219" xml:space="preserve"><value>Durchsuche sorgfältig gestaltete Buchstabengitter in deinem Tempo. Wähle eine Schwierigkeit, verfolge die Buchstaben und speichere deinen Fortschritt jederzeit.</value></data>
+  <data name="Phase2.Static.220" xml:space="preserve"><value>Ziehe vom ersten bis zum letzten Buchstaben. Wörter dürfen sich überlappen. Hinweise zeigen einen Anfangsbuchstaben, ohne XP zu verringern.</value></data>
+  <data name="Phase2.Static.221" xml:space="preserve"><value>Wähle eine Schwierigkeit oder setze dein aktuelles Rätsel fort.</value></data>
+  <data name="Phase2.Static.222" xml:space="preserve"><value>Setze das aktuelle Rätsel fort oder beende es, bevor du ein neues beginnst.</value></data>
+  <data name="Phase2.Static.223" xml:space="preserve"><value>Ein ruhiger Sieg für heute.</value></data>
+  <data name="Phase2.Static.224" xml:space="preserve"><value>Finde dein eigenes Tempo.</value></data>
+  <data name="Phase2.Static.225" xml:space="preserve"><value>Memory-Kartenpaare</value></data>
+  <data name="Phase2.Static.226" xml:space="preserve"><value>Investitionsprojekte</value></data>
+  <data name="Phase2.Static.227" xml:space="preserve"><value>Einmalige Investitionen in diese Immobilie. Projekte bleiben nach Prestige erhalten. Raumstufen müssen beim Bau erfüllt sein; dauerhafte Etagen- und Systemfreischaltungen bleiben bestehen.</value></data>
+  <data name="Phase2.Static.228" xml:space="preserve"><value>Bauen</value></data>
+  <data name="Phase2.Static.229" xml:space="preserve"><value>Abgeschlossen</value></data>
+  <data name="Phase2.Static.230" xml:space="preserve"><value>Dein Managementteam</value></data>
+  <data name="Phase2.Static.231" xml:space="preserve"><value>Feste Spezialisten statt zufälliger Anstellungen. Die Geschäftsführung eröffnet einen aktiven Platz, Prestige V einen zweiten und der Vorstand einen dritten. Zuweisungen bleiben nach Prestige erhalten, aber zurückgesetzte Räume müssen wieder eröffnet werden.</value></data>
+  <data name="Phase2.Static.232" xml:space="preserve"><value>Zuweisen</value></data>
+  <data name="Phase2.Static.233" xml:space="preserve"><value>INAKTIV</value></data>
+  <data name="Phase2.Static.234" xml:space="preserve"><value>AKTIV · </value></data>
+  <data name="Phase2.Static.235" xml:space="preserve"><value>Verwaltungsautomatik</value></data>
+  <data name="Phase2.Static.236" xml:space="preserve"><value>Benötigt die Geschäftsführung und die Verwaltungsautomatik-Forschung. Alle 30 Produktionssekunden gibt das System höchstens den gewählten Budgetanteil aus und bewahrt die Reserve. Offline gilt derselbe Rhythmus. Höchstens 50 Ausbauschritte pro Entscheidung.</value></data>
+  <data name="Phase2.Static.237" xml:space="preserve"><value>Reserve (Credits)</value></data>
+  <data name="Phase2.Static.238" xml:space="preserve"><value>Budget je Entscheidung (%) · 1–50</value></data>
+  <data name="Phase2.Static.239" xml:space="preserve"><value>Zielstufe · 1–200</value></data>
+  <data name="Phase2.Static.240" xml:space="preserve"><value>Günstigster nächster Meilenstein</value></data>
+  <data name="Phase2.Static.241" xml:space="preserve"><value>Prioritätenfolge</value></data>
+  <data name="Phase2.Static.242" xml:space="preserve"><value>AUTO / GESPERRT</value></data>
+  <data name="Phase2.Static.243" xml:space="preserve"><value>AUTO / AKTIV</value></data>
+  <data name="Phase2.Static.244" xml:space="preserve"><value>AUTO / PAUSIERT</value></data>
+  <data name="Phase2.Static.245" xml:space="preserve"><value>Ziel erreicht</value></data>
+  <data name="Phase2.Static.246" xml:space="preserve"><value>Raum gesperrt</value></data>
+  <data name="Phase2.Static.247" xml:space="preserve"><value>Raum vorgemerkt</value></data>
+  <data name="Phase2.Static.248" xml:space="preserve"><value>Nicht in der Prioritätenliste</value></data>
+  <data name="Phase2.Static.249" xml:space="preserve"><value>günstigster Meilenstein</value></data>
+  <data name="Phase2.Static.250" xml:space="preserve"><value>Prioritätenfolge</value></data>
+  <data name="Phase2.Static.251" xml:space="preserve"><value>Team gesperrt · baue die Geschäftsführung.</value></data>
+  <data name="Phase2.Static.252" xml:space="preserve"><value>Nächster Schritt: Budget aufbauen.</value></data>
+  <data name="Phase2.Static.253" xml:space="preserve"><value>Baue andere Abteilungen aus.</value></data>
+  <data name="Phase2.Static.254" xml:space="preserve"><value>Alle Synergiestufen abgeschlossen.</value></data>
+  <data name="Phase2.Static.255" xml:space="preserve"><value>Unter Verwaltung findest du Forschung, Projekte und dein Immobilienportfolio.</value></data>
+  <data name="Phase2.Static.256" xml:space="preserve"><value>Raumanalyse</value></data>
+  <data name="Phase2.Static.257" xml:space="preserve"><value>RAUMANALYSE / </value></data>
+  <data name="Phase2.Static.258" xml:space="preserve"><value>ANWESENÜBERSICHT / </value></data>
+  <data name="Phase2.Static.259" xml:space="preserve"><value>TEAM</value></data>
+  <data name="Phase2.Static.260" xml:space="preserve"><value>PROJEKTE</value></data>
+  <data name="Phase2.Static.261" xml:space="preserve"><value>BETRIEB</value></data>
+  <data name="Phase2.Static.262" xml:space="preserve"><value>SPIELBETRIEB</value></data>
+  <data name="Phase2.Static.263" xml:space="preserve"><value>GASTFREUNDSCHAFT</value></data>
+  <data name="Phase2.Static.264" xml:space="preserve"><value>VORSCHAU</value></data>
+  <data name="Phase2.Static.265" xml:space="preserve"><value>Alle Räume</value></data>
+  <data name="Phase2.Static.266" xml:space="preserve"><value>PAUSIERT</value></data>
+  <data name="Phase2.Static.267" xml:space="preserve"><value>AKTIV</value></data>
+  <data name="Phase2.Static.268" xml:space="preserve"><value>BEENDET</value></data>
+  <data name="Phase2.Static.269" xml:space="preserve"><value>Empfohlen</value></data>
+  <data name="Phase2.Static.270" xml:space="preserve"><value>Nicht verfügbar</value></data>
+  <data name="Phase2.Static.271" xml:space="preserve"><value>AUTOMATIK</value></data>
+  <data name="Phase2.Static.272" xml:space="preserve"><value>FORSCHUNG</value></data>
+  <data name="Phase2.Static.273" xml:space="preserve"><value>VERWALTUNG</value></data>
+</root>
