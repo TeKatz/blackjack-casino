@@ -160,10 +160,10 @@ function ReelsApp(){
     const timer=window.setTimeout(()=>setWinBurst(id=>id===last.id?null:id),1700);
     return()=>window.clearTimeout(timer);
   },[snapshot?.state.lastSpin?.id,animating,snapshot?.state.animationsEnabled]);
-  const act=useCallback((intent:ReelsIntent):boolean=>{
+  const act=useCallback((intent:ReelsIntent,fromAuto=false):boolean=>{
     const state=current.current;
     if(!state||pendingRef.current||uncertain||animatingRef.current)return false;
-    if(intent.action==='spin'&&!state.state.canSpin)return false;
+    if(intent.action==='spin'&&(!state.state.canSpin||(autoRef.current.active&&!fromAuto)))return false;
     if(intent.action==='spin'&&state.state.soundEnabled)armReelsCelebrationAudio();
     const id=sendReelsIntent(state,intent);
     pendingRef.current=id;setPending(id);setMessage(null);
@@ -213,7 +213,7 @@ function ReelsApp(){
         canSpin:latest.state.canSpin,
         latestId:latest.state.lastSpin?.id??null,revealedId,
       })){return;}
-      if(act({action:'spin'})){
+      if(act({action:'spin'},true)){
         autoRef.current.remaining--;
         setAutoRemaining(autoRef.current.remaining);
       }
@@ -242,6 +242,8 @@ function ReelsApp(){
   </div>;
   const s=snapshot.state,t=vocabulary[s.language],result:ReelsSpin|null=s.lastSpin;
   const locked=!!pending||uncertain||animating;
+  const readoutProps={spinId:result?.id??null,revealedId,
+    enabled:s.animationsEnabled,duration:speed==='turbo'?210:610};
   const feedback=result?.multiplier===100?t.jackpot+' · '+money(result.payout):
     result&&Number(result.net)>0?t.win+' · '+result.multiplier+'× · '+money(result.payout):
     result?.multiplier===1?t.push:result?t.noMatch:t.ready;
@@ -254,13 +256,16 @@ function ReelsApp(){
   return <div className="reels-app" lang={s.language} data-language={s.language}
     data-testid="reels-app" data-motion={s.animationsEnabled}
      data-win-tier={!animating&&result&&Number(result.net)>0?(result.multiplier>=25?'jackpot':'win'):'none'}
+     data-reaction={reaction?.kind??'none'} data-speed={speed} data-autospin={autoActive}
      data-animating={animating} data-bet-pending={!!pending&&!animating} data-spin-id={result?.id??''}>
     <header className="reels-header">
       <button className="reels-back" onClick={close}><span aria-hidden="true">‹</span> {t.back} <kbd>ESC</kbd></button>
       <div className="reels-header-signature" aria-label="The Midnight Club">
         <span aria-hidden="true">♠</span><small>THE MIDNIGHT CLUB</small>
       </div>
-      <div className="reels-header-wallet"><small>{t.balance}</small><strong>{money(s.bankroll)}</strong></div>
+      <div className="reels-header-wallet reels-reactive-wallet">
+        <small>{t.balance}</small><strong><AnimatedReadout value={s.bankroll} kind="money" {...readoutProps}/></strong>
+      </div>
     </header>
     <div className="reels-body">
       <main className="reels-cabinet">
@@ -278,7 +283,8 @@ function ReelsApp(){
         </div>
         <p className="reels-tagline">{t.tag}</p>
         <div className={'reels-lightband'+(!animating&&result?.multiplier===100?' jackpot':'')} aria-hidden="true">
-          {Array.from({length:11},(_,i)=><i key={i}/>)}
+          {Array.from({length:11},(_,i)=><i key={i}
+            style={{'--lamp-index':i} as React.CSSProperties}/>)}
         </div>
         <div className="reels-stage" data-testid="reels-display">
           <div className="reels-stage-illumination" aria-hidden="true"><i/><i/><i/></div>
@@ -297,8 +303,10 @@ function ReelsApp(){
           <div className="reels-grid">
             {[0,1,2].map(i=><div className="reels-reel" key={i}>
               <div className="reels-strip" style={{
-                transform:movement?.running?'translateY(-'+(movement.travel[i]*movement.cell)+'px)':'translateY(0px)',
-                transition:movement?.running?'transform '+STOP_DELAYS[i]+'ms cubic-bezier(.13,.64,.18,1)':'none'
+                transform:movement?.running?
+                  'translate3d(0,-'+(movement.travel[i]*movement.cell)+'px,0)':'translate3d(0,0,0)',
+                transition:movement?.running?
+                  'transform '+SPEED_PRESETS[speed][i]+'ms cubic-bezier(.19,.61,.23,1)':'none'
               }}>
                 {columns(i).map((symbol,j)=><div className="reels-symbol" key={j} data-symbol={symbol}>
                   <ReelIcon symbol={symbol}/>
@@ -313,23 +321,43 @@ function ReelsApp(){
           <strong>{message??(animating?t.spinning:feedback)}</strong>
           <small>{!animating&&result?('+'+result.playerXp+' XP · +'+result.seasonXp+' Season XP'+(result.levelUp?' · '+t.levelUp:'')):t.hint}</small>
         </div>
+        <div className="reels-atmosphere-decor" aria-hidden="true">
+          <span className="reels-decor-ray"/><span className="reels-decor-crest">✦</span>
+          <span className="reels-decor-ray"/>
+        </div>
         <div className="reels-cabinet-footer">
           <div className="reels-balances">
-            <div><small>{t.balance}</small><strong>{money(s.bankroll)}</strong></div>
+            <div className="reels-reactive-wallet"><small>{t.balance}</small>
+              <strong><AnimatedReadout value={s.bankroll} kind="money" {...readoutProps}/></strong></div>
             <div><small>{t.wager}</small><strong>{money(s.bet)}</strong></div>
-            <div className="reels-last-return"><small>{t.win}</small><strong>{money(result?.payout??'0')}</strong></div>
+            <div className="reels-last-return"><small>{t.win}</small>
+              <strong><AnimatedReadout value={result?.payout??'0'} kind="money" {...readoutProps}/></strong></div>
           </div>
           <div className="reels-chips" role="group" aria-label={t.wager}>
             {CHIPS.map(value=><button key={value} className={Number(s.bet)===value?'selected':''}
-              disabled={locked||value>Number(s.bankroll)}
+              disabled={locked||autoActive||value>Number(s.bankroll)}
               onClick={()=>act({action:'bet.set',value:String(value)})}>
                 {'$'+value.toLocaleString('en-US')}
               </button>)}
           </div>
-          <button className="reels-spin" data-testid="reels-spin" disabled={locked||!s.canSpin}
-            onClick={()=>act({action:'spin'})}>
-            {animating?t.spinning:s.canSpin?t.spin:t.out}<kbd>SPACE</kbd>
+          <button className="reels-spin" data-testid="reels-spin"
+            aria-label={animating?t.spinning:s.canSpin?t.spin:t.out}
+            disabled={locked||autoActive||!s.canSpin} onClick={()=>act({action:'spin'})}>
+            {animating&&<span className="reels-spin-loader" aria-hidden="true"/>}
+            <span className="reels-spin-label">{s.canSpin?t.spin:t.out}</span>
+            {!animating&&<kbd>SPACE</kbd>}
           </button>
+          <div className="reels-auto-controls" role="group" aria-label={t.auto}>
+            <span className="reels-auto-heading">{t.auto}</span>
+            <div className="reels-auto-buttons">
+              {AUTO_OPTIONS.map(value=><button type="button" key={value} data-testid={'reels-auto-'+value}
+                disabled={locked||autoActive||!s.canSpin} onClick={()=>startAuto(value)}>{value}×</button>)}
+              <button type="button" className="reels-auto-stop" data-testid="reels-auto-stop"
+                disabled={!autoActive} onClick={stopAuto}>{t.autoStop}</button>
+            </div>
+            {autoActive&&<span className="reels-auto-counter" role="status">
+              {autoRemaining} {t.left}</span>}
+          </div>
         </div>
       </main>
       <aside className="reels-sidebar">
@@ -346,12 +374,17 @@ function ReelsApp(){
           <div className="reels-section-heading"><span aria-hidden="true">♠</span><h2>{t.stats}</h2></div>
           <div className="reels-level">PRESTIGE {s.profile.prestige} · LEVEL {s.profile.level} · ◆ {s.profile.coins.toLocaleString()}</div>
           <div className="reels-stats">
-            <div>{t.spins}<strong>{s.stats.spins.toLocaleString()}</strong></div>
-            <div>{t.wins}<strong>{s.stats.wins.toLocaleString()}</strong></div>
-            <div>{t.pushes}<strong>{s.stats.pushes.toLocaleString()}</strong></div>
-            <div>{t.net}<strong>{money(s.stats.netProfit)}</strong></div>
+            <div>{t.spins}<strong><AnimatedReadout value={String(s.stats.spins)}
+              kind="integer" {...readoutProps}/></strong></div>
+            <div>{t.wins}<strong><AnimatedReadout value={String(s.stats.wins)}
+              kind="integer" {...readoutProps}/></strong></div>
+            <div>{t.pushes}<strong><AnimatedReadout value={String(s.stats.pushes)}
+              kind="integer" {...readoutProps}/></strong></div>
+            <div>{t.net}<strong><AnimatedReadout value={s.stats.netProfit}
+              kind="money" {...readoutProps}/></strong></div>
           </div>
-          <p>{t.best}: <strong>{money(s.stats.biggestPayout)}</strong></p>
+          <p>{t.best}: <strong><AnimatedReadout value={s.stats.biggestPayout}
+            kind="money" {...readoutProps}/></strong></p>
           <small>{t.xp}</small>
         </section>
         <section className="reels-settings">
@@ -359,6 +392,17 @@ function ReelsApp(){
             onChange={e=>act({action:'sound.set',value:String(e.target.checked)})}/>{t.sound}</label>
           <label><input data-testid="reels-animation" type="checkbox" checked={s.animationsEnabled} disabled={locked}
             onChange={e=>act({action:'animations.set',value:String(e.target.checked)})}/>{t.animations}</label>
+          <label className="reels-speed-control" htmlFor="reels-speed">
+            <span>{t.speed}</span>
+            <select id="reels-speed" data-testid="reels-speed" value={speed}
+              disabled={locked||autoActive} onChange={event=>{
+                const next=event.target.value as ReelsSpeed;
+                if(!SPEED_OPTIONS.includes(next))return;
+                setSpeed(next);saveReelsSpeed(next);
+              }}>
+              {SPEED_OPTIONS.map(option=><option key={option} value={option}>{t[option]}</option>)}
+            </select>
+          </label>
           <small>{t.offline}</small>
         </section>
       </aside>
