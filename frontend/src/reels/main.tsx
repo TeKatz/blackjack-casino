@@ -12,6 +12,7 @@ import {AUTO_OPTIONS,SPEED_OPTIONS,SPEED_PRESETS,canQueueAutoSpin,readReelsSpeed
 import type {ReelsSpeed,ReelsReaction} from './reelsMotion';
 import './reels.css';
 import './reels-design.css';
+import './reels-reactive.css';
 
 const CHIPS=[1,5,25,100,500,1000];
 const money=(value:string)=>'$'+Number(value).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -129,8 +130,7 @@ function ReelsApp(){
         setReaction({id:last.id,kind:outcome});
         reactionTimer.current=setTimeout(()=>setReaction(v=>v?.id===last.id?null:v),1400);
       }else setReaction(null);
-      if(outcome==='bigwin'&&snapshot.state.soundEnabled&&
-        !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
+      if(outcome==='bigwin'&&snapshot.state.soundEnabled)
         playReelsCelebrationAudio(last.multiplier>=50);
       window.chrome?.webview?.postMessage({type:'reels.animation-complete',spinId:last.id});
     };
@@ -271,7 +271,7 @@ function ReelsApp(){
       <main className="reels-cabinet">
         <div className="reels-atmosphere" aria-hidden="true"><i/><i/><i/><i/><i/><i/></div>
         <ReelsVfx enabled={s.animationsEnabled} spinning={animating} celebrationId={winBurst}
-          jackpot={!!result&&result.multiplier===100}/>
+          jackpot={!!result&&result.multiplier===100} speed={speed}/>
         <div className="reels-crown-engraving" aria-hidden="true"><i/><span>✧</span><i/></div>
         <div className="reels-brand">
           <span className="reels-brand-wing" aria-hidden="true">✦</span>
