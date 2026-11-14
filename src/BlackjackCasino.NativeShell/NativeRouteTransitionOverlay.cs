@@ -199,17 +199,12 @@ internal sealed class NativeRouteTransitionOverlay : Form
         if (rect.Width <= 0 || rect.Height <= 0) return;
         g.Clear(Color.FromArgb(7, 27, 24));
 
-        using (var glow = new PathGradientBrush(new[]
-        {
-            new Point(rect.Width / 2, Math.Max(0, rect.Height / 5)),
-            new Point(rect.Width, rect.Height),
-            new Point(0, rect.Height),
-        }))
-        {
-            glow.CenterColor = Color.FromArgb(43, 91, 70);
-            glow.SurroundColors = new[] { Color.FromArgb(7, 27, 24) };
-            g.FillRectangle(glow, rect);
-        }
+        using (var gradient = new LinearGradientBrush(rect,
+            Color.FromArgb(20, 56, 44), Color.FromArgb(7, 27, 24), 90f))
+            g.FillRectangle(gradient, rect);
+        using (var glow = new SolidBrush(Color.FromArgb(28, 94, 73, 48)))
+            g.FillEllipse(glow, rect.Width * .17f, -rect.Height * .45f,
+                rect.Width * .66f, rect.Height * 1.1f);
 
         float middleX = rect.Width / 2f;
         float middleY = rect.Height / 2f;
