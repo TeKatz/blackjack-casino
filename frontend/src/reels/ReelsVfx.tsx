@@ -48,7 +48,7 @@ export function ReelsVfx({enabled,spinning,celebrationId,jackpot,speed}:Props){
     // centre without filling it with flat panels or textures.
     for(let i=0;i<3;i++){
       const halo=new Graphics().circle(0,0,88+i*48)
-        .stroke({width:i===0?1.5:1,color:i===1?0xa8e3c1:0xd6af69,alpha:i===0?.29:.12})
+        .stroke({width:i===0?1.5:1,color:i===1?0xa8e3c1:0xd6af69,alpha:i===0 ? 0.29 : 0.12})
         .circle(0,0,118+i*43)
         .stroke({width:1,color:0xe3c48c,alpha:.10});
       instance.stage.addChild(halo);halos.push(halo);
@@ -101,7 +101,7 @@ export function ReelsVfx({enabled,spinning,celebrationId,jackpot,speed}:Props){
       const y=((i*47.3-clock*m.speed*(spinning?5:1))%(h+30)+(h+30))%(h+30)-15;
       const x=(i*111.7+Math.sin(clock*.5+m.phase)*26*m.depth)%w;
       m.art.position.set(x,y);
-      const intensity=motionSpeed==='turbo'?.72:spinning?1.45:1;
+      const intensity=motionSpeed==='turbo' ? 0.72 : spinning ? 1.45 : 1;
       m.art.alpha=(.11+.22*(.5+.5*Math.sin(clock*1.1+m.phase)))*intensity;
       m.art.scale.set(spinning?(motionSpeed==='turbo'?1:1.45):.85+m.depth*.35);
      });
