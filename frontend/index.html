@@ -6,17 +6,29 @@
     <meta name="theme-color" content="#100d17" />
     <title>Midnight Manor · Modern Preview</title>
   <style>
-html,body{margin:0;min-height:100%;background:#0e0c15;color:#f3dfb4}
+/* Unified, first-paint-safe boot mask. NativeShell overlays WebView2 HWND
+   replacement; the HTML mask protects each page before JS/React is mounted. */
+html,body{margin:0;min-height:100%;background:#071b18;color:#f3dfb4}
 #root{min-height:100vh}
-#mode-boot{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,#d1ab7420,transparent 56%),#0e0c15;color:#efd8a5;font-family:Georgia,serif;text-align:center;pointer-events:auto;transition:opacity .24s ease,visibility .24s ease}
+#mode-boot{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;overflow:hidden;
+ background:radial-gradient(ellipse at 50% 30%,#356249 0%,#112b22 32%,#071b18 76%);
+ color:#efd8a5;font-family:Georgia,serif;text-align:center;pointer-events:auto;
+ transition:opacity .24s ease,visibility .24s ease}
+#mode-boot::before{content:"";position:absolute;inset:17px;border:1px solid #bba16e36;
+ border-radius:15px;pointer-events:none}
+#mode-boot::after{content:"";position:absolute;width:min(460px,80vw);height:min(460px,80vw);
+ border:1px solid #bfa66d22;border-radius:50%;pointer-events:none}
 #mode-boot[data-state="ready"]{opacity:0;visibility:hidden;pointer-events:none}
-#mode-boot .boot-content{max-width:90vw;padding:30px 24px}
-#mode-boot .boot-mark{font-size:40px;color:#cba66c;line-height:1.3}
-#mode-boot .boot-brand{margin:14px 0 8px;font:600 11px/1.5 "Segoe UI",sans-serif;letter-spacing:.32em;color:#c9b38d}
-#mode-boot .boot-title{margin:0;font:normal clamp(26px,4vw,42px)/1.2 Georgia,serif;letter-spacing:.13em;color:#f4dfb1}
-#mode-boot .boot-track{width:136px;height:2px;margin:28px auto 0;background:#a68b5940;overflow:hidden}
-#mode-boot .boot-track::after{content:"";display:block;width:48px;height:100%;background:#e4bd76;animation:boot-progress 1.6s ease-in-out infinite alternate}
-@keyframes boot-progress{from{transform:translateX(0)}to{transform:translateX(88px)}}
+#mode-boot .boot-content{position:relative;z-index:1;max-width:90vw;padding:30px 24px}
+#mode-boot .boot-mark{font-size:40px;color:#cba66c;line-height:1.3;text-shadow:0 0 28px #f4daaa3d}
+#mode-boot .boot-brand{margin:14px 0 8px;font:700 11px/1.5 "Segoe UI",sans-serif;
+ letter-spacing:.32em;color:#d7be90}
+#mode-boot .boot-title{margin:0;font:normal clamp(26px,4vw,42px)/1.2 Georgia,serif;
+ letter-spacing:.12em;color:#f4dfb1;text-shadow:0 2px 14px #0008}
+#mode-boot .boot-track{width:154px;height:2px;margin:28px auto 0;background:#a68b5940;overflow:hidden}
+#mode-boot .boot-track::after{content:"";display:block;width:50px;height:100%;background:#e4bd76;
+ box-shadow:0 0 14px #e9ca81;animation:boot-progress 1.45s ease-in-out infinite alternate}
+@keyframes boot-progress{from{transform:translateX(0)}to{transform:translateX(104px)}}
 @media(prefers-reduced-motion:reduce){#mode-boot{transition:none}#mode-boot .boot-track::after{animation:none;width:100%}}
 </style>
 </head>
