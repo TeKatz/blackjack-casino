@@ -59,6 +59,9 @@ internal sealed class NativeShellForm : Form
     private UpdateManifest? pendingUpdate;
     private string updateStatus = "This isolated test candidate cannot install updates. You can check the published release status.";
     private readonly Panel content = new() { Dock = DockStyle.Fill };
+    private readonly NativeRouteTransitionOverlay routeTransition;
+    // Prevent stale WebView2 events and double-clicks from interleaving route changes.
+    private bool routeSwitchPending;
     private readonly Label status = new()
     {
         Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft,
@@ -129,6 +132,7 @@ internal sealed class NativeShellForm : Form
         // casino layout. The former navigation strip and preview footer were
         // temporary migration scaffolding and must not be reinstated.
         Controls.Add(content);
+        routeTransition = new NativeRouteTransitionOverlay(this, content);
         loungeRefresh.Tick += (_, _) =>
         {
             if (closing || activeMode != "chill-lounge" || !ready) return;
@@ -266,10 +270,13 @@ internal sealed class NativeShellForm : Form
 
     // Minimal internal acceptance interface; never used by React or game commands.
     internal bool BrowserReady => ready && !browserFailed;
+    internal bool TransitionVisible => routeTransition.Visible && routeTransition.Opacity > .1;
     internal string? BrowserMode => activeMode;
     internal CoreWebView2? BrowserCore => browser?.CoreWebView2;
     internal Task OpenForAcceptanceAsync(string mode) => OpenModeAsync(mode);
-    internal void ReturnForAcceptance() => ReturnToHome();
+    // Acceptance checks require a synchronous return; normal users get a
+    // composited fade before the old WebView HWND is detached.
+    internal void ReturnForAcceptance() => ReturnToHomeNow();
 
     private static Button MakeButton(string label, Action click)
     {
@@ -366,6 +373,24 @@ internal sealed class NativeShellForm : Form
     }
 
     private void ReturnToHome()
+    {
+        if (closing || routeSwitchPending) return;
+        if (activeMode == "blackjack" && runtime.HandInProgress)
+        {
+            status.Text = "Finish the Blackjack hand before returning to the lobby.";
+            return;
+        }
+        _ = ReturnToHomeWithTransitionAsync();
+    }
+
+    private async Task ReturnToHomeWithTransitionAsync()
+    {
+        routeSwitchPending = true;
+        await routeTransition.CoverAsync(null, !runtime.Preferences.AnimationsEnabled);
+        if (!closing) ReturnToHomeNow();
+    }
+
+    private void ReturnToHomeNow()
     {
         if (activeMode == "blackjack" && runtime.HandInProgress)
         {
@@ -488,11 +513,20 @@ internal sealed class NativeShellForm : Form
         if (closing || lobbyBrowserDisabled || activeMode is not null
             || !File.Exists(Path.Combine(frontendFolder, "lobby.html"))) return;
 
+        // Cover before destroying the old child HWND. A persistent owned
+        // native window bridges both WebView2 generations without dark frames.
+        if (!routeSwitchPending)
+        {
+            routeSwitchPending = true;
+            await routeTransition.CoverAsync(null, !runtime.Preferences.AnimationsEnabled,
+                instant: browser is null);
+            if (closing || activeMode is not null) return;
+        }
         DisposeBrowser();
         var web = new WebView2
         {
             Dock = DockStyle.Fill,
-            DefaultBackgroundColor = Color.FromArgb(4, 22, 17),
+            DefaultBackgroundColor = Color.FromArgb(7, 27, 24),
         };
         browser = web;
         content.Controls.Clear();
@@ -571,6 +605,10 @@ internal sealed class NativeShellForm : Form
             status.Text = "Finish the Blackjack hand first.";
             return;
         }
+        if (routeSwitchPending) return;
+        routeSwitchPending = true;
+        await routeTransition.CoverAsync(mode, !runtime.Preferences.AnimationsEnabled);
+        if (closing) return;
         if (activeMode == "reels" && mode != "reels") runtime.CloseReels();
         if (activeMode == "neon-vault" && mode != "neon-vault") runtime.CloseNeonVault();
         if (activeMode == "nine-lives" && mode != "nine-lives") runtime.CloseNineLives();
@@ -645,8 +683,7 @@ internal sealed class NativeShellForm : Form
         var web = new WebView2
         {
             Dock = DockStyle.Fill,
-            DefaultBackgroundColor = mode == "blackjack"
-                ? Color.FromArgb(6, 23, 20) : Color.FromArgb(12, 10, 25),
+            DefaultBackgroundColor = Color.FromArgb(7, 27, 24),
         };
         browser = web;
         content.Controls.Add(web);
@@ -698,6 +735,13 @@ internal sealed class NativeShellForm : Form
         }
     }
 
+    private void RevealRouteWhenReady()
+    {
+        if (!routeSwitchPending) return;
+        routeSwitchPending = false;
+        routeTransition.RevealAfterReady();
+    }
+
     private static string PageFor(string mode) => NativeRouteCatalog.WebPageFor(mode);
 
     private static bool IsTrusted(string? mode, string? source) => mode switch
@@ -745,6 +789,7 @@ internal sealed class NativeShellForm : Form
                     ready = true;
                     watchdog.Stop();
                     status.Text = "Native React lobby · native profile · $" + runtime.Bankroll.ToString("N2");
+                    RevealRouteWhenReady();
                     break;
                 case "lobby.refresh" when activeMode is null && listening:
                     RefreshLobbySnapshot();
@@ -805,6 +850,7 @@ internal sealed class NativeShellForm : Form
                     loungeRefresh.Start();
                     loungeTowerRefresh.Start();
                     status.Text = "Chill Lounge ready: eight native games.";
+                    RevealRouteWhenReady();
                     break;
                 case "lounge.close" when activeMode == "chill-lounge" && ready:
                     if (LoungeMessageVersion(root))
@@ -859,6 +905,7 @@ internal sealed class NativeShellForm : Form
                     Post("empire.activated", new { VisitId = 1 });
                     Post("empire.visibility", new { Visible = true });
                     status.Text = "Casino Empire ready.";
+                    RevealRouteWhenReady();
                     break;
                 case "empire.refresh" when activeMode == "casino-empire" && listening:
                     RefreshGameSnapshot();
@@ -894,6 +941,7 @@ internal sealed class NativeShellForm : Form
                     ready = true;
                     watchdog.Stop();
                     status.Text = runtime.Status;
+                    RevealRouteWhenReady();
                     break;
                 case "roulette.close" when activeMode == "roulette" && ready:
                     BeginInvoke(new Action(ReturnToHome));
@@ -930,6 +978,7 @@ internal sealed class NativeShellForm : Form
                     ready = true;
                     watchdog.Stop();
                     status.Text = runtime.Status;
+                    RevealRouteWhenReady();
                     if (activeMode == "midnight-dice") _ = AdvanceDiceAiIfNeededAsync();
                     break;
                 case "blackjack.refresh" when activeMode == "blackjack":
@@ -1639,6 +1688,7 @@ internal sealed class NativeShellForm : Form
             listening = ready = true;
             watchdog.Stop();
             status.Text = runtime.Status;
+            RevealRouteWhenReady();
             return;
         }
         if (command.Type == "ui.close")
@@ -1718,6 +1768,8 @@ internal sealed class NativeShellForm : Form
     private void FailBrowser(string message)
     {
         if (closing || browserFailed) return;
+        routeSwitchPending = false;
+        routeTransition.Dismiss(); // Recovery controls must never be hidden.
         empireRefresh.Stop();
         loungeRefresh.Stop();
         loungeTowerRefresh.Stop();
@@ -1745,6 +1797,8 @@ internal sealed class NativeShellForm : Form
 
     private void ShowRecovery(string mode, string problem, bool assetsAvailable)
     {
+        routeSwitchPending = false;
+        routeTransition.Dismiss();
         activeMode = mode;
         DisposeBrowser();
         content.Controls.Clear();
@@ -1832,6 +1886,7 @@ internal sealed class NativeShellForm : Form
         loungeBoard = null;
         detachedEmpire?.Close();
         detachedEmpire = null;
+        routeTransition.Dispose();
         DisposeBrowser();
         updateCancellation.Cancel();
         updateService.Dispose();
