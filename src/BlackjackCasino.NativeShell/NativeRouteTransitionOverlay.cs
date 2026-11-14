@@ -42,6 +42,7 @@ internal sealed class NativeRouteTransitionOverlay : Form
     {
         this.host = host;
         this.viewport = viewport;
+        CasinoWinCursor.Install(this);
         FormBorderStyle = FormBorderStyle.None;
         ShowInTaskbar = false;
         StartPosition = FormStartPosition.Manual;

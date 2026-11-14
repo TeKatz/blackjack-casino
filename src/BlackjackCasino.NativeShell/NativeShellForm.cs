@@ -132,6 +132,7 @@ internal sealed class NativeShellForm : Form
         // casino layout. The former navigation strip and preview footer were
         // temporary migration scaffolding and must not be reinstated.
         Controls.Add(content);
+        CasinoWinCursor.Install(this);
         routeTransition = new NativeRouteTransitionOverlay(this, content);
         loungeRefresh.Tick += (_, _) =>
         {

@@ -6,6 +6,9 @@ config/name="Midnight Manor 3D Bonus Prototype"
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 
+[autoload]
+CasinoCursor="*res://casino_cursor.gd"
+
 [display]
 window/size/viewport_width=1280
 window/size/viewport_height=720

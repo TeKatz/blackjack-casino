@@ -1,0 +1,14 @@
+/* Shared two-state cursor, active before React and Pixi initialize. */
+@media (hover:hover) and (pointer:fine){
+  html,html body,html body *,html body *::before,html body *::after {
+    cursor:url('/cursor/casino-normal.svg') 4 2,auto!important;
+  }
+  html[data-casino-cursor='pressed'],html[data-casino-cursor='pressed'] body,
+  html[data-casino-cursor='pressed'] body *,html[data-casino-cursor='pressed'] body *::before,
+  html[data-casino-cursor='pressed'] body *::after {
+    cursor:url('/cursor/casino-pressed.svg') 4 2,auto!important;
+  }
+}
+@media (forced-colors:active){
+  html,html body,html body *,html body *::before,html body *::after{cursor:auto!important}
+}

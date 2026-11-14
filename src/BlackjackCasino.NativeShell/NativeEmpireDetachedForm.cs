@@ -42,6 +42,7 @@ internal sealed class NativeEmpireDetachedForm : Form
         ClientSize = new Size(1280, 820);
         MinimumSize = new Size(800, 600);
         Controls.Add(web);
+        CasinoWinCursor.Install(this);
         tick.Tick += (_, _) =>
         {
             if (!ready || closing || runtime.LoungeRequiresRestart) return;

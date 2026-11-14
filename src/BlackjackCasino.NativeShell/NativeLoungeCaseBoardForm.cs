@@ -39,6 +39,7 @@ internal sealed class NativeLoungeCaseBoardForm : Form
         ClientSize = new Size(1200, 800);
         MinimumSize = new Size(800, 600);
         Controls.Add(web);
+        CasinoWinCursor.Install(this);
         Shown += async (_, _) => await InitializeAsync();
         FormClosed += (_, _) => closing = true;
     }
