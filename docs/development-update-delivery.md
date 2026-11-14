@@ -1,6 +1,6 @@
 # Development update delivery
 
-## Current Development publisher (2026-11-13)
+## Current Development publisher (2026-11-14)
 
 The active source branch is **`dev`**, descended from the validated `develop` â†’ `main` integration commit `24c26c3`. The former `develop` and `dev` branch names are no longer active Development publishers. Both the `on.push.branches` filter and the `publish-development.if` ref guard in `.github/workflows/development-release.yml` select exactly that branch. The publisher builds and tests the frontend and native .NET solution, runs Windows startup/presentation checks, creates the installer package and verifies the SHA-256 checksum, updater manifest and published GitHub assets. Neither `main` nor `feature/*` pushes publish the mutable Development channel.
 
@@ -8,7 +8,7 @@ The active source branch is **`dev`**, descended from the validated `develop` â†
 
 `https://github.com/TeKatz/blackjack-casino/releases/download/development/update-manifest.json`
 
-The upgrade channel, asset names, semantic-version ordering, updater schema and player-data location are unchanged. Only a successful release publication will be offered to installed clients; a branch build or PR artifact is not a released update. The release contains `blackjack-casino-win-x64.zip`, its checksum, the update manifest and release notes.
+The upgrade channel, asset names, semantic-version ordering and updater schema are unchanged. Development publishes NativeShell directly, not the retired WPF host. Existing Development NativeShell profiles remain in their established storage directory. A WPF-free Desktop.exe compatibility alias is included for older updater contracts and Windows shortcuts. Modern updaters restart NativeShell directly. Only a successful release publication will be offered to installed clients; a branch build or PR artifact is not a released update. The release contains `blackjack-casino-win-x64.zip`, its checksum, the update manifest and release notes.
 
 The [Casino Music Importer](casino-music-importer.md) is still launched through Actions on the default `main` branch, but it explicitly checks out/commits into `dev` and optionally dispatches the Development Release workflow from `dev`.
 

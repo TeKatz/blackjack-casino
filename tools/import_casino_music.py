@@ -13,7 +13,7 @@ from urllib.parse import unquote, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 ROOT = Path(__file__).resolve().parents[1]
-MUSIC = ROOT / "src/BlackjackCasino.Desktop/Assets/Music/Licensed"
+MUSIC = ROOT / "src/BlackjackCasino.Assets/Music/Licensed"
 CREDITS = MUSIC / "credits.json"
 AREAS = {
     "midnight-manor": "midnight-manor.mp3",

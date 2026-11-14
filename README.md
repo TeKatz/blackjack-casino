@@ -2,7 +2,7 @@
 
 An **offline-first, single-player casino for Windows**, built around virtual credits and progression. No real-money gambling, payments, accounts, advertisements or online services are required for gameplay.
 
-The desktop application uses **.NET 10 with WPF as the Windows host**. The casino lobby, Chill Lounge hub, Blackjack table, Midnight Reels, Neon Vault, Nine Lives, Midnight Merge, Midnight Dice, Casino Empire and Midnight Manor now have modern **React + TypeScript** presentations, hosted locally through **WebView2**; PixiJS powers richer scenes where appropriate. Player profile editing (display name, owned titles/portraits), Season Pass management, Blackjack Hand History and the lobby's Casino Vault now live in React, alongside the shop, challenges and statistics. The Collector's Album (including its five-card pack-opening animations, artwork archive and sequential Open All) has also moved to React. Progress export and the emergency Album fallback remain native. Existing game logic and persistent player data remain in C#.
+The Windows application runs on **.NET 10 with a WPF-free WinForms/WebView2 NativeShell**. The casino lobby and all game surfaces are local **React + TypeScript**, with PixiJS and embedded Godot where appropriate. C# remains authoritative for game outcomes, wagers, progression, receipts and durable saves. The former WPF application has been removed from the active source tree. A small **WPF-free** `BlackjackCasino.Desktop.exe` compatibility alias remains in published ZIPs solely for existing shortcuts and older updater restart contracts; the actual application is `BlackjackCasino.NativeShell.exe`.
 
 The current migration repairs and device acceptance checks are documented in [Migration regression repairs](docs/migration-regression-repairs.md). Phase 5 consolidates seven React game routes behind a shared foreground-surface adapter and the ten React page hosts behind a common offline WebView2 security bootstrap; see [Desktop host modernization](docs/host-modernization-phase5.md).
 
@@ -36,9 +36,9 @@ The casino lobby uses its own React/TypeScript entry point (`frontend/lobby.html
 - Responsive DOM layout with accessible keyboard-focus states, compact screen-height handling, card hover lift, image zoom, reflected highlights and gold button feedback.
 - Transparent **PixiJS particle atmosphere**, limited to 30 FPS and paused while the document is hidden; it respects reduced-motion settings and the game's animation preference.
 - **C#-owned** player balances, progression and mode availability. The isolated WebView2 lobby sends only allowed navigation intents; it cannot calculate rewards or change saved finances.
-- The original **WPF lobby remains as an emergency fallback** if WebView2 is unavailable or the modern page does not load; the Blackjack table is never the startup surface. The obsolete native Daily Login drawer is removed, and the old WPF startup-welcome source remains only for legacy regression checks. Every existing game opens through the original registered C# action, including Casino Empire's detached-window option.
+- If the React lobby or WebView2 is unavailable, a native WinForms emergency screen offers supported game routes and recovery without starting WPF. The normal lobby preserves its stable React/PixiJS tile objects across tab switches.
 
-For native builds, run `npm run build` from `frontend/` before the .NET build. Vite emits `index.html` (Manor), `lobby.html`, `empire.html`, `blackjack.html` and `reels.html`, plus their local assets into `frontend/dist/`; the desktop project packages that whole directory as `ModernFrontend`.
+For native builds, run `npm run build` from `frontend/` before the .NET build. Vite emits `index.html` (Manor), `lobby.html`, `empire.html`, `blackjack.html` and `reels.html`, plus their local assets into `frontend/dist/`; the NativeShell project packages that whole directory as `ModernFrontend`.
 
 ## Blackjack: native table removed
 
@@ -61,7 +61,7 @@ The Chill Lounge uses a local React/TypeScript hub (`frontend/lounge.html`) with
 
 **Memory now plays directly in the React Lounge** as well. It preserves the five original table sizes (4×4, 4×5, 6×6, 6×8 and 8×8), all four curated decks (Casino Icons, Card Suits, Animals and Fruits & Treats), the native C# match/mismatch rules, flipped-card animations, the original flip/match/miss/perfect sound effects, streaks, accuracy, autosaved resume, and the completion summary with exactly-once XP awards. Only face-up and matched cards have identifying symbols in the browser: the native shuffle/solution remains private. See [Memory modernization](docs/memory-modernization.md).
 
-**Jigsaw Puzzle now plays in the React Lounge with a PixiJS board.** The twelve offline images, eight grid sizes (24–1,000), saved piece positions, native snapping/group movement, thirty achievements and completion rewards remain compatible with the original C# implementation. The new studio includes the gallery, tray, zoom/panning, reference view, resume and completion. See [Jigsaw modernization](docs/jigsaw-modernization.md). **Tales from the Backroom** now also runs in React, joining the other React Chill Lounge routes. Its three public stories retain the native AdventureEngine, character classes, inventory and conditions, D20 checks, mystery board, Blackjack/Five-of-a-Kind encounters, saves and completion progression. The older Strangers' Wager remains a loadable compatibility/test story rather than a fourth public adventure. Legacy WPF presentations remain as rollback coverage. See [Tales modernization](docs/adventure-modernization.md).
+**Jigsaw Puzzle now plays in the React Lounge with a PixiJS board.** The twelve offline images, eight grid sizes (24–1,000), saved piece positions, native snapping/group movement, thirty achievements and completion rewards remain compatible with the original C# implementation. The new studio includes the gallery, tray, zoom/panning, reference view, resume and completion. See [Jigsaw modernization](docs/jigsaw-modernization.md). **Tales from the Backroom** now also runs in React, joining the other React Chill Lounge routes. Its three public stories retain the native AdventureEngine, character classes, inventory and conditions, D20 checks, mystery board, Blackjack/Five-of-a-Kind encounters, saves and completion progression. The older Strangers' Wager remains a loadable compatibility/test story rather than a fourth public adventure. The legacy WPF presentation files have been removed; C# save compatibility is retained. See [Tales modernization](docs/adventure-modernization.md).
 
 **Midnight Bastion (Tower Defense)** is the seventh lounge activity, shown as a featured custom strategy tile with its own vector fortress illustration. Phase 2 adds locally bundled illustrated unit sprites and a moonlit battlefield, projectile and impact FX, an expanded tower workshop, ambient fireflies and gesture-unlocked, preference-aware synthesized audio. Phase 1 has a PixiJS battlefield with one fixed-path map, 10 build pads, three upgradeable tower types, four enemy classes, 15 manually started waves, pause/resume, 1×/2× speed, selling, defeat/victory and native C#-verified simulation. The game autosaves inside existing app preferences and continues paused after reopening, including recovery of saves affected by the old negative spawn-clock defect. The wave indicator counts confirmed kills instead of enemy spawns or shots; native state distinguishes escapes. A compact desktop layout keeps the map and workshop in view, with expanded causeway/forest detailing and distinct tower-attack sounds. Tower Defense has no wagers or shared XP/coin payouts in this initial phase. See [Tower Defense phase 1](docs/tower-defense-phase1.md) and [current presentation and reliability notes](docs/tower-defense-phase2.md).
 
@@ -71,11 +71,11 @@ The Chill Lounge uses a local React/TypeScript hub (`frontend/lounge.html`) with
 Idle and held dice show one flat, readable result face. The six-sided 3D model is mounted only during a throw and hands the view back to the flat result after landing. Outcomes, holds, scoring and settlements remain authoritative in native C#.
 
 
-Midnight Dice now opens through the local `frontend/midnight-dice.html` WebView2 page. Both the free solo score sheet and the paid four-player casino table use a responsive React interface with five equipped cosmetic dice, thirteen native score categories, individual hold/reroll controls, AI standings and opponent sheets, the existing entry tiers, result receipts and gold five-of-a-kind celebrations. The same C# `KniffelGame`, `KniffelCash`, `KniffelTable` and progression services resolve every dice face, score, fee, payout and reward **before** the browser updates. Session receipts prevent duplicate actions after a browser failure, and saved casual/casino states retain their original formats. The WPF dice interface is retained only as unlinked source for rollback while device visual/audio acceptance continues. See [Midnight Dice](docs/kniffel.md).
+Midnight Dice now opens through the local `frontend/midnight-dice.html` WebView2 page. Both the free solo score sheet and the paid four-player casino table use a responsive React interface with five equipped cosmetic dice, thirteen native score categories, individual hold/reroll controls, AI standings and opponent sheets, the existing entry tiers, result receipts and gold five-of-a-kind celebrations. The same C# `KniffelGame`, `KniffelCash`, `KniffelTable` and progression services resolve every dice face, score, fee, payout and reward **before** the browser updates. Session receipts prevent duplicate actions after a browser failure, and saved casual/casino states retain their original formats. The WPF dice source has been removed; the existing native C# score, receipt and persistence contracts remain. See [Midnight Dice](docs/kniffel.md).
 
 ## Neon Vault: React/PixiJS high-voltage casino
 
-Neon Vault is now rendered in a responsive, local React/PixiJS cabinet (`frontend/neon-vault.html`). The established five-reel, four-row, 1,024-ways C# game resolves spins and all bonus features **before** the browser visualizes them. The modern client presents the existing tier ladder through $250K, the four Access Key jackpots, Vault Break free spins, expanding Wilds, Vault Energy / Security Override, three Blackout events and anticipation without calculating payouts. The original WPF slot window, reel animations and its old symbol textures are retired; the native host and lobby artwork remain until the surrounding shell is replaced. See [Neon Vault implementation](docs/neon-vault.md).
+Neon Vault is now rendered in a responsive, local React/PixiJS cabinet (`frontend/neon-vault.html`). The established five-reel, four-row, 1,024-ways C# game resolves spins and all bonus features **before** the browser visualizes them. The modern client presents the existing tier ladder through $250K, the four Access Key jackpots, Vault Break free spins, expanding Wilds, Vault Energy / Security Override, three Blackout events and anticipation without calculating payouts. The original WPF slot window, reel animations and its old symbol textures are retired; the WPF-free NativeShell now owns the entire game lifecycle. See [Neon Vault implementation](docs/neon-vault.md).
 
 ## Nine Lives: React/PixiJS rooftop
 
@@ -85,9 +85,9 @@ The normal Nine Lives destination is now the responsive React/PixiJS cabinet (`f
 
 Empire opens directly in React/TypeScript/WebView2, both inside the casino and in its optional detached window. The estate gallery, room inspector, floors, circuits, research, projects, properties, specialists, automation, events, contracts, statistics and prestige use the existing C# economy and transaction/save paths. One retained PixiJS lighting scene decorates the selected room; text and controls remain DOM content. Original room artwork is packaged offline at its existing source resolution.
 
-The independent one-second economy clock is unchanged. Hidden/minimized views and reduced-motion settings stop decorative rendering. Purchases require a validated session/revision and request ID; previews use isolated C# state, and uncertain responses never automatically repeat a purchase. The old Empire WPF source is retained for rollback and benchmark comparison, outside the normal navigation path.
+The independent one-second economy clock is unchanged. Hidden/minimized views and reduced-motion settings stop decorative rendering. Purchases require a validated session/revision and request ID; previews use isolated C# state, and uncertain responses never automatically repeat a purchase. The former WPF Empire presentation is removed; native Empire state and transaction checks remain.
 
-Windows smoke captures the three supported desktop sizes and detached hosting. A sequential WPF/modern benchmark writes actual CPU, memory and callback interval samples to `empire-presentation-performance.json`. These runner diagnostics do not certify GPU performance, long sessions or visual acceptance. See [Empire](docs/casino-empire.md) for the protocol, measurement limitations and manual acceptance checklist.
+Native Windows/WebView2 smoke covers real lobby and game-route hosting; independent manual performance, DPI and extended-session acceptance remains required. See [Empire](docs/casino-empire.md) for the protocol, measurement limitations and manual acceptance checklist.
 
 ## Midnight Manor: modern presentation
 
@@ -103,9 +103,9 @@ Windows smoke captures the three supported desktop sizes and detached hosting. A
 - Original C# game logic for random outcomes, payouts, bet validation and player decisions
 - Local rendering and audio; the browser interface cannot directly change a balance or award
 
-An optional [embedded Godot 3D Manor bonus prototype](docs/manor-godot-bonus.md) is accessible through **Display Settings → Test Bonus Game** without spins or payouts. Actual bonus rounds retain the existing 2D presentation by default; an optional session-only switch enables the experimental 3D display. The 3D scene runs locally inside the same WebView2 window, while C# continues to own rules, payouts, and saves.
+The integrated local Godot 3D Escape the Manor bonus replaces the older 2D bonus presentation. Its rooms, ghost/item logic, checkpoints and final payouts remain tied to validated native C# session state and receipts; the scene is unloaded on exit.
 
-The legacy WPF Manor source remains available for a controlled rollback build, but is **not a second player-selectable game**. Its removal from the menu does not change the save format, payout tables or game rules.
+The former WPF Manor source is removed. Save formats, payout tables and game rules remain unchanged.
 
 Technical details: [modernization roadmap](docs/modernization-roadmap.md), [Manor design](docs/midnight-manor-design.md), [acceptance and recovery tests](docs/midnight-manor-acceptance.md).
 
@@ -118,7 +118,7 @@ Download a packaged Windows build from [GitHub Releases](https://github.com/TeKa
 | **Stable** | Regular releases | Latest stable GitHub release |
 | **Development** | Early access to validated changes | Mutable [development release](https://github.com/TeKatz/blackjack-casino/releases/tag/development), also available through the in-app updater |
 
-The updater validates package size and SHA-256 before staged installation. Player data is stored outside the installation directory, in `%LOCALAPPDATA%\BlackjackCasino`. Keep a backup when validating changes to persistence or updating an older installation.
+The updater validates package size and SHA-256 before staged installation. Player data is stored outside the installation directory under `%LOCALAPPDATA%\BlackjackCasino`; NativeShell retains the already-used `NativeShellPreview/Candidates/development` profile for previous Development players and never silently reimports older data over it. Keep a backup when validating changes to persistence or updating an older installation.
 
 **Branch model:** `main` is the tested integration baseline, and **`dev`** is the active source of the mutable Development updater. Only successfully verified builds from the [Development Release workflow](.github/workflows/development-release.yml) publish to the [existing in-app manifest](https://github.com/TeKatz/blackjack-casino/releases/download/development/update-manifest.json). Feature/PR builds are not in-app updates. `main` does not automatically publish a Stable release. See [branching policy](docs/branching-and-release-policy.md).
 
@@ -129,7 +129,10 @@ See [Development update delivery](docs/development-update-delivery.md) for relea
 | Path | Responsibility |
 | --- | --- |
 | `src/BlackjackCasino.Core/` | Game rules, bankroll, rewards, progression and state models |
-| `src/BlackjackCasino.Desktop/` | Windows shell, existing WPF games, WebView2 host, settings and persistence |
+| `src/BlackjackCasino.NativeShell/` | Production WinForms/WebView2 host, game bridges and native recovery |
+| `src/BlackjackCasino.HostShared/` | Shared C# save, protocol, audio and profile sources (compiled into NativeShell and tests) |
+| `src/BlackjackCasino.Assets/` | Original offline artwork, icons, licensed audio and provenance |
+| `src/BlackjackCasino.CompatLauncher/` | WPF-free launcher with the old executable filename for older upgrades |
 | `frontend/` | Modern lobby and Midnight Manor pages, local generated asset atlases and PixiJS effects |
 | `src/BlackjackCasino.Update/` | Update manifest, version and package validation |
 | `src/BlackjackCasino.Updater/` | Staged installation and restart helper |
@@ -146,7 +149,7 @@ Read the [architecture guide](docs/architecture.md) for service boundaries and t
 
 Development requires Windows and the **.NET 10 SDK** compatible with [global.json](global.json). The modern frontend uses **Node.js 22**.
 
-Build the frontend before the Windows client so its bundled files are included in the desktop output:
+Build the frontend before NativeShell so its offline bundles are included in the release output:
 
 ```powershell
 cd frontend
@@ -156,25 +159,28 @@ npm run build
 cd ..
 
 python tools/check_repo_contract.py
+python tools/check_native_cutover.py
 python tools/check_localization.py
 python tools/check_localization_coverage.py --strict-shell
 python tools/check_adventure_localization.py
 dotnet restore BlackjackCasino.sln
 dotnet build BlackjackCasino.sln --configuration Release
 dotnet test BlackjackCasino.sln --configuration Release --no-build
+dotnet run --project src/BlackjackCasino.NativeShell --configuration Release -- --smoke
+dotnet run --project src/BlackjackCasino.NativeShell --configuration Release -- --web-smoke
 ```
 
-Windows CI additionally runs actual desktop startup, Manor runtime and presentation regression tests. A successful frontend build or documentation check alone does not prove an installable Windows release. Production packages are created and verified by the release workflows.
+Windows CI additionally runs NativeShell receipt, real WebView2 startup/game navigation and packaged artwork checks. A successful frontend build or documentation check alone does not prove an installable Windows release. Production packages are created and verified by the release workflows.
 
-## WPF cleanup and React Lounge separation
+## Final native-host cutover
 
-All eight normal Chill Lounge routes are now registered by `ModernLoungeCatalog`, independent of the emergency native game registry. Opening React does not create legacy WPF game screens or load their presentation decorators. `OpenLegacyLounge` is reserved for the explicit WebView2 failure/unavailable fallback. The old startup-welcome WPF dialog is no longer a player-facing route; its legacy visual and language smoke remains for regression coverage. The automated [WPF cleanup inventory](docs/legacy-wpf-inventory.md) records the remaining compiled native dependencies; these must not be deleted before device and recovery acceptance.
+Development publishes `BlackjackCasino.NativeShell.exe` directly, with a WPF-free compatibility alias for existing updater installations. The original WPF, XAML, fallback games and WPF smoke-tool sources have been retired. On its first launch the NativeShell imports an older WPF save only if no persistent native profile already exists. An existing Development native profile always takes precedence; neither a failed import nor a browser crash overwrites the original legacy data. The external updater stages, validates and atomically replaces program files, then restarts NativeShell. Stable changes are released only by explicit verified tags from `main`. See [native host cutover](docs/native-shell-migration.md).
 
 ## Current engineering boundaries
 
 - **Midnight Manor:** modern presentation is the primary route; remaining subjective audio, display-scaling and long-session performance checks are tracked separately.
 - **Blackjack:** the retired native table, sidebar and custom rule dialog have been removed. React is the only player-facing Blackjack table; its C# session survives a WebView failure and can be rehosted.
-- **Other game interfaces:** the Chill Lounge hub and all eight activities—Sudoku, six Midnight Solitaire variants, Word Search, Memory, Jigsaw, Tales from the Backroom, Midnight Bastion and Midnight Sweep—are React. The old Lounge/Jigsaw/Adventure WPF code remains as emergency fallback and regression coverage. Old Sudoku, Solitaire, Word Search and Memory presentations persist only for fallback and legacy regression checks, not normal navigation. The Midnight Dice WPF source remains for rollback and legacy visual tests, but its normal play route is React. The shared WPF host and emergency lobby remain until all destinations are accepted.
+- **Other game interfaces:** All Chill Lounge activities, Midnight Dice and other casino surfaces use local React/WebView2. Native C# rules, state, progression and financial receipts remain authoritative; there is no WPF game fallback.
 - **Localization:** English/German shell support is present; some older game and adventure content still needs translation.
 - **Player data and financial outcomes:** preserve backward compatibility, deterministic payout tests and exactly-once committed transitions.
 - **Releases:** `dev` publishes the mutable Development channel after verification; Stable is an explicitly tagged release from the tested integrated code on `main`.
@@ -197,7 +203,7 @@ The roadmap tracks completed migration stages and outstanding quality gates; his
 - [Casino Empire](docs/casino-empire.md)
 - [Tales from the Backroom](docs/adventure-engine.md)
 - [Tales React migration](docs/adventure-modernization.md)
-- [Legacy WPF cleanup inventory](docs/legacy-wpf-inventory.md)
+- [Historical WPF cleanup inventory](docs/legacy-wpf-inventory.md)
 
 ### Midnight Bastion campaign
 

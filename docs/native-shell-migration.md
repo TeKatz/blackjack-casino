@@ -1,7 +1,23 @@
-# WPF-free native shell: implementation and parity gate
+# NativeShell migration: final host cutover and historical checkpoints
 
 **Integrated baseline:** `main`; **Development source:** `dev` (historical implementation: `feature/manor-modernization-phase-1`)  
-**Status:** Independent WinForms/WebView2 executable with genuine native Blackjack, Roulette, Midnight Reels, Neon Vault, Nine Lives, Midnight Merge, Midnight Dice and Midnight Manor game bridges. **Preview, not release replacement.** The production installer and auto-updater still package `BlackjackCasino.Desktop.exe` (WPF).
+**Current status (final cutover branch, 2026-11-14):** `BlackjackCasino.NativeShell.exe` is the direct Development package host. WPF/XAML sources and WPF-only runtime tests are retired. Stable changes remain subject to an explicit reviewed tag; they are not automatically published. The chronological phase entries below describe **historical checkpoints**, not the current host state.
+
+## Final WPF-free cutover (2026-11-14)
+
+- Production-style launch without arguments starts NativeShell directly. The already-used Development native profile is reused before considering any legacy save import.
+- `BlackjackCasino.Desktop.exe` in the release ZIP is a tiny **WPF-free WinForms compatibility launcher** for old updaters and shortcuts. It only starts NativeShell. The new `UpdaterLauncher` restarts NativeShell directly.
+- New WinForms browser-recovery routes replace legacy UI fallbacks; no WPF assemblies, XAML, old window code or WPF smoke projects are included.
+- 72 shared C# files, 92 original assets and 26 resource files were moved out of the retired desktop project without changing game mechanics, receipt IDs or save schemas.
+- The existing immutable original legacy saves remain available; failure to safely import blocks startup without opening another writer. Rehearsal and return-export tools remain available as offline safety workflows.
+- Development and Stable packaging scripts now publish NativeShell, the compatibility shim, updater, frontend, audio and Godot assets. Stable still requires explicit tagged signoff.
+- Real WinForms/WebView2 and domain tests are mandatory. Windows 10/11 hardware, audio, DPI, crash/restore, extended play and accessibility signoff are separate from code-level CI.
+
+### Historical migration checkpoints
+
+The following sections record the staged approach and constraints **at the time
+of each phase**. Earlier claims that NativeShell was only a preview or that WPF
+was still the Development release target were superseded by this final cutover.
 
 ## What is already functional without WPF
 

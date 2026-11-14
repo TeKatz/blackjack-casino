@@ -36,6 +36,18 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+      # The production NativeShell package must include the actual Godot Web
+      # Manor bonus, not just Vite's HTML/TypeScript frontend.
+      - name: Cache single-threaded Godot Web export templates
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Roaming/Godot/export_templates/4.5.1.stable
+          key: manor-godot-4.5.1-web-nothreads-windows-v1
+
+      - name: Import and export the bundled Manor 3D Web bonus
+        shell: pwsh
+        run: ./tools/build_manor_bonus_web.ps1 -OutputDirectory frontend/dist/manor3d
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
@@ -59,6 +71,15 @@ jobs:
       - name: Test
         run: dotnet test BlackjackCasino.sln --configuration Release --no-build
 
+      - name: Native release architecture and receipt/browser acceptance
+        run: python tools/check_native_cutover.py
+
+      - name: Verify native receipt and save state
+        run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --smoke
+
+      - name: Verify native WebView2 interaction
+        run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --web-smoke
+
       - name: Publish updater
         shell: pwsh
         run: |
@@ -71,10 +92,10 @@ jobs:
             -p:Version=$env:VERSION `
             --output artifacts/updater
 
-      - name: Publish desktop
+      - name: Publish NativeShell and upgrade compatibility alias
         shell: pwsh
         run: |
-          dotnet publish src/BlackjackCasino.Desktop/BlackjackCasino.Desktop.csproj `
+          dotnet publish src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj `
             --configuration Release `
             --runtime win-x64 `
             --self-contained true `
@@ -82,7 +103,15 @@ jobs:
             -p:DebugType=None `
             -p:Version=$env:VERSION `
             --output artifacts/app
-
+          dotnet publish src/BlackjackCasino.CompatLauncher/BlackjackCasino.CompatLauncher.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:DebugType=None `
+            -p:Version=$env:VERSION `
+            --output artifacts/compat-launcher
+          Copy-Item artifacts/compat-launcher/BlackjackCasino.Desktop.exe artifacts/app/BlackjackCasino.Desktop.exe
           New-Item -ItemType Directory -Path artifacts/app/tools/updater -Force | Out-Null
           Copy-Item artifacts/updater/BlackjackCasino.Updater.exe artifacts/app/tools/updater/BlackjackCasino.Updater.exe
 
@@ -96,21 +125,29 @@ jobs:
         shell: pwsh
         run: ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/app/MidnightDescent
 
-      - name: Verify bundled Midnight Manor frontend assets
+      - name: Verify native casino and Midnight Manor frontend assets
         shell: pwsh
         run: |
+          foreach ($executable in @("BlackjackCasino.NativeShell.exe", "BlackjackCasino.Desktop.exe", "tools/updater/BlackjackCasino.Updater.exe")) {
+            if (!(Test-Path "artifacts/app/$executable")) { throw "Native package lacks: $executable" }
+          }
           $index = "artifacts/app/ModernFrontend/index.html"
           $assets = "artifacts/app/ModernFrontend/assets"
           if (!(Test-Path $index)) { throw "Modern Manor index.html was not packaged." }
           if (!(Test-Path $assets)) { throw "Modern Manor bundles were not packaged." }
+          foreach ($resource in @("index.html", "index.js", "index.wasm", "index.pck")) {
+            if (!(Test-Path "artifacts/app/ModernFrontend/manor3d/$resource")) {
+              throw "Published NativeShell is missing Manor 3D Web export: $resource"
+            }
+          }
           $javascript = Get-ChildItem $assets -Filter "*.js" -File
           if (!$javascript) { throw "Modern Manor JavaScript bundle missing." }
 
-      - name: Verify published single-file Empire artwork
+      - name: Verify packaged native artwork and licensed soundtracks
         shell: pwsh
         run: ./tools/verify_published_artwork.ps1 -AppDirectory artifacts/app -OutputDirectory artifacts/published-artwork-smoke
 
-      - name: Upload published artwork evidence
+      - name: Upload native artwork evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:

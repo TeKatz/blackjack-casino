@@ -1,6 +1,6 @@
 # Branching, integration and releases
 
-**Current policy (2026-11-13):** The complete validated `develop` baseline was merged into `main` through [integration PR #59](https://github.com/TeKatz/blackjack-casino/pull/59). New work takes place on `dev`, the active long-lived Development branch descended from the validated `main` integration. The former `develop` and `dev` names are no longer active Development sources.
+**Current policy (2026-11-14):** The complete validated `develop` baseline was merged into `main` through [integration PR #59](https://github.com/TeKatz/blackjack-casino/pull/59). New work takes place on `dev`, the active long-lived Development branch descended from the validated `main` integration. The former `develop` and `dev` names are no longer active Development sources.
 
 | Source | Responsibility |
 | --- | --- |
@@ -20,7 +20,7 @@ The 2026-11-08 integration through PR #36 and the 2026-11-13 consolidation throu
 ## Integration checklist
 
 1. Synchronize with the newest integration baseline, inspect divergent commits, resolve conflicts deliberately without silently discarding changes, and keep save/RNG/payout contracts stable.
-2. Run repository documentation checks, localization parity, frontend tests/build, .NET tests, Windows startup and presentation regression, plus updater/checksum validation for releases.
+2. Run repository documentation and WPF-free architecture checks, localization parity, frontend tests/build, .NET tests, native WinForms/WebView2 game/navigation regression, plus updater/checksum validation for releases.
 3. Confirm **the exact integration SHA** has completed required checks before merging. Passing automation does not substitute for manual visual/audio/DPI/extended-session acceptance.
 4. Merge through reviewable PRs. No unrelated force-push, tag, release-channel switch or deletion of historical branches.
 

@@ -1,5 +1,7 @@
 # Modern casino frontend — staged migration roadmap
 
+**Current implementation (2026-11-14):** NativeShell (WinForms/WebView2) is the Windows host. The historical WPF stages below are completed/retired. See [native cutover architecture](architecture.md) for active file paths, updater and save safety.
+
 **Current integration status (2026-11-08):** The cumulative modernization is consolidated into `main` through [integration PR #36](https://github.com/TeKatz/blackjack-casino/pull/36). New tested Development packages are sourced from the permanent `develop` branch. The modern lobby, Manor, Blackjack, Midnight Dice, Collector's Album, seven Chill Lounge activities and the other implemented React games are part of the integrated baseline. Later quality and device acceptance work remains separate from compile success. The dated milestones below are retained as technical history; see [current branch policy](branching-and-release-policy.md).
 
 **Historical implementation status (2026-11-04):** Midnight Manor's React/TypeScript/PixiJS/WebView2 presentation is the sole Manor lobby entry in Development. Phase-3 rendering, six bonus chambers, the restricted C# command bridge and crash-safe settlements are implemented. The replacement passed CI and Development package verification on `2114b05`; additional hardware/visual checks remain open. At that date, Development ran on `feature/manor-modernization-phase-1` without a merge to `main`. WPF Manor is retained in source for rollback only; the frontend never decides results or modifies wallets directly.
