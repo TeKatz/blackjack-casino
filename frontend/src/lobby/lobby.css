@@ -671,3 +671,60 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
   background-size:contain;background-position:center;background-repeat:no-repeat;
   box-shadow:none;filter:drop-shadow(0 0 6px #cba95d33);
 }
+
+
+/* Midnight Club enhancements: restrained parallax, motion and accessibility. */
+.lobby-hero{isolation:isolate;}
+.lobby-hero-picture{inset:-5px;width:calc(100% + 10px);height:calc(100% + 10px);
+ transform:translate3d(var(--hero-back-x,0px),var(--hero-back-y,0px),0);
+ will-change:transform;}
+.lobby-hero-foreground{position:absolute;inset:-5px;z-index:1;pointer-events:none;
+ background:url('/lobby/art/hero.png') 70% 50% / cover no-repeat;
+ -webkit-mask-image:linear-gradient(to bottom,transparent 45%,#000 82%);
+ mask-image:linear-gradient(to bottom,transparent 45%,#000 82%);
+ transform:translate3d(var(--hero-front-x,0px),var(--hero-front-y,0px),0);}
+.lobby-hero-light{position:absolute;inset:-15% -7% -30% 38%;z-index:1;pointer-events:none;
+ background:radial-gradient(ellipse at 62% 54%,#f2bc5e21,transparent 60%);
+ mix-blend-mode:screen;transform:translate3d(var(--hero-light-x,0px),0,0);}
+.lobby-hero-sheen{position:absolute;inset:0;z-index:1;pointer-events:none;
+ background:linear-gradient(108deg,transparent 28%,#ffe9b800 44%,#ffe2a516 50%,#ffe9b800 56%,transparent 68%);
+ transform:translateX(-75%);animation:lobby-hero-glint 14s ease-in-out infinite;}
+@keyframes lobby-hero-glint{0%,18%{transform:translateX(-75%)}43%,100%{transform:translateX(105%)}}
+.lobby-hero::after{z-index:2}
+.hero-copy{z-index:3}
+
+/* A single sliding selection surface; actual buttons still own hit testing/focus. */
+.lobby-nav-scroll{position:relative;isolation:isolate}
+.lobby-nav-selection-track{position:absolute;top:0;left:0;right:0;height:48px;
+ opacity:0;pointer-events:none;z-index:0;border:1px solid #d7aa58;border-radius:12px;
+ background:linear-gradient(115deg,#24553a,#0d301d);
+ box-shadow:0 0 14px #f0cb6466,inset 0 0 12px #f6ce6330;}
+.lobby-nav-selection-track[data-ready="true"]{
+ transition:transform .34s cubic-bezier(.2,.8,.2,1),height .25s ease,opacity .18s ease;}
+.lobby-nav-selection-track::before{content:"";position:absolute;left:0;top:20%;bottom:20%;
+ width:3px;border-radius:3px;background:#f7d88f;box-shadow:0 0 10px #ffe6a5;}
+.lobby-nav-scroll .lobby-nav-item{position:relative;z-index:1;flex:0 0 auto}
+.lobby-nav-scroll .lobby-nav-item.selected{
+ background:transparent;border-color:transparent;box-shadow:none;}
+.lobby-nav-scroll .lobby-nav-item:hover:not(.selected){background:#174b346e}
+.lobby-nav-scroll .nav-icon{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.lobby-nav-scroll .lobby-nav-item:hover .nav-icon{transform:translateY(-2px) scale(1.06)}
+.lobby-nav-scroll .lobby-nav-item:active .nav-icon{transform:scale(.95)}
+
+/* Incoming tiles use FLIP geometry via the independent CSS translate property.
+   This leaves the existing hover transform and Pixi clipping intact. */
+.lobby-game{backface-visibility:hidden;}
+
+/* Server-confirmed daily claims fly to the real native bankroll field. */
+.lobby-claim-flight{position:fixed;inset:0;z-index:25;pointer-events:none;overflow:hidden}
+.lobby-flight-coin{position:absolute;width:var(--coin-size,14px);height:var(--coin-size,14px);
+ margin-left:-7px;margin-top:-7px;border-radius:50%;opacity:0;
+ border:2px solid #ffdf90;background:radial-gradient(circle at 33% 28%,#fff1be,#e3b95e 54%,#95622d);
+ box-shadow:0 0 10px #ffd889b0,inset 0 0 0 2px #8e5c27;}
+.casino-lobby-shell[data-reduced="true"] .lobby-hero-sheen{animation:none;opacity:0}
+.casino-lobby-shell[data-reduced="true"] .lobby-nav-selection-track{transition:none}
+.casino-lobby-shell[data-reduced="true"] .lobby-nav-scroll .nav-icon{transition:none}
+@media(prefers-reduced-motion:reduce){
+ .lobby-hero-sheen{animation:none!important;opacity:0}
+ .lobby-nav-selection-track,.lobby-nav-scroll .nav-icon{transition:none!important}
+}

@@ -1,5 +1,5 @@
 import {finishModeBoot} from '../boot/finishModeBoot';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type {PointerEvent as ReactPointerEvent} from 'react';
 import { createRoot } from 'react-dom/client';
 import {PlayerPortrait,CosmeticTitle,VaultIcon} from './Cosmetics';
@@ -11,6 +11,10 @@ import './rouletteTile.css';
 import {ArcadeMenu} from './ArcadeMenu';
 import {ARCADE_MODE_ID,arcadeLobbyMode} from './arcadeCatalog';
 import { LobbyAmbient } from './LobbyAmbient';
+import {LobbyHero} from './LobbyHero';
+import {useLobbyFilterMotion} from './LobbyFilterMotion';
+import {BankrollCounter,DailyClaimFlight,isConfirmedDailyClaim} from './DailyClaimEffects';
+import type {PendingDailyClaim,DailyClaimReceipt} from './DailyClaimEffects';
 import {stableLobbyTiles} from './lobbyTiles';
 import { ModernShop } from './ModernShop';
 import { ModernChallenges } from './ModernChallenges';
@@ -78,7 +82,7 @@ function GameTile({ mode, hidden, language, motionEnabled, onOpen, onSecondary }
     event.currentTarget.style.setProperty('--motion-x','0px');
     event.currentTarget.style.setProperty('--motion-y','0px');
   };
-  return <article hidden={hidden} className={'lobby-game game-'+mode.id+
+  return <article hidden={hidden} data-lobby-id={mode.id} className={'lobby-game game-'+mode.id+
       (mode.enabled?'':' unavailable')} onPointerMove={move} onPointerLeave={leave}>
     <div className="game-art-window" data-mode-art={mode.id} aria-hidden="true">
       {mode.id==='roulette'&&<div className="roulette-tile-art"><span>✦</span><i/></div>}
@@ -132,7 +136,7 @@ function DailyLogin({data,onClaim,onClose,mobileOpen}:{data:LobbySnapshot;onClai
         const completed = reward.day <= daily.cycleCompletedSteps;
         const active = daily.canClaim && reward.day === daily.activeStep;
         const claimedToday = daily.claimedToday && reward.day === daily.activeStep;
-        return <div key={reward.day} className={'daily-reward '+(active?'current ':completed?'claimed ':'upcoming ')+(reward.pack?'has-pack':'')}
+        return <div key={reward.day} data-daily-reward-day={reward.day} className={'daily-reward '+(active?'current ':completed?'claimed ':'upcoming ')+(reward.pack?'has-pack':'')}
           aria-current={active?'step':undefined}>
           <span className="daily-reward-top">
             <b>{de?'Tag':'Day'} {reward.day}</b>
@@ -190,6 +194,10 @@ function LobbyApp() {
   const [shopPending,setShopPending] = useState<string|null>(null);
   const [shopNotice,setShopNotice] = useState<{success:boolean;message:string}|null>(null);
   const [filter,setFilter] = useState<Filter>('all');
+  const pendingClaim=useRef<PendingDailyClaim|null>(null);
+  const [claimReceipt,setClaimReceipt]=useState<DailyClaimReceipt|null>(null);
+  const navScroll=useRef<HTMLDivElement>(null);
+  const navMarker=useRef<HTMLDivElement>(null);
   const [arcadeOpen,setArcadeOpen] = useState(false);
   const [updates,setUpdates] = useState<LobbyUpdatesSnapshot>(fallbackUpdates);
   const [updatesOpen,setUpdatesOpen] = useState(false);
@@ -199,8 +207,28 @@ function LobbyApp() {
   const [settingsOpen,setSettingsOpen] = useState(false);
   const [dailyOpen,setDailyOpen] = useState(false);
   const [lowMotion,setLowMotion] = useState(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const {gridRef,requestFilter,cancelFilterMotion}=useLobbyFilterMotion(
+    filter,setFilter,!lowMotion && data.animationsEnabled);
+
   const [nativeSnapshotReceived,setNativeSnapshotReceived] = useState(!embeddedLobby);
   const [nativePreviewNotice,setNativePreviewNotice] = useState<string|null>(null);
+  useLayoutEffect(()=>{
+    const parent=navScroll.current,marker=navMarker.current;
+    if(!parent||!marker)return;
+    const sync=()=>{
+      const selected=parent.querySelector<HTMLElement>('.lobby-nav-item[aria-current="page"]');
+      if(!selected){marker.style.opacity='0';return;}
+      // offsetTop is in the scrolling content coordinate system.
+      marker.style.height=selected.offsetHeight+'px';
+      marker.style.transform='translate3d(0,'+selected.offsetTop+'px,0)';
+      marker.style.opacity='1';
+      marker.dataset.ready='true';
+    };
+    sync();
+    const resize=new ResizeObserver(sync);
+    resize.observe(parent);
+    return ()=>resize.disconnect();
+  },[filter,recordsVisible,shopVisible,arcadeOpen,nativeSnapshotReceived]);
   useEffect(()=>{
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     const listener = () => setLowMotion(media.matches);
@@ -269,6 +297,12 @@ function LobbyApp() {
     // requestAnimationFrame indefinitely, so a frame-based ready handshake
     // would deadlock the lobby and leave the old WPF fallback visible.
     const stop = onLobbySnapshot(snapshot=>{
+      const pending=pendingClaim.current;
+      if(isConfirmedDailyClaim(pending,snapshot.dailyLogin)){
+        setClaimReceipt({id:snapshot.dailyLogin.totalClaims,day:pending!.day,
+          before:pending!.bankrollValue,after:snapshot.bankrollValue??null});
+        pendingClaim.current=null;
+      }
       setData(snapshot);
       setNativeSnapshotReceived(true);
     });
@@ -321,6 +355,7 @@ function LobbyApp() {
     lobbyCommand('lobby.shop.close');
   };
   const openMode = (id:string)=>{
+    cancelFilterMotion();
     if(nativePreview&&id!==ARCADE_MODE_ID&&!data.modes.some(mode=>mode.id===id&&mode.enabled)){
       previewUnavailable();return;
     }
@@ -349,6 +384,7 @@ function LobbyApp() {
     lobbyCommand('lobby.progression',id);
   };
   const chooseNav = (id:Filter)=>{
+    cancelFilterMotion();
     setArcadeOpen(false);
     if(id==='collections') {openProgression("Collector's Album");return;}
     if(id==='shop') {openShop();return;}
@@ -361,7 +397,7 @@ function LobbyApp() {
     if(id==='daily') {setDailyOpen(true);return;}
     if(id==='profile') {openRecords('profile');return;}
     setDailyOpen(false);
-    setFilter(id);
+    requestFilter(id);
   };
   const openUpdates = () => {
     setSettingsOpen(false);
@@ -385,6 +421,17 @@ function LobbyApp() {
   // Preserve the artwork DOM and its Pixi scene objects while a subpage is
   // open. Hiding instead of unmounting prevents delayed icon reconstruction.
   const lobbyContentVisible=recordsVisible===null&&!shopVisible&&!arcadeOpen;
+  useEffect(()=>{
+    if(!lobbyContentVisible)cancelFilterMotion();
+  },[lobbyContentVisible]);
+  const claimDaily=()=>{
+    if(!data.dailyLogin.canClaim)return;
+    const previous=pendingClaim.current;
+    if(previous&&previous.totalClaims===data.dailyLogin.totalClaims)return;
+    pendingClaim.current={totalClaims:data.dailyLogin.totalClaims,
+      day:data.dailyLogin.activeStep,bankrollValue:data.bankrollValue??null};
+    lobbyCommand('lobby.daily.claim');
+  };
   // Keep the same keyed tile elements across category changes; their PixiJS
   // sprites and first-frame readiness must not reset when returning to Lobby.
   const modes = stableLobbyTiles(
@@ -404,10 +451,11 @@ function LobbyApp() {
         aria-label={de?'Hinweis schließen':'Dismiss notice'}>×</button>
     </div>}
     <LobbyAmbient motionEnabled={!lowMotion && data.animationsEnabled}/>
+    <DailyClaimFlight receipt={claimReceipt} enabled={!lowMotion && data.animationsEnabled}/>
     <header className="lobby-topbar">
       <button className="lobby-brand" type="button"
         onPointerDown={event=>{if(event.pointerType!=='touch')event.preventDefault();}}
-        onClick={event=>{if(event.detail>0)event.currentTarget.blur();if(shopVisible)closeShop();if(recordsVisible)closeRecords();setArcadeOpen(false);setFilter('all');}}>
+        onClick={event=>{cancelFilterMotion();if(event.detail>0)event.currentTarget.blur();if(shopVisible)closeShop();if(recordsVisible)closeRecords();setArcadeOpen(false);setFilter('all');}}>
         <span className="brand-spade" aria-hidden="true">♠</span>
         <span><b>BLACKJACK CASINO</b><i>THE MIDNIGHT CLUB</i></span>
       </button>
@@ -431,7 +479,9 @@ function LobbyApp() {
         </button>
       </div>
       <div className="lobby-finances">
-        <span><small>BANKROLL</small><strong>{data.bankroll}</strong></span>
+        <span><small>BANKROLL</small><BankrollCounter value={data.bankroll}
+          numeric={data.bankrollValue} receipt={claimReceipt}
+          enabled={!lowMotion && data.animationsEnabled}/></span>
         {data.showEmpireBalance&&<span className="empire-wallet"><small>EMPIRE CREDITS</small><strong>{data.empireCredits}</strong></span>}
       </div>
       <button type="button" className="lobby-exit" onClick={()=>setExitOpen(true)}>
@@ -440,7 +490,8 @@ function LobbyApp() {
     </header>
     <div className={'lobby-body '+(shopVisible?'shop-active':recordsVisible?'records-active':arcadeOpen?'arcade-active':'')}>
       <nav className="lobby-nav" aria-label={de?'Casino-Navigation':'Casino navigation'}>
-        <div className="lobby-nav-scroll">
+        <div className="lobby-nav-scroll" ref={navScroll}>
+        <div ref={navMarker} className="lobby-nav-selection-track" aria-hidden="true"/>
         <button className="lobby-nav-item" onClick={()=>setNewsOpen(true)}><NavIcon name="news"/><span>News</span></button>
         {navigation.map(n=><button type="button" key={n.id}
           aria-current={(shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='history'?'profile':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'page':undefined}
@@ -519,16 +570,8 @@ function LobbyApp() {
         onAlbum={()=>openProgression("Collector's Album")}/>:
       arcadeOpen?<ArcadeMenu language={data.language} onBack={()=>setArcadeOpen(false)}/>:null}
       <main className="lobby-main" style={{display:lobbyContentVisible?undefined:'none'}}>
-        <div className="lobby-hero">
-          <div className="lobby-hero-picture" aria-hidden="true"/>
-          <div className="hero-copy">
-            <span className="lobby-eyebrow">— &nbsp; THE MIDNIGHT CLUB &nbsp; —</span>
-            <h1>{de?'Eine Nacht wie keine andere.':'A different kind of night.'}</h1>
-            <p>{de?'Wähle deinen Tisch. Finde deinen Rhythmus. Fühl dich zu Hause.':
-              'Choose your table. Find your rhythm. Make yourself at home.'}</p>
-          </div>
-        </div>
-        <section className={'lobby-game-grid '+(filter!=='all'?'filtered':'')}
+        <LobbyHero de={de} motionEnabled={!lowMotion && data.animationsEnabled}/>
+        <section ref={gridRef} className={'lobby-game-grid '+(filter!=='all'?'filtered':'')}
           aria-label={de?'Spiele und Aktivitäten':'Games and activities'}>
           {modes.map(({mode,visible})=><GameTile key={mode.id} mode={mode}
             hidden={!visible} language={data.language}
@@ -538,7 +581,7 @@ function LobbyApp() {
         </section>
         {!embeddedLobby&&<small className="browser-note">Browser preview · navigation requires the Windows client.</small>}
       </main>
-      {lobbyContentVisible&&<DailyLogin data={data} onClaim={()=>lobbyCommand('lobby.daily.claim')}
+      {lobbyContentVisible&&<DailyLogin data={data} onClaim={claimDaily}
         onClose={()=>setDailyOpen(false)} mobileOpen={dailyOpen}/>}
     </div>
     {newsOpen&&<Modal className="casino-news" label="News" onClose={()=>setNewsOpen(false)}>

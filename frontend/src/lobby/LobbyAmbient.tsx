@@ -2,6 +2,7 @@ import {useEffect,useRef} from 'react';
 import {Application,Graphics} from 'pixi.js';
 import {createModeScenes} from './ModeScenes';
 import {createShopFx} from './ShopFxEngine';
+import {createLobbyHeroFx} from './LobbyHeroFx';
 
 /** Single shared, transparent WebGL scene behind accessible React text/controls. */
 export function LobbyAmbient({motionEnabled}:{motionEnabled:boolean}){
@@ -40,7 +41,8 @@ export function LobbyAmbient({motionEnabled}:{motionEnabled:boolean}){
         const root=host.parentElement??host;
         const scene=createModeScenes(instance.stage,root,()=>motionRef.current);
         const shop=createShopFx(instance.stage,root);
-        disposeScenes=()=>{shop?.destroy();scene.destroy();};
+        const heroFx=createLobbyHeroFx(instance.stage,root);
+        disposeScenes=()=>{heroFx.destroy();shop?.destroy();scene.destroy();};
         const dust=Array.from({length:16},(_,i)=>{
           const dot=new Graphics().circle(0,0,.85+(i%3)*.4)
             .fill({color:i%5===0?0x87d7b1:0xe1be82,alpha:.15});
@@ -58,6 +60,7 @@ export function LobbyAmbient({motionEnabled}:{motionEnabled:boolean}){
           instance.ticker.maxFPS=motion?30:12;
           clock+=ticker.deltaTime/60;
           scene.tick(clock);
+          heroFx.tick(clock,motion);
           if(motion)shop.tick(clock,ticker.deltaTime);
           for(const {dot,phase,speed} of dust){
             dot.visible=motion;

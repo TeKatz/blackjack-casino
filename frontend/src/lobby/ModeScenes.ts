@@ -288,6 +288,10 @@ export function createModeScenes(stage:Container,root:HTMLElement,motion:()=>boo
           s.hoverProgress=hovered?1:0;
           s.wasVisible=true;
         }
+        // Web Animations fade the keyed DOM tile; the shared canvas must
+        // follow the same opacity instead of leaving its artwork behind.
+        const alpha=Number.parseFloat(getComputedStyle(s.card).opacity);
+        s.group.alpha=Number.isFinite(alpha)?alpha:1;
         const x=rect.left-rootRect.left,y=rect.top-rootRect.top,w=rect.width,h=rect.height;
         if(Math.abs(x-s.x)>.5||Math.abs(y-s.y)>.5||Math.abs(w-s.w)>.5||Math.abs(h-s.h)>.5){
           s.mask.clear().rect(x,y,w,h).fill(0xffffff);
