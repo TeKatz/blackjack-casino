@@ -207,7 +207,7 @@ internal static class NativeShellWebSmoke
                             throw new InvalidOperationException(mode
                                 + " left the native transition covering the ready game.");
                         string htmlMask = await form.BrowserCore!.ExecuteScriptAsync(
-                            "document.getElementById('mode-boot')?.dataset.state==='ready'");
+                            "document.getElementById('mode-boot')===null");
                         if (htmlMask != "true")
                             throw new InvalidOperationException(mode
                                 + " did not dismiss the unified in-document loading mask.");
