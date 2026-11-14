@@ -194,7 +194,7 @@ function LobbyApp() {
   const [shopPending,setShopPending] = useState<string|null>(null);
   const [shopNotice,setShopNotice] = useState<{success:boolean;message:string}|null>(null);
   const [filter,setFilter] = useState<Filter>('all');
-  const pendingClaim=useRef<PendingDailyClaim|null>(null);
+  const pendingClaim=useRef<(PendingDailyClaim & {sentAt:number})|null>(null);
   const [claimReceipt,setClaimReceipt]=useState<DailyClaimReceipt|null>(null);
   const navScroll=useRef<HTMLDivElement>(null);
   const navMarker=useRef<HTMLDivElement>(null);
@@ -427,9 +427,12 @@ function LobbyApp() {
   const claimDaily=()=>{
     if(!data.dailyLogin.canClaim)return;
     const previous=pendingClaim.current;
-    if(previous&&previous.totalClaims===data.dailyLogin.totalClaims)return;
+    // A missing/failed native reply must never lock the claim button forever.
+    if(previous&&previous.totalClaims===data.dailyLogin.totalClaims &&
+      Date.now()-previous.sentAt<1600)return;
     pendingClaim.current={totalClaims:data.dailyLogin.totalClaims,
-      day:data.dailyLogin.activeStep,bankrollValue:data.bankrollValue??null};
+      day:data.dailyLogin.activeStep,bankrollValue:data.bankrollValue??null,
+      sentAt:Date.now()};
     lobbyCommand('lobby.daily.claim');
   };
   // Keep the same keyed tile elements across category changes; their PixiJS

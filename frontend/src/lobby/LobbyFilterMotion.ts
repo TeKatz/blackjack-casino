@@ -46,9 +46,7 @@ export function useLobbyFilterMotion<T extends string>(
     if(phases.leaving.length){
       timer.current=window.setTimeout(()=>{
         timer.current=null;
-        // Discard finishing leave animations before the next layout measurement.
-        for(const animation of running.current)animation.cancel();
-        running.current=[];
+        // Keep the outgoing artwork faded until React commits hidden=true.
         setFilter(next);
       },105);
     }else setFilter(next);
@@ -56,6 +54,10 @@ export function useLobbyFilterMotion<T extends string>(
   useLayoutEffect(()=>{
     const boxes=before.current;
     before.current=null;
+    // This runs after React hid departing cards but before the next paint:
+    // cancelling fill:forwards here cannot flash a departing Pixi sprite.
+    for(const animation of running.current)animation.cancel();
+    running.current=[];
     const grid=gridRef.current;
     if(!boxes||!grid||!enabled)return;
     const elements=[...grid.querySelectorAll<HTMLElement>('.lobby-game[data-lobby-id]')];
@@ -75,6 +77,7 @@ export function useLobbyFilterMotion<T extends string>(
       ],{duration:230,easing:'ease-out'}));
     }
   },[filter,enabled]);
+  useEffect(()=>{if(!enabled)cancel();},[enabled]);
   useEffect(()=>()=>cancel(),[]);
   return {gridRef,requestFilter:request,cancelFilterMotion:cancel};
 }

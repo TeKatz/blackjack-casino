@@ -1,4 +1,4 @@
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useLayoutEffect,useRef,useState} from 'react';
 import type {DailyLoginSnapshot} from './lobbyBridge';
 
 export type PendingDailyClaim={totalClaims:number;day:number;bankrollValue:number|null};
@@ -68,7 +68,7 @@ export function BankrollCounter({value,numeric,receipt,enabled}:{
 }) {
   const [display,setDisplay]=useState(value);
   const lastReceipt=useRef<number>(-1);
-  useEffect(()=>{
+  useLayoutEffect(()=>{
     if(!receipt||lastReceipt.current===receipt.id||!enabled||
        receipt.before===null||receipt.after===null||receipt.after<=receipt.before){
       setDisplay(value);return;
