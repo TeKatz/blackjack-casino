@@ -1,6 +1,6 @@
 # Documentation
 
-This is the documentation entry point for **The Midnight Club**. The [README](../README.md) is the short product overview of the currently published Development build. The reviewed `main` Stable source has not yet received the full native cutover. The guides below are divided into **current gameplay and engineering references** and **historical implementation records**; old WPF migration notes are not instructions for today's native Windows app.
+This is the documentation entry point for **The Midnight Club**. The [README](../README.md) is the short product overview of the currently published Development build. The `main` integration source now includes the native cutover; a newly tagged native Stable build remains a separate release step. The guides below are divided into **current gameplay and engineering references** and **historical implementation records**; old WPF migration notes are not instructions for today's native Windows app.
 
 ## Games and features
 

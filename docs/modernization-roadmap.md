@@ -1,6 +1,6 @@
 # Current architecture and quality roadmap
 
-The Midnight Club is an offline play-money Windows casino. The native WinForms/WebView2 host and local React/PixiJS game interfaces have **replaced the former WPF application in the Development channel**. The project is no longer in a dual-host migration phase.
+The Midnight Club is an offline play-money Windows casino. The native WinForms/WebView2 host and local React/PixiJS game interfaces have **replaced the former WPF application in both `dev` and the integrated `main` source**. The project is no longer in a dual-host migration phase.
 
 This guide summarizes the current engineering direction. The original step-by-step worklog is retained in the [2026 modernization archive](archive/modernization-roadmap-2026.md).
 
@@ -10,7 +10,7 @@ This guide summarizes the current engineering direction. The original step-by-st
 - C# remains authoritative for RNG, wagers, rewards, inventories, progression and persistence; the browser displays validated results and sends constrained commands.
 - Midnight Manor embeds its Godot 3D Escape bonus; Midnight Descent is a separately launched Godot roguelite.
 - Existing Development saves remain under the established `NativeShellPreview` path; a verified one-time legacy import is available, and old updaters are supported by a WPF-free executable alias.
-- `dev` is the sole Development publisher. A native Stable release requires integration into `main`, the same validation gates and an explicit tagged build; the current `main` sources are not yet cut over.
+- `dev` is the sole Development publisher. A native Stable release requires the same validation gates and an explicit tagged build from the now-integrated `main` source.
 
 For the full product overview, see the [README](../README.md), [architecture](architecture.md) and [documentation index](index.md).
 

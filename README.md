@@ -46,7 +46,7 @@ Player profiles are stored separately from the application files under `%LOCALAP
 
 ## Technology and project documentation
 
-The casino uses **.NET 10 / C#** for game logic, payouts, progression and saved transactions. A native **WinForms/WebView2** host displays locally bundled **React, TypeScript and PixiJS** interfaces; Godot powers Midnight Descent and the Manor 3D bonus. The current **Development package** contains no WPF interface; the older `main` source has not yet undergone this Stable-channel cutover.
+The casino uses **.NET 10 / C#** for game logic, payouts, progression and saved transactions. A native **WinForms/WebView2** host displays locally bundled **React, TypeScript and PixiJS** interfaces; Godot powers Midnight Descent and the Manor 3D bonus. Both `dev` and `main` now contain the WPF-free native host. Publishing a new native Stable release remains a separate, explicitly tagged and validated step.
 
 For contributors and curious players:
 
