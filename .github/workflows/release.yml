@@ -36,6 +36,18 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+      # The production NativeShell package must include the actual Godot Web
+      # Manor bonus, not just Vite's HTML/TypeScript frontend.
+      - name: Cache single-threaded Godot Web export templates
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Roaming/Godot/export_templates/4.5.1.stable
+          key: manor-godot-4.5.1-web-nothreads-windows-v1
+
+      - name: Import and export the bundled Manor 3D Web bonus
+        shell: pwsh
+        run: ./tools/build_manor_bonus_web.ps1 -OutputDirectory frontend/dist/manor3d
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
@@ -123,6 +135,11 @@ jobs:
           $assets = "artifacts/app/ModernFrontend/assets"
           if (!(Test-Path $index)) { throw "Modern Manor index.html was not packaged." }
           if (!(Test-Path $assets)) { throw "Modern Manor bundles were not packaged." }
+          foreach ($resource in @("index.html", "index.js", "index.wasm", "index.pck")) {
+            if (!(Test-Path "artifacts/app/ModernFrontend/manor3d/$resource")) {
+              throw "Published NativeShell is missing Manor 3D Web export: $resource"
+            }
+          }
           $javascript = Get-ChildItem $assets -Filter "*.js" -File
           if (!$javascript) { throw "Modern Manor JavaScript bundle missing." }
 
