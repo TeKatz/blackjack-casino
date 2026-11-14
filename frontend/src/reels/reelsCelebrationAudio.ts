@@ -14,13 +14,13 @@ export function playReelsCelebrationAudio(mega:boolean):void{
   const at=context.currentTime+.015;
   const notes=mega?[392,523.25,659.25,783.99,1046.5,1318.51]:[440,554.37,659.25,880];
   notes.forEach((hz,i)=>{
-   const begin=at+i*(mega?.108:.112);
+   const begin=at+i*(mega ? 0.108 : 0.112);
    const oscillator=context!.createOscillator();
    const gain=context!.createGain();
    oscillator.type=i%2===0?'sine':'triangle';
    oscillator.frequency.setValueAtTime(hz,begin);
    gain.gain.setValueAtTime(0,begin);
-   gain.gain.linearRampToValueAtTime(mega?.055:.043,begin+.015);
+   gain.gain.linearRampToValueAtTime(mega ? 0.055 : 0.043,begin+.015);
    gain.gain.exponentialRampToValueAtTime(.0001,begin+.26);
    oscillator.connect(gain);gain.connect(context!.destination);
    oscillator.start(begin);oscillator.stop(begin+.28);
