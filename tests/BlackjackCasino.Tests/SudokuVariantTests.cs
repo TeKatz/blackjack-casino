@@ -1,7 +1,7 @@
 using System.Text.Json;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Sudoku;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 
 namespace BlackjackCasino.Tests;
 

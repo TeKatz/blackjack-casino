@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>false</UseWPF>
+    <AssemblyName>BlackjackCasino.MigrationDiagnostics</AssemblyName>
+    <Description>CI-only historical save migration, WPF return and offline rollback rehearsals. Never shipped with the casino.</Description>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj" />
+  </ItemGroup>
+</Project>

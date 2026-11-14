@@ -1,0 +1,66 @@
+namespace BlackjackCasino.HostShared;
+
+internal enum Soundtrack { Blackjack, Reels, Manor, DiceLounge, ChillLounge, Adventure, Lobby, ChillLoungeActivity }
+
+/// <summary>Original cached scores: sampled themes plus generated lounge compositions; no network dependency.</summary>
+internal static class CasinoMusicSynthesis
+{
+    internal static int Tempo(Soundtrack track) => track switch
+    {
+        Soundtrack.Blackjack => 72,
+        Soundtrack.Lobby => 72,
+        Soundtrack.Reels => 104,
+        Soundtrack.DiceLounge => 68,
+        Soundtrack.ChillLounge => 74,
+        Soundtrack.ChillLoungeActivity => 74,
+        Soundtrack.Adventure => 58,
+        _ => 62,
+    };
+
+    internal static int Beats(Soundtrack track) => track == Soundtrack.Manor ? 48 : 64;
+
+    internal static string Theme(Soundtrack track) => track switch
+    {
+        Soundtrack.Blackjack => "Felt after hours",
+        Soundtrack.Lobby => "The Midnight Club lobby",
+        Soundtrack.Reels => "Brass and lucky sevens",
+        Soundtrack.DiceLounge => "A quiet roll",
+        Soundtrack.ChillLounge => "Velvet Sidewalks",
+        Soundtrack.ChillLoungeActivity => "Velvet Sidewalks",
+        Soundtrack.Adventure => "Lanterns Beyond the Door",
+        _ => "The clockwork waltz",
+    };
+
+    internal static AudioClip Build(Soundtrack track)
+    {
+        // Fallback for installations without the optional lobby MP3.
+        if (track == Soundtrack.Lobby) return Build(Soundtrack.Blackjack);
+        if (track == Soundtrack.DiceLounge)
+        {
+            return DiceLoungeSynthesis.Build();
+        }
+        if (track is Soundtrack.ChillLounge or Soundtrack.ChillLoungeActivity)
+        {
+            return ChillLoungeSynthesis.Build();
+        }
+        if (track == Soundtrack.Adventure)
+        {
+            return AdventureSynthesis.Build();
+        }
+
+        string name = "BlackjackCasino.Music." + track.ToString().ToLowerInvariant() + ".wav";
+        using Stream stream = typeof(CasinoMusicSynthesis).Assembly.GetManifestResourceStream(name)
+            ?? throw new InvalidDataException("Missing music resource: " + name);
+        using var data = new MemoryStream();
+        stream.CopyTo(data);
+        return AudioClip.FromWave(data.ToArray());
+    }
+
+    internal static double Noise(int i)
+    {
+        uint x = unchecked((uint)i * 747796405u + 2891336453u);
+        x = ((x >> ((int)(x >> 28) + 4)) ^ x) * 277803737u;
+        x = (x >> 22) ^ x;
+        return x / (double)uint.MaxValue * 2 - 1;
+    }
+}

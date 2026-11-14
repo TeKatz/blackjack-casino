@@ -1,6 +1,6 @@
 # Word Search — Words Discovered mode
 
-**Integrated baseline:** `main` · **Development source:** `develop` (historical implementation: `feature/manor-modernization-phase-1`)  
+**Current:** NativeShell + local React/WebView2; Development source: `dev` (Stable is separately tagged from `main`).
 **Presentation:** React in the shared `frontend/lounge.html`  
 **Authoritative gameplay and persistence:** `BlackjackCasino.Core.WordSearch`
 
@@ -87,5 +87,5 @@ WebView2 smoke covers opening the album, revealing and persisting a new
 word, returning/resuming a puzzle, completing it and leaving the Lounge.
 
 Real-device high-DPI and subjective sound/UI balance still require player
-review. Legacy WPF Word Search remains as a fallback and still loads the
-same game state.
+review. The old WPF Word Search fallback was retired; the React game and native
+C# persistence now own the full play and resume flow.

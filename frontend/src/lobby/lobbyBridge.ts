@@ -10,6 +10,8 @@ export type DailyLoginSnapshot = {
   rewards: {day:number;bankroll:string;coins:number;pack:string|null}[];
 };
 export type LobbySnapshot = {
+  /** Independent WinForms preview: unsupported tabs/transactions must not show mock data. */
+  nativePreview?: boolean;
   dailyLogin: DailyLoginSnapshot;
  titleVariant?:string;portraitVariant?:string;frameVariant?:string;
   displayName: string; level: number; coins: string; prestige: number; title: string;
@@ -32,6 +34,7 @@ const fraction = (x: unknown) => numeric(x) && x >= 0 && x <= 1;
 
 export function isLobbySnapshot(x: unknown): x is LobbySnapshot {
   if (!object(x) || !object(x.dailyLogin)) return false;
+  if (x.nativePreview !== undefined && typeof x.nativePreview !== 'boolean') return false;
   if(x.bankrollValue!==undefined&&(!numeric(x.bankrollValue)||x.bankrollValue<0))return false;
   if (!['titleVariant','portraitVariant','frameVariant'].every(k=>x[k]===undefined||
     typeof x[k]==='string'&&/^[a-z0-9-]{1,100}$/.test(x[k] as string)))return false;
@@ -116,7 +119,7 @@ export function onLobbySnapshot(onSnapshot: (snapshot: LobbySnapshot) => void): 
 }
 export function lobbyCommand(type: string, id?: string): void {
   const allowed = ['lobby.ready','lobby.ui-ready','lobby.open','lobby.open-secondary',
-    'lobby.progression','lobby.profile','lobby.profile.native','lobby.profile.equip','lobby.vault','lobby.daily.claim','lobby.language.set','lobby.exit','lobby.refresh',
+    'lobby.progression','lobby.profile','lobby.profile.native','lobby.profile.equip','lobby.vault','lobby.daily.claim','lobby.language.set','lobby.exit','lobby.exit.cancel','lobby.refresh',
     'lobby.shop.open','lobby.shop.close','lobby.shop.action','lobby.shop.pack',
     'lobby.records.open','lobby.records.close','lobby.records.claim','lobby.records.claim-all','lobby.records.season.activate',
     'lobby.records.vault.open','lobby.album.open','lobby.album.complete','lobby.album.claim',

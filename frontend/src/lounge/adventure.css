@@ -75,8 +75,6 @@
 .backroom-d20{border:1px solid #3f5747;border-radius:11px;background:#0e1b17;display:flex;gap:7px;align-items:center;flex-direction:column;padding:13px;margin-top:18px;text-align:center}
 .backroom-d20.active{border-color:#d0af67}
 .backroom-d20>strong{font:800 12px system-ui,sans-serif;letter-spacing:.2em;color:#bda668}
-.backroom-d20>span{display:flex;align-items:center;justify-content:center;border:2px solid #bfa66d;clip-path:polygon(50% 0,88% 13%,100% 55%,50% 100%,0 55%,12% 13%);background:#263c2d;color:#f2d68a;width:122px;height:110px;font-size:29px}
-.backroom-d20.active>span{font:700 11px system-ui,sans-serif;padding:12px;line-height:1.5}
 .backroom-d20>small{color:#a9baae}
 .backroom-inventory{margin-top:12px;padding:18px;border:1px solid #3c594b;border-radius:12px;background:#12231d}
 .backroom-inventory h3{margin:0 0 13px}

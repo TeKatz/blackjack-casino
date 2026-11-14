@@ -117,7 +117,6 @@ function CharacterSheet({run,copy,pending,send,animations}:{
    <strong>D20</strong>
    <BackroomD20 value={run.lastRoll?.chosenRoll??20} rolling={rolling}
      resolved={resolved} motion={animations}/>
-   {run.lastRoll&&!rolling&&<span className="backroom-d20-result" aria-label="D20 result">{run.lastRoll.chosenRoll}</span>}
    {run.pending?<><small>{run.pending.ability} · DC {run.pending.difficulty} · {copy.mod} {signed(run.pending.modifier)}
     {run.pending.mode==='Advantage'?' · '+copy.adv:run.pending.mode==='Disadvantage'?' · '+copy.disadv:''}</small>
     <button className="backroom-primary" disabled={rolling||pending} aria-disabled={pending||rolling}

@@ -1,5 +1,7 @@
 # Midnight Descent — Combat pressure & healing balance patch
 
+**Historical implementation/polish snapshot.** The current Midnight Descent roguelite has expanded beyond this isolated pass. For live game systems and controls, see [Midnight Descent](midnight-descent.md); the old five-room prototype is not the current content limit.
+
 ## Core balancing changes
 
 This patch intentionally preserves all playable loadouts, relic IDs, synergies, the route graph, and the three bosses.

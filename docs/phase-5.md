@@ -1,5 +1,7 @@
 # Phase 5 — Table Rules & Casino Setup
 
+**Historical development phase.** The feature work below was part of the original casino build-out. The current application is the native WinForms/WebView2 casino, not the WPF-era interface described in some early checkpoints. See the [product overview](../README.md) and [current architecture](architecture.md).
+
 Phase 5 expands Blackjack Casino from one fixed rule set into a configurable blackjack table without compromising the default laid-back single-player flow.
 
 ## Design principle: Casual Solo stays first-class

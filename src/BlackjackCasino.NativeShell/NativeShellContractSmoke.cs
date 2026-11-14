@@ -1,5 +1,8 @@
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 using BlackjackCasino.Core;
+using BlackjackCasino.Core.Hosting;
+using System.Security.Cryptography;
+using System.Text.Json;
 
 namespace BlackjackCasino.NativeShell;
 
@@ -21,6 +24,56 @@ internal static class NativeShellContractSmoke
                     name.Name is "PresentationFramework" or "PresentationCore" or "WindowsBase"))
                 throw new InvalidOperationException("Native shell still references WPF assemblies.");
 
+            if (NativeHostAudio.TrackFor(null) != Soundtrack.Lobby
+                || NativeHostAudio.TrackFor("midnight-dice") != Soundtrack.DiceLounge
+                || NativeHostAudio.TrackFor("chill-lounge") != Soundtrack.ChillLounge
+                || NativeHostAudio.TrackFor("midnight-manor") != Soundtrack.Manor)
+                throw new InvalidOperationException("WPF-free native music routes are incomplete.");
+
+            if (NativeRouteCatalog.WebRoutes.Count != 10
+                || !NativeRouteCatalog.IsWebRoute("midnight-manor")
+                || !NativeRouteCatalog.IsWebRoute("roulette")
+                || !NativeRouteCatalog.IsWebRoute("casino-empire")
+                || !NativeRouteCatalog.IsWebRoute("chill-lounge")
+
+                || NativeRouteCatalog.WebPageFor("reels") != "reels.html")
+                throw new InvalidOperationException("Host parity manifest is inconsistent.");
+            string descentFixture = Path.Combine(directory, "descent-fixture");
+            string descentPath = NativeDescentLaunch.Executable(descentFixture);
+            Directory.CreateDirectory(Path.GetDirectoryName(descentPath)!);
+            if (NativeDescentLaunch.IsPackaged(descentFixture))
+                throw new InvalidOperationException("Missing Godot pack was accepted.");
+            File.WriteAllText(descentPath, "fixture");
+            File.WriteAllText(Path.ChangeExtension(descentPath, ".pck"), "fixture");
+            var descentStart = NativeDescentLaunch.CreateStartInfo(descentFixture, german: true);
+            if (!descentStart.ArgumentList.SequenceEqual(
+                ["--fullscreen", "--", "--language=de"])
+                || descentStart.UseShellExecute
+                || !string.Equals(descentStart.WorkingDirectory,
+                    Path.GetDirectoryName(descentPath), StringComparison.Ordinal))
+                throw new InvalidOperationException("Godot launch flags/lifecycle are incorrect.");
+
+            // Rehearse an actual existing wallet/profile import without touching
+            // user AppData. Exercise atomic staging, hash integrity, isolation,
+            // replay protection, corruption rejection and the native runtime.
+            // Full historical cutover/rollback safety rehearsal now runs from
+            // tools/NativeMigrationDiagnostics --rehearsal-smoke in CI.
+
+            string live = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "BlackjackCasino");
+            try
+            {
+                HostPreviewStorage.RequireIsolatedDirectory(live,
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
+                throw new InvalidOperationException("Native preview accepted live player data.");
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message == "NativeShell profile must stay separate from legacy player storage.")
+            {
+                // Correct: production state must remain untouched.
+            }
+
             if (!BlackjackModernProtocol.Trusted("https://midnight-manor.local/blackjack.html")
                 || BlackjackModernProtocol.Trusted("https://midnight-manor.local/reels.html")
                 || !ModernReelsProtocol.Trusted("https://midnight-manor.local/reels.html")
@@ -37,8 +90,57 @@ internal static class NativeShellContractSmoke
                 || ManorPreviewProtocol.IsTrustedSource("https://example.com/index.html"))
                 throw new InvalidOperationException("Browser page trust is not isolated.");
 
-            using (var session = new NativePreviewRuntime(directory))
+            using (var session = new NativeCasinoRuntime(directory))
             {
+                using (var lobby = System.Text.Json.JsonDocument.Parse(
+                    System.Text.Json.JsonSerializer.Serialize(session.LobbySnapshot(),
+                        new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))))
+                {
+                    var root = lobby.RootElement;
+                    if (!root.GetProperty("nativePreview").GetBoolean()
+                        || root.GetProperty("modes").GetArrayLength() != 11
+                        || root.GetProperty("bankrollValue").GetDecimal() != session.Bankroll
+                        || !root.GetProperty("dailyLogin").GetProperty("canClaim").GetBoolean())
+                        throw new InvalidOperationException("Native lobby emitted demo or invalid state.");
+                }
+
+                var nativeLobby = new NativeLobbyController(session);
+                var jsonOpts = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web);
+                foreach (string page in new[] { "challenges", "statistics", "profile",
+                    "history", "season", "vault", "album" })
+                {
+                    using var document = System.Text.Json.JsonDocument.Parse(
+                        System.Text.Json.JsonSerializer.Serialize(nativeLobby.Snapshot(page), jsonOpts));
+                    if (document.RootElement.ValueKind != System.Text.Json.JsonValueKind.Object)
+                        throw new InvalidOperationException("Missing native React record: " + page);
+                }
+                using (var nativeShop = System.Text.Json.JsonDocument.Parse(
+                    System.Text.Json.JsonSerializer.Serialize(nativeLobby.ShopSnapshot(), jsonOpts)))
+                {
+                    if (nativeShop.RootElement.GetProperty("items").GetArrayLength() == 0
+                        || nativeShop.RootElement.GetProperty("packs").GetArrayLength() != 5)
+                        throw new InvalidOperationException("Native cosmetic shop is using demo inventory.");
+                }
+                decimal beforeDaily = session.Bankroll;
+                NativeLobbyOutcome dailyPaid = nativeLobby.ClaimDaily();
+                if (!dailyPaid.Success
+                    || session.Bankroll <= beforeDaily
+                    || session.Preferences.DailyLoginClaims != 1
+                    || nativeLobby.ClaimDaily().Success)
+                    throw new InvalidOperationException("Daily reward was missing or paid twice.");
+                if (!nativeLobby.ActivateSeason(SeasonCatalog.Current.Id).Success)
+                    throw new InvalidOperationException("Core Season Pass activation failed.");
+                NativeLobbyOutcome secondDaily = nativeLobby.ClaimDaily();
+                if (secondDaily.Success)
+                    throw new InvalidOperationException("Duplicate daily receipt accepted.");
+                using (var postDaily = System.Text.Json.JsonDocument.Parse(
+                    System.Text.Json.JsonSerializer.Serialize(session.LobbySnapshot(), jsonOpts)))
+                {
+                    if (postDaily.RootElement.GetProperty("dailyLogin")
+                        .GetProperty("canClaim").GetBoolean())
+                        throw new InvalidOperationException("Daily claim remained available after a commit.");
+                }
+
                 decimal initial = session.Bankroll;
                 string id = Guid.NewGuid().ToString("D");
                 var epoch = new BlackjackModernSession();
@@ -48,6 +150,105 @@ internal static class NativeShellContractSmoke
                     throw new InvalidOperationException("Blackjack native command failed.");
                 if (epoch.Execute(command, _ => throw new Exception("Replayed command!")) != result)
                     throw new InvalidOperationException("Blackjack receipt was replayed.");
+
+                // Preview roulette runs through the existing Core settlement rules
+                // and persists one authoritative result before responding.
+                using (var rouletteBets = System.Text.Json.JsonDocument.Parse(
+                    "[{\"key\":\"red\",\"amount\":100}]"))
+                {
+                    var roundId = Guid.NewGuid();
+                    var rouletteReceipt = session.ApplyRoulette(roundId, rouletteBets.RootElement);
+                    if (rouletteReceipt is not NativeRouletteReceipt paid
+                        || paid.RoundId != roundId || !paid.Success
+                        || session.Bankroll != paid.Bankroll)
+                        throw new InvalidOperationException("Native roulette did not settle.");
+                    if (!Equals(session.ApplyRoulette(roundId, rouletteBets.RootElement), paid)
+                        || session.Bankroll != paid.Bankroll)
+                        throw new InvalidOperationException("Native roulette double-charged a replay.");
+                }
+
+                session.OpenLounge();
+                // Every Lounge subgame must return to the shared selection
+                // screen after an acknowledged exit, not remain in the
+                // NativeShell snapshot and softlock subsequent navigation.
+                foreach (var game in new[]
+                {
+                    (Id: "sudoku", Type: "lounge.sudoku.command", Prefix: "sudoku",
+                        Session: "session", Revision: "revision", Action: "sudoku.exit"),
+                    (Id: "solitaire", Type: "lounge.solitaire.command", Prefix: "solitaire",
+                        Session: "solitaireSession", Revision: "solitaireRevision", Action: "solitaire.exit"),
+                    (Id: "word-search", Type: "lounge.word-search.command", Prefix: "wordSearch",
+                        Session: "wordSearchSession", Revision: "wordSearchRevision", Action: "word-search.exit"),
+                    (Id: "memory", Type: "lounge.memory.command", Prefix: "memory",
+                        Session: "memorySession", Revision: "memoryRevision", Action: "memory.exit"),
+                    (Id: "jigsaw", Type: "lounge.jigsaw.command", Prefix: "jigsaw",
+                        Session: "jigsawSession", Revision: "jigsawRevision", Action: "jigsaw.exit"),
+                    (Id: "tales-backroom", Type: "lounge.adventure.command", Prefix: "adventure",
+                        Session: "adventureSession", Revision: "adventureRevision", Action: "adventure.exit"),
+                    (Id: "tower-defense", Type: "lounge.tower-defense.command", Prefix: "towerDefense",
+                        Session: "towerDefenseSession", Revision: "towerDefenseRevision", Action: "tower.exit"),
+                    (Id: "minesweeper", Type: "lounge.minesweeper.command", Prefix: "minesweeper",
+                        Session: "minesweeperSession", Revision: "minesweeperRevision", Action: "mine.exit"),
+                })
+                {
+                    session.OpenLoungeGame(game.Id);
+                    using var snapshot = System.Text.Json.JsonDocument.Parse(
+                        System.Text.Json.JsonSerializer.Serialize(session.LoungeSnapshot(), jsonOpts));
+                    var current = snapshot.RootElement;
+                    if (current.GetProperty(game.Prefix).ValueKind != System.Text.Json.JsonValueKind.Object)
+                        throw new InvalidOperationException("Native Lounge missing active game: " + game.Id);
+                    string commandJson = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        type = game.Type,
+                        version = 1,
+                        requestId = Guid.NewGuid().ToString("D"),
+                        session = current.GetProperty(game.Session).GetString(),
+                        expectedRevision = current.GetProperty(game.Revision).GetInt64(),
+                        action = game.Action,
+                    });
+                    NativeLoungeReply? reply = session.ApplyLounge(game.Type, commandJson);
+                    if (reply is null)
+                        throw new InvalidOperationException("Native Lounge exit was not handled: " + game.Id);
+                    using var acknowledged = System.Text.Json.JsonDocument.Parse(
+                        System.Text.Json.JsonSerializer.Serialize(reply.Data, jsonOpts));
+                    if (!acknowledged.RootElement.GetProperty("success").GetBoolean())
+                        throw new InvalidOperationException("Native Lounge exit failed: " + game.Id);
+                    using var restored = System.Text.Json.JsonDocument.Parse(
+                        System.Text.Json.JsonSerializer.Serialize(session.LoungeSnapshot(), jsonOpts));
+                    if (restored.RootElement.GetProperty(game.Prefix).ValueKind
+                        != System.Text.Json.JsonValueKind.Null)
+                        throw new InvalidOperationException("Native Lounge never returned to menu: " + game.Id);
+                }
+                session.CloseLounge();
+                session.OpenEmpire();
+                var empireSnapshot = System.Text.Json.JsonSerializer.Serialize(session.EmpireSnapshot(),
+                    new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
+                if (!empireSnapshot.Contains("\"economy\"", StringComparison.Ordinal)
+                    || !session.EmpireStarted)
+                    throw new InvalidOperationException("Native Empire is not authoritative.");
+                var empireEpoch = new EmpireModernSession();
+                var empireId = Guid.NewGuid().ToString("D");
+                string empireCommandJson = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    version = EmpireModernProtocol.Version,
+                    requestId = empireId,
+                    session = empireEpoch.Id,
+                    expectedRevision = 0,
+                    action = "upgrade",
+                    id = "slots",
+                    levels = 1,
+                });
+                EmpireModernCommand? empireCommand = EmpireModernProtocol.Parse(empireCommandJson);
+                if (empireCommand is null)
+                    throw new InvalidOperationException("Native Empire command parsing failed.");
+                EmpireModernReply empireReceipt = empireEpoch.Execute(empireCommand,
+                    session.CommitEmpire, session.EmpirePreview);
+                if (!empireReceipt.Success || empireReceipt.Revision != 1
+                    || empireEpoch.Execute(empireCommand,
+                        _ => throw new Exception("Empire action replayed."),
+                        _ => throw new Exception("Empire preview replayed.")) != empireReceipt)
+                    throw new InvalidOperationException("Native Empire duplicate purchase or missing checkpoint.");
+                session.CloseEmpire();
 
                 session.OpenReels();
                 var spinEpoch = new ModernReelsSession();
@@ -126,6 +327,34 @@ internal static class NativeShellContractSmoke
                     throw new InvalidOperationException("Manor replay was not idempotent.");
                 session.CloseManor();
                 session.Persist();
+            }
+            // Receipt IDs persist across runtime lifetimes and browser restarts.
+            using (var resumed = new NativeCasinoRuntime(directory))
+            {
+                if (resumed.Preferences.DailyLoginClaims != 1
+                    || new NativeLobbyController(resumed).ClaimDaily().Success)
+                    throw new InvalidOperationException("Daily login receipt replayed after restart.");
+                using var repeatBets = System.Text.Json.JsonDocument.Parse(
+                    "[{\"key\":\"red\",\"amount\":100}]");
+                var receiptJournal = new NativeRouletteJournal(directory);
+                if (receiptJournal is null)
+                    throw new InvalidOperationException("Roulette journal missing.");
+                // A pending mirror failure must recover from the same journal.
+                string faultDirectory = Path.Combine(directory, "roulette-fault");
+                var faultJournal = new NativeRouletteJournal(faultDirectory);
+                var result = Roulette.Settle([new RouletteBet("red", 100m)], 1000m, 1);
+                var candidate = new AppPreferences { Bankroll = result.Bankroll };
+                try
+                {
+                    faultJournal.Commit(Guid.NewGuid(), result, candidate,
+                        _ => throw new IOException("Simulated interrupted roulette mirror."));
+                    throw new InvalidOperationException("Roulette fault injection was not reached.");
+                }
+                catch (IOException ex) when (ex.Message.Contains("Simulated interrupted"))
+                { }
+                new NativeRouletteJournal(faultDirectory).Recover();
+                if (PlayerStateStore.Load(faultDirectory).Bankroll != result.Bankroll)
+                    throw new InvalidOperationException("Roulette recovery lost the paid settlement.");
             }
             AppPreferences saved = PlayerStateStore.Load(directory);
             if (saved.Bankroll < 0 || !File.Exists(Path.Combine(directory, "profile.json")))

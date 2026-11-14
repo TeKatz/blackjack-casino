@@ -17,9 +17,8 @@ jobs:
     # Only dev can publish the mutable Development channel; no other branch may replace its release.
     if: github.ref == 'refs/heads/dev'
     runs-on: windows-latest
-    # Includes full frontend/.NET tests, two Windows runtime smokes, two self-contained
-    # publishes, artifact verification, upload and a published-package checksum round trip.
-    # A 20-minute cap cancelled a passing build at the desktop startup smoke in P2 batch 1.
+    # Includes frontend/.NET tests, real native WinForms/WebView2 runtime smokes,
+    # direct NativeShell publish and an updater/checksum round trip.
     timeout-minutes: 60
 
     steps:
@@ -78,7 +77,7 @@ jobs:
       - name: Localization resource parity
         run: python tools/check_localization.py
 
-      - name: Migrated German shell coverage
+      - name: Native German content coverage
         run: python tools/check_localization_coverage.py --strict-shell
 
       - name: Adventure localization sanity checks
@@ -99,78 +98,16 @@ jobs:
       - name: WPF-free native shell protocol and storage smoke
         run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --smoke
 
-      - name: Shared controls regression contract
-        run: python tools/check_control_templates.py --self-test
+      - name: Historical save migration and rollback safety rehearsal
+        run: dotnet run --project tools/NativeMigrationDiagnostics/BlackjackCasino.MigrationDiagnostics.csproj --configuration Release --no-build -- --rehearsal-smoke
 
-      - name: Casino presentation runtime regression
-        shell: pwsh
-        run: |
-          $output = "artifacts/presentation-regression"
-          New-Item -ItemType Directory -Force $output | Out-Null
-          for ($attempt = 1; $attempt -le 2; $attempt++) {
-            $log = Join-Path $output "attempt-$attempt.log"
-            dotnet run --project tools/PresentationSmoke --configuration Release -- "$output/attempt-$attempt" 2>&1 | Tee-Object -FilePath $log
-            $code = $LASTEXITCODE
-            if ($code -eq 0) { exit 0 }
-            # Retry only a transient initial WebView2 readiness failure. All
-            # other presentation assertions must fail the release immediately.
-            if ($attempt -eq 1 -and (Select-String -Path $log -SimpleMatch "Cannot capture lobby artwork: React WebView2 did not become ready." -Quiet)) {
-              Write-Warning "Lobby browser startup failed; retrying the complete presentation smoke once."
-              continue
-            }
-            throw "Casino presentation regression failed (exit $code). See $log."
-          }
+      - name: Native host migration and isolated storage regression
+        run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --web-smoke
 
-      - name: Desktop startup, Nine Lives and Kniffel smoke
-        # An actual startup deadlock must fail this step explicitly instead of
-        # exhausting the entire development publishing job without diagnostics.
-        timeout-minutes: 18
-        run: dotnet run --project tools/StartupSmoke/StartupSmoke.csproj --configuration Release -- artifacts/startup-smoke
+      - name: Native-only production cutover contract
+        run: python tools/check_native_cutover.py
 
-      - name: Upload startup smoke evidence
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: desktop-startup-smoke
-          path: artifacts/startup-smoke
-          if-no-files-found: ignore
-          retention-days: 14
-
-      - name: Upload casino presentation evidence
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: casino-presentation-regression
-          path: artifacts/presentation-regression
-          if-no-files-found: ignore
-          retention-days: 14
-
-      - name: Windows Manor runtime acceptance smoke
-        shell: pwsh
-        run: |
-          $maxAttempts = 2
-          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
-            $attemptOutput = "artifacts/manor-development-smoke/attempt-$attempt"
-            Write-Host "Running Manor smoke attempt $attempt of $maxAttempts..."
-            dotnet run --project tools/ManorSmoke/ManorSmoke.csproj --configuration Release -- $attemptOutput
-            if ($LASTEXITCODE -eq 0) {
-              Write-Host "Manor smoke passed on attempt $attempt."
-              exit 0
-            }
-            Write-Warning "Manor smoke attempt $attempt failed with exit code $LASTEXITCODE."
-          }
-          throw "Manor runtime smoke failed on all $maxAttempts attempts."
-
-      - name: Upload Manor runtime evidence
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: manor-development-smoke
-          path: artifacts/manor-development-smoke
-          if-no-files-found: ignore
-          retention-days: 14
-
-      - name: Publish updater and desktop
+      - name: Publish updater
         shell: pwsh
         run: |
           dotnet publish src/BlackjackCasino.Updater/BlackjackCasino.Updater.csproj `
@@ -182,7 +119,10 @@ jobs:
             -p:Version=$env:VERSION `
             --output artifacts/updater
 
-          dotnet publish src/BlackjackCasino.Desktop/BlackjackCasino.Desktop.csproj `
+      - name: Publish native Windows casino
+        shell: pwsh
+        run: |
+          dotnet publish src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj `
             --configuration Release `
             --runtime win-x64 `
             --self-contained true `
@@ -191,6 +131,18 @@ jobs:
             -p:Version=$env:VERSION `
             --output artifacts/app
 
+          # A pre-cutover updater still requires Desktop.exe to be in the
+          # incoming ZIP. This tiny WinForms shim is NOT WPF and delegates to
+          # NativeShell; old shortcuts and atomic recovery remain functional.
+          dotnet publish src/BlackjackCasino.CompatLauncher/BlackjackCasino.CompatLauncher.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:DebugType=None `
+            -p:Version=$env:VERSION `
+            --output artifacts/compat-launcher
+          Copy-Item artifacts/compat-launcher/BlackjackCasino.Desktop.exe artifacts/app/BlackjackCasino.Desktop.exe
           New-Item -ItemType Directory -Path artifacts/app/tools/updater -Force | Out-Null
           Copy-Item artifacts/updater/BlackjackCasino.Updater.exe artifacts/app/tools/updater/BlackjackCasino.Updater.exe
 
@@ -204,35 +156,38 @@ jobs:
         shell: pwsh
         run: ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/app/MidnightDescent
 
-      - name: Verify bundled Midnight Manor frontend assets
+      - name: Verify native package and frontend inventory
         shell: pwsh
         run: |
-          $index = "artifacts/app/ModernFrontend/index.html"
+          foreach ($page in @("lobby.html", "blackjack.html", "roulette.html",
+              "empire.html", "lounge.html", "reels.html", "neon-vault.html",
+              "nine-lives.html", "midnight-merge.html", "midnight-dice.html", "index.html")) {
+            if (!(Test-Path "artifacts/app/ModernFrontend/$page")) {
+              throw "NativeShell package lacks: $page"
+            }
+          }
           foreach ($asset in @("index.html", "index.js", "index.wasm", "index.pck")) {
-            $resource = Join-Path "artifacts/app/ModernFrontend/manor3d" $asset
-            if (!(Test-Path $resource)) { throw "Packaged Godot 3D bonus resource missing: $resource" }
+            if (!(Test-Path "artifacts/app/ModernFrontend/manor3d/$asset")) {
+              throw "NativeShell package lacks Manor 3D: $asset"
+            }
           }
-          $assets = "artifacts/app/ModernFrontend/assets"
-          if (!(Test-Path $index)) { throw "Modern Manor index.html was not packaged." }
-          if (!(Test-Path $assets)) { throw "Modern Manor bundles were not packaged." }
-          $javascript = Get-ChildItem $assets -Filter "*.js" -File
-          if (!$javascript) { throw "Modern Manor JavaScript bundle missing." }
-          $reelsEntry = "artifacts/app/ModernFrontend/reels.html"
-          if (!(Test-Path $reelsEntry)) { throw "Packaged Reels HTML entry missing." }
-          $references = [regex]::Matches((Get-Content $reelsEntry -Raw), '(?:src|href)="(?:\./)?assets/([^"]+)"')
-          if (!(@($references | Where-Object { $_.Groups[1].Value.EndsWith(".js") }).Count)) {
-            throw "Packaged Reels HTML does not reference its compiled JavaScript."
+          foreach ($file in @("BlackjackCasino.NativeShell.exe", "BlackjackCasino.Desktop.exe",
+              "tools/updater/BlackjackCasino.Updater.exe", "MidnightDescent/MidnightDescent.exe",
+              "MidnightDescent/MidnightDescent.pck")) {
+            if (!(Test-Path "artifacts/app/$file")) { throw "Native package lacks: $file" }
           }
-          foreach ($reference in $references) {
-            $resource = Join-Path "artifacts/app/ModernFrontend/assets" $reference.Groups[1].Value
-            if (!(Test-Path $resource)) { throw "Packaged Reels resource missing: $resource" }
+          if (Test-Path artifacts/app/BlackjackCasino.MigrationDiagnostics.exe) {
+            throw "The offline migration diagnostic executable must not be packaged."
+          }
+          if (Test-Path artifacts/app/native-development-default.flag) {
+            throw "Obsolete WPF redirection marker must not ship with the native release."
           }
 
-      - name: Verify published single-file Empire artwork
+      - name: Verify published native artwork and licensed soundtracks
         shell: pwsh
         run: ./tools/verify_published_artwork.ps1 -AppDirectory artifacts/app -OutputDirectory artifacts/published-artwork-smoke
 
-      - name: Upload published artwork evidence
+      - name: Upload native packaged artwork evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -257,7 +212,7 @@ jobs:
       - name: Package development build
         shell: pwsh
         run: |
-          $appVersion = (Get-Item "artifacts/app/BlackjackCasino.Desktop.exe").VersionInfo.ProductVersion.Split('+')[0]
+          $appVersion = (Get-Item "artifacts/app/BlackjackCasino.NativeShell.exe").VersionInfo.ProductVersion.Split('+')[0]
           if ($appVersion -ne $env:VERSION) {
             throw "Packaged application version $appVersion does not match manifest version $env:VERSION."
           }

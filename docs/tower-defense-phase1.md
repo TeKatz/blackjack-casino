@@ -1,5 +1,7 @@
 # Midnight Bastion — Tower Defense phase 1
 
+**Historical first-implementation snapshot.** Midnight Bastion now also includes later campaign and mastery expansions. See the [current Bastion guide](tower-defense-phase2.md) and the [product overview](../README.md).
+
 ## Current gameplay
 
 Midnight Bastion is the seventh Chill Lounge activity. Its featured custom tile is visible under All Activities and Strategy, inside the existing offline WebView2 host.

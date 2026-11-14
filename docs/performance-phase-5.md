@@ -1,5 +1,7 @@
 # Performance Phase 5 — Collection artwork memory
 
+**Historical performance-phase record.** This page documents a specific optimization and its original measurement scope. It is not a guarantee of current FPS or GPU/CPU use. Consult [current presentation validation](presentation-regression.md) and the [quality roadmap](modernization-roadmap.md).
+
 Phase 5 bounds the decoded collection-art cache without changing collection IDs, artwork assets, card layouts, ownership, pack contents, rarity effects, or save data.
 
 ## Previous behavior

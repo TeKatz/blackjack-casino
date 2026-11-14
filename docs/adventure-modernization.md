@@ -1,6 +1,6 @@
 # Tales from the Backroom — React/WebView2 modernization
 
-Integrated baseline: `main`; Development source: `develop` (historical implementation branch: `feature/manor-modernization-phase-1`). Normal player route: `frontend/lounge.html`.
+**Current:** NativeShell + local React/WebView2; Development source: `dev` (Stable is separately tagged from `main`).
 
 ## Scope
 
@@ -17,8 +17,8 @@ As with the previous WPF encounter surface, an incomplete ephemeral tabletop han
 - ModernAdventureBridgeTests: protocol, stale/replay safety, native start/resume, D20, save rollback, Blackjack with dealer hole card, Five-of-a-Kind AI, secret clue protection.
 - adventureBridge.test.ts: snapshots for catalog, character, story, check, caseboard, masked dealer card, completion and receipts.
 - ModernAdventureSmoke: real packaged Windows WebView2 start, story, native choice, character sheet, saved resume and UI snapshots.
-- BackroomLoungeSmoke and existing adventure engine suites retain WPF reference behavior.
+- The C# adventure engine tests and real Windows WebView2 navigation cover current behavior; WPF-only smoke tools are retired.
 
 ## Remaining signoff gates
 
-Verify CI and published Development ZIP at the final SHA, then run device testing for all public campaign endings, two encounter types, 100–200% DPI, keyboard/screenreader caseboard, German translations, soundtrack volume, reduced motion, long sessions and crash/restart. WPF code removal and replacement of the Windows shell are separate later phases.
+Verify CI and published Development ZIP at the final SHA, then run device testing for all public campaign endings, two encounter types, 100–200% DPI, keyboard/screenreader caseboard, German translations, soundtrack volume, reduced motion, long sessions and crash/restart. The WPF host and WPF-only UI sources have already been removed.

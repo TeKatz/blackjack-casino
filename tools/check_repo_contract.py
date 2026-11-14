@@ -18,6 +18,7 @@ REQUIRED = (
     "docs/architecture.md",
     "docs/development-update-delivery.md",
     "docs/modernization-roadmap.md",
+    "docs/index.md",
     ".github/pull_request_template.md",
     ".github/workflows/development-release.yml",
 )
@@ -26,6 +27,11 @@ DOCS = (
     "AGENTS.md",
     "CONTRIBUTING.md",
     "docs/modernization-roadmap.md",
+    "docs/index.md",
+    "docs/architecture.md",
+    "docs/branching-and-release-policy.md",
+    "docs/development-update-delivery.md",
+    "docs/presentation-regression.md",
 )
 LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
 BRANCH_FILTER = re.compile(r"(?m)^\s*branches:\s*\[\"([^\"]+)\"\]")
@@ -46,6 +52,15 @@ def main() -> int:
     for name in REQUIRED:
         if not (ROOT / name).is_file():
             problems.append(f"Missing required file: {name}")
+
+    readme = ROOT / "README.md"
+    if readme.exists() and len(readme.read_text(encoding="utf-8")) > 9000:
+        problems.append("README is too long for a product overview; move detailed worklogs to docs/")
+    if readme.exists() and re.search(
+        r"(?m)^#{1,3}\s+(?:Phase\s+[A-Z0-9]|Development\s+[Ll]og|(?:Final\s+)?[Cc]utover\s+[Mm]ilestone)",
+        readme.read_text(encoding="utf-8"),
+    ):
+        problems.append("README contains migration/devlog section headings; use the docs archive")
 
     for name in DOCS:
         file = ROOT / name

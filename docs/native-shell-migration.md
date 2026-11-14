@@ -1,60 +1,34 @@
-# WPF-free native shell: implementation and parity gate
+# NativeShell and player-data compatibility
 
-**Integrated baseline:** `main`; **Development source:** `develop` (historical implementation: `feature/manor-modernization-phase-1`)  
-**Status:** Independent WinForms/WebView2 executable with genuine native Blackjack, Midnight Reels, Neon Vault, Nine Lives, Midnight Merge, Midnight Dice and Midnight Manor game bridges. **Preview, not release replacement.** The production installer and auto-updater still package `BlackjackCasino.Desktop.exe` (WPF).
+**Current status:** The Midnight Club runs directly as `BlackjackCasino.NativeShell.exe`. The retired WPF UI and its XAML game fallbacks are not part of the app. The original cutover checklists and step-by-step implementation notes are preserved in the [historical migration archive](archive/native-shell-migration-phases.md).
 
-## What is already functional without WPF
+## Startup and profile selection
 
-- A separate `BlackjackCasino.NativeShell.exe` compiled with `<UseWindowsForms>true</UseWindowsForms>` and `<UseWPF>false</UseWPF>`. No XAML or PresentationFramework references.
-- A single offline WebView2 game surface serving the *existing* local `blackjack.html` and `reels.html` pages, with their original React visuals and native Core rules. The shell accepts the exact versioned, GUID/revision-validated protocols; the authoritative Blackjack hand, SlotMachineSession, paid spin, bankroll and progression awards still come from C#.
-- Strict exact-document origin validation; no remote navigation, popups, host objects, browser devtools or permissions. The WebView2 user profile is always outside the installation directory.
-- Browser init/readiness watchdog, retry/lobby recovery without automatic wagers, and fresh browser command sessions. Reels recovery retains native game result state.
-- Source-linked preferences, profile, progression, receipt and save contracts from the actual desktop application, not a newly invented game-engine implementation.
-- A **separate preview save directory** under `%LOCALAPPDATA%\BlackjackCasino\NativeShellPreview`. This pilot never writes over production `player-state.json`, `profile.json` or history. A clean profile and bankroll are expected on first run; this is deliberately not a production-state migration.
-- Windows CI builds the project, runs the headless protocol, replay and isolated-storage smoke, publishes a *separate* native-shell pilot artifact, and checks that all seven React documents are bundled. The Development updater's WPF executable, channel, manifest, user saves and release package remain unchanged.
+NativeShell's normal launch (without arguments) starts the real React/WebView2 casino. Existing user progress takes priority over any older data:
 
-## Run the independent shell
+1. If the verified `NativeShellPreview\Candidates\development` profile exists, **reuse it**.
+2. Otherwise, if a native profile already exists at `NativeShellPreview`, **reuse that**.
+3. Otherwise, if older WPF save data exists, stage a **verified, copy-only first import** into the native Development candidate directory.
+4. Otherwise, create a fresh native profile.
 
-Build the frontend once with `npm ci && npm run build` in `frontend/`, then from the repository root:
+This policy intentionally keeps the historical directory name `NativeShellPreview`. Renaming it would require a separate, tested migration and must not happen as a cosmetic cleanup.
 
-```powershell
-dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release
-```
+## Persistence and financial safety
 
-Run a headless architecture/receipt check with:
+- Installed user data lives under `%LOCALAPPDATA%\BlackjackCasino`, **outside the game installation directory**.
+- NativeShell holds an exclusive writer lock for its active profile; concurrent writers cannot commit to the same journal.
+- Player/roulette/Manor transaction checkpoints recover interrupted changes before normal play resumes.
+- The first-run importer copies validated save files and local Arcade high-score browser storage rather than rewriting the original profile.
+- An invalid or interrupted import blocks startup safely; it does not silently start the retired WPF host or overwrite old data.
 
-```powershell
-dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release -- --smoke
-```
+## Updater and launch compatibility
 
-For packaged binary, use the CI artifact **blackjack-casino-native-shell-preview-win-x64**. The pilot must not be swapped in for the production executable or used with the old updater.
+The published casino contains `BlackjackCasino.NativeShell.exe` plus a tiny **WPF-free** `BlackjackCasino.Desktop.exe` launch alias for shortcuts and older updaters. New updaters restart NativeShell directly. Stable and Development channel manifests retain their established URLs and integrity validation.
 
-## Not yet migrated — release blockers
+The old checkpoint, export-to-WPF, rollback and simulated crash-recovery commands are **developer diagnostics only** in `tools/NativeMigrationDiagnostics/`. Their source and automated regression tests are retained, but they are not distributed in the casino package. The installed save path and manifest schema are unchanged.
 
-| Area | Required before removing WPF |
-| --- | --- |
-| Full React Casino Lobby | Exact account/shop/vault/album/updates/history/season command bridge and all nine navigation routes, including secondary Empire window |
-| Chill Lounge | Six native-authoritative React game services and Tales detached investigation board in the independent host |
-| Dice, Neon Vault, Nine Lives, Midnight Merge | Their retained native services, transactions, audio signals and browser bridges |
-| Midnight Manor | Full native game controller and browser session in the new shell, including separate-window lifecycle |
-| Progression/account | Production profile import, durable history, cosmetics, season rewards, claim idempotency, daily login |
-| System lifecycle | Real user migration without double writers, updater/rollback, first-run and failure recovery, DPI/multi-monitor/keyboard/focus, audio |
-| Release gate | Windows 10/11 runtime parity; update, rollback, restart and crash tests; all old WPF smoke tests replaced by equivalent real WebView2 tests |
+## Current verification
 
-A successful CI build of this pilot **does not prove** full migration. Do not set the Development/stable publisher to it, delete `BlackjackCasino.Desktop`, disable WPF smokes or claim WPF has been removed. Only switch the release target after every row is implemented and the old/new host runs pass the same functional acceptance suite.
+Windows CI tests the no-WPF architecture, first-import/protocol smoke, journal integrity, browser navigation and real WebView2 startup. The separate diagnostics suite verifies the historical cutover and torn-rollback scenarios using temporary synthetic data. Release workflows check packaged executables and assets.
 
-## Independent real-WebView2 acceptance
-
-The separate Windows CI `--web-smoke` mode now opens all seven native-host routes through the real WinForms WebView2 control and the packaged React pages, requires the UI-ready handshake and a rendered document, then verifies lobby return. Each run uses its own temporary browser profile and player state. The existing headless `--smoke` additionally validates original EN/DE Merge resource lookup, native game actions, spin/order receipts and rejection of replay. This tests host startup and native command bridging; it does **not** replace complete game interaction, player migration, audio, update or screen-reader acceptance.
-
-## Midnight Dice native service (2026-11-07)
-
-The native pilot now also hosts `midnight-dice.html`. The reusable `ModernDiceSnapshot` no longer depends on WPF `KniffelView`, `DiceAppearance` or `Localization`: category names and cosmetic palette tokens are shared with the old WPF view as pure C# data. The WinForms host reuses Core `KniffelGame`, `KniffelTable` and `KniffelCash` to support casual sheets and paid casino tables. A complete candidate dice checkpoint and wallet change are written before changing live state. Opponent turns use Core AI away from the UI thread; a native receipt revision is bumped only after the turn has been durably committed. The existing profile progression service remains authoritative.
-
-This is still **preview-only**. Full production replay/save compatibility, browser fault injection on every game, multiple AI table cycles, standalone detached windows and audio parity are not yet proven. The original WPF release is not replaced.
-
-## Midnight Manor journal-backed route (2026-11-07)
-
-The native pilot now hosts `index.html` via the existing strict V2 `ManorPreviewProtocol`, source-linked `ManorController` and `ManorModernGameService`. The wallet, profile, room decisions and optimistic revision token are committed together in the same write-ahead `ManorPersistence` journal that the existing WPF application uses. The journal is scoped exclusively to the pilot save directory. On launch, a pending journal is recovered **before** either player mirror is loaded. On uncertain commit errors, new game transactions are blocked until the preview restarts; stale normal saves cannot overwrite an authoritative unresolved journal. A headless test checks replay IDs and a real React/WebView2 test confirms Manor's `ui.ready` handshake.
-
-The view in the pilot is embedded in its new WinForms shell rather than a separate WPF Window. Detached-window parity and all Manor animations/sounds are still subject to the full UI acceptance suite before release cutover.
+See [architecture](architecture.md), [release delivery](development-update-delivery.md) and [contributing](../CONTRIBUTING.md).

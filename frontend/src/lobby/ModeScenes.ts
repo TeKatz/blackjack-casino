@@ -59,6 +59,7 @@ type Scene = {
   cat:MeshPlane|null;catVertices:Float32Array|null;catWarped:boolean;
   detail:MotionDetails;signature:Graphics;em:Ember[];
   x:number;y:number;w:number;h:number;energy:number;reveal:number;hoverProgress:number;
+  wasVisible:boolean;
 };
 
 function makeSignature(id:ModeSceneId,color:number):Graphics {
@@ -107,9 +108,13 @@ function createScene(stage:Container,art:HTMLElement,card:HTMLElement,id:ModeSce
   });
   group.addChild(signature,detail.layer);
   return {id,art,card,group,mask,back:null,front:null,cat:null,catVertices:null,catWarped:false,
-    detail,signature,em,x:NaN,y:NaN,w:0,h:0,energy:0,reveal:0,hoverProgress:0};
+    // Recreated views reuse decoded textures without fading in from blank.
+    detail,signature,em,x:NaN,y:NaN,w:0,h:0,
+    energy:card.matches(':hover')||card.matches(':focus-within')?1:0,
+    reveal:1,hoverProgress:card.matches(':hover')?1:0,wasVisible:false};
 }
 function disposeScene(stage:Container,s:Scene){
+  delete s.art.dataset.pixiArtReady;
   s.group.mask=null;
   stage.removeChild(s.mask,s.group);
   s.group.destroy({children:true});
@@ -135,7 +140,7 @@ function attachArt(s:Scene,resources:Map<ModeSceneId,{back:Texture;front:Texture
     s.group.addChildAt(back,0);
     s.back=back;
   }
-  s.art.dataset.pixiArtReady='true';
+  // Keep CSS fallback until the first fully positioned GPU render frame.
   if(data.front){
     const front=new Sprite(data.front);
     front.anchor.set(.5);
@@ -273,7 +278,16 @@ export function createModeScenes(stage:Container,root:HTMLElement,motion:()=>boo
         const rect=s.art.getBoundingClientRect();
         const visible=rectVisible(rect,rootRect);
         s.group.visible=visible;
-        if(!visible)continue;
+        if(!visible){s.wasVisible=false;continue;}
+        if(!s.wasVisible){
+          // A filtered/hidden card may have been hovered before it disappeared.
+          // Enter the new viewport at its real hover state, without animating
+          // from stale offscreen scales (the visible 'morph' on tab return).
+          const hovered=motion()&&(s.card.matches(':hover')||s.card.matches(':focus-within'));
+          s.energy=hovered?1:0;
+          s.hoverProgress=hovered?1:0;
+          s.wasVisible=true;
+        }
         const x=rect.left-rootRect.left,y=rect.top-rootRect.top,w=rect.width,h=rect.height;
         if(Math.abs(x-s.x)>.5||Math.abs(y-s.y)>.5||Math.abs(w-s.w)>.5||Math.abs(h-s.h)>.5){
           s.mask.clear().rect(x,y,w,h).fill(0xffffff);
@@ -281,8 +295,16 @@ export function createModeScenes(stage:Container,root:HTMLElement,motion:()=>boo
           s.x=x;s.y=y;s.w=w;s.h=h;
         }
         placeArt(s,time,motion());
+        // Only switch off the CSS fallback when actual sprites have been
+        // placed at the final card bounds, avoiding a double-crop morph.
+        if (s.back && s.art.dataset.pixiArtReady !== 'true')
+          s.art.dataset.pixiArtReady='true';
       }
     },
+    // Called when the native WebView2 host is collapsed or the browser is
+    // hidden and the ticker stops before observing zero-sized art windows.
+    // Its first resumed frame must still discard stale hover zoom.
+    invalidateVisibility(){for(const s of scenes.values())s.wasVisible=false;},
     destroy(){
       disposed=true;
       for(const s of scenes.values())disposeScene(stage,s);

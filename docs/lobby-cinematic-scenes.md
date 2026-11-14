@@ -1,6 +1,6 @@
 # Custom cinematic lobby scenes
 
-**Status:** Modernisation branch, Development-channel candidate. Desktop user-testing remains required.
+**Status:** Packaged in the current NativeShell/React lobby. Asset and CI checks are active; subjective desktop animation, hover and GPU acceptance still requires device testing.
 
 ## Rendering boundary
 
@@ -30,9 +30,13 @@ React layout. **Nine Lives deliberately keeps the existing cat image**
 
 ## Animation, performance and accessibility
 
-The scene manager caches browser textures, clips sprites to live DOM thumbnail
-rectangles, and reconciles filtered/unmounted modes. Only the Pixi transforms,
-ambient light and particles move; game navigation and snapshots remain native.
+The scene manager caches browser textures and clips sprites to live DOM thumbnail
+rectangles. Category filters keep the keyed React art windows and their Pixi
+scenes mounted while hiding unmatched cards from layout and keyboard navigation.
+Only genuinely removed game modes dispose their scenes. On re-entry, the current
+hover state is applied before the first visible scene tick, preventing the
+CSS fallback and GPU art from visibly changing crop or scale. Only the Pixi
+transforms, ambient light and particles move; game navigation and snapshots remain native.
 The shared stage is capped to 30 FPS with animation enabled. With animation
 disabled it still renders all artwork, at a 12-FPS geometry-update cadence,
 with no moving particles, idle motion or hover parallax. Document visibility

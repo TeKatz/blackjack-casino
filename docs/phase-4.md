@@ -1,5 +1,7 @@
 # Phase 4 — Casino Presentation & Polish
 
+**Historical development phase.** The feature work below was part of the original casino build-out. The current application is the native WinForms/WebView2 casino, not the WPF-era interface described in some early checkpoints. See the [product overview](../README.md) and [current architecture](architecture.md).
+
 Phase 4 moved the project from a functional Blackjack table toward a desktop casino experience that is comfortable to keep open and play for longer sessions. The original Phase 4 goals are now integrated and later work has extended the same presentation principles across the lobby, profile/progression and slot modes.
 
 ## Implemented presentation foundation

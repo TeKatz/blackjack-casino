@@ -15,6 +15,16 @@ export function LobbyAmbient({motionEnabled}:{motionEnabled:boolean}){
     let app:Application|undefined;
     let disposeScenes=()=>{};
     let syncVisibility=()=>{};
+    let hostVisible=true;
+    const hostMessage=(event:MessageEvent)=>{
+      const value:unknown=event.data;
+      if(!value||typeof value!=='object')return;
+      const message=value as {type?:unknown;data?:{visible?:unknown}};
+      if(message.type!=='lobby.visibility'||typeof message.data?.visible!=='boolean')return;
+      hostVisible=message.data.visible;
+      syncVisibility();
+    };
+    window.chrome?.webview?.addEventListener('message',hostMessage);
     (async()=>{
       const instance=new Application();
       try{
@@ -59,8 +69,10 @@ export function LobbyAmbient({motionEnabled}:{motionEnabled:boolean}){
           }
         });
         syncVisibility=()=>{
-          if(document.hidden)instance.ticker.stop();
-          else instance.ticker.start();
+          if(document.hidden||!hostVisible){
+            scene.invalidateVisibility();
+            instance.ticker.stop();
+          }else instance.ticker.start();
         };
         document.addEventListener('visibilitychange',syncVisibility);
         syncVisibility();
@@ -74,6 +86,7 @@ export function LobbyAmbient({motionEnabled}:{motionEnabled:boolean}){
     return()=>{
       disposed=true;
       document.removeEventListener('visibilitychange',syncVisibility);
+      window.chrome?.webview?.removeEventListener('message',hostMessage);
       disposeScenes();
       app?.destroy(true);
     };

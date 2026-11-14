@@ -1,6 +1,9 @@
 using System.Drawing;
+using System.Diagnostics;
 using System.Text.Json;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
+using BlackjackCasino.Core.Hosting;
+using BlackjackCasino.Update;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
@@ -9,7 +12,7 @@ namespace BlackjackCasino.NativeShell;
 /// <summary>
 /// Genuine Windows Forms shell. The local React game pages remain the only
 /// gameplay UI; this host has no WPF control, XAML resource or WPF dispatcher.
-/// The native preview stores its player state separately from the installed app.
+/// The native player profile is stored separately from the older legacy root.
 /// </summary>
 internal sealed class NativeShellForm : Form
 {
@@ -19,7 +22,42 @@ internal sealed class NativeShellForm : Form
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
-    private readonly NativePreviewRuntime runtime;
+    private readonly NativeCasinoRuntime runtime;
+    private readonly FullscreenKeyFilter fullscreenKeyFilter;
+    private sealed class FullscreenKeyFilter : IMessageFilter
+    {
+        private readonly NativeShellForm host;
+        internal FullscreenKeyFilter(NativeShellForm host) => this.host = host;
+        public bool PreFilterMessage(ref Message message)
+        {
+            // WM_KEYDOWN for WebView2's child HWND is handled before native
+            // accelerators consume the key. Only affect our own focused form.
+            if (message.Msg != 0x0100 || message.WParam != (IntPtr)(int)Keys.F11
+                || !host.ContainsFocus || host.closing) return false;
+            host.ToggleNativeFullscreen();
+            return true;
+        }
+    }
+    private readonly bool managedRelease;
+    private readonly NativeLobbyController lobbyController;
+    private readonly NativeHostAudio hostAudio = new();
+    private string? recordsPage;
+    private bool shopOpen, updatesOpen;
+    private UpdateChannel NativeInstallChannel
+    {
+        get
+        {
+            string? productVersion = FileVersionInfo.GetVersionInfo(Application.ExecutablePath).ProductVersion;
+            return SemanticVersion.TryParse(productVersion ?? "", out SemanticVersion parsed)
+                ? NativeReleaseChannelPolicy.InstalledChannel(parsed)
+                : UpdateChannel.Development;
+        }
+    }
+    private readonly CasinoUpdateService updateService = new();
+    private readonly CancellationTokenSource updateCancellation = new();
+    private bool checkingUpdates, availableUpdates;
+    private UpdateManifest? pendingUpdate;
+    private string updateStatus = "This isolated test candidate cannot install updates. You can check the published release status.";
     private readonly Panel content = new() { Dock = DockStyle.Fill };
     private readonly Label status = new()
     {
@@ -38,22 +76,48 @@ internal sealed class NativeShellForm : Form
     private ModernMergeSession? mergeEpoch;
     private ModernDiceSession? diceEpoch;
     private bool diceAiScheduling;
+    private Guid? reelsCompletedAudio, neonCompletedAudio, nineCompletedAudio;
+    private Guid? reelsStopSpin, neonStopSpin, nineStopSpin;
+    private readonly HashSet<int> reelsStoppedAudio = new();
+    private readonly HashSet<int> neonStoppedAudio = new();
+    private readonly HashSet<int> nineStoppedAudio = new();
     private bool manorProcessing;
     private string? activeMode;
     private bool listening, ready, browserFailed, closing;
+    private bool lobbyShown, lobbyBrowserDisabled;
+    private Process? descentProcess;
+    private EmpireModernSession? empireEpoch;
+    private NativeLoungeCaseBoardForm? loungeBoard;
+    private NativeEmpireDetachedForm? detachedEmpire;
+    private readonly System.Windows.Forms.Timer loungeRefresh = new() { Interval = 1000 };
+    private readonly System.Windows.Forms.Timer loungeTowerRefresh = new() { Interval = 100 };
+    private readonly System.Windows.Forms.Timer empireRefresh = new() { Interval = 2000 };
+    private DateTimeOffset empireLastPersist = DateTimeOffset.UtcNow;
     private readonly string frontendFolder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
 
-    internal NativeShellForm(string? previewDirectory = null)
+    internal NativeShellForm(string? profileDirectory = null, bool migrationCandidate = false,
+        bool managedRelease = false)
     {
-        previewDirectory ??= Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "BlackjackCasino", "NativeShellPreview");
-        runtime = new NativePreviewRuntime(previewDirectory);
+        this.managedRelease = managedRelease;
+        fullscreenKeyFilter = new FullscreenKeyFilter(this);
+        Application.AddMessageFilter(fullscreenKeyFilter);
+        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        profileDirectory ??= HostPreviewStorage.DefaultDirectory(localAppData);
+        profileDirectory = HostPreviewStorage.RequireIsolatedDirectory(profileDirectory, localAppData);
+        runtime = new NativeCasinoRuntime(profileDirectory);
+        lobbyController = new NativeLobbyController(runtime);
         environment = new Lazy<Task<CoreWebView2Environment>>(() =>
             CoreWebView2Environment.CreateAsync(
-                userDataFolder: Path.Combine(previewDirectory, "WebView2")));
+                userDataFolder: Path.Combine(profileDirectory, "WebView2")));
 
-        Text = "Blackjack Casino — WPF-free Native Shell Preview";
+        Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+        Text = managedRelease
+            ? "Blackjack Casino"
+            : migrationCandidate
+                ? "Blackjack Casino — Isolated Host Migration Candidate"
+                : "Blackjack Casino — Isolated NativeShell diagnostics";
+        if (managedRelease)
+            updateStatus = "NativeShell active. Verified updates are available through the bundled updater.";
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(940, 640);
         ClientSize = new Size(1360, 860);
@@ -61,43 +125,32 @@ internal sealed class NativeShellForm : Form
         ForeColor = Color.WhiteSmoke;
         KeyPreview = true;
 
-        var root = new TableLayoutPanel
+        // Both production and isolated diagnostic windows use the actual React
+        // casino layout. The former navigation strip and preview footer were
+        // temporary migration scaffolding and must not be reinstated.
+        Controls.Add(content);
+        loungeRefresh.Tick += (_, _) =>
         {
-            Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
-            Margin = Padding.Empty, Padding = Padding.Empty,
+            if (closing || activeMode != "chill-lounge" || !ready) return;
+            runtime.TickLounge();
+            RefreshGameSnapshot();
         };
-        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 57));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
-
-        var navigation = new FlowLayoutPanel
+        loungeTowerRefresh.Tick += (_, _) =>
         {
-            Dock = DockStyle.Fill, WrapContents = false,
-            FlowDirection = FlowDirection.LeftToRight, AutoScroll = true,
-            BackColor = Color.FromArgb(11, 31, 29),
-            Padding = new Padding(12, 9, 12, 8),
+            if (closing || activeMode != "chill-lounge" || !ready) return;
+            if (runtime.TickLoungeTower()) RefreshGameSnapshot();
         };
-        navigation.Controls.Add(MakeButton("Lobby", ReturnToHome));
-        navigation.Controls.Add(MakeButton("Blackjack", () => _ = OpenModeAsync("blackjack")));
-        navigation.Controls.Add(MakeButton("Midnight Reels", () => _ = OpenModeAsync("reels")));
-        navigation.Controls.Add(MakeButton("Neon Vault", () => _ = OpenModeAsync("neon-vault")));
-        navigation.Controls.Add(MakeButton("Nine Lives", () => _ = OpenModeAsync("nine-lives")));
-        navigation.Controls.Add(MakeButton("Midnight Merge", () => _ = OpenModeAsync("midnight-merge")));
-        navigation.Controls.Add(MakeButton("Midnight Dice", () => _ = OpenModeAsync("midnight-dice")));
-        navigation.Controls.Add(MakeButton("Midnight Manor", () => _ = OpenModeAsync("midnight-manor")));
-        navigation.Controls.Add(new Label
+        empireRefresh.Tick += (_, _) =>
         {
-            AutoSize = true, Text = "NATIVE HOST • PREVIEW",
-            ForeColor = Color.FromArgb(221, 192, 127),
-            TextAlign = ContentAlignment.MiddleCenter,
-            Padding = new Padding(16, 10, 0, 0),
-        });
-
-        root.Controls.Add(navigation, 0, 0);
-        root.Controls.Add(content, 0, 1);
-        root.Controls.Add(status, 0, 2);
-        Controls.Add(root);
+            if (closing || activeMode != "casino-empire" || !ready) return;
+            runtime.TickEmpire();
+            RefreshGameSnapshot();
+            if (DateTimeOffset.UtcNow - empireLastPersist >= TimeSpan.FromSeconds(30))
+            {
+                runtime.Persist();
+                empireLastPersist = DateTimeOffset.UtcNow;
+            }
+        };
         watchdog.Tick += (_, _) =>
         {
             watchdog.Stop();
@@ -106,19 +159,115 @@ internal sealed class NativeShellForm : Form
         KeyDown += (_, e) =>
         {
             if (e.KeyCode != Keys.F11) return;
-            FormBorderStyle = FormBorderStyle == FormBorderStyle.None
-                ? FormBorderStyle.Sizable : FormBorderStyle.None;
-            WindowState = FormBorderStyle == FormBorderStyle.None
-                ? FormWindowState.Maximized : FormWindowState.Normal;
-            e.Handled = true;
+            ToggleNativeFullscreen();
+            e.Handled = e.SuppressKeyPress = true;
         };
         ShowHome();
+        Shown += (_, _) =>
+        {
+            lobbyShown = true;
+            if (activeMode is null && !lobbyBrowserDisabled)
+                _ = OpenLobbyAsync();
+        };
+    }
+
+    private void ToggleNativeFullscreen()
+    {
+        if (WindowState == FormWindowState.Maximized
+            && FormBorderStyle == FormBorderStyle.None)
+        {
+            WindowState = FormWindowState.Normal;
+            FormBorderStyle = FormBorderStyle.Sizable;
+        }
+        else
+        {
+            WindowState = FormWindowState.Normal;
+            FormBorderStyle = FormBorderStyle.None;
+            WindowState = FormWindowState.Maximized;
+        }
+    }
+
+    private static bool MatchesSpinMessage(JsonElement root, Guid expected, out int reel)
+    {
+        reel = -1;
+        if (!root.TryGetProperty("spinId", out JsonElement raw)
+            || raw.ValueKind != JsonValueKind.String
+            || !Guid.TryParse(raw.GetString(), out Guid actual)
+            || actual != expected) return false;
+        if (root.TryGetProperty("reel", out JsonElement index))
+        {
+            if (index.ValueKind != JsonValueKind.Number
+                || !index.TryGetInt32(out reel)) return false;
+        }
+        return true;
+    }
+
+    private void PlayStopOnce(string? mode, JsonElement root)
+    {
+        Guid? active = mode switch
+        {
+            "reels" => runtime.ReelsAudioResult?.SpinId,
+            "neon-vault" => runtime.NeonAudioResult?.SpinId,
+            "nine-lives" => runtime.NineAudioResult?.SpinId,
+            _ => null,
+        };
+        if (active is not Guid id || !MatchesSpinMessage(root, id, out int index))
+            return;
+        int reelCount = mode == "neon-vault" ? 5 : 3;
+        if (index < 0 || index >= reelCount) return;
+        HashSet<int> stopped = mode switch
+        {
+            "reels" => reelsStoppedAudio,
+            "neon-vault" => neonStoppedAudio,
+            _ => nineStoppedAudio,
+        };
+        Guid? last = mode switch
+        {
+            "reels" => reelsStopSpin,
+            "neon-vault" => neonStopSpin,
+            _ => nineStopSpin,
+        };
+        if (last != id)
+        {
+            stopped.Clear();
+            if (mode == "reels") reelsStopSpin = id;
+            else if (mode == "neon-vault") neonStopSpin = id;
+            else nineStopSpin = id;
+        }
+        if (stopped.Add(index))
+            hostAudio.PlayGameCue(mode, "reel-stop", SoundEnabledForCurrentMode());
+    }
+
+    private void PlayResultOnce(string? mode, JsonElement root)
+    {
+        bool enabled = SoundEnabledForCurrentMode();
+        switch (mode)
+        {
+            case "reels" when runtime.ReelsAudioResult is { } reels
+                && MatchesSpinMessage(root, reels.SpinId, out _)
+                && reelsCompletedAudio != reels.SpinId:
+                reelsCompletedAudio = reels.SpinId;
+                hostAudio.PlayReelsOutcome(reels, enabled);
+                break;
+            case "neon-vault" when runtime.NeonAudioResult is { } neon
+                && MatchesSpinMessage(root, neon.SpinId, out _)
+                && neonCompletedAudio != neon.SpinId:
+                neonCompletedAudio = neon.SpinId;
+                hostAudio.PlayNeonOutcome(neon, enabled);
+                break;
+            case "nine-lives" when runtime.NineAudioResult is { } nine
+                && MatchesSpinMessage(root, nine.SpinId, out _)
+                && nineCompletedAudio != nine.SpinId:
+                nineCompletedAudio = nine.SpinId;
+                hostAudio.PlayNineOutcome(nine, enabled);
+                break;
+        }
     }
 
     // Minimal internal acceptance interface; never used by React or game commands.
-    internal bool PreviewReady => ready && !browserFailed;
-    internal string? PreviewMode => activeMode;
-    internal CoreWebView2? PreviewBrowser => browser?.CoreWebView2;
+    internal bool BrowserReady => ready && !browserFailed;
+    internal string? BrowserMode => activeMode;
+    internal CoreWebView2? BrowserCore => browser?.CoreWebView2;
     internal Task OpenForAcceptanceAsync(string mode) => OpenModeAsync(mode);
     internal void ReturnForAcceptance() => ReturnToHome();
 
@@ -168,9 +317,12 @@ internal sealed class NativeShellForm : Form
             Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter,
             ForeColor = Color.FromArgb(190, 218, 201),
             Font = new Font("Segoe UI", 13),
-            Text = "WPF-freier Windows-Host mit echten React-Oberflächen und C#-Spielregeln.\n"
-                + "In dieser isolierten Testversion sind Blackjack, Reels, Neon Vault und Nine Lives angebunden.\n"
-                + "Die übrigen Casino-Bereiche verbleiben vorerst in der regulären Desktop-Anwendung.",
+            Text = managedRelease
+                ? "Die Casino-Lobby konnte nicht geladen werden.\n"
+                    + "Du kannst die Spiele über diese Notfallnavigation öffnen.\n"
+                    + "Dein NativeShell-Spielstand bleibt erhalten."
+                : "WPF-freier Windows-Host mit echten React-Oberflächen und C#-Spielregeln.\n"
+                    + "Die reguläre React-Lobby ist vorübergehend nicht verfügbar.",
         }, 0, 1);
         var actions = new FlowLayoutPanel
         {
@@ -179,24 +331,38 @@ internal sealed class NativeShellForm : Form
             WrapContents = false, AutoSize = false,
         };
         actions.Controls.Add(MakeButton("BLACKJACK SPIELEN", () => _ = OpenModeAsync("blackjack")));
+        actions.Controls.Add(MakeButton("ROULETTE", () => _ = OpenModeAsync("roulette")));
         actions.Controls.Add(MakeButton("MIDNIGHT REELS", () => _ = OpenModeAsync("reels")));
         actions.Controls.Add(MakeButton("NEON VAULT", () => _ = OpenModeAsync("neon-vault")));
         actions.Controls.Add(MakeButton("NINE LIVES", () => _ = OpenModeAsync("nine-lives")));
         actions.Controls.Add(MakeButton("MIDNIGHT MERGE", () => _ = OpenModeAsync("midnight-merge")));
         actions.Controls.Add(MakeButton("MIDNIGHT DICE", () => _ = OpenModeAsync("midnight-dice")));
         actions.Controls.Add(MakeButton("MIDNIGHT MANOR", () => _ = OpenModeAsync("midnight-manor")));
+        actions.Controls.Add(MakeButton("CASINO EMPIRE", () => _ = OpenModeAsync("casino-empire")));
+        actions.Controls.Add(MakeButton("EMPIRE · SEPARATES FENSTER", OpenDetachedEmpire));
+        actions.Controls.Add(MakeButton("CHILL LOUNGE", () => _ = OpenModeAsync("chill-lounge")));
+        if (NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory))
+            actions.Controls.Add(MakeButton("MIDNIGHT DESCENT", () => _ = OpenDescentAsync()));
         page.Controls.Add(actions, 0, 2);
         page.Controls.Add(new Label
         {
             Dock = DockStyle.Fill, ForeColor = Color.FromArgb(150, 172, 166),
-            Text = "Sicherer Testmodus: Fortschritt wird ausschließlich unter "
-                + "%LOCALAPPDATA%\\BlackjackCasino\\NativeShellPreview gespeichert. "
-                + "Der normale Spielerstand und der veröffentlichte Updater bleiben unverändert.",
+            Text = managedRelease
+                ? "Notfallansicht: Spiele und Guthaben werden weiterhin im "
+                    + "NativeShell-Profil gespeichert. Du kannst das Fenster schließen "
+                    + "und über den normalen Programmstart neu öffnen."
+                : "Sicherer Testmodus: Spielstände liegen ausschließlich im isolierten "
+                    + "NativeShell-Profil; deine ursprünglichen WPF-Daten bleiben erhalten.",
             TextAlign = ContentAlignment.TopCenter,
             Font = new Font("Segoe UI", 10),
         }, 0, 3);
         content.Controls.Add(page);
         status.Text = "Lobby · Spielgeld: " + runtime.Bankroll.ToString("N2");
+        hostAudio.Update(null, runtime.Preferences);
+        recordsPage = null;
+        shopOpen = false;
+        updatesOpen = false;
+        if (lobbyShown && !lobbyBrowserDisabled) _ = OpenLobbyAsync();
     }
 
     private void ReturnToHome()
@@ -221,14 +387,181 @@ internal sealed class NativeShellForm : Form
         }
         if (activeMode == "midnight-manor")
             runtime.CloseManor();
+        if (activeMode == "chill-lounge")
+        {
+            loungeRefresh.Stop();
+            loungeTowerRefresh.Stop();
+            loungeBoard?.Close();
+            loungeBoard = null;
+            runtime.CloseLounge();
+        }
+        if (activeMode == "casino-empire")
+        {
+            empireRefresh.Stop();
+            runtime.CloseEmpire();
+            empireEpoch = null;
+        }
         ShowHome();
+    }
+
+    private void OpenDetachedEmpire()
+    {
+        if (closing || runtime.ManorRequiresRestart || runtime.RouletteRequiresRestart
+            || runtime.LoungeRequiresRestart) return;
+        if (detachedEmpire is { IsDisposed: false })
+        {
+            detachedEmpire.Activate();
+            return;
+        }
+        if (runtime.HandInProgress)
+        {
+            status.Text = "Finish the current Blackjack hand first.";
+            return;
+        }
+        try
+        {
+            runtime.OpenEmpire();
+            var window = new NativeEmpireDetachedForm(
+                runtime, environment.Value, frontendFolder, RefreshLobbySnapshot)
+            {
+                Owner = this,
+            };
+            detachedEmpire = window;
+            window.FormClosed += (_, _) =>
+            {
+                if (ReferenceEquals(detachedEmpire, window)) detachedEmpire = null;
+                RefreshLobbySnapshot();
+            };
+            window.Show(this);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or InvalidDataException or InvalidOperationException)
+        {
+            status.Text = "Casino Empire could not open: " + ex.Message;
+        }
+    }
+
+    private async Task OpenDescentAsync()
+    {
+        if (closing || descentProcess is not null || runtime.HandInProgress) return;
+
+        FormWindowState previousState = WindowState;
+        hostAudio.Suspend();
+        Process? process = null;
+        try
+        {
+            bool german = runtime.Preferences.Language == UiLanguagePreference.German;
+            ProcessStartInfo start = NativeDescentLaunch.CreateStartInfo(
+                AppContext.BaseDirectory, german);
+            process = Process.Start(start)
+                ?? throw new InvalidOperationException("Godot could not be started.");
+            descentProcess = process;
+            Enabled = false;
+            WindowState = FormWindowState.Minimized;
+            status.Text = "Midnight Descent is running.";
+            await process.WaitForExitAsync();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            if (!closing && !IsDisposed)
+                status.Text = "Midnight Descent: " + ex.Message;
+        }
+        finally
+        {
+            if (ReferenceEquals(descentProcess, process)) descentProcess = null;
+            process?.Dispose();
+            if (!closing && !IsDisposed)
+            {
+                Enabled = true;
+                WindowState = previousState == FormWindowState.Minimized
+                    ? FormWindowState.Normal : previousState;
+                Activate();
+                RefreshLobbySnapshot();
+                hostAudio.Update(activeMode, runtime.Preferences);
+            }
+        }
+    }
+
+    private async Task OpenLobbyAsync()
+    {
+        if (closing || lobbyBrowserDisabled || activeMode is not null
+            || !File.Exists(Path.Combine(frontendFolder, "lobby.html"))) return;
+
+        DisposeBrowser();
+        var web = new WebView2
+        {
+            Dock = DockStyle.Fill,
+            DefaultBackgroundColor = Color.FromArgb(4, 22, 17),
+        };
+        browser = web;
+        content.Controls.Clear();
+        content.Controls.Add(web);
+        listening = ready = browserFailed = false;
+        status.Text = "Loading native React casino lobby…";
+        watchdog.Start();
+        try
+        {
+            CoreWebView2Environment env = await environment.Value;
+            if (closing || browser != web || activeMode is not null) return;
+            await web.EnsureCoreWebView2Async(env);
+            if (closing || browser != web || activeMode is not null) return;
+            CoreWebView2 core = web.CoreWebView2
+                ?? throw new InvalidOperationException("Lobby WebView2 initialization failed.");
+            core.Settings.AreDefaultContextMenusEnabled = false;
+            core.Settings.AreDevToolsEnabled = false;
+            core.Settings.AreHostObjectsAllowed = false;
+            core.Settings.IsStatusBarEnabled = false;
+            core.Settings.IsZoomControlEnabled = false;
+            core.Settings.IsWebMessageEnabled = true;
+            // WebView2 owns keyboard focus, so normal WinForms KeyDown does
+            // not see F11. Forward the shortcut from each bundled React page.
+            await core.AddScriptToExecuteOnDocumentCreatedAsync(
+                "window.addEventListener('keydown',function(e){"
+                + "if(e.key==='F11'&&!e.repeat){e.preventDefault();"
+                + "e.stopImmediatePropagation();"
+                + "window.chrome.webview.postMessage({type:'host.fullscreen.toggle'});"
+                + "}},true);");
+            core.SetVirtualHostNameToFolderMapping(
+                VirtualHost, frontendFolder, CoreWebView2HostResourceAccessKind.DenyCors);
+            core.NavigationStarting += (_, args) =>
+            {
+                if (!IsTrusted(null, args.Uri)) args.Cancel = true;
+            };
+            core.NewWindowRequested += (_, args) => args.Handled = true;
+            core.PermissionRequested += (_, args) => args.State = CoreWebView2PermissionState.Deny;
+            core.NavigationCompleted += (_, args) =>
+            {
+                if (!args.IsSuccess) ScheduleFailure("React lobby navigation failed.");
+            };
+            core.ProcessFailed += (_, _) => ScheduleFailure("React lobby browser failed.");
+            core.WebMessageReceived += OnMessage;
+            web.Source = new Uri("https://" + VirtualHost + "/lobby.html");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or InvalidOperationException or System.Runtime.InteropServices.COMException)
+        {
+            if (!closing && browser == web)
+                FailBrowser("React lobby initialization failed: " + ex.Message);
+        }
+    }
+
+    private void RefreshLobbySnapshot()
+    {
+        if (!closing && !browserFailed && activeMode is null
+            && listening && browser?.CoreWebView2 is not null)
+            Post("lobby.snapshot", runtime.LobbySnapshot());
     }
 
     private async Task OpenModeAsync(string mode)
     {
-        if (closing || mode is not ("blackjack" or "reels" or "neon-vault" or "nine-lives"
-            or "midnight-merge" or "midnight-dice" or "midnight-manor")) return;
-        if (runtime.ManorRequiresRestart)
+        if (closing || !NativeRouteCatalog.IsWebRoute(mode)) return;
+        if (mode == "casino-empire" && detachedEmpire is { IsDisposed: false })
+        {
+            detachedEmpire.Activate();
+            return;
+        }
+        if (runtime.ManorRequiresRestart || runtime.LoungeRequiresRestart || runtime.RouletteRequiresRestart)
         {
             status.Text = "Manor journal recovery requires an application restart.";
             return;
@@ -253,11 +586,27 @@ internal sealed class NativeShellForm : Form
         }
         if (activeMode == "midnight-manor" && mode != "midnight-manor")
             runtime.CloseManor();
+        if (activeMode == "chill-lounge" && mode != "chill-lounge")
+        {
+            loungeRefresh.Stop();
+            loungeTowerRefresh.Stop();
+            loungeBoard?.Close();
+            loungeBoard = null;
+            runtime.CloseLounge();
+        }
+        if (activeMode == "casino-empire" && mode != "casino-empire")
+        {
+            empireRefresh.Stop();
+            runtime.CloseEmpire();
+            empireEpoch = null;
+        }
         if (mode == "reels") runtime.OpenReels();
         if (mode == "neon-vault") runtime.OpenNeonVault();
         if (mode == "nine-lives") runtime.OpenNineLives();
         if (mode == "midnight-merge") runtime.OpenMerge();
         if (mode == "midnight-dice") runtime.OpenDice();
+        if (mode == "casino-empire") runtime.OpenEmpire();
+        if (mode == "chill-lounge") runtime.OpenLounge();
         if (mode == "midnight-manor")
         {
             try
@@ -274,6 +623,7 @@ internal sealed class NativeShellForm : Form
         }
         DisposeBrowser();
         activeMode = mode;
+        hostAudio.Update(activeMode, runtime.Preferences);
         listening = ready = browserFailed = false;
         blackjackEpoch = mode == "blackjack" ? new BlackjackModernSession() : null;
         reelsEpoch = mode == "reels" ? new ModernReelsSession() : null;
@@ -282,6 +632,7 @@ internal sealed class NativeShellForm : Form
         // Keep Merge's request receipts when only the WebView process restarts.
         mergeEpoch = mode == "midnight-merge" ? mergeEpoch ?? new ModernMergeSession() : null;
         diceEpoch = mode == "midnight-dice" ? diceEpoch ?? new ModernDiceSession() : null;
+        empireEpoch = mode == "casino-empire" ? empireEpoch ?? new EmpireModernSession() : null;
 
         content.Controls.Clear();
         string document = PageFor(mode);
@@ -315,6 +666,14 @@ internal sealed class NativeShellForm : Form
             core.Settings.IsStatusBarEnabled = false;
             core.Settings.IsZoomControlEnabled = false;
             core.Settings.IsWebMessageEnabled = true;
+            // WebView2 owns keyboard focus, so normal WinForms KeyDown does
+            // not see F11. Forward the shortcut from each bundled React page.
+            await core.AddScriptToExecuteOnDocumentCreatedAsync(
+                "window.addEventListener('keydown',function(e){"
+                + "if(e.key==='F11'&&!e.repeat){e.preventDefault();"
+                + "e.stopImmediatePropagation();"
+                + "window.chrome.webview.postMessage({type:'host.fullscreen.toggle'});"
+                + "}},true);");
             core.SetVirtualHostNameToFolderMapping(
                 VirtualHost, frontendFolder, CoreWebView2HostResourceAccessKind.DenyCors);
 
@@ -339,21 +698,15 @@ internal sealed class NativeShellForm : Form
         }
     }
 
-    private static string PageFor(string mode) => mode switch
-    {
-        "blackjack" => "blackjack.html",
-        "reels" => "reels.html",
-        "neon-vault" => "neon-vault.html",
-        "nine-lives" => "nine-lives.html",
-        "midnight-merge" => "midnight-merge.html",
-        "midnight-dice" => "midnight-dice.html",
-        "midnight-manor" => "index.html",
-        _ => throw new ArgumentOutOfRangeException(nameof(mode)),
-    };
+    private static string PageFor(string mode) => NativeRouteCatalog.WebPageFor(mode);
 
     private static bool IsTrusted(string? mode, string? source) => mode switch
     {
+        null => string.Equals(source, "https://" + VirtualHost + "/lobby.html", StringComparison.Ordinal),
         "blackjack" => BlackjackModernProtocol.Trusted(source),
+        "roulette" => string.Equals(source, "https://" + VirtualHost + "/roulette.html", StringComparison.Ordinal),
+        "casino-empire" => EmpireModernProtocol.Trusted(source),
+        "chill-lounge" => string.Equals(source, "https://" + VirtualHost + "/lounge.html", StringComparison.Ordinal),
         "reels" => ModernReelsProtocol.Trusted(source),
         "neon-vault" => ModernNeonVaultProtocol.Trusted(source),
         "nine-lives" => ModernNineLivesProtocol.Trusted(source),
@@ -367,7 +720,8 @@ internal sealed class NativeShellForm : Form
     {
         if (closing || browserFailed || browser is null
             || !IsTrusted(activeMode, args.Source)
-            || args.WebMessageAsJson.Length > 4096) return;
+            || args.WebMessageAsJson.Length > (activeMode is "roulette" or "casino-empire" ? 8192 :
+                activeMode == "chill-lounge" ? 2048 : 4096)) return;
         try
         {
             if (activeMode == "midnight-manor")
@@ -383,6 +737,179 @@ internal sealed class NativeShellForm : Form
             string? message = type.GetString();
             switch (message)
             {
+                case "lobby.ready" when activeMode is null:
+                    listening = true;
+                    RefreshLobbySnapshot();
+                    break;
+                case "lobby.ui-ready" when activeMode is null && listening:
+                    ready = true;
+                    watchdog.Stop();
+                    status.Text = "Native React lobby · native profile · $" + runtime.Bankroll.ToString("N2");
+                    break;
+                case "lobby.refresh" when activeMode is null && listening:
+                    RefreshLobbySnapshot();
+                    RefreshLobbyRecords();
+                    RefreshLobbyShop();
+                    break;
+                case "lobby.open" when activeMode is null && listening && ready:
+                {
+                    if (!root.TryGetProperty("id", out JsonElement rawMode)
+                        || rawMode.ValueKind != JsonValueKind.String) break;
+                    string? id = rawMode.GetString();
+                    // External Godot modes have no local React game document, so they
+                    // must be resolved against the full canonical route catalog.
+                    HostCasinoRoute? mode = NativeRouteCatalog.CasinoRoutes.FirstOrDefault(
+                        route => string.Equals(route.DesktopModeId, id, StringComparison.Ordinal));
+                    if (mode?.WebModeId is { } alias)
+                        BeginInvoke(new Action(() => { _ = OpenModeAsync(alias); }));
+                    else if (mode?.HasNativeProcess == true &&
+                             NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory))
+                        BeginInvoke(new Action(() => { _ = OpenDescentAsync(); }));
+                    break;
+                }
+                case "lobby.open-secondary" when activeMode is null && listening && ready:
+                    if (root.TryGetProperty("id", out JsonElement secondaryId)
+                        && secondaryId.ValueKind == JsonValueKind.String
+                        && secondaryId.GetString() == "casino-empire")
+                        BeginInvoke(new Action(OpenDetachedEmpire));
+                    break;
+                case "lobby.language.set" when activeMode is null && listening && ready:
+                {
+                    if (!root.TryGetProperty("id", out JsonElement languageId)
+                        || languageId.ValueKind != JsonValueKind.String) break;
+                    string? choice = languageId.GetString();
+                    if (choice is "de" or "en")
+                    {
+                        runtime.SetLobbyLanguage(choice == "de"
+                            ? UiLanguagePreference.German : UiLanguagePreference.English);
+                        RefreshLobbySnapshot();
+                    }
+                    break;
+                }
+                case "lobby.settings.fullscreen" when activeMode is null && ready:
+                case "host.fullscreen.toggle" when ready:
+                    ToggleNativeFullscreen();
+                    break;
+                case "lobby.exit" when activeMode is null && ready:
+                    BeginInvoke(new Action(Close));
+                    break;
+                case "lounge.ready" when activeMode == "chill-lounge":
+                    if (!LoungeMessageVersion(root)) break;
+                    listening = true;
+                    RefreshGameSnapshot();
+                    break;
+                case "lounge.ui-ready" when activeMode == "chill-lounge" && listening:
+                    if (!LoungeMessageVersion(root)) break;
+                    ready = true;
+                    watchdog.Stop();
+                    loungeRefresh.Start();
+                    loungeTowerRefresh.Start();
+                    status.Text = "Chill Lounge ready: eight native games.";
+                    break;
+                case "lounge.close" when activeMode == "chill-lounge" && ready:
+                    if (LoungeMessageVersion(root))
+                        BeginInvoke(new Action(ReturnToHome));
+                    break;
+                case "lounge.open" when activeMode == "chill-lounge" && listening && ready:
+                    if (!LoungeMessageVersion(root)
+                        || !root.TryGetProperty("id", out JsonElement loungeId)
+                        || loungeId.ValueKind != JsonValueKind.String) break;
+                    string? gameId = loungeId.GetString();
+                    if (!ModernLoungeCatalog.Contains(gameId)) break;
+                    runtime.OpenLoungeGame(gameId!);
+                    RefreshGameSnapshot();
+                    break;
+                case "lounge.adventure.board-window" when activeMode == "chill-lounge"
+                    && listening && ready:
+                    if (LoungeMessageVersion(root))
+                        BeginInvoke(new Action(OpenCaseBoardWindow));
+                    break;
+                case "lounge.sudoku.command" or "lounge.solitaire.command" or
+                    "lounge.word-search.command" or "lounge.memory.command" or
+                    "lounge.jigsaw.command" or "lounge.adventure.command" or
+                    "lounge.tower-defense.command" or "lounge.minesweeper.command"
+                    when activeMode == "chill-lounge" && listening && ready:
+                {
+                    NativeLoungeReply? reply = runtime.ApplyLounge(
+                        message!, args.WebMessageAsJson);
+                    if (reply is not null)
+                    {
+                        Post(reply.Type, reply.Data);
+                        if (SuccessfulLoungeAction(reply.Data)
+                            && root.TryGetProperty("action", out JsonElement loungeAction)
+                            && loungeAction.ValueKind == JsonValueKind.String)
+                            hostAudio.PlayGameCue(activeMode,
+                                loungeAction.GetString() ?? "", SoundEnabledForCurrentMode());
+                    }
+                    RefreshGameSnapshot();
+                    loungeBoard?.RefreshBoard();
+                    break;
+                }
+                case "empire.ready" when activeMode == "casino-empire":
+                    listening = true;
+                    RefreshGameSnapshot();
+                    break;
+                case "empire.ui-ready" when activeMode == "casino-empire" && listening:
+                    if (!root.TryGetProperty("visitId", out JsonElement visit)
+                        || visit.ValueKind != JsonValueKind.Number
+                        || !visit.TryGetInt32(out int visitId) || visitId != 1) break;
+                    ready = true;
+                    watchdog.Stop();
+                    empireRefresh.Start();
+                    Post("empire.activated", new { VisitId = 1 });
+                    Post("empire.visibility", new { Visible = true });
+                    status.Text = "Casino Empire ready.";
+                    break;
+                case "empire.refresh" when activeMode == "casino-empire" && listening:
+                    RefreshGameSnapshot();
+                    break;
+                case "empire.close" when activeMode == "casino-empire":
+                    BeginInvoke(new Action(ReturnToHome));
+                    break;
+                case "empire.dismiss-offline" when activeMode == "casino-empire":
+                    RefreshGameSnapshot();
+                    break;
+                case "empire.command" when activeMode == "casino-empire" && listening && ready:
+                {
+                    EmpireModernCommand? command = EmpireModernProtocol.Parse(args.WebMessageAsJson);
+                    if (command is null || empireEpoch is null) break;
+                    EmpireModernReply reply = empireEpoch.Execute(command,
+                        runtime.CommitEmpire, runtime.EmpirePreview);
+                    Post("empire.result", reply);
+                    status.Text = reply.Message;
+                    if (!command.Preview)
+                    {
+                        if (reply.Success)
+                            hostAudio.PlayGameCue(activeMode, command.Action,
+                                SoundEnabledForCurrentMode());
+                        RefreshGameSnapshot();
+                    }
+                    break;
+                }
+                case "roulette.ready" when activeMode == "roulette":
+                    listening = true;
+                    Post("roulette.snapshot", runtime.RouletteSnapshot());
+                    break;
+                case "roulette.ui-ready" when activeMode == "roulette" && listening:
+                    ready = true;
+                    watchdog.Stop();
+                    status.Text = runtime.Status;
+                    break;
+                case "roulette.close" when activeMode == "roulette" && ready:
+                    BeginInvoke(new Action(ReturnToHome));
+                    break;
+                case "roulette.spin" when activeMode == "roulette" && listening && ready:
+                {
+                    if (!root.TryGetProperty("roundId", out JsonElement rouletteId)
+                        || rouletteId.ValueKind != JsonValueKind.String
+                        || !Guid.TryParse(rouletteId.GetString(), out Guid roundId)
+                        || roundId == Guid.Empty
+                        || !root.TryGetProperty("bets", out JsonElement bets)) break;
+                    Post("roulette.result", runtime.ApplyRoulette(roundId, bets));
+                    Post("roulette.snapshot", runtime.RouletteSnapshot());
+                    status.Text = runtime.Status;
+                    break;
+                }
                 case "blackjack.ready" when activeMode == "blackjack":
                 case "reels.ready" when activeMode == "reels":
                 case "neon-vault.ready" when activeMode == "neon-vault":
@@ -437,6 +964,8 @@ internal sealed class NativeShellForm : Form
                     if (command is null || reelsEpoch is null) break;
                     ModernReelsReply reply = reelsEpoch.Execute(command, runtime.ApplyReels);
                     Post("reels.result", reply);
+                    if (reply.Success && command.Action is not ("sound.set" or "animations.set"))
+                        hostAudio.PlayGameCue(activeMode, command.Action, SoundEnabledForCurrentMode());
                     status.Text = reply.Message;
                     RefreshGameSnapshot();
                     break;
@@ -447,6 +976,8 @@ internal sealed class NativeShellForm : Form
                     if (command is null || neonEpoch is null) break;
                     ModernNeonVaultReply reply = neonEpoch.Execute(command, runtime.ApplyNeonVault);
                     Post("neon-vault.result", reply);
+                    if (reply.Success && command.Action is not ("sound.set" or "animations.set"))
+                        hostAudio.PlayGameCue(activeMode, command.Action, SoundEnabledForCurrentMode());
                     status.Text = reply.Message;
                     RefreshGameSnapshot();
                     break;
@@ -457,6 +988,8 @@ internal sealed class NativeShellForm : Form
                     if (command is null || nineEpoch is null) break;
                     ModernNineLivesReply reply = nineEpoch.Execute(command, runtime.ApplyNineLives);
                     Post("nine-lives.result", reply);
+                    if (reply.Success && command.Action is not ("sound.set" or "animations.set"))
+                        hostAudio.PlayGameCue(activeMode, command.Action, SoundEnabledForCurrentMode());
                     status.Text = reply.Message;
                     RefreshGameSnapshot();
                     break;
@@ -468,6 +1001,8 @@ internal sealed class NativeShellForm : Form
                     ModernMergeReply reply = mergeEpoch.Execute(command,
                         runtime.MergeRevision, runtime.ApplyMerge);
                     Post("midnight-merge.result", reply);
+                    if (reply.Success && command.Action is not ("sound.set" or "animations.set"))
+                        hostAudio.PlayGameCue(activeMode, command.Action, SoundEnabledForCurrentMode());
                     status.Text = reply.Message;
                     RefreshGameSnapshot();
                     break;
@@ -478,6 +1013,8 @@ internal sealed class NativeShellForm : Form
                     if (command is null || diceEpoch is null) break;
                     ModernDiceReply reply = diceEpoch.Execute(command, runtime.ApplyDice);
                     Post("midnight-dice.result", reply);
+                    if (reply.Success && command.Action is not ("sound.set" or "animations.set" or "music.set"))
+                        hostAudio.PlayGameCue(activeMode, command.Action, SoundEnabledForCurrentMode());
                     status.Text = reply.Message;
                     RefreshGameSnapshot();
                     if (runtime.DiceWaiting) _ = AdvanceDiceAiIfNeededAsync();
@@ -489,11 +1026,475 @@ internal sealed class NativeShellForm : Form
                 case "midnight-dice.recover" when activeMode == "midnight-dice" && listening && ready:
                     ScheduleFailure("The game requested WebView2 recovery.");
                     break;
-                // Reel-stop and animation-complete signals are presentation cues,
-                // never outcome calculations; the preview has no sound router yet.
+                // Browser presentation cues cannot settle a second spin.
+                case "reels.reel-stop" when activeMode == "reels" && ready:
+                case "neon-vault.reel-stop" when activeMode == "neon-vault" && ready:
+                case "nine-lives.reel-stop" when activeMode == "nine-lives" && ready:
+                    PlayStopOnce(activeMode, root);
+                    break;
+                case "reels.animation-complete" when activeMode == "reels" && ready:
+                case "neon-vault.animation-complete" when activeMode == "neon-vault" && ready:
+                case "nine-lives.animation-complete" when activeMode == "nine-lives" && ready:
+                    PlayResultOnce(activeMode, root);
+                    break;
+                case "neon-vault.feature-impact" when activeMode == "neon-vault" && ready:
+                    if (runtime.NeonAudioResult is { } impact
+                        && MatchesSpinMessage(root, impact.SpinId, out _))
+                        hostAudio.PlayNeonFeature(impact, SoundEnabledForCurrentMode());
+                    break;
+                case "nine-lives.feature-impact" when activeMode == "nine-lives" && ready:
+                    if (runtime.NineAudioResult is { } feature
+                        && MatchesSpinMessage(root, feature.SpinId, out _))
+                        hostAudio.PlayGameCue(activeMode, "feature-impact", SoundEnabledForCurrentMode());
+                    break;
             }
+            if (activeMode is null && listening && ready)
+                HandleLobbyAction(message ?? string.Empty, root);
+            else if (ready && message is "reels.command" or "neon-vault.command"
+                or "nine-lives.command" or "midnight-merge.command" or "midnight-dice.command"
+                or "lounge.sudoku.command" or "lounge.solitaire.command"
+                or "lounge.word-search.command" or "lounge.memory.command"
+                or "lounge.jigsaw.command" or "lounge.adventure.command"
+                or "lounge.tower-defense.command" or "lounge.minesweeper.command")
+                hostAudio.Update(activeMode, runtime.Preferences);
         }
         catch (JsonException) { }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or InvalidDataException or InvalidOperationException or OverflowException)
+        {
+            if (activeMode == "chill-lounge")
+                FailBrowser("Native Lounge save or gameplay error: " + ex.Message);
+        }
+    }
+
+    private static string? ValidLobbyId(JsonElement root)
+    {
+        if (!root.TryGetProperty("id", out JsonElement value)) return null;
+        if (value.ValueKind != JsonValueKind.String) return null;
+        string? id = value.GetString();
+        return id is { Length: >= 1 and <= 80 }
+            && id.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' or ' ' or '\'')
+            ? id : null;
+    }
+
+    private void RefreshLobbyRecords()
+    {
+        if (recordsPage is { } page && activeMode is null && listening)
+            Post("lobby.records.snapshot", new { Page = page, Snapshot = lobbyController.Snapshot(page) });
+    }
+
+    private void RefreshLobbyShop()
+    {
+        if (shopOpen && activeMode is null && listening)
+            Post("lobby.shop.snapshot", lobbyController.ShopSnapshot());
+    }
+
+    private void SendLobbyResult(string id, NativeLobbyOutcome result) =>
+        Post("lobby.records.result", new { Id = id, result.Success, result.Message });
+
+    private void HandleLobbyAction(string action, JsonElement root)
+    {
+        string? id = ValidLobbyId(root);
+        switch (action)
+        {
+            case "lobby.records.open"
+                when id is "challenges" or "statistics" or "profile" or
+                    "history" or "season" or "vault" or "album":
+                shopOpen = false;
+                recordsPage = id;
+                RefreshLobbyRecords();
+                break;
+            case "lobby.records.close":
+                recordsPage = null;
+                break;
+            case "lobby.progression"
+                when id is "Season Pass" or "Cosmetic Shop" or "Collector's Album"
+                    or "Challenges" or "Statistics":
+            {
+                if (id == "Cosmetic Shop")
+                {
+                    recordsPage = null;
+                    shopOpen = true;
+                    Post("lobby.shop.show", (object?)null);
+                    RefreshLobbyShop();
+                }
+                else
+                {
+                    recordsPage = id switch
+                    {
+                        "Season Pass" => "season",
+                        "Collector's Album" => "album",
+                        "Challenges" => "challenges",
+                        _ => "statistics",
+                    };
+                    shopOpen = false;
+                    Post("lobby.records.show", new { Page = recordsPage });
+                    RefreshLobbyRecords();
+                }
+                break;
+            }
+            case "lobby.profile" or "lobby.profile.native":
+                shopOpen = false;
+                recordsPage = "profile";
+                Post("lobby.records.show", new { Page = recordsPage });
+                RefreshLobbyRecords();
+                break;
+            case "lobby.vault":
+                shopOpen = false;
+                recordsPage = "vault";
+                Post("lobby.records.show", new { Page = recordsPage });
+                RefreshLobbyRecords();
+                break;
+            case "lobby.shop.open":
+                recordsPage = null;
+                shopOpen = true;
+                RefreshLobbyShop();
+                break;
+            case "lobby.shop.close":
+                shopOpen = false;
+                break;
+            case "lobby.shop.action" when shopOpen && id is not null:
+            {
+                NativeLobbyOutcome result = lobbyController.PurchaseOrEquip(id);
+                Post("lobby.shop.result", new { Id = id, result.Success, result.Message });
+                RefreshLobbyShop();
+                RefreshLobbySnapshot();
+                break;
+            }
+            case "lobby.shop.pack" when shopOpen && id is not null:
+            {
+                NativeLobbyOutcome result = lobbyController.PurchasePack(id);
+                Post("lobby.shop.result", new { Id = id, result.Success, result.Message });
+                RefreshLobbyShop();
+                RefreshLobbySnapshot();
+                break;
+            }
+            case "lobby.album.open" when recordsPage == "album" && id is not null:
+            case "lobby.album.complete" when recordsPage == "album" && id is not null:
+            case "lobby.album.claim" when recordsPage == "album" && id is not null:
+            {
+                string operation = action["lobby.album.".Length..];
+                NativeLobbyOutcome result = operation switch
+                {
+                    "open" => lobbyController.OpenAlbumPack(id),
+                    "complete" => lobbyController.CompleteAlbumOpening(id),
+                    _ => lobbyController.ClaimAlbumTheme(id),
+                };
+                Post("lobby.album.result", new
+                {
+                    Operation = operation,
+                    Id = id,
+                    result.Success,
+                    result.Message,
+                    Pending = lobbyController.AlbumPending(),
+                });
+                RefreshLobbyRecords();
+                RefreshLobbySnapshot();
+                break;
+            }
+            case "lobby.records.claim" when recordsPage == "challenges" && id is not null:
+            {
+                SendLobbyResult(id, lobbyController.ClaimChallenge(id));
+                RefreshLobbyRecords();
+                RefreshLobbySnapshot();
+                break;
+            }
+            case "lobby.records.claim-all" when recordsPage == "challenges":
+                SendLobbyResult("all", lobbyController.ClaimAllChallenges());
+                RefreshLobbyRecords();
+                RefreshLobbySnapshot();
+                break;
+            case "lobby.profile.rename" when recordsPage == "profile":
+            {
+                if (!root.TryGetProperty("value", out JsonElement value)
+                    || value.ValueKind != JsonValueKind.String
+                    || value.GetString() is not { Length: <= 256 } playerName) break;
+                SendLobbyResult("rename", lobbyController.Rename(playerName));
+                RefreshLobbyRecords();
+                RefreshLobbySnapshot();
+                break;
+            }
+            case "lobby.profile.equip" when recordsPage == "profile" && id is not null:
+                SendLobbyResult(id, lobbyController.EquipProfile(id));
+                RefreshLobbyRecords();
+                RefreshLobbySnapshot();
+                break;
+            case "lobby.records.season.activate" when recordsPage == "season" && id is not null:
+                SendLobbyResult(id, lobbyController.ActivateSeason(id));
+                RefreshLobbyRecords();
+                RefreshLobbySnapshot();
+                break;
+            case "lobby.records.vault.open" when recordsPage == "vault":
+            {
+                NativeLobbyOutcome outcome = lobbyController.OpenVault();
+                Post("lobby.records.vault.result", new
+                {
+                    outcome.Success, outcome.Message, outcome.Reward,
+                });
+                RefreshLobbyRecords();
+                RefreshLobbySnapshot();
+                break;
+            }
+            case "lobby.daily.claim":
+                _ = lobbyController.ClaimDaily();
+                RefreshLobbySnapshot();
+                break;
+            case "lobby.arcade.run" when id is not null:
+            {
+                if (!root.TryGetProperty("score", out JsonElement scoreValue)
+                    || !scoreValue.TryGetInt32(out int score)
+                    || !root.TryGetProperty("seconds", out JsonElement secondsValue)
+                    || !secondsValue.TryGetInt32(out int seconds)
+                    || !root.TryGetProperty("runId", out JsonElement runValue)
+                    || runValue.ValueKind != JsonValueKind.String
+                    || !Guid.TryParse(runValue.GetString(), out Guid runId)) break;
+                NativeLobbyOutcome result = lobbyController.RecordArcade(id, score, seconds, runId);
+                if (result.Success)
+                {
+                    RefreshLobbySnapshot();
+                    RefreshLobbyRecords();
+                }
+                break;
+            }
+            case "lobby.settings.music" when id is "true" or "false":
+                runtime.UpdateLoungePreferences(p => p with { MusicEnabled = id == "true" });
+                hostAudio.Update(activeMode, runtime.Preferences);
+                RefreshLobbySnapshot();
+                break;
+            case "lobby.settings.empire" when id is "true" or "false":
+                runtime.UpdateLoungePreferences(p => p with { ShowEmpireBalance = id == "true" });
+                RefreshLobbySnapshot();
+                break;
+            case "lobby.settings.volume"
+                when int.TryParse(id, out int units) && units is >= 0 and <= 32:
+                runtime.UpdateLoungePreferences(p => p with { MusicVolume = units / 100d });
+                hostAudio.Update(activeMode, runtime.Preferences);
+                RefreshLobbySnapshot();
+                break;
+            case "lobby.updates.open":
+                updatesOpen = true;
+                RefreshNativeUpdates();
+                break;
+            case "lobby.updates.close":
+                updatesOpen = false;
+                break;
+            case "lobby.updates.channel.set" when updatesOpen && !checkingUpdates
+                && id is "stable" or "development":
+                runtime.UpdateLoungePreferences(p => p with
+                {
+                    UpdateChannel = id == "stable"
+                        ? UpdateChannel.Stable : UpdateChannel.Development,
+                });
+                availableUpdates = false;
+                pendingUpdate = null;
+                updateStatus = managedRelease
+                    ? "NativeShell updates are supported. Select an update channel and check again."
+                    : "Channel changed. You may check published updates, but installation remains disabled in this test candidate.";
+                RefreshNativeUpdates();
+                break;
+            case "lobby.updates.check" when updatesOpen && !checkingUpdates:
+                _ = CheckNativeUpdatesAsync();
+                break;
+            case "lobby.updates.install" when updatesOpen:
+                if (managedRelease && pendingUpdate is not null
+                    && activeMode is null && !checkingUpdates)
+                    _ = InstallManagedReleaseUpdateAsync();
+                else
+                {
+                    updateStatus = "Only the installed NativeShell release may install verified updates.";
+                    RefreshNativeUpdates();
+                }
+                break;
+        }
+    }
+
+    private void RefreshNativeUpdates()
+    {
+        if (!updatesOpen || activeMode is not null || !listening) return;
+        string? version = FileVersionInfo.GetVersionInfo(Application.ExecutablePath).ProductVersion;
+        Post("lobby.updates.snapshot", new
+        {
+            InstalledVersion = string.IsNullOrWhiteSpace(version) ? "NativeShell" : version,
+            Channel = (runtime.Preferences.UpdateChannel ?? NativeInstallChannel).ToManifestValue(),
+            Status = updateStatus,
+            Busy = checkingUpdates,
+            CanCheck = !checkingUpdates,
+            CanInstall = managedRelease && !checkingUpdates
+                && availableUpdates && pendingUpdate is not null
+                && UpdaterLauncher.IsAvailable,
+            UpdateAvailable = availableUpdates,
+        });
+    }
+
+    private async Task CheckNativeUpdatesAsync()
+    {
+        if (closing || checkingUpdates) return;
+        checkingUpdates = true;
+        availableUpdates = false;
+        pendingUpdate = null;
+        updateStatus = managedRelease
+            ? "Checking casino updates…"
+            : "Checking the published release manifest (read-only)…";
+        RefreshNativeUpdates();
+        try
+        {
+            UpdateChannel channel = runtime.Preferences.UpdateChannel ?? NativeInstallChannel;
+            string? version = FileVersionInfo.GetVersionInfo(Application.ExecutablePath).ProductVersion;
+            if (!SemanticVersion.TryParse(version ?? "", out SemanticVersion current))
+                current = SemanticVersion.Parse("0.1.0");
+            UpdateCheckResult result = await updateService.CheckAsync(
+                channel, current, updateCancellation.Token);
+            if (closing || IsDisposed) return;
+            availableUpdates = result.UpdateAvailable;
+            pendingUpdate = managedRelease && result.UpdateAvailable
+                && NativeReleaseChannelPolicy.MayInstall(current, channel)
+                ? result.Manifest : null;
+            updateStatus = result.UpdateAvailable
+                ? "A published " + channel.ToManifestValue() + " build is available ("
+                    + result.LatestVersion + "). "
+                    + (pendingUpdate is not null ? "Ready to install." : "Installation is restricted.")
+                : "Published " + channel.ToManifestValue() + " releases checked. "
+                    + (managedRelease ? "No newer build detected." : "Test candidate installation is disabled.");
+        }
+        catch (OperationCanceledException) when (closing || updateCancellation.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException
+            or InvalidDataException or JsonException or FormatException)
+        {
+            if (closing || IsDisposed) return;
+            updateStatus = ("Cannot check published releases: " + ex.Message)
+                .Substring(0, Math.Min(2048, ("Cannot check published releases: " + ex.Message).Length));
+        }
+        finally
+        {
+            checkingUpdates = false;
+            if (!closing && !IsDisposed) RefreshNativeUpdates();
+        }
+    }
+
+    private async Task InstallManagedReleaseUpdateAsync()
+    {
+        if (!managedRelease || checkingUpdates || pendingUpdate is null || closing
+            || activeMode is not null || !UpdaterLauncher.IsAvailable)
+            return;
+        checkingUpdates = true;
+        updateStatus = "Revalidating casino update…";
+        RefreshNativeUpdates();
+        try
+        {
+            string? productVersion = FileVersionInfo.GetVersionInfo(
+                Application.ExecutablePath).ProductVersion;
+            if (!SemanticVersion.TryParse(productVersion ?? "", out SemanticVersion installed))
+                throw new InvalidDataException("NativeShell version could not be verified.");
+            UpdateChannel selectedChannel = runtime.Preferences.UpdateChannel ??
+                (installed.PreRelease is null ? UpdateChannel.Stable : UpdateChannel.Development);
+            if (!NativeReleaseChannelPolicy.MayInstall(installed, selectedChannel))
+                throw new InvalidOperationException(
+                    "Updates from a different channel are blocked until the native release transition is verified.");
+            UpdateCheckResult latest = await updateService.CheckAsync(
+                selectedChannel, installed, updateCancellation.Token);
+            if (!latest.UpdateAvailable)
+            {
+                updateStatus = "This release is already up to date.";
+                pendingUpdate = null;
+                availableUpdates = false;
+                return;
+            }
+            SemanticVersion updaterVersion = UpdaterLauncher.CurrentVersion ?? installed;
+            if (CasinoUpdateService.MinimumUpdaterVersion(latest.Manifest) > updaterVersion)
+                throw new InvalidOperationException("The installed updater is too old for this release.");
+            pendingUpdate = latest.Manifest;
+            updateStatus = "Downloading and verifying casino update…";
+            RefreshNativeUpdates();
+            string path = await updateService.DownloadAsync(
+                latest.Manifest.Package, cancellationToken: updateCancellation.Token);
+            // Mutable Development manifests can change during the download.
+            UpdateCheckResult check = await updateService.CheckAsync(
+                selectedChannel, installed, updateCancellation.Token);
+            if (!check.UpdateAvailable
+                || !Equals(check.Manifest.Package, latest.Manifest.Package))
+                throw new InvalidDataException(
+                    "The Development release changed while downloading. Check for updates again.");
+
+            updateStatus = "Update verified. Closing NativeShell for installation…";
+            RefreshNativeUpdates();
+            UpdaterLauncher.Launch(path, latest.Manifest.Package.Sha256);
+            // The updater waits for this process and restarts NativeShell directly.
+            Close();
+        }
+        catch (OperationCanceledException) when (closing || updateCancellation.IsCancellationRequested)
+        {
+            // The main form is already shutting down.
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException
+            or HttpRequestException or InvalidDataException or InvalidOperationException
+            or System.ComponentModel.Win32Exception)
+        {
+            updateStatus = "NativeShell update failed: " + error.Message;
+        }
+        finally
+        {
+            checkingUpdates = false;
+            if (!closing && !IsDisposed) RefreshNativeUpdates();
+        }
+    }
+
+    private bool SoundEnabledForCurrentMode()
+    {
+        string area = activeMode switch
+        {
+            null => "lobby",
+            "reels" => "midnight-reels",
+            "midnight-dice" => "kniffel",
+            _ => activeMode,
+        };
+        return runtime.Preferences.SoundEnabled
+            && runtime.Preferences.Presentation(area).SoundEnabled;
+    }
+
+    private static bool SuccessfulLoungeAction(object receipt) => receipt switch
+    {
+        ModernSudokuReply r => r.Success,
+        ModernSolitaireReply r => r.Success,
+        ModernWordSearchReply r => r.Success,
+        ModernMemoryReply r => r.Success,
+        ModernJigsawReply r => r.Success,
+        ModernAdventureReply r => r.Success,
+        ModernTowerDefenseReply r => r.Success,
+        ModernMinesweeperReply r => r.Success,
+        _ => false,
+    };
+
+    private static bool LoungeMessageVersion(JsonElement message) =>
+        message.TryGetProperty("version", out JsonElement version)
+        && version.ValueKind == JsonValueKind.Number
+        && version.TryGetInt32(out int number) && number == 1;
+
+    private void OpenCaseBoardWindow()
+    {
+        if (closing || activeMode != "chill-lounge" || !runtime.LoungeCanOpenCaseBoard)
+            return;
+        if (loungeBoard is { IsDisposed: false })
+        {
+            loungeBoard.Activate();
+            return;
+        }
+        var window = new NativeLoungeCaseBoardForm(
+            runtime, environment.Value, frontendFolder, RefreshGameSnapshot)
+        {
+            Owner = this,
+        };
+        loungeBoard = window;
+        runtime.SetLoungeBoardWindow(true);
+        window.FormClosed += (_, _) =>
+        {
+            if (ReferenceEquals(loungeBoard, window)) loungeBoard = null;
+            runtime.SetLoungeBoardWindow(false);
+            RefreshGameSnapshot();
+        };
+        window.Show(this);
     }
 
     private void RefreshGameSnapshot()
@@ -539,6 +1540,20 @@ internal sealed class NativeShellForm : Form
                 Session = mergeEpoch.Id,
                 Revision = runtime.MergeRevision,
                 State = runtime.MergeSnapshot(),
+            });
+        else if (activeMode == "chill-lounge")
+            Post("lounge.snapshot", runtime.LoungeSnapshot());
+        else if (activeMode == "casino-empire" && empireEpoch is not null)
+            Post("empire.snapshot", new
+            {
+                Version = EmpireModernProtocol.Version,
+                Session = empireEpoch.Id,
+                empireEpoch.Revision,
+                VisitId = 1,
+                Notice = (string?)null,
+                Offline = (object?)null,
+                LastReply = (EmpireModernReply?)null,
+                State = runtime.EmpireSnapshot(),
             });
         else if (activeMode == "midnight-dice" && diceEpoch is not null)
             Post("midnight-dice.snapshot", new
@@ -593,7 +1608,7 @@ internal sealed class NativeShellForm : Form
                 command.RequestId, ex.Message, runtime.ManorSnapshot(),
                 runtime.ManorRequiresRestart));
             if (runtime.ManorRequiresRestart)
-                status.Text = "Manor journal recovery required. Restart this preview.";
+                status.Text = "Manor journal recovery required. Restart the casino.";
         }
         finally
         {
@@ -626,7 +1641,7 @@ internal sealed class NativeShellForm : Form
         }
     }
 
-    private void Post(string type, object data)
+    private void Post(string type, object? data)
     {
         if (!closing && !browserFailed && browser?.CoreWebView2 is { } core)
             core.PostWebMessageAsJson(JsonSerializer.Serialize(new { type, data }, MessageJson));
@@ -640,7 +1655,24 @@ internal sealed class NativeShellForm : Form
 
     private void FailBrowser(string message)
     {
-        if (closing || browserFailed || activeMode is null) return;
+        if (closing || browserFailed) return;
+        empireRefresh.Stop();
+        loungeRefresh.Stop();
+        loungeTowerRefresh.Stop();
+        if (activeMode is null)
+        {
+            // The native WinForms home remains the emergency route when React
+            // or WebView2 is unavailable. Do not spin in a reload/failure loop.
+            lobbyBrowserDisabled = true;
+            DisposeBrowser();
+            ShowHome();
+            status.Text = message;
+            if (managedRelease)
+                System.Windows.Forms.MessageBox.Show(this, message,
+                    "NativeShell browser recovery", MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            return;
+        }
         browserFailed = true;
         watchdog.Stop();
         string mode = activeMode;
@@ -709,18 +1741,45 @@ internal sealed class NativeShellForm : Form
         old.Dispose();
     }
 
+    protected override void OnFormClosed(FormClosedEventArgs e)
+    {
+        Application.RemoveMessageFilter(fullscreenKeyFilter);
+        base.OnFormClosed(e);
+    }
+
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
         if (runtime.HandInProgress && e.CloseReason == CloseReason.UserClosing)
         {
             DialogResult answer = System.Windows.Forms.MessageBox.Show(
-                this, "A Blackjack hand is still in progress. Exit the preview anyway?",
+                this, "A Blackjack hand is still in progress. Exit the casino anyway?",
                 "Current hand", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (answer != DialogResult.Yes) { e.Cancel = true; return; }
         }
         closing = true;
+        if (descentProcess is { HasExited: false } process)
+        {
+            try { process.Kill(); }
+            catch (InvalidOperationException) { }
+            catch (System.ComponentModel.Win32Exception) { }
+        }
+        empireRefresh.Stop();
+        loungeRefresh.Stop();
+        loungeTowerRefresh.Stop();
+        loungeBoard?.Close();
+        loungeBoard = null;
+        detachedEmpire?.Close();
+        detachedEmpire = null;
         DisposeBrowser();
+        updateCancellation.Cancel();
+        updateService.Dispose();
+        updateCancellation.Dispose();
         runtime.Dispose();
+        hostAudio.Dispose();
+        CasinoAudio.Shutdown();
+        empireRefresh.Dispose();
+        loungeRefresh.Dispose();
+        loungeTowerRefresh.Dispose();
         watchdog.Dispose();
         base.OnFormClosing(e);
     }

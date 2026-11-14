@@ -1,5 +1,7 @@
 # Performance Phase 7 — Windowed rendering, Casino Empire, and Season Pass loading
 
+**Historical performance-phase record.** This page documents a specific optimization and its original measurement scope. It is not a guarantee of current FPS or GPU/CPU use. Consult [current presentation validation](presentation-regression.md) and the [quality roadmap](modernization-roadmap.md).
+
 ## Scope
 
 Phase 7 addresses a reported regression that was strongly mode-specific: the desktop client remained smooth in fullscreen, while windowed mode became noticeably less responsive after the standard Windows frame was replaced with the custom casino frame. The same report also identified smaller remaining slowdowns in Casino Empire and while opening the Season Pass.

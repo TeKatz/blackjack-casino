@@ -5,11 +5,13 @@ import { createRoot } from 'react-dom/client';
 import {PlayerPortrait,CosmeticTitle,VaultIcon} from './Cosmetics';
 import {localizedSudokuTitleName} from './sudokuTitleLocalization';
 import {Modal} from './Modal';
+import {ExitPrompt} from './ExitPrompt';
 import {NavIcon} from './NavIcon';
 import './rouletteTile.css';
 import {ArcadeMenu} from './ArcadeMenu';
 import {ARCADE_MODE_ID,arcadeLobbyMode} from './arcadeCatalog';
 import { LobbyAmbient } from './LobbyAmbient';
+import {stableLobbyTiles} from './lobbyTiles';
 import { ModernShop } from './ModernShop';
 import { ModernChallenges } from './ModernChallenges';
 import { ModernStatistics } from './ModernStatistics';
@@ -54,22 +56,15 @@ const navigation: {id: Filter; en: string; de: string}[] = [
   {id:'profile',en:'Player Profile',de:'Spielerprofil'},
 ];
 function percent(n: number): string { return Math.round(n * 100) + '%'; }
-function matchesFilter(id: string, filter: Filter): boolean {
-  if (filter === 'all') return true;
-  if (filter === 'tables') return id === 'blackjack' || id === 'roulette' || id === 'kniffel';
-  if (filter === 'slots') return ['midnight-reels','neon-vault','nine-lives','midnight-manor'].includes(id);
-  if (filter === 'relax') return id === 'chill-lounge';
-  if (filter === 'empire') return ['casino-empire','midnight-merge'].includes(id);
-  return true;
-}
 function Progress({value, tone = 'green'}:{value:number; tone?:'green'|'gold'}) {
   return <div className={'lobby-meter '+tone} role="progressbar" aria-valuemin={0}
     aria-valuemax={100} aria-valuenow={Math.round(value*100)}>
       <span style={{width: percent(value)}}/>
     </div>;
 }
-function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
-  mode:LobbyMode; language:'de'|'en'; motionEnabled:boolean; onOpen:(id:string)=>void; onSecondary:(id:string)=>void;
+function GameTile({ mode, hidden, language, motionEnabled, onOpen, onSecondary }:{
+  mode:LobbyMode; hidden:boolean; language:'de'|'en'; motionEnabled:boolean;
+  onOpen:(id:string)=>void; onSecondary:(id:string)=>void;
 }) {
   const move=(event:ReactPointerEvent<HTMLElement>)=>{
     if(!motionEnabled||event.pointerType==='touch')return;
@@ -83,7 +78,7 @@ function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
     event.currentTarget.style.setProperty('--motion-x','0px');
     event.currentTarget.style.setProperty('--motion-y','0px');
   };
-  return <article className={'lobby-game game-'+mode.id+
+  return <article hidden={hidden} className={'lobby-game game-'+mode.id+
       (mode.enabled?'':' unavailable')} onPointerMove={move} onPointerLeave={leave}>
     <div className="game-art-window" data-mode-art={mode.id} aria-hidden="true">
       {mode.id==='roulette'&&<div className="roulette-tile-art"><span>✦</span><i/></div>}
@@ -197,12 +192,14 @@ function LobbyApp() {
   const [arcadeOpen,setArcadeOpen] = useState(false);
   const [updates,setUpdates] = useState<LobbyUpdatesSnapshot>(fallbackUpdates);
   const [updatesOpen,setUpdatesOpen] = useState(false);
+  const [exitOpen,setExitOpen] = useState(false);
   const [newsOpen,setNewsOpen]=useState(false);
   const [newsShown,setNewsShown]=useState(false);
   const [settingsOpen,setSettingsOpen] = useState(false);
   const [dailyOpen,setDailyOpen] = useState(false);
   const [lowMotion,setLowMotion] = useState(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [nativeSnapshotReceived,setNativeSnapshotReceived] = useState(!embeddedLobby);
+  const [nativePreviewNotice,setNativePreviewNotice] = useState<string|null>(null);
   useEffect(()=>{
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     const listener = () => setLowMotion(media.matches);
@@ -252,6 +249,18 @@ function LobbyApp() {
     return stop;
   },[]);
   useEffect(()=>onUpdateSnapshot(setUpdates),[]);
+  // Native window-close actions reuse this already-mounted React surface.
+  // No second WebView2 controller is needed while the lobby is visible.
+  useEffect(()=>{
+    const host=window.chrome?.webview;
+    const onHostMessage=(event:MessageEvent)=>{
+      const value:unknown=event.data;
+      if(value&&typeof value==='object'
+        &&(value as {type?:unknown}).type==='lobby.exit.show')setExitOpen(true);
+    };
+    host?.addEventListener('message',onHostMessage);
+    return()=>host?.removeEventListener('message',onHostMessage);
+  },[]);
   useEffect(()=>{
     // The native WebView2 host starts hidden. Hidden webviews can suspend
     // requestAnimationFrame indefinitely, so a frame-based ready handshake
@@ -272,8 +281,12 @@ function LobbyApp() {
     document.documentElement.lang=data.language;
     document.title='Blackjack Casino · Lobby';
   },[data.language]);
-  useEffect(()=>{if(nativeSnapshotReceived&&!newsShown){setNewsOpen(true);setNewsShown(true);}},[nativeSnapshotReceived,newsShown]);
+  useEffect(()=>{if(nativeSnapshotReceived&&!newsShown){if(!data.nativePreview)setNewsOpen(true);setNewsShown(true);}},[nativeSnapshotReceived,newsShown]);
   const de = data.language==='de';
+  const nativePreview = data.nativePreview===true;
+  const previewUnavailable = () => setNativePreviewNotice(de
+    ? 'Diese Funktion ist noch nicht mit der NativeShell-Vorschau verbunden. Spielstände werden nicht verändert.'
+    : 'This feature is not connected to the NativeShell preview yet. Player data has not changed.');
   const closeRecords = () => {
     setRecordsVisible(null);setRecordsPending(null);setShopNotice(null);setVaultReward(null);setVaultNotice(null);setAlbumResult(null);
     lobbyCommand('lobby.records.close');
@@ -305,6 +318,9 @@ function LobbyApp() {
     lobbyCommand('lobby.shop.close');
   };
   const openMode = (id:string)=>{
+    if(nativePreview&&id!==ARCADE_MODE_ID&&!data.modes.some(mode=>mode.id===id&&mode.enabled)){
+      previewUnavailable();return;
+    }
     if(shopVisible)closeShop();
     if(recordsVisible)closeRecords();
     if(id==='roulette'&&!embeddedLobby){window.location.href='./roulette.html';return;}
@@ -315,7 +331,10 @@ function LobbyApp() {
     setArcadeOpen(false);
     lobbyCommand('lobby.open',id);
   };
-  const openSecondary = (id:string)=>lobbyCommand('lobby.open-secondary',id);
+  const openSecondary = (id:string)=>{
+    if(nativePreview&&!data.modes.some(mode=>mode.id===id&&mode.secondary)){previewUnavailable();return;}
+    lobbyCommand('lobby.open-secondary',id);
+  };
   const openProgression = (id:string)=>{
     if(id==='Cosmetic Shop'){openShop();return;}
     if(id==="Collector's Album"||id==='Album'){openRecords('album');return;}
@@ -346,19 +365,46 @@ function LobbyApp() {
     setUpdatesOpen(true);
     lobbyCommand('lobby.updates.open');
   };
+  const cancelExit=()=>{
+    setExitOpen(false);
+    lobbyCommand('lobby.exit.cancel');
+  };
+  const confirmExit=()=>{
+    setExitOpen(false);
+    lobbyCommand('lobby.exit');
+  };
   const closeUpdates = () => {
     if(updates.busy)return;
     setUpdatesOpen(false);
     lobbyCommand('lobby.updates.close');
   };
   // Arcade is a local selection screen; it does not issue an unknown native game route.
-  const modes = [...data.modes.filter(x=>x.id!==ARCADE_MODE_ID),arcadeLobbyMode(data.language)]
-    .filter(x=>matchesFilter(x.id,filter))
-    .sort((a,b)=>artOrder.indexOf(a.id)-artOrder.indexOf(b.id));
+  // Preserve the artwork DOM and its Pixi scene objects while a subpage is
+  // open. Hiding instead of unmounting prevents delayed icon reconstruction.
+  const lobbyContentVisible=recordsVisible===null&&!shopVisible&&!arcadeOpen;
+  // Keep the same keyed tile elements across category changes; their PixiJS
+  // sprites and first-frame readiness must not reset when returning to Lobby.
+  const modes = stableLobbyTiles(
+    [...data.modes.filter(x=>x.id!==ARCADE_MODE_ID),arcadeLobbyMode(data.language)],
+    filter,artOrder);
+  const hasVisibleModes=modes.some(({visible})=>visible);
+  if(embeddedLobby&&!nativeSnapshotReceived){
+    return <div className="casino-lobby-shell native-lobby-boot" role="status" aria-live="polite">
+      <div className="native-lobby-loading">THE MIDNIGHT CLUB · {data.language==='de'?'Lade Spielerdaten…':'Loading player data…'}</div>
+    </div>;
+  }
   return <div className="casino-lobby-shell" data-reduced={lowMotion || !data.animationsEnabled}>
+    {nativePreviewNotice&&<div className="native-preview-notice" role="status">
+      <strong>{de?'NativeShell-Vorschau':'NativeShell Preview'}</strong>
+      <span>{nativePreviewNotice}</span>
+      <button type="button" onClick={()=>setNativePreviewNotice(null)}
+        aria-label={de?'Hinweis schließen':'Dismiss notice'}>×</button>
+    </div>}
     <LobbyAmbient motionEnabled={!lowMotion && data.animationsEnabled}/>
     <header className="lobby-topbar">
-      <button className="lobby-brand" type="button" onClick={()=>{if(shopVisible)closeShop();if(recordsVisible)closeRecords();setArcadeOpen(false);setFilter('all');}}>
+      <button className="lobby-brand" type="button"
+        onPointerDown={event=>{if(event.pointerType!=='touch')event.preventDefault();}}
+        onClick={event=>{if(event.detail>0)event.currentTarget.blur();if(shopVisible)closeShop();if(recordsVisible)closeRecords();setArcadeOpen(false);setFilter('all');}}>
         <span className="brand-spade" aria-hidden="true">♠</span>
         <span><b>BLACKJACK CASINO</b><i>THE MIDNIGHT CLUB</i></span>
       </button>
@@ -385,7 +431,7 @@ function LobbyApp() {
         <span><small>BANKROLL</small><strong>{data.bankroll}</strong></span>
         {data.showEmpireBalance&&<span className="empire-wallet"><small>EMPIRE CREDITS</small><strong>{data.empireCredits}</strong></span>}
       </div>
-      <button type="button" className="lobby-exit" onClick={()=>lobbyCommand('lobby.exit')}>
+      <button type="button" className="lobby-exit" onClick={()=>setExitOpen(true)}>
         ↪ <span>{de?'Beenden':'Exit'}</span>
       </button>
     </header>
@@ -464,8 +510,8 @@ function LobbyApp() {
         onCosmetic={id=>{setShopPending(id);lobbyCommand('lobby.shop.action',id);}}
         onPack={rarity=>{setShopPending(rarity);lobbyCommand('lobby.shop.pack',rarity);}}
         onAlbum={()=>openProgression("Collector's Album")}/>:
-      arcadeOpen?<ArcadeMenu language={data.language} onBack={()=>setArcadeOpen(false)}/>:<>
-      <main className="lobby-main">
+      arcadeOpen?<ArcadeMenu language={data.language} onBack={()=>setArcadeOpen(false)}/>:null}
+      <main className="lobby-main" style={{display:lobbyContentVisible?undefined:'none'}}>
         <div className="lobby-hero">
           <div className="lobby-hero-picture" aria-hidden="true"/>
           <div className="hero-copy">
@@ -477,16 +523,16 @@ function LobbyApp() {
         </div>
         <section className={'lobby-game-grid '+(filter!=='all'?'filtered':'')}
           aria-label={de?'Spiele und Aktivitäten':'Games and activities'}>
-          {modes.map(mode=><GameTile key={mode.id} mode={mode} language={data.language}
+          {modes.map(({mode,visible})=><GameTile key={mode.id} mode={mode}
+            hidden={!visible} language={data.language}
             motionEnabled={!lowMotion && data.animationsEnabled}
             onOpen={openMode} onSecondary={openSecondary}/>)}
-          {modes.length===0&&<p className="empty-mode">{de?'Keine Spiele in dieser Kategorie.':'No games in this category.'}</p>}
+          {!hasVisibleModes&&<p className="empty-mode">{de?'Keine Spiele in dieser Kategorie.':'No games in this category.'}</p>}
         </section>
         {!embeddedLobby&&<small className="browser-note">Browser preview · navigation requires the Windows client.</small>}
       </main>
-      <DailyLogin data={data} onClaim={()=>lobbyCommand('lobby.daily.claim')}
-        onClose={()=>setDailyOpen(false)} mobileOpen={dailyOpen}/>
-      </>}
+      {lobbyContentVisible&&<DailyLogin data={data} onClaim={()=>lobbyCommand('lobby.daily.claim')}
+        onClose={()=>setDailyOpen(false)} mobileOpen={dailyOpen}/>}
     </div>
     {newsOpen&&<Modal className="casino-news" label="News" onClose={()=>setNewsOpen(false)}>
       <header><div><small>THE MIDNIGHT CLUB · {data.installedVersion??updates.installedVersion}</small><h2>{de?'Neuigkeiten':'News'}</h2></div>
@@ -540,6 +586,7 @@ function LobbyApp() {
       onClose={closeUpdates} onChannel={value=>lobbyCommand('lobby.updates.channel.set',value)}
       onCheck={()=>lobbyCommand('lobby.updates.check')}
       onInstall={()=>lobbyCommand('lobby.updates.install')}/>}
+    {exitOpen&&<ExitPrompt language={data.language} onStay={cancelExit} onExit={confirmExit}/>}
     {shopNotice&&<div role="status" className={'shop-notice '+(shopNotice.success?'success':'error')}>
       <span>{shopNotice.message}</span>
       <button type="button" onClick={()=>setShopNotice(null)} aria-label="Dismiss message">×</button>

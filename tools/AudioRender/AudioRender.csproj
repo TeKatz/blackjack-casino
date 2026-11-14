@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
   <ItemGroup>
-    <Compile Include="../../src/BlackjackCasino.Desktop/AudioClip.cs" Link="AudioClip.cs" />
-    <Compile Include="../../src/BlackjackCasino.Desktop/AudioMixer.cs" Link="AudioMixer.cs" />
-    <Compile Include="../../src/BlackjackCasino.Desktop/DiceLoungeSynthesis.cs" Link="DiceLoungeSynthesis.cs" />
-    <Compile Include="../../src/BlackjackCasino.Desktop/ChillLoungeSynthesis.cs" Link="ChillLoungeSynthesis.cs" />
-    <Compile Include="../../src/BlackjackCasino.Desktop/AdventureSynthesis.cs" Link="AdventureSynthesis.cs" />
-    <Compile Include="../../src/BlackjackCasino.Desktop/CasinoMusicSynthesis.cs" Link="CasinoMusicSynthesis.cs" />
-    <Compile Include="../../src/BlackjackCasino.Desktop/CasinoSoundSynthesis.cs" Link="CasinoSoundSynthesis.cs" />
-    <Compile Include="../../src/BlackjackCasino.Desktop/ManorSoundSynthesis.cs" Link="ManorSoundSynthesis.cs" />
+    <Compile Include="../../src/BlackjackCasino.HostShared/AudioClip.cs" Link="AudioClip.cs" />
+    <Compile Include="../../src/BlackjackCasino.HostShared/AudioMixer.cs" Link="AudioMixer.cs" />
+    <Compile Include="../../src/BlackjackCasino.HostShared/DiceLoungeSynthesis.cs" Link="DiceLoungeSynthesis.cs" />
+    <Compile Include="../../src/BlackjackCasino.HostShared/ChillLoungeSynthesis.cs" Link="ChillLoungeSynthesis.cs" />
+    <Compile Include="../../src/BlackjackCasino.HostShared/AdventureSynthesis.cs" Link="AdventureSynthesis.cs" />
+    <Compile Include="../../src/BlackjackCasino.HostShared/CasinoMusicSynthesis.cs" Link="CasinoMusicSynthesis.cs" />
+    <Compile Include="../../src/BlackjackCasino.HostShared/CasinoSoundSynthesis.cs" Link="CasinoSoundSynthesis.cs" />
+    <Compile Include="../../src/BlackjackCasino.HostShared/ManorSoundSynthesis.cs" Link="ManorSoundSynthesis.cs" />
   </ItemGroup>
-  <ItemGroup><EmbeddedResource Include="../../src/BlackjackCasino.Desktop/Assets/Music/*.wav" LogicalName="BlackjackCasino.Music.%(Filename)%(Extension)" /></ItemGroup>
+  <ItemGroup><EmbeddedResource Include="../../src/BlackjackCasino.Assets/Music/*.wav" LogicalName="BlackjackCasino.Music.%(Filename)%(Extension)" /></ItemGroup>
 </Project>
