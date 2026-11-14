@@ -98,6 +98,9 @@ jobs:
       - name: WPF-free native shell protocol and storage smoke
         run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --smoke
 
+      - name: Historical save migration and rollback safety rehearsal
+        run: dotnet run --project tools/NativeMigrationDiagnostics/BlackjackCasino.MigrationDiagnostics.csproj --configuration Release --no-build -- --rehearsal-smoke
+
       - name: Native host migration and isolated storage regression
         run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --web-smoke
 

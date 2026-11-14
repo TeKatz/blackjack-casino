@@ -45,6 +45,21 @@ def main():
                     f"{file.relative_to(ROOT)}: WPF namespace import")
             require("Microsoft.Web.WebView2.Wpf" not in source,
                     f"{file.relative_to(ROOT)}: WPF WebView2 control")
+    for name in ("NativeCutoverCheckpoint.cs", "NativeCutoverPromotion.cs",
+                 "NativeLegacyReturnExport.cs", "NativeLegacyRollbackRehearsal.cs"):
+        require(not (ROOT / "src/BlackjackCasino.NativeShell" / name).exists(),
+                f"Historical tool still compiled into production: {name}")
+        require((ROOT / "tools/NativeMigrationDiagnostics/Rehearsal" / name).exists(),
+                f"Historical diagnostic fixture missing: {name}")
+    source = read("src/BlackjackCasino.NativeShell/Program.cs")
+    require('if (args is ["--stage-migration"' not in source,
+            "Historical command handlers still exist in production startup")
+    require('if (args is ["--web-smoke"])' in source and
+            'if (args is ["--smoke"])' in source,
+            "Normal NativeShell acceptance commands must remain")
+    require("InternalsVisibleTo" in read(
+        "src/BlackjackCasino.NativeShell/AssemblyInfo.cs"),
+        "Diagnostic tool must use explicit friend assembly access")
     native = read("src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj")
     require("<UseWPF>false</UseWPF>" in native and "<UseWindowsForms>true</UseWindowsForms>" in native,
             "Release NativeShell must use WinForms/WebView2 without WPF")
