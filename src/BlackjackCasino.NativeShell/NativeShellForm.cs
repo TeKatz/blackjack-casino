@@ -43,6 +43,16 @@ internal sealed class NativeShellForm : Form
     private readonly NativeHostAudio hostAudio = new();
     private string? recordsPage;
     private bool shopOpen, updatesOpen;
+    private UpdateChannel NativeInstallChannel
+    {
+        get
+        {
+            string? productVersion = FileVersionInfo.GetVersionInfo(Application.ExecutablePath).ProductVersion;
+            return SemanticVersion.TryParse(productVersion ?? "", out SemanticVersion parsed)
+                ? NativeReleaseChannelPolicy.InstalledChannel(parsed)
+                : UpdateChannel.Development;
+        }
+    }
     private readonly DesktopUpdateService updateService = new();
     private readonly CancellationTokenSource updateCancellation = new();
     private bool checkingUpdates, availableUpdates;
@@ -1350,7 +1360,7 @@ internal sealed class NativeShellForm : Form
         Post("lobby.updates.snapshot", new
         {
             InstalledVersion = string.IsNullOrWhiteSpace(version) ? "Native preview" : version,
-            Channel = (runtime.Preferences.UpdateChannel ?? UpdateChannel.Development).ToManifestValue(),
+            Channel = (runtime.Preferences.UpdateChannel ?? NativeInstallChannel).ToManifestValue(),
             Status = updateStatus,
             Busy = checkingUpdates,
             CanCheck = !checkingUpdates,
@@ -1373,7 +1383,7 @@ internal sealed class NativeShellForm : Form
         RefreshNativeUpdates();
         try
         {
-            UpdateChannel channel = runtime.Preferences.UpdateChannel ?? UpdateChannel.Development;
+            UpdateChannel channel = runtime.Preferences.UpdateChannel ?? NativeInstallChannel;
             string? version = FileVersionInfo.GetVersionInfo(Application.ExecutablePath).ProductVersion;
             if (!SemanticVersion.TryParse(version ?? "", out SemanticVersion current))
                 current = SemanticVersion.Parse("0.1.0");
@@ -1381,7 +1391,9 @@ internal sealed class NativeShellForm : Form
                 channel, current, updateCancellation.Token);
             if (closing || IsDisposed) return;
             availableUpdates = result.UpdateAvailable;
-            pendingUpdate = managedRelease && result.UpdateAvailable ? result.Manifest : null;
+            pendingUpdate = managedRelease && result.UpdateAvailable
+                && NativeReleaseChannelPolicy.MayInstall(current, channel)
+                ? result.Manifest : null;
             updateStatus = result.UpdateAvailable
                 ? "A published " + channel.ToManifestValue() + " build is available ("
                     + result.LatestVersion + "). "
@@ -1423,6 +1435,9 @@ internal sealed class NativeShellForm : Form
                 throw new InvalidDataException("NativeShell version could not be verified.");
             UpdateChannel selectedChannel = runtime.Preferences.UpdateChannel ??
                 (installed.PreRelease is null ? UpdateChannel.Stable : UpdateChannel.Development);
+            if (!NativeReleaseChannelPolicy.MayInstall(installed, selectedChannel))
+                throw new InvalidOperationException(
+                    "Updates from a different channel are blocked until the native release transition is verified.");
             UpdateCheckResult latest = await updateService.CheckAsync(
                 selectedChannel, installed, updateCancellation.Token);
             if (!latest.UpdateAvailable)
