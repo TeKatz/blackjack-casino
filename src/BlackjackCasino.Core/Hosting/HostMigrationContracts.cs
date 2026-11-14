@@ -60,14 +60,14 @@ public static class NativeRouteCatalog
     public static IReadOnlyList<HostCasinoRoute> WebRoutes =>
         CasinoRoutes.Where(route => route.HasWebPage).ToArray();
 
-    public static bool IsWebRoute(string? previewModeId) =>
-        previewModeId is not null && WebRoutes.Any(route =>
+    public static bool IsWebRoute(string? webModeId) =>
+        webModeId is not null && WebRoutes.Any(route =>
             string.Equals(route.WebModeId, webModeId, StringComparison.Ordinal));
 
     public static string WebPageFor(string webModeId)
     {
         HostCasinoRoute? route = WebRoutes.SingleOrDefault(route =>
-            string.Equals(route.WebModeId, previewModeId, StringComparison.Ordinal));
+            string.Equals(route.WebModeId, webModeId, StringComparison.Ordinal));
         return route?.WebDocument ??
             throw new ArgumentOutOfRangeException(nameof(webModeId), "Unknown native WebView2 route.");
     }
