@@ -1,6 +1,6 @@
 using BlackjackCasino.Core.Hosting;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// Pure lobby route metadata: independent of WPF game art, Windows windowing

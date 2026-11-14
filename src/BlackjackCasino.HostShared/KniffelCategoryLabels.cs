@@ -1,6 +1,6 @@
 using BlackjackCasino.Core.Kniffel;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Shared, WPF-independent names for the exact 13 score categories.</summary>
 internal static class KniffelCategoryLabels

@@ -1,7 +1,7 @@
 using BlackjackCasino.Core;
 using BlackjackCasino.Update;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal enum PlayModePreference
 {

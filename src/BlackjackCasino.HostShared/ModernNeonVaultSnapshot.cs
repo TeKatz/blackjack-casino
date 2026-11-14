@@ -1,7 +1,7 @@
 using System.Globalization;
 using BlackjackCasino.Core;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Every presented feature and monetary value is resolved by Core first.</summary>
 internal static class ModernNeonVaultSnapshot

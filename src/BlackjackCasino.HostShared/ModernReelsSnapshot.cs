@@ -1,7 +1,7 @@
 using System.Globalization;
 using BlackjackCasino.Core;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal static class ModernReelsSnapshot
 {

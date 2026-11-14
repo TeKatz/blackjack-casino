@@ -1,7 +1,7 @@
 using System.Drawing;
 using System.Diagnostics;
 using System.Text.Json;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 using BlackjackCasino.Core.Hosting;
 using BlackjackCasino.Update;
 using Microsoft.Web.WebView2.Core;

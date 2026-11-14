@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using BlackjackCasino.Core.Solitaire;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// Authoritative C# Solitaire game session for the React Chill Lounge.

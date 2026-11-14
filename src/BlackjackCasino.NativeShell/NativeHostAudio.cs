@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 using BlackjackCasino.Core;
 
 namespace BlackjackCasino.NativeShell;

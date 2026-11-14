@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using BlackjackCasino.Core.Sudoku;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Owns every variant board, clock and hint; browser sends intentions only.</summary>
 internal sealed class ModernSudokuVariants

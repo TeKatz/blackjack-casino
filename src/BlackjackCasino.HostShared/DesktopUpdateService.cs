@@ -1,7 +1,7 @@
 using System.Net.Http;
 using BlackjackCasino.Update;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// WPF-independent desktop update transport. The shell owns prompts, progress display,

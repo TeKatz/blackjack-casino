@@ -1,7 +1,7 @@
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.MidnightMerge;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Presentation-only projection of the durable MergeBoard and catalog.</summary>
 internal static class ModernMergeSnapshot

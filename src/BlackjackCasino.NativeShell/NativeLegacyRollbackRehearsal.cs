@@ -1,6 +1,6 @@
 using System.Text.Json;
 using BlackjackCasino.Core.Hosting;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 
 namespace BlackjackCasino.NativeShell;
 

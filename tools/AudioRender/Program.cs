@@ -1,5 +1,5 @@
 using System.Text.Json;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 
 string output=Path.GetFullPath(args.FirstOrDefault() ?? "artifacts/audio-review");
 Directory.CreateDirectory(output);

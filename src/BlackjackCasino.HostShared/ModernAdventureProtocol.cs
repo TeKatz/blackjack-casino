@@ -1,7 +1,7 @@
 using System.Text.Json;
 using BlackjackCasino.Core.Adventure;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// Narrow native-authoritative contract: no browser-supplied dice, deck, check result, reward,

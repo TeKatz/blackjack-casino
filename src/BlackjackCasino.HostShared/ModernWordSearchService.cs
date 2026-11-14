@@ -2,7 +2,7 @@ using System.Diagnostics;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.WordSearch;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// Native-authoritative Word Search; existing serialized grids survive the move from WPF.

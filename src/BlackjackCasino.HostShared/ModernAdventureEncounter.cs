@@ -2,7 +2,7 @@ using BlackjackCasino.Core;
 using BlackjackCasino.Core.Adventure;
 using BlackjackCasino.Core.Kniffel;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// Owns an in-progress, local non-wagering story encounter. All cards, dice, outcomes

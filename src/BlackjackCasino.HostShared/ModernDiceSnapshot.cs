@@ -2,7 +2,7 @@ using System.Globalization;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Kniffel;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal sealed record ModernDiceCelebration(long Id, string Player, string Category, int Points, int Bonus, int Face);
 

@@ -1,7 +1,7 @@
 using System.IO;
 using BlackjackCasino.Core.Collections;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// Authored archive copy for all 136 collectible cards, including ultra-rare themes.
@@ -171,14 +171,8 @@ internal static class CollectionLore
 
     internal static int AuthoredCount => Entries.Count;
     internal static bool Has(CollectionCard card) => Entries.ContainsKey(card.Id);
-#if !NATIVE_SHELL
-    internal static string BodyFor(CollectionCard card) =>
-        BodyFor(card, Localization.Language, Localization.T);
-#endif
-
-    // The same authored English entries and German resource keys are shared by
-    // the WPF application and the WPF-free native host. A provided lookup keeps
-    // language selection per caller rather than using process-wide UI state.
+    // NativeShell uses the authored English entries and German localization keys.
+    // The caller supplies its language and localized string resolver.
     internal static string BodyFor(CollectionCard card, UiLanguagePreference language,
         Func<string, string> localizedText)
     {

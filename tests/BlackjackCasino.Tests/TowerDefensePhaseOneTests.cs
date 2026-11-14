@@ -1,5 +1,5 @@
 using BlackjackCasino.Core.TowerDefense;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 
 namespace BlackjackCasino.Tests;
 

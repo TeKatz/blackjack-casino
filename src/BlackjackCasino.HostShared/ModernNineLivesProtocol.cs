@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using BlackjackCasino.Core;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Validated browser intents only. Neither results nor wallet amounts originate in JS.</summary>
 internal sealed record ModernNineLivesCommand(string RequestId, string Session,

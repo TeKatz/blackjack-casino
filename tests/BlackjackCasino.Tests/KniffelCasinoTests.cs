@@ -1,7 +1,7 @@
 using System.Text.Json;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Kniffel;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 
 namespace BlackjackCasino.Tests;
 

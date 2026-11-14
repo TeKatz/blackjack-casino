@@ -2,7 +2,7 @@ using System.Diagnostics;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Memory;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// Keeps the original C# Memory rules, cards, saves, challenge receipts and lifetime stats.

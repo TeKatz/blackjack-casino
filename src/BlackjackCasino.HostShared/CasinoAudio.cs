@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>One buffered PCM output, independent of WPF dispatcher/MediaPlayer seeks.</summary>
 internal static class CasinoAudio

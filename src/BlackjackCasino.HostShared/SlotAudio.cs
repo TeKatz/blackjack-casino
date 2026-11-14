@@ -1,4 +1,4 @@
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal enum SlotSound { Start, Tick, Stop, Win, Jackpot, Push, Loss, Anticipation, Wild, Blackout, FreeSpins,
     NeonLockdown, NeonOverload, NeonTotalBlackout, NeonOverride, NeonBigWin, NeonMegaWin,

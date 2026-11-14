@@ -3,7 +3,7 @@ using System.Text.Json;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Adventure;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal sealed record ModernAdventureCopy(
     Func<AdventureDefinition, string> Title,

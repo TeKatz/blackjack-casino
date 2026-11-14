@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using BlackjackCasino.Core;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 
 namespace BlackjackCasino.Tests;
 

@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal sealed record ModernTowerDefenseCommand(string RequestId, string Session,
     long ExpectedRevision, string Action, int? Pad, string? Kind);

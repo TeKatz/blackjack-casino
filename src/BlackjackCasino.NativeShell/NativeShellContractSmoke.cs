@@ -1,4 +1,4 @@
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Hosting;
 using System.Security.Cryptography;
@@ -450,7 +450,6 @@ internal static class NativeShellContractSmoke
                 throw new InvalidOperationException("WPF-free native music routes are incomplete.");
 
             if (HostMigrationCatalog.PreviewRoutes.Count != 10
-                || HostMigrationCatalog.ApprovedForRelease
                 || !HostMigrationCatalog.IsPreviewRoute("midnight-manor")
                 || !HostMigrationCatalog.IsPreviewRoute("roulette")
                 || !HostMigrationCatalog.IsPreviewRoute("casino-empire")

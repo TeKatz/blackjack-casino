@@ -1,7 +1,7 @@
 using System.Globalization;
 using BlackjackCasino.Core;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>One read-only, native-authoritative presentation projection.</summary>
 internal static class ModernNineLivesSnapshot

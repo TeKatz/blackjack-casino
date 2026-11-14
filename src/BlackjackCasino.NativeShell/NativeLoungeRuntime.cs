@@ -7,7 +7,7 @@ using BlackjackCasino.Core.Solitaire;
 using BlackjackCasino.Core.Sudoku;
 using BlackjackCasino.Core.TowerDefense;
 using BlackjackCasino.Core.WordSearch;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 
 namespace BlackjackCasino.NativeShell;
 

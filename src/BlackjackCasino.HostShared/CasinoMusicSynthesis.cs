@@ -1,4 +1,4 @@
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal enum Soundtrack { Blackjack, Reels, Manor, DiceLounge, ChillLounge, Adventure, Lobby, ChillLoungeActivity }
 

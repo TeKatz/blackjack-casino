@@ -1,6 +1,6 @@
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Manor;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 using Xunit;
 
 namespace BlackjackCasino.Tests;

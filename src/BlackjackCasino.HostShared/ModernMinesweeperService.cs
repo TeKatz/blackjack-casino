@@ -1,6 +1,6 @@
 using BlackjackCasino.Core.Minesweeper;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Transaction boundary for Midnight Sweep; React only receives masked cells.</summary>
 internal sealed class ModernMinesweeperService

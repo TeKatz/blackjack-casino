@@ -1,7 +1,7 @@
 using System.Globalization;
 using BlackjackCasino.Core;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 // A read-only projection of the Core session. The hidden dealer card is never
 // sent to the browser before settlement, not even in a concealed HTML element.

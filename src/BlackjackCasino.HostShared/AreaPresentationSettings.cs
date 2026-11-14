@@ -1,4 +1,4 @@
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Presentation preferences owned by one casino destination, independent of game state.</summary>
 internal sealed record AreaPresentationSettings

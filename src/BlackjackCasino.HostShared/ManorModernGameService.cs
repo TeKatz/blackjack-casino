@@ -2,7 +2,7 @@ using System.IO;
 using System.Text.Json;
 using BlackjackCasino.Core.Manor;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// The only gameplay-command entry point for the modern frontend. All transitions are

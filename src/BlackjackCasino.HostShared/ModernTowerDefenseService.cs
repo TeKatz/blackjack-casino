@@ -1,6 +1,6 @@
 using BlackjackCasino.Core.TowerDefense;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Native owner of all Tower Defense rules and saves; React is presentation only.</summary>
 internal sealed class ModernTowerDefenseService

@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using BlackjackCasino.Core;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 // Browser messages are intents only; no outcome, balance or XP is accepted from JS.
 internal sealed record ModernReelsCommand(string RequestId, string Session,

@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using BlackjackCasino.Core.Kniffel;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>A narrow, versioned intent boundary. Dice, previews, fees, XP and payouts never enter from the browser.</summary>
 internal sealed record ModernDiceCommand(string RequestId, string Session, long ExpectedRevision,

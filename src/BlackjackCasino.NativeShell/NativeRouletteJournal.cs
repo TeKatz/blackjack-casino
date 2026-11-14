@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BlackjackCasino.Core;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// Shared WPF/NativeShell roulette receipt with browser-compatible JSON names.

@@ -1,4 +1,4 @@
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// Original 58 BPM fantasy ambience for Tales from the Backroom. The arrangement stays deliberately
