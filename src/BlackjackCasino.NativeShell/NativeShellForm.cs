@@ -12,7 +12,7 @@ namespace BlackjackCasino.NativeShell;
 /// <summary>
 /// Genuine Windows Forms shell. The local React game pages remain the only
 /// gameplay UI; this host has no WPF control, XAML resource or WPF dispatcher.
-/// The native preview stores its player state separately from the installed app.
+/// The native player profile is stored separately from the older legacy root.
 /// </summary>
 internal sealed class NativeShellForm : Form
 {
@@ -348,7 +348,7 @@ internal sealed class NativeShellForm : Form
         {
             Dock = DockStyle.Fill, ForeColor = Color.FromArgb(150, 172, 166),
             Text = managedRelease
-                ? "Notfallansicht: Spiele und Guthaben werden weiterhin im Development-"
+                ? "Notfallansicht: Spiele und Guthaben werden weiterhin im "
                     + "NativeShell-Profil gespeichert. Du kannst das Fenster schließen "
                     + "und über den normalen Programmstart neu öffnen."
                 : "Sicherer Testmodus: Spielstände liegen ausschließlich im isolierten "
@@ -756,7 +756,7 @@ internal sealed class NativeShellForm : Form
                     if (!root.TryGetProperty("id", out JsonElement rawMode)
                         || rawMode.ValueKind != JsonValueKind.String) break;
                     string? id = rawMode.GetString();
-                    // External Godot modes have no React preview document, so they
+                    // External Godot modes have no local React game document, so they
                     // must be resolved against the full canonical route catalog.
                     HostCasinoRoute? mode = NativeRouteCatalog.CasinoRoutes.FirstOrDefault(
                         route => string.Equals(route.DesktopModeId, id, StringComparison.Ordinal));
@@ -1608,7 +1608,7 @@ internal sealed class NativeShellForm : Form
                 command.RequestId, ex.Message, runtime.ManorSnapshot(),
                 runtime.ManorRequiresRestart));
             if (runtime.ManorRequiresRestart)
-                status.Text = "Manor journal recovery required. Restart this preview.";
+                status.Text = "Manor journal recovery required. Restart the casino.";
         }
         finally
         {
@@ -1752,7 +1752,7 @@ internal sealed class NativeShellForm : Form
         if (runtime.HandInProgress && e.CloseReason == CloseReason.UserClosing)
         {
             DialogResult answer = System.Windows.Forms.MessageBox.Show(
-                this, "A Blackjack hand is still in progress. Exit the preview anyway?",
+                this, "A Blackjack hand is still in progress. Exit the casino anyway?",
                 "Current hand", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (answer != DialogResult.Yes) { e.Cancel = true; return; }
         }

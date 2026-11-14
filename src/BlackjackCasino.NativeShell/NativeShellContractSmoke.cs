@@ -69,7 +69,7 @@ internal static class NativeShellContractSmoke
                 throw new InvalidOperationException("Native preview accepted live player data.");
             }
             catch (InvalidOperationException ex) when (
-                ex.Message == "NativeShell preview cannot use production player storage.")
+                ex.Message == "NativeShell profile must stay separate from legacy player storage.")
             {
                 // Correct: production state must remain untouched.
             }

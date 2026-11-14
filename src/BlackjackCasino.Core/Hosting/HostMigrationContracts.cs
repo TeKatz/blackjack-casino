@@ -109,7 +109,7 @@ public static class HostPreviewStorage
 
         if ((productionOrChild && !isPreview) || ancestorOfProduction)
             throw new InvalidOperationException(
-                "NativeShell preview cannot use production player storage.");
+                "NativeShell profile must stay separate from legacy player storage.");
 
         return directory;
     }

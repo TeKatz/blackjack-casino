@@ -21,8 +21,8 @@ internal sealed record NativeMigrationManifest(
     string[] RemainingGates);
 
 /// <summary>
-/// Offline, copy-only rehearsal of the old WPF host's state in a separate
-/// NativeShell candidate directory. Never writes to the live player's files.
+/// Verified one-time, copy-only import from the retired legacy player-data root.
+/// Original files stay untouched and each native profile is separately locked.
 /// </summary>
 internal static class NativeHostMigration
 {
@@ -135,8 +135,8 @@ internal static class NativeHostMigration
             var manifest = new NativeMigrationManifest(SchemaVersion, name,
                 DateTimeOffset.UtcNow, files, browserFiles,
                 ["Only the original WebView2 localStorage database is copied; the browser profile's cookies and cache are not imported.",
-                 "Updater and Windows runtime parity are not approved.",
-                 "This is a test candidate; it cannot replace the installed host."]);
+                 "A verified import is independent of the installed update channel.",
+                 "The original legacy save stays untouched for future recovery."]);
             string marker = Path.Combine(temporary, ManifestFile);
             using (var stream = new FileStream(marker, FileMode.CreateNew,
                 FileAccess.Write, FileShare.None))
