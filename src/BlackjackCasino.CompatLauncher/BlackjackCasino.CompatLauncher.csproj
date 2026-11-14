@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>false</UseWPF>
+    <AssemblyName>BlackjackCasino.Desktop</AssemblyName>
+    <ApplicationIcon>../BlackjackCasino.Assets/midnight-club.ico</ApplicationIcon>
+    <Description>WPF-free compatibility entrypoint for older shortcuts and updater restart contracts.</Description>
+  </PropertyGroup>
+</Project>

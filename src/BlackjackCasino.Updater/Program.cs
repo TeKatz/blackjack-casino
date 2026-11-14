@@ -67,7 +67,7 @@ internal static class Program
                     ? "The update could not be safely rolled back. Do not launch the casino yet. "
                       + "Keep the original-file backup listed in Details and contact support."
                     : "The update could not be installed or the casino could not be restarted. "
-                      + "Open BlackjackCasino.Desktop.exe from the installation folder.";
+                      + "Open BlackjackCasino.NativeShell.exe from the installation folder.";
             string advice = ex is IOException or UnauthorizedAccessException
                 ? Environment.NewLine + Environment.NewLine
                   + "Windows could not access the installation directory. Another casino instance, "
@@ -119,10 +119,10 @@ internal static class Program
         try
         {
             string target = Path.GetFullPath(targetDirectory);
-            string targetExecutable = Path.Combine(target, "BlackjackCasino.Desktop.exe");
+            string targetExecutable = Path.Combine(target, "BlackjackCasino.NativeShell.exe");
             int activeInstances = 0;
             int unreadablePaths = 0;
-            foreach (Process process in Process.GetProcessesByName("BlackjackCasino.Desktop"))
+            foreach (Process process in Process.GetProcessesByName("BlackjackCasino.NativeShell"))
             {
                 using (process)
                 {

@@ -39,7 +39,7 @@ internal static class NativeShellWebSmoke
         // occupy the entire native window, without the migration tab strip or
         // preview diagnostic footer.
         using var form = new NativeShellForm(candidate,
-            migrationCandidate: true, managedDevelopment: true);
+            migrationCandidate: true, managedRelease: true);
         if (form.Controls.Count != 1 || form.Controls[0] is not Panel host
             || host.Dock != DockStyle.Fill)
             throw new InvalidOperationException(

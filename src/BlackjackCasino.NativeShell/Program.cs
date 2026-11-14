@@ -17,11 +17,9 @@ internal static class Program
             return NativeShellWebSmoke.Run();
         }
 
-        // A development package can be selected through the existing
-        // Desktop.exe shortcut. On the very first launch, import WPF saves to
-        // the durable native-development profile exactly once. Every later
-        // launch resumes that profile instead of reimporting stale WPF data.
-        if (args is ["--development"] or ["--development", "--wait-pid", _])
+        // NativeShell is the release entry point. Keep the already-used
+        // Development save directory; import an older WPF save only once.
+        if (args is [] or ["--development"] or ["--development", "--wait-pid", _])
         {
             try
             {
@@ -53,7 +51,7 @@ internal static class Program
                 System.Windows.Forms.Application.EnableVisualStyles();
                 System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
                 System.Windows.Forms.Application.Run(new NativeShellForm(
-                    destination, migrationCandidate: false, managedDevelopment: true));
+                    destination, migrationCandidate: false, managedRelease: true));
                 return 0;
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException
@@ -61,23 +59,12 @@ internal static class Program
                 or ArgumentException or System.ComponentModel.Win32Exception)
             {
                 System.Windows.Forms.MessageBox.Show(
-                    "The NativeShell development launch was blocked to protect your data.\n\n"
-                    + error.Message + "\n\nThe old WPF host will be opened as a fallback.",
-                    "Safe host fallback", System.Windows.Forms.MessageBoxButtons.OK,
-                    System.Windows.Forms.MessageBoxIcon.Warning);
-                try
-                {
-                    string legacy = Path.Combine(AppContext.BaseDirectory,
-                        "BlackjackCasino.Desktop.exe");
-                    var start = new System.Diagnostics.ProcessStartInfo(legacy)
-                    {
-                        WorkingDirectory = AppContext.BaseDirectory,
-                        UseShellExecute = false,
-                    };
-                    start.ArgumentList.Add("--legacy");
-                    _ = System.Diagnostics.Process.Start(start);
-                }
-                catch (Exception) { /* Existing files remain intact. */ }
+                    "Blackjack Casino could not safely open your existing save.\n\n"
+                    + error.Message + "\n\nNo existing files were overwritten. "
+                    + "Close other casino instances and use the verified migration "
+                    + "recovery tools before retrying.",
+                    "NativeShell startup blocked", System.Windows.Forms.MessageBoxButtons.OK,
+                    System.Windows.Forms.MessageBoxIcon.Error);
                 return 1;
             }
         }

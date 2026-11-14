@@ -61,7 +61,7 @@ internal static class UpdaterLauncher
         startInfo.ArgumentList.Add("--target");
         startInfo.ArgumentList.Add(Path.GetFullPath(AppContext.BaseDirectory));
         startInfo.ArgumentList.Add("--restart");
-        startInfo.ArgumentList.Add("BlackjackCasino.Desktop.exe");
+        startInfo.ArgumentList.Add("BlackjackCasino.NativeShell.exe");
         startInfo.ArgumentList.Add("--pid");
         startInfo.ArgumentList.Add(Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
