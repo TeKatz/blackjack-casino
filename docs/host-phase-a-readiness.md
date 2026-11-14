@@ -1,5 +1,7 @@
 # Host migration Phase A — parity inventory and protective boundaries
 
+**Historical migration-phase archive (2026-11-14).** This document records the pre-cutover WPF-to-NativeShell safety gates. The native WinForms/WebView2 casino is now the shipped host; source paths, availability and release-blocking statements below describe the *past* migration phase. Current behavior and the offline diagnostics project are documented in [architecture](architecture.md).
+
 **Status:** Phase A infrastructure implemented on `dev`; **not a production host switch**.
 The existing `BlackjackCasino.Desktop.exe` remains the Development/Stable application.
 The `BlackjackCasino.NativeShell.exe` stays a separately published test pilot.

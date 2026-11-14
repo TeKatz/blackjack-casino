@@ -1,5 +1,7 @@
 # Phase 5 — desktop host modernization
 
+**Archived engineering phase.** The WPF frame, UI adapters and WPF-only smoke tools described below were removed at the final NativeShell cutover. Historical `MainWindow` references are not executable instructions. The current native host and isolated diagnostics are described in [architecture](architecture.md).
+
 **Historical phase status:** first bounded host-extraction slice implemented on `feature/manor-modernization-phase-1`, now integrated into `main`; subsequent development uses `develop`. the executable still uses .NET 10 WPF with offline WebView2.
 
 ## Baseline preserved

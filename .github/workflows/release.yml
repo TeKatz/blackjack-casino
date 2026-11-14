@@ -134,6 +134,9 @@ jobs:
           foreach ($executable in @("BlackjackCasino.NativeShell.exe", "BlackjackCasino.Desktop.exe", "tools/updater/BlackjackCasino.Updater.exe")) {
             if (!(Test-Path "artifacts/app/$executable")) { throw "Native package lacks: $executable" }
           }
+          if (Test-Path artifacts/app/BlackjackCasino.MigrationDiagnostics.exe) {
+            throw "The offline migration diagnostic executable must not be packaged."
+          }
           $index = "artifacts/app/ModernFrontend/index.html"
           $assets = "artifacts/app/ModernFrontend/assets"
           if (!(Test-Path $index)) { throw "Modern Manor index.html was not packaged." }

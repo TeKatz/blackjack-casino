@@ -5,6 +5,9 @@
 
 ## Final WPF-free cutover (2026-11-14)
 
+The original manual checkpoint, staged promotion, WPF-compatible export and rollback/recovery routines now live in the **CI-only** `tools/NativeMigrationDiagnostics/` project, rather than in the production executable. The former command-line options run through that standalone tool only. Normal NativeShell launch, verified one-time import and journal replay remain in the production host; the existing on-disk `NativeShellPreview` profile and migration marker are deliberately unchanged.
+
+
 - Production-style launch without arguments starts NativeShell directly. The already-used Development native profile is reused before considering any legacy save import.
 - `BlackjackCasino.Desktop.exe` in the release ZIP is a tiny **WPF-free WinForms compatibility launcher** for old updaters and shortcuts. It only starts NativeShell. The new `UpdaterLauncher` restarts NativeShell directly.
 - New WinForms browser-recovery routes replace legacy UI fallbacks; no WPF assemblies, XAML, old window code or WPF smoke projects are included.

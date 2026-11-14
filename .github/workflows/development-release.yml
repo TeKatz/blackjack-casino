@@ -176,6 +176,9 @@ jobs:
               "MidnightDescent/MidnightDescent.pck")) {
             if (!(Test-Path "artifacts/app/$file")) { throw "Native package lacks: $file" }
           }
+          if (Test-Path artifacts/app/BlackjackCasino.MigrationDiagnostics.exe) {
+            throw "The offline migration diagnostic executable must not be packaged."
+          }
           if (Test-Path artifacts/app/native-development-default.flag) {
             throw "Obsolete WPF redirection marker must not ship with the native release."
           }

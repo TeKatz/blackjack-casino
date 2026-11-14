@@ -192,6 +192,13 @@ jobs:
           New-Item -ItemType Directory -Path artifacts/preview-app/tools/updater -Force | Out-Null
           Copy-Item artifacts/preview-updater/BlackjackCasino.Updater.exe artifacts/preview-app/tools/updater/BlackjackCasino.Updater.exe
 
+      - name: Exclude offline migration tools from preview package
+        shell: pwsh
+        run: |
+          if (Test-Path artifacts/preview-app/BlackjackCasino.MigrationDiagnostics.exe) {
+            throw "Offline WPF migration diagnostics must not ship with the casino."
+          }
+
       - name: Cache Godot Windows export template
         uses: actions/cache@v4
         with:
