@@ -27,7 +27,7 @@ describe('two-state global casino pointer',()=>{
  it('disables decorative text selection globally without suppressing gameplay pointer events',()=>{
    const css=read('public/cursor/casino-cursor.css');
    expect(css).toContain('Shared selection policy');
-   expect(css).toMatch(/html,html body,html body \\*/);
+   expect(css).toContain('html,html body,html body *');
    expect(css).toContain('-webkit-user-select:none');
    expect(css).toContain('user-select:none');
    // Editable inputs, contenteditable widgets, and intentional text exports
