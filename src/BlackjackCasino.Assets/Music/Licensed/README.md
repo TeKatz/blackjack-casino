@@ -1,6 +1,6 @@
 # Optional OpenGameArt music
 
-The player supplied these four tracks in order. Put normalized MP3s here:
+These four imported audio tracks are normalized MP3s in the source asset folder:
 
 | File | Plays in | Source file |
 | --- | --- | --- |
@@ -12,7 +12,7 @@ The player supplied these four tracks in order. Put normalized MP3s here:
 Two OGG/Vorbis sources were transcoded to MP3 for built-in Windows playback.
 The two source MP3s were left unchanged.
 
-The Desktop project copies present `*.mp3` files to `Music/Licensed/` under
+The NativeShell project copies present `*.mp3` files to `Music/Licensed/` under
 the build and published application directory. If a track is absent or fails
 to open, the original synthesized soundtrack remains available. The existing
 music toggle, per-area volume and area exit cleanup apply to these tracks.

@@ -1,14 +1,11 @@
 # Casino Empire room atlas
 
 `rooms-atlas.png` is original generated art for the offline desktop client. It is
-embedded as a WPF resource; no network requests or image generation happen at runtime.
+kept as a source asset and copied into the local `ModernFrontend/empire-art/` package by the NativeShell build. The current React/WebView2 client uses packaged images; no network requests or image generation happen at runtime.
 The six equally sized tiles are Slot Gallery, Card Salon, Midnight Bar, Roulette
 Room, VIP Lounge and treasury/lobby cover (left to right, top to bottom).
 
-Created with the built-in image generation tool. The original PNG is bundled
-unchanged. Frozen CroppedBitmap resources select the tiles at runtime. Text,
-levels, income, lighting particles, upgrade flashes, controls and milestone
-indicators are rendered separately, keeping them readable at different sizes.
+Created with the image generation tool. The original PNG source is preserved unchanged. Current React/PixiJS presentation keeps text, levels, income, lighting particles, upgrade flashes, controls and milestones separate from the background artwork, preserving readability at different sizes.
 
 ## Generation prompt
 
@@ -19,6 +16,4 @@ Use case: stylized-concept. Asset type: production 2D game background atlas for 
 Ten original square images now give every Upper Floor and Resort Floor room its
 own illustration. `room-prompts.json` records the built-in imagegen prompt set.
 The established Main Floor atlas and its treasury illustration stay in use.
-Room IDs select their own assets; no new room reuses an atlas tile. Images are
-decoded at 768 pixels, frozen and cached on first use. Image brushes, common
-shades and room status text are reused across ambient animation frames.
+Room IDs select their own assets; no new room reuses an atlas tile. The native release copies all eleven Empire PNG source assets to the offline frontend package. React presents the selected room and management status; decorative effects and image caching are handled by the current browser presentation.
