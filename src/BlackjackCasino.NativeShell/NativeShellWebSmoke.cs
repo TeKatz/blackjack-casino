@@ -88,6 +88,48 @@ internal static class NativeShellWebSmoke
                     throw new InvalidOperationException(
                         "Lobby artwork re-entry animation or obsolete logo returned.");
 
+                // Regression: the formerly animated Lobby tile cards must remain
+                // the exact same DOM elements across a Slots -> Lobby filter trip.
+                // Recreating them invalidates DOM-keyed Pixi scenes and triggers
+                // the delayed fallback-art morph seen in production.
+                string captured = await form.PreviewBrowser!.ExecuteScriptAsync(
+                    "(()=>{const tiles=[...document.querySelectorAll('.lobby-game')];"
+                    + "const buttons=[...document.querySelectorAll('.lobby-nav-item')];"
+                    + "const slots=buttons.find(x=>x.textContent?.trim()==='Slots');"
+                    + "const lobby=buttons.find(x=>x.textContent?.trim()==='Lobby');"
+                    + "if(tiles.length<8||!slots||!lobby)return false;"
+                    + "window.__nativeTileIdentitySmoke={tiles,ready:tiles.filter(x=>"
+                    + "x.querySelector('.game-art-window')?.getAttribute('data-pixi-art-ready')==='true').length};"
+                    + "slots.click();return true;})()");
+                if (captured != "true")
+                    throw new InvalidOperationException(
+                        "Could not capture the original React lobby tiles for Pixi identity regression.");
+                await Task.Delay(250);
+                string filtered = await form.PreviewBrowser.ExecuteScriptAsync(
+                    "(()=>{const state=window.__nativeTileIdentitySmoke;"
+                    + "if(!state||state.tiles.length!==document.querySelectorAll('.lobby-game').length)return false;"
+                    + "return state.tiles.every(x=>x.isConnected)&&"
+                    + "state.tiles.filter(x=>getComputedStyle(x).display!=='none').length===4;})()");
+                if (filtered != "true")
+                    throw new InvalidOperationException(
+                        "Lobby Slots tab remounted tiles or did not hide non-slot modes.");
+                await form.PreviewBrowser.ExecuteScriptAsync(
+                    "([...document.querySelectorAll('.lobby-nav-item')]"
+                    + ".find(x=>x.textContent?.trim()==='Lobby'))?.click()");
+                await Task.Delay(250);
+                string restoredTiles = await form.PreviewBrowser.ExecuteScriptAsync(
+                    "(()=>{const state=window.__nativeTileIdentitySmoke;"
+                    + "if(!state)return false;const now=[...document.querySelectorAll('.lobby-game')];"
+                    + "const same=now.length===state.tiles.length&&"
+                    + "now.every((tile,i)=>tile===state.tiles[i]&&getComputedStyle(tile).display!=='none');"
+                    + "const ready=now.filter(x=>x.querySelector('.game-art-window')"
+                    + "?.getAttribute('data-pixi-art-ready')==='true').length;"
+                    + "delete window.__nativeTileIdentitySmoke;return same&&ready>=state.ready;})()");
+                if (restoredTiles != "true")
+                    throw new InvalidOperationException(
+                        "Lobby filter re-entry recreated DOM-keyed Pixi tiles or lost ready artwork.");
+                Console.WriteLine("PASS: NativeShell Pixi lobby tile DOM identity survives Slots/Lobby filtering.");
+
                 // The real WebView2 document owns focus. Simulate its F11
                 // keyboard dispatch and require the native window to toggle
                 // in BOTH directions without a WinForms toolbar.

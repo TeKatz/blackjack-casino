@@ -52,4 +52,4 @@ Use `dev` for ongoing work, with reviewable feature/fix PRs. Integrate to `main`
 
 ## Modernization
 
-**Midnight Manor** was the first modernized game and remains the only player-facing Manor selection. React/PixiJS renders the game via WebView2 while the C# engine, persistent journal and player wallet remain authoritative. The legacy WPF Manor source has been removed; native receipts and rollback-compatible saves remain. The migration history is documented in see [modernization roadmap](docs/modernization-roadmap.md).
+**Midnight Manor** was the first modernized game and remains the only player-facing Manor selection. React/PixiJS renders the game via WebView2 while the C# engine, persistent journal and player wallet remain authoritative. The legacy WPF Manor source has been removed; native receipts and rollback-compatible saves remain. The migration history is documented in the [modernization roadmap](docs/modernization-roadmap.md).

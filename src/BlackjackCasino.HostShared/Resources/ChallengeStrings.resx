@@ -608,4 +608,6 @@
   <data name="Challenge.sudoku-career-90.Description" xml:space="preserve"><value>Reach Sudoku career level 90.</value></data>
   <data name="Challenge.sudoku-career-100.Name" xml:space="preserve"><value>Beyond Logic</value></data>
   <data name="Challenge.sudoku-career-100.Description" xml:space="preserve"><value>Complete all one hundred Sudoku career levels.</value></data>
+  <data name="Challenge.word-search-clean-200.Name" xml:space="preserve"><value>Unerring Eye</value></data>
+  <data name="Challenge.word-search-clean-200.Description" xml:space="preserve"><value>Complete 200 Word Search puzzles without hints.</value></data>
 </root>

@@ -608,4 +608,6 @@
   <data name="Challenge.sudoku-career-90.Description" xml:space="preserve"><value>Erreiche Sudoku-Karrierestufe 90.</value></data>
   <data name="Challenge.sudoku-career-100.Name" xml:space="preserve"><value>Jenseits der Logik</value></data>
   <data name="Challenge.sudoku-career-100.Description" xml:space="preserve"><value>Erreiche die maximale Sudoku-Karrierestufe 100.</value></data>
+  <data name="Challenge.word-search-clean-200.Name" xml:space="preserve"><value>Treffsicherer Blick</value></data>
+  <data name="Challenge.word-search-clean-200.Description" xml:space="preserve"><value>Löse 200 Wortsuchrätsel ohne Hinweise.</value></data>
 </root>

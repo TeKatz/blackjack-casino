@@ -1,6 +1,8 @@
 # Historical WPF inventory — retired at final NativeShell cutover
 
-**Historical note:** All entries below describe the pre-cutover WPF application. On the final cutover branch, the WPF/XAML source tree and its legacy smoke executables have been removed. This document is retained solely for provenance; consult [current architecture](architecture.md) for active components.\n\n**Integrated baseline:** `main`. **Development source:** `develop`. **Historical implementation:** `feature/manor-modernization-phase-1`.
+**Historical note:** All entries below describe the pre-cutover WPF application. On the final cutover branch, the WPF/XAML source tree and its legacy smoke executables have been removed. This document is retained solely for provenance; consult [current architecture](architecture.md) for active components.
+
+**Integrated baseline:** `main`. **Development source:** `develop`. **Historical implementation:** `feature/manor-modernization-phase-1`.
 **Scope:** React/WPF dependency separation, obsolete source cleanup and ongoing fallback inventory (modernization phase 4).
 
 ## Current status
