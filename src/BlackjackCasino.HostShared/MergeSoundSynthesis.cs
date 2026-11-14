@@ -1,4 +1,4 @@
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal enum MergeCue { Spawn, PickUp, Drop, Merge, TierUp, Invalid, Order, Milestone }
 internal static class MergeSoundSynthesis

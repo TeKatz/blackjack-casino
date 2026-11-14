@@ -8,7 +8,7 @@ using BlackjackCasino.Core.Kniffel;
 using BlackjackCasino.Core.Empire;
 using BlackjackCasino.NativeShell;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// First WPF-independent composition root. Isolated preview storage deliberately

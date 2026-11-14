@@ -1,4 +1,4 @@
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Dedicated moonlit-cabinet cues. No sound from the generic SlotAudio library is used.</summary>
 internal enum NineLivesCue { Spin, ReelStop, Loss, Win, BigWin, Pounce, Bonus, Frenzy }

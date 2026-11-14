@@ -1,7 +1,7 @@
 using BlackjackCasino.Core.Empire;
 using BlackjackCasino.Update;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// WPF-independent projection of current native host state into the existing save

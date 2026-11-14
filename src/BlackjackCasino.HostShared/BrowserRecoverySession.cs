@@ -1,4 +1,4 @@
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// Browser-independent recovery choice. No game registration, WPF view, save

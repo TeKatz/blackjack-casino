@@ -2,7 +2,7 @@ using BlackjackCasino.Core.Collections;
 using BlackjackCasino.Core.Adventure;
 using BlackjackCasino.Core;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal sealed class PlayerProgressionController : IDisposable
 {

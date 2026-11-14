@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using BlackjackCasino.Core;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 // This parser is deliberately narrower than GameRules.Validate: the UI offers a
 // defined, finite rule editor rather than arbitrary JSON deserialization.

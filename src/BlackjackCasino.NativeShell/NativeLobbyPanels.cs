@@ -6,7 +6,7 @@ using BlackjackCasino.Core.Empire;
 using BlackjackCasino.Core.Jigsaw;
 using BlackjackCasino.Core.Manor;
 using BlackjackCasino.Core.Sudoku;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 
 namespace BlackjackCasino.NativeShell;
 

@@ -2,7 +2,7 @@ using System.Globalization;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Collections;
 using BlackjackCasino.Core.Hosting;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 
 namespace BlackjackCasino.NativeShell;
 

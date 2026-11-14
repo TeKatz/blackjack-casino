@@ -2,7 +2,7 @@ using System.Diagnostics;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Jigsaw;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Transactional adapter around the existing native puzzle, persistence, achievements and receipts.</summary>
 internal sealed class ModernJigsawService

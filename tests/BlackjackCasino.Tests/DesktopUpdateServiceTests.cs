@@ -1,7 +1,7 @@
 using System.Net.Http;
 using System.Net;
 using System.Net.Http.Json;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 using BlackjackCasino.Update;
 
 namespace BlackjackCasino.Tests;

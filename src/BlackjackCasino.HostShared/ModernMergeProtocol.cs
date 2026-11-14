@@ -1,7 +1,7 @@
 using System.Text.Json;
 using BlackjackCasino.Core.MidnightMerge;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Only intents enter C#. Client-provided item definitions, scores and rewards are never trusted.</summary>
 internal sealed record ModernMergeCommand(string RequestId, string Session, long ExpectedRevision,

@@ -1,6 +1,6 @@
 using System.Drawing;
 using System.Text.Json;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 

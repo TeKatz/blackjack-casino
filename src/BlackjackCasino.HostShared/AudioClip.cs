@@ -1,4 +1,4 @@
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal sealed record AudioClip(float[] Samples)
 {

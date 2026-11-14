@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Hosting;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 
 namespace BlackjackCasino.NativeShell;
 

@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Resources;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 
 namespace BlackjackCasino.NativeShell;
 

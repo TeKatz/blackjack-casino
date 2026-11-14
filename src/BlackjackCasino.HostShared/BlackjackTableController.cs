@@ -1,7 +1,7 @@
 using System.Globalization;
 using BlackjackCasino.Core;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal sealed record BlackjackTableActionResult(bool Success, string Message,
     bool RoundChanged = false, bool CardSound = false,

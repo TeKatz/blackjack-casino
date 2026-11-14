@@ -18,6 +18,20 @@ def main():
             and not (ROOT / "tools/PresentationSmoke").exists()
             and not (ROOT / "tools/ManorSmoke").exists(),
             "WPF-specific runtime smoke projects remain")
+    # C# API cleanup: old UI namespaces must not return.
+    # Keep the compatibility executable name and on-disk save directory stable.
+    for directory in ("src/BlackjackCasino.HostShared",
+                      "src/BlackjackCasino.NativeShell",
+                      "tests/BlackjackCasino.Tests", "tools/AudioRender"):
+        for file in (ROOT / directory).rglob("*.cs"):
+            source = file.read_text(encoding="utf-8-sig")
+            require(not re.search(
+                r"\b(?:namespace|using(?:\s+static)?)\s+BlackjackCasino\.Desktop\b",
+                source),
+                f"{file.relative_to(ROOT)}: retired Desktop C# namespace")
+    require("HostReleaseRequirement" not in read(
+        "src/BlackjackCasino.Core/Hosting/HostMigrationContracts.cs"),
+        "Obsolete all-false preview release approvals must not be compiled")
     for project in ROOT.rglob("*.csproj"):
         content = project.read_text(encoding="utf-8")
         require("<UseWPF>true</UseWPF>" not in content,

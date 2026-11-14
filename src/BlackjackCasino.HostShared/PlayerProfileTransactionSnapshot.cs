@@ -1,6 +1,6 @@
 using BlackjackCasino.Core;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal enum RoutineProfileTransactionArea
 {

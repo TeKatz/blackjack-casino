@@ -13,8 +13,8 @@ public interface IHostModeNavigator
 }
 
 /// <summary>
-/// A canonical desktop route and its currently available NativeShell preview bridge.
-/// A preview bridge is NOT evidence of production parity or release approval.
+/// A canonical casino route with its native WebView2 document when applicable.
+/// DesktopModeId is the durable historical gameplay identifier; never rename saved IDs.
 /// </summary>
 public sealed record HostCasinoRoute(
     string DesktopModeId,
@@ -27,11 +27,9 @@ public sealed record HostCasinoRoute(
     public bool HasPreviewBridge => PreviewModeId is not null && PreviewDocument is not null;
 }
 
-public sealed record HostReleaseRequirement(string Id, string Acceptance, bool Approved);
-
 /// <summary>
-/// Phase A inventory. IDs match the real MainWindow lobby, while the preview
-/// aliases match NativeShellForm. No UI framework types or mutable delegates.
+/// Canonical route inventory shared by Core and the current NativeShell host.
+/// Historical property names are retained for save and protocol compatibility.
 /// </summary>
 public static class HostMigrationCatalog
 {
@@ -59,22 +57,6 @@ public static class HostMigrationCatalog
         "tales-backroom", "tower-defense", "minesweeper",
     });
 
-    // All approvals start false: a successful preview smoke is not a release
-    // sign-off. Each requires the acceptance evidence described below.
-    public static IReadOnlyList<HostReleaseRequirement> ReleaseRequirements { get; } =
-        Array.AsReadOnly(new HostReleaseRequirement[]
-        {
-            new("full-lobby", "All lobby actions and their authoritative C# bridges", false),
-            new("all-game-routes", "Every casino mode, Lounge game, and detached window", false),
-            new("user-data", "Production save import, wallet/history integrity, single writer", false),
-            new("receipts", "Replay, crash, restart, and interrupted-commit tests", false),
-            new("browser-recovery", "Missing assets/runtime, navigation and renderer crashes", false),
-            new("system-services", "Audio, updates, window/focus/DPI, external Godot lifecycle", false),
-            new("windows-acceptance", "Windows 10/11 and multi-monitor/DPI/device coverage", false),
-            new("release-rollback", "Verified package upgrade and old-version rollback", false),
-            new("test-parity", "Native tests replace, rather than disable, legacy WPF smokes", false),
-        });
-
     public static IReadOnlyList<HostCasinoRoute> PreviewRoutes =>
         CasinoRoutes.Where(route => route.HasPreviewBridge).ToArray();
 
@@ -90,12 +72,10 @@ public static class HostMigrationCatalog
             throw new ArgumentOutOfRangeException(nameof(previewModeId), "Unknown native preview route.");
     }
 
-    public static bool ApprovedForRelease =>
-        ReleaseRequirements.Count != 0 && ReleaseRequirements.All(requirement => requirement.Approved);
 }
 
 /// <summary>
-/// Prevent the pilot's experimental state writer from pointing at production
+/// Prevent the NativeShell state writer from pointing at an older legacy
 /// player-state.json, profile.json, or another directory within the live root.
 /// A dedicated preview subtree and independently allocated test paths are allowed.
 /// This is a path policy, not a replacement for transaction/journal recovery.

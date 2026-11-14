@@ -1,7 +1,7 @@
 using System.Text.Json;
 using BlackjackCasino.Core.Memory;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Allow-listed Memory user intentions. The browser cannot send cards, seed, matches or rewards.</summary>
 internal sealed record ModernMemoryCommand(

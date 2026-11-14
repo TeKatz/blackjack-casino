@@ -114,10 +114,7 @@ jobs:
       - name: WPF-free native shell protocol and storage smoke
         run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --smoke
 
-      - name: WPF-free native shell real WebView2 startup and seven React routes
-        run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --web-smoke
-
-      - name: Native Windows real-WebView2 regression evidence
+      - name: Native Windows real-WebView2 startup, routes and lobby regression
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path artifacts/native-runtime-smoke -Force | Out-Null

@@ -1,4 +1,4 @@
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Original 68 BPM lounge score, rendered once off the UI thread and cached by BackgroundMusic.</summary>
 internal static class DiceLoungeSynthesis

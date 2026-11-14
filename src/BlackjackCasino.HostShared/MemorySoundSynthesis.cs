@@ -1,4 +1,4 @@
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal enum MemoryCue { Flip, Match, Mismatch, Complete, Perfect }
 

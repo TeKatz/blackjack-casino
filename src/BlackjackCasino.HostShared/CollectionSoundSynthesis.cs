@@ -1,6 +1,6 @@
 using BlackjackCasino.Core.Collections;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal static class CollectionSoundSynthesis
 {

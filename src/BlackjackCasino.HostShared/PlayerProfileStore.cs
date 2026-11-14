@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Adventure;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal static class PlayerProfileStore
 {

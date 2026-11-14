@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using BlackjackCasino.Core.Sudoku;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// Sudoku application boundary shared by the React game and the existing C# save

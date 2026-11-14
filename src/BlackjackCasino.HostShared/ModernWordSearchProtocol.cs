@@ -1,7 +1,7 @@
 using System.Text.Json;
 using BlackjackCasino.Core.WordSearch;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Strict intent-only boundary: the React view never submits letters, solutions, saves or rewards.</summary>
 internal sealed record ModernWordSearchCommand(

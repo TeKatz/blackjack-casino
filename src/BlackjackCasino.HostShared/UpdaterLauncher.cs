@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using BlackjackCasino.Update;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal static class UpdaterLauncher
 {

@@ -1,5 +1,5 @@
 using BlackjackCasino.Core.Hosting;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 
 namespace BlackjackCasino.Tests;
 
@@ -58,15 +58,22 @@ public sealed class HostMigrationContractsTests
     }
 
     [Fact]
-    public void ReleaseNeedsExplicitParityEvidence()
+    public void NativeRouteInventoryNeverOffersUnmappedOrDuplicateModes()
     {
-        Assert.False(HostMigrationCatalog.ApprovedForRelease);
-        Assert.Equal(9, HostMigrationCatalog.ReleaseRequirements.Count);
-        Assert.All(HostMigrationCatalog.ReleaseRequirements, requirement =>
+        Assert.Equal(11, HostMigrationCatalog.CasinoRoutes.Count);
+        Assert.Equal(10, HostMigrationCatalog.PreviewRoutes.Count);
+        Assert.All(HostMigrationCatalog.CasinoRoutes, route =>
         {
-            Assert.False(requirement.Approved);
-            Assert.False(string.IsNullOrWhiteSpace(requirement.Acceptance));
+            Assert.False(string.IsNullOrWhiteSpace(route.DesktopModeId));
+            Assert.True(route.HasPreviewBridge ^ route.HasNativeProcess);
+            if (route.HasPreviewBridge)
+                Assert.Equal(route.PreviewDocument,
+                    HostMigrationCatalog.PreviewPageFor(route.PreviewModeId!));
         });
+        Assert.Equal(HostMigrationCatalog.PreviewRoutes.Count,
+            HostMigrationCatalog.PreviewRoutes
+                .Select(route => route.PreviewModeId)
+                .Distinct(StringComparer.Ordinal).Count());
     }
 
     [Fact]

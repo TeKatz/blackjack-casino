@@ -1,7 +1,7 @@
 using BlackjackCasino.Core.Adventure;
 using BlackjackCasino.Core;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>One cheap data pass shared by the lobby and header; never creates off-screen menus.</summary>
 internal sealed record LobbyProgressSnapshot(

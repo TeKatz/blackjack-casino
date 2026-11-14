@@ -4,7 +4,6 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <UseWPF>false</UseWPF>
-    <DefineConstants>$(DefineConstants);NATIVE_SHELL</DefineConstants>
     <AssemblyName>BlackjackCasino.NativeShell</AssemblyName>
     <ApplicationIcon>../BlackjackCasino.Assets/midnight-club.ico</ApplicationIcon>
     <Description>Production WPF-free WinForms/WebView2 Windows casino host.</Description>
@@ -29,8 +28,7 @@
     <Compile Include="../BlackjackCasino.HostShared/AdventureSynthesis.cs" Link="Shared/AdventureSynthesis.cs" />
   </ItemGroup>
   <ItemGroup>
-    <!-- Link the EXACT domain and save contracts currently used by the WPF app.
-         These source files do not depend on PresentationFramework or XAML. -->
+    <!-- Compile the shared, WPF-independent C# contracts directly into NativeShell. -->
     <Compile Include="../BlackjackCasino.HostShared/AppPreferences.cs" Link="Shared/AppPreferences.cs" />
     <Compile Include="../BlackjackCasino.HostShared/DesktopUpdateService.cs" Link="Shared/DesktopUpdateService.cs" />
     <Compile Include="../BlackjackCasino.HostShared/UpdaterLauncher.cs" Link="Shared/UpdaterLauncher.cs" />

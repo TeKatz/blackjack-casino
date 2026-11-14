@@ -1,7 +1,7 @@
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Manor;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal sealed class ManorController
 {

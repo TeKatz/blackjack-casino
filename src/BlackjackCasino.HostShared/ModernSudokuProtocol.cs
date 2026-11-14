@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// The browser can request only Sudoku intentions. It never submits boards, solutions,

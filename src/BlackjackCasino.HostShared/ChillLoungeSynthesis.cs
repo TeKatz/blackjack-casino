@@ -1,4 +1,4 @@
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Original 74 BPM chill hip-hop loop: swung hats, dusty kick and snare,
 /// mellow electric keys, warm sub bass and a quiet tape bed. Generated offline.</summary>

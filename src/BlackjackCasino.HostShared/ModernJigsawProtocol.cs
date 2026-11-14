@@ -1,7 +1,7 @@
 using System.Text.Json;
 using BlackjackCasino.Core.Jigsaw;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Only bounded player intentions cross WebView2. No solution, reward or save may be supplied.</summary>
 internal sealed record ModernJigsawCommand(

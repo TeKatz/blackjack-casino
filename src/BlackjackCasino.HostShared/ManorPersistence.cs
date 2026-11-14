@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Manor;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal sealed record ManorCheckpoint(int SchemaVersion,bool NeedsRecovery,AppPreferences Preferences,
     PlayerProfileState Profile,ManorSessionState Machine);

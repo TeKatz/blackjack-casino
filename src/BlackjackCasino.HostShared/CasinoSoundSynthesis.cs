@@ -1,4 +1,4 @@
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 internal enum TableCue { Deal, Chip, Win, Loss, Push, Menu, ReelSpin, ReelLoss, DiceRoll, DiceFiveOfAKind }
 internal static class CasinoSoundSynthesis

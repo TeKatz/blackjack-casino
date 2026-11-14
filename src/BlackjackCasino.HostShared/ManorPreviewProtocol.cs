@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using BlackjackCasino.Core.Manor;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>
 /// V2 local WebView2 protocol. Only C# calculates outcomes and commits the journal.

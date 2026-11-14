@@ -1,7 +1,7 @@
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Adventure;
 using BlackjackCasino.Core.Collections;
-using BlackjackCasino.Desktop;
+using BlackjackCasino.HostShared;
 
 namespace BlackjackCasino.Tests;
 

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using BlackjackCasino.Core.Solitaire;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Versioned, allow-listed solitaire intentions. The browser never submits cards, outcomes or rewards.</summary>
 internal sealed record ModernSolitaireCommand(string RequestId, string Session, long ExpectedRevision,

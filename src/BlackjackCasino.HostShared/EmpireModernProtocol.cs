@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using BlackjackCasino.Core.Empire;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 // Presentation intents only. No client money, rates, outcomes or timestamps are accepted.
 internal sealed record EmpireModernCommand(string RequestId, string Session, long ExpectedRevision,

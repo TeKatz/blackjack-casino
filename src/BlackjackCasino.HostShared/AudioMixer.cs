@@ -1,4 +1,4 @@
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Sample-clock mixer: independent cue tails, circular loops, smoothed gain.</summary>
 internal sealed class AudioMixer

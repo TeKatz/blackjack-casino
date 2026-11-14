@@ -10,7 +10,7 @@ WPF, XAML or PresentationFramework references in the production build.
 | --- | --- | --- |
 | Native Windows host | `src/BlackjackCasino.NativeShell/` | Real window, F11/focus, lifecycle, exact-origin WebView2, navigation, native emergency UI, separate Empire and Tales windows |
 | Authoritative C# games | `src/BlackjackCasino.Core/` | RNG, wagers, settlement, completion, progression and game catalogs |
-| Shared host sources | `src/BlackjackCasino.HostShared/` | Original save formats, preference/profile storage, validated command protocols, receipts and sound synthesis; linked as source into NativeShell and unit tests |
+| Shared host sources | `src/BlackjackCasino.HostShared/` | Original save formats, preference/profile storage, validated command protocols, receipts and sound synthesis; linked as source into NativeShell and unit tests under the `BlackjackCasino.HostShared` namespace |
 | React/PixiJS UI | `frontend/` | The packaged local lobby, casino machines, Lounge activities, Arcade, Album and account screens |
 | Audio and artwork | `src/BlackjackCasino.Assets/` | Offline graphics, music, licensed material, icons, localization provenance |
 | Update protocol | `src/BlackjackCasino.Update/` | Version/channel/manifest parsing and SHA-256 verification |
@@ -67,3 +67,15 @@ are additional release acceptance tasks, not implied by a passing CI.
 See [native migration history](native-shell-migration.md),
 [Development delivery](development-update-delivery.md) and
 [release branch policy](branching-and-release-policy.md).
+
+## Post-cutover source hygiene
+
+The former `BlackjackCasino.Desktop` C# namespace was retired from current
+shared service, NativeShell and test sources. This is a compile-time rename;
+no casino IDs, JSON fields, localized resource base names or player-data paths
+were changed. `NativeShellPreview` remains the **existing on-disk save folder**
+for compatibility with installed Development builds. The
+`BlackjackCasino.Desktop.exe` WinForms alias is still required by older
+updaters and pinned Windows shortcuts. The old all-false Phase A release
+approval matrix was removed; runtime acceptance is enforced by CI, native
+WebView2 and receipt smoke tests rather than a stale in-memory flag.

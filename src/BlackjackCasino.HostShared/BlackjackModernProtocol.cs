@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using BlackjackCasino.Core;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 // User intents only. Card order, payouts, eligibility and bankroll remain C#-owned.
 internal sealed record BlackjackModernCommand(string RequestId, string Session, long ExpectedRevision,

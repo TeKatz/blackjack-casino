@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using BlackjackCasino.Core;
 
-namespace BlackjackCasino.Desktop;
+namespace BlackjackCasino.HostShared;
 
 /// <summary>Strict local intent boundary; results, awards and RNG are never accepted from JS.</summary>
 internal sealed record ModernNeonVaultCommand(string RequestId, string Session,
