@@ -18,7 +18,7 @@ internal sealed record NativeLoungeReply(string Type, object Data);
 /// Each service is the same native C# authority used by MainWindow, including
 /// versioned request ID/revision receipts and original serialized board formats.
 /// </summary>
-internal sealed class NativeLoungeRuntime(NativePreviewRuntime owner) : IDisposable
+internal sealed class NativeLoungeRuntime(NativeCasinoRuntime owner) : IDisposable
 {
     private ModernSudokuSession sudokuSession = new();
     private ModernSolitaireSession solitaireSession = new();

@@ -78,8 +78,8 @@ internal static class NativeHostMigration
         if (Directory.Exists(target) || File.Exists(target))
             throw new IOException("Candidate already exists; existing progress will never be overwritten.");
         if (checkRunningHost) RequireLegacyStopped();
-        // The installed WPF host now holds this OS lease throughout its
-        // lifetime; no second host can race the migration snapshot.
+        // The original casino storage remains protected by its exclusive OS
+        // writer lease while the one-time native import is staged.
         using var productionLease = HostWriterLease.Acquire(source);
 
         // Validate the real formats, not merely the presence of files.

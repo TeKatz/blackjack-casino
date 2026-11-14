@@ -67,7 +67,7 @@ internal static class NativeMigrationRehearsalSmoke
             || !sourcePreferences.SequenceEqual(File.ReadAllBytes(
                 Path.Combine(candidate, "player-state.json"))))
             throw new InvalidOperationException("Candidate import failed to copy the original bytes.");
-        using (var imported = new NativePreviewRuntime(candidate))
+        using (var imported = new NativeCasinoRuntime(candidate))
         {
             if (imported.Bankroll != expectedWallet
                 || imported.Profile.DisplayName != "Candidate Import"
@@ -79,7 +79,7 @@ internal static class NativeMigrationRehearsalSmoke
             // wallet, Manor/roulette checkpoints or browser profile.
             try
             {
-                using var duplicate = new NativePreviewRuntime(candidate);
+                using var duplicate = new NativeCasinoRuntime(candidate);
                 throw new InvalidOperationException("Two simultaneous native writers were admitted.");
             }
             catch (InvalidOperationException ex) when (
@@ -88,7 +88,7 @@ internal static class NativeMigrationRehearsalSmoke
                 // Expected; the first runtime's lease remains held.
             }
         }
-        using (var reopened = new NativePreviewRuntime(candidate))
+        using (var reopened = new NativeCasinoRuntime(candidate))
         {
             if (reopened.Bankroll != expectedWallet)
                 throw new InvalidOperationException("Native writer lease did not release on close.");
@@ -183,7 +183,7 @@ internal static class NativeMigrationRehearsalSmoke
         if (Directory.Exists(NativeCutoverPromotion.WorkspacePath(production, "blocked-root")))
             throw new InvalidOperationException("Blocked native handover published a workspace.");
 
-        // Hold only the writer lease here. Disposing a real NativePreviewRuntime
+        // Hold only the writer lease here. Disposing a real NativeCasinoRuntime
         // persists a normalized save, intentionally changing the source hashes
         // after the checkpoint and invalidating this otherwise clean fixture.
         using (var candidateWriter = new FileStream(
@@ -213,7 +213,7 @@ internal static class NativeMigrationRehearsalSmoke
             || !sourceBrowser.SequenceEqual(File.ReadAllBytes(Path.Combine(promoted,
                 "WebView2", "Default", "Local Storage", "leveldb", "000001.ldb"))))
             throw new InvalidOperationException("Native rehearsal did not reconstruct the candidate state.");
-        using (var active = new NativePreviewRuntime(promoted))
+        using (var active = new NativeCasinoRuntime(promoted))
         {
             if (active.Bankroll != expectedWallet ||
                 active.Progression.History.Count != 1)
@@ -227,7 +227,7 @@ internal static class NativeMigrationRehearsalSmoke
             PlayerStateStore.Load(promoted) with { Bankroll = updatedWallet }, promoted);
         // Reusing the exact source profile is allowed; bankroll is the
         // authoritative changed player progress in this rollback fixture.
-        using (var runningNative = new NativePreviewRuntime(promoted))
+        using (var runningNative = new NativeCasinoRuntime(promoted))
         {
             try
             {

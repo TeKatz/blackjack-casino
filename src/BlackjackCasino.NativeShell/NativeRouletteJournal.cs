@@ -6,7 +6,7 @@ using BlackjackCasino.HostShared;
 namespace BlackjackCasino.HostShared;
 
 /// <summary>
-/// Shared WPF/NativeShell roulette receipt with browser-compatible JSON names.
+/// Stable cross-version roulette receipt with browser-compatible JSON names.
 /// </summary>
 internal sealed record NativeRouletteReceipt(Guid RoundId, bool Success,
     int Number, decimal Stake, decimal Return, decimal Net, decimal Bankroll);
@@ -15,7 +15,7 @@ internal sealed record NativeRouletteCheckpoint(int Version, bool Pending,
     AppPreferences Preferences, NativeRouletteReceipt[] Receipts);
 
 /// <summary>
-/// Journals the financial snapshot before modifying player-state.json on either host.
+/// Journals the financial snapshot before modifying player-state.json on the native host.
 /// A pending checkpoint replays the same candidate after an interruption;
 /// all request IDs remain retained for cross-restart idempotency.
 /// </summary>

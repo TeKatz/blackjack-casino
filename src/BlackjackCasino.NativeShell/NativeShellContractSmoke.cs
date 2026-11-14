@@ -90,7 +90,7 @@ internal static class NativeShellContractSmoke
                 || ManorPreviewProtocol.IsTrustedSource("https://example.com/index.html"))
                 throw new InvalidOperationException("Browser page trust is not isolated.");
 
-            using (var session = new NativePreviewRuntime(directory))
+            using (var session = new NativeCasinoRuntime(directory))
             {
                 using (var lobby = System.Text.Json.JsonDocument.Parse(
                     System.Text.Json.JsonSerializer.Serialize(session.LobbySnapshot(),
@@ -329,7 +329,7 @@ internal static class NativeShellContractSmoke
                 session.Persist();
             }
             // Receipt IDs persist across runtime lifetimes and browser restarts.
-            using (var resumed = new NativePreviewRuntime(directory))
+            using (var resumed = new NativeCasinoRuntime(directory))
             {
                 if (resumed.Preferences.DailyLoginClaims != 1
                     || new NativeLobbyController(resumed).ClaimDaily().Success)

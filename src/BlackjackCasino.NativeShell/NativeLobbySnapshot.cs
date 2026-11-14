@@ -7,13 +7,13 @@ using BlackjackCasino.HostShared;
 namespace BlackjackCasino.NativeShell;
 
 /// <summary>
-/// Read-only projection of the preview's genuine C# financial and profile state
+/// Read-only projection of the casino's genuine C# financial and profile state
 /// into the existing React lobby wire contract. No mock account balances or
 /// synthetic progress; unavailable sub-systems stay disabled.
 /// </summary>
 internal static class NativeLobbySnapshot
 {
-    internal static object Create(NativePreviewRuntime session)
+    internal static object Create(NativeCasinoRuntime session)
     {
         PlayerProfileState player = session.Profile;
         AppPreferences preferences = session.Preferences;

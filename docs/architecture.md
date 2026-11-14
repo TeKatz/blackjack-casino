@@ -79,3 +79,17 @@ for compatibility with installed Development builds. The
 updaters and pinned Windows shortcuts. The old all-false Phase A release
 approval matrix was removed; runtime acceptance is enforced by CI, native
 WebView2 and receipt smoke tests rather than a stale in-memory flag.
+
+### Historical diagnostics are not shipped
+
+The legacy cutover checkpoint, promotion rehearsal, WPF-compatible export and
+simulated rollback code lives in `tools/NativeMigrationDiagnostics/`, an
+**offline-only developer tool** referencing NativeShell's shared internal save
+contracts. The published NativeShell no longer embeds these four workflows or
+their old command-line entrypoints. CI runs the synthetic migration/rollback
+rehearsal separately alongside the native casino smoke and real WebView2 tests.
+
+The production runtime is named `NativeCasinoRuntime`. This rename does **not**
+change the existing `NativeShellPreview` on-disk save location, the
+`Candidates/development` import manifest, JSON fields, Frontend `nativePreview`
+capability, exact page origins or write-ahead journal format.

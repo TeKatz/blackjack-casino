@@ -22,7 +22,7 @@ internal sealed class NativeShellForm : Form
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
-    private readonly NativePreviewRuntime runtime;
+    private readonly NativeCasinoRuntime runtime;
     private readonly FullscreenKeyFilter fullscreenKeyFilter;
     private sealed class FullscreenKeyFilter : IMessageFilter
     {
@@ -95,27 +95,27 @@ internal sealed class NativeShellForm : Form
     private DateTimeOffset empireLastPersist = DateTimeOffset.UtcNow;
     private readonly string frontendFolder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
 
-    internal NativeShellForm(string? previewDirectory = null, bool migrationCandidate = false,
+    internal NativeShellForm(string? profileDirectory = null, bool migrationCandidate = false,
         bool managedRelease = false)
     {
         this.managedRelease = managedRelease;
         fullscreenKeyFilter = new FullscreenKeyFilter(this);
         Application.AddMessageFilter(fullscreenKeyFilter);
         string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        previewDirectory ??= HostPreviewStorage.DefaultDirectory(localAppData);
-        previewDirectory = HostPreviewStorage.RequireIsolatedDirectory(previewDirectory, localAppData);
-        runtime = new NativePreviewRuntime(previewDirectory);
+        profileDirectory ??= HostPreviewStorage.DefaultDirectory(localAppData);
+        profileDirectory = HostPreviewStorage.RequireIsolatedDirectory(profileDirectory, localAppData);
+        runtime = new NativeCasinoRuntime(profileDirectory);
         lobbyController = new NativeLobbyController(runtime);
         environment = new Lazy<Task<CoreWebView2Environment>>(() =>
             CoreWebView2Environment.CreateAsync(
-                userDataFolder: Path.Combine(previewDirectory, "WebView2")));
+                userDataFolder: Path.Combine(profileDirectory, "WebView2")));
 
         Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         Text = managedRelease
             ? "Blackjack Casino"
             : migrationCandidate
                 ? "Blackjack Casino — Isolated Host Migration Candidate"
-                : "Blackjack Casino — WPF-free Native Shell Preview";
+                : "Blackjack Casino — Isolated NativeShell diagnostics";
         if (managedRelease)
             updateStatus = "NativeShell active. Verified updates are available through the bundled updater.";
         StartPosition = FormStartPosition.CenterScreen;
@@ -125,55 +125,10 @@ internal sealed class NativeShellForm : Form
         ForeColor = Color.WhiteSmoke;
         KeyPreview = true;
 
-        if (managedRelease)
-        {
-            // The real React casino lobby already owns every game, menu and
-            // navigation action. The extra WinForms test-nav and diagnostic
-            // footer were only migration scaffolding. Give the React content
-            // the entire client area (including when switching game routes).
-            Controls.Add(content);
-        }
-        else
-        {
-            var root = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
-                Margin = Padding.Empty, Padding = Padding.Empty,
-            };
-            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 57));
-            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
-            var navigation = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Fill, WrapContents = false,
-                FlowDirection = FlowDirection.LeftToRight, AutoScroll = true,
-                BackColor = Color.FromArgb(11, 31, 29),
-                Padding = new Padding(12, 9, 12, 8),
-            };
-            navigation.Controls.Add(MakeButton("Lobby", ReturnToHome));
-            navigation.Controls.Add(MakeButton("Blackjack", () => _ = OpenModeAsync("blackjack")));
-            navigation.Controls.Add(MakeButton("Roulette", () => _ = OpenModeAsync("roulette")));
-            navigation.Controls.Add(MakeButton("Midnight Reels", () => _ = OpenModeAsync("reels")));
-            navigation.Controls.Add(MakeButton("Neon Vault", () => _ = OpenModeAsync("neon-vault")));
-            navigation.Controls.Add(MakeButton("Nine Lives", () => _ = OpenModeAsync("nine-lives")));
-            navigation.Controls.Add(MakeButton("Midnight Merge", () => _ = OpenModeAsync("midnight-merge")));
-            navigation.Controls.Add(MakeButton("Midnight Dice", () => _ = OpenModeAsync("midnight-dice")));
-            navigation.Controls.Add(MakeButton("Midnight Manor", () => _ = OpenModeAsync("midnight-manor")));
-            navigation.Controls.Add(MakeButton("Casino Empire", () => _ = OpenModeAsync("casino-empire")));
-            navigation.Controls.Add(MakeButton("Chill Lounge", () => _ = OpenModeAsync("chill-lounge")));
-            navigation.Controls.Add(new Label
-            {
-                AutoSize = true, Text = managedRelease ? "NATIVE HOST • RELEASE" : "NATIVE HOST • PREVIEW",
-                ForeColor = Color.FromArgb(221, 192, 127),
-                TextAlign = ContentAlignment.MiddleCenter,
-                Padding = new Padding(16, 10, 0, 0),
-            });
-            root.Controls.Add(navigation, 0, 0);
-            root.Controls.Add(content, 0, 1);
-            root.Controls.Add(status, 0, 2);
-            Controls.Add(root);
-        }
+        // Both production and isolated diagnostic windows use the actual React
+        // casino layout. The former navigation strip and preview footer were
+        // temporary migration scaffolding and must not be reinstated.
+        Controls.Add(content);
         loungeRefresh.Tick += (_, _) =>
         {
             if (closing || activeMode != "chill-lounge" || !ready) return;
@@ -310,9 +265,9 @@ internal sealed class NativeShellForm : Form
     }
 
     // Minimal internal acceptance interface; never used by React or game commands.
-    internal bool PreviewReady => ready && !browserFailed;
-    internal string? PreviewMode => activeMode;
-    internal CoreWebView2? PreviewBrowser => browser?.CoreWebView2;
+    internal bool BrowserReady => ready && !browserFailed;
+    internal string? BrowserMode => activeMode;
+    internal CoreWebView2? BrowserCore => browser?.CoreWebView2;
     internal Task OpenForAcceptanceAsync(string mode) => OpenModeAsync(mode);
     internal void ReturnForAcceptance() => ReturnToHome();
 
@@ -789,7 +744,7 @@ internal sealed class NativeShellForm : Form
                 case "lobby.ui-ready" when activeMode is null && listening:
                     ready = true;
                     watchdog.Stop();
-                    status.Text = "Native React lobby · preview storage · $" + runtime.Bankroll.ToString("N2");
+                    status.Text = "Native React lobby · native profile · $" + runtime.Bankroll.ToString("N2");
                     break;
                 case "lobby.refresh" when activeMode is null && listening:
                     RefreshLobbySnapshot();
@@ -1359,7 +1314,7 @@ internal sealed class NativeShellForm : Form
         string? version = FileVersionInfo.GetVersionInfo(Application.ExecutablePath).ProductVersion;
         Post("lobby.updates.snapshot", new
         {
-            InstalledVersion = string.IsNullOrWhiteSpace(version) ? "Native preview" : version,
+            InstalledVersion = string.IsNullOrWhiteSpace(version) ? "NativeShell" : version,
             Channel = (runtime.Preferences.UpdateChannel ?? NativeInstallChannel).ToManifestValue(),
             Status = updateStatus,
             Busy = checkingUpdates,

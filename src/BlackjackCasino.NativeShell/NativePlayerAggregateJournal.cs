@@ -6,7 +6,7 @@ using BlackjackCasino.HostShared;
 namespace BlackjackCasino.NativeShell;
 
 /// <summary>
-/// Isolated preview-only player profile and wallet aggregate journal.
+/// Native player profile and wallet aggregate write-ahead journal.
 /// No two independent mirrors may be made visible before the durable pending
 /// checkpoint is written. Replay is idempotent after an interrupted projection.
 /// </summary>

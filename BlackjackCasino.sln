@@ -14,7 +14,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackjackCasino.NativeShell
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackjackCasino.Tests", "tests\BlackjackCasino.Tests\BlackjackCasino.Tests.csproj", "{E5555555-5555-4555-8555-555555555555}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackjackCasino.MigrationDiagnostics", "tools\\NativeMigrationDiagnostics\\BlackjackCasino.MigrationDiagnostics.csproj", "{BC0D44F2-E881-4C5A-836A-2118DC274BED}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlackjackCasino.MigrationDiagnostics", "tools\NativeMigrationDiagnostics\BlackjackCasino.MigrationDiagnostics.csproj", "{BC0D44F2-E881-4C5A-836A-2118DC274BED}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

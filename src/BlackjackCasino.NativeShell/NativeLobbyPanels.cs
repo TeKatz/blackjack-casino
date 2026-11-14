@@ -12,9 +12,9 @@ namespace BlackjackCasino.NativeShell;
 
 /// <summary>
 /// Unmodified authoritative Core statistics and inventories projected into the
-/// original React lobby records protocol. This adapter only reads a preview profile.
+/// original React lobby records protocol. This adapter only reads the current native player profile.
 /// </summary>
-internal sealed class NativeLobbyPanels(NativePreviewRuntime runtime)
+internal sealed class NativeLobbyPanels(NativeCasinoRuntime runtime)
 {
     private PlayerProgressionController progressionController => runtime.Progression;
 
