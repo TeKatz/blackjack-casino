@@ -11,6 +11,24 @@ internal static class ModernIndianRubySnapshot
         ProgressionAward? award, PlayerProfileState profile, bool sound, bool animations, string language)
     {
         SlotStatistics stats = profile.IndianRuby;
+        int outerTotal = IndianRubyRules.BaseSymbolWeights.Where(x => x.Symbol != IndianRubySymbol.Ruby)
+            .Sum(x => x.Weight);
+        int innerTotal = IndianRubyRules.BaseSymbolWeights.Sum(x => x.Weight);
+        double elephantOuter = 30d / outerTotal;
+        double elephantInner = 30d / innerTotal;
+        double zero = Math.Pow(1d - elephantOuter, 6) * Math.Pow(1d - elephantInner, 9);
+        double one = 6 * elephantOuter * Math.Pow(1d - elephantOuter, 5) * Math.Pow(1d - elephantInner, 9)
+            + 9 * elephantInner * Math.Pow(1d - elephantInner, 8) * Math.Pow(1d - elephantOuter, 6);
+        var paytable = IndianRubyRules.BaseSymbolWeights.Select(item => new
+        {
+            Symbol = item.Symbol.ToString(),
+            Two = IndianRubyRules.LineMultiplier(item.Symbol, 2),
+            Three = IndianRubyRules.LineMultiplier(item.Symbol, 3),
+            Four = IndianRubyRules.LineMultiplier(item.Symbol, 4),
+            Five = IndianRubyRules.LineMultiplier(item.Symbol, 5),
+            OuterPercent = Math.Round(item.Symbol == IndianRubySymbol.Ruby ? 0d : item.Weight * 100d / outerTotal, 3),
+            InnerPercent = Math.Round(item.Weight * 100d / innerTotal, 3),
+        }).ToArray();
         return new
         {
             Language = language,
@@ -21,6 +39,10 @@ internal static class ModernIndianRubySnapshot
             AnimationsEnabled = animations,
             Bets = IndianRubyRules.Bets.Select(Money).ToArray(),
             Paylines = IndianRubyRules.Lines.Select(line => line.ToArray()).ToArray(),
+            Paytable = paytable,
+            BonusTriggerPercent = Math.Round((1d - zero - one) * 100d, 3),
+            BonusElephantPercent = 13d,
+            BonusRubyInnerPercent = 9d,
             Profile = new { profile.Level, profile.Prestige, profile.Coins },
             Stats = new
             {
