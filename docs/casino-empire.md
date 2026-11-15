@@ -1,25 +1,29 @@
 # Casino Empire
 
-**Casino Empire** is a management and idle-progression game inside The Midnight Club. Build a casino portfolio, expand departments, research improvements and optimize income over time. It runs in the local React/WebView2 interface, either embedded in the main casino or in its detachable management window.
+Casino Empire is a dedicated **active incremental clicker** within The Midnight Club. The lobby title and artwork are preserved, but the old idle management mode has been replaced.
 
-## Managing your empire
+## Core loop
 
-- Expand properties, rooms, floors and operating departments.
-- Improve production through upgrades, research, staff, automation and capital projects.
-- Balance events, contracts, specialists, prestige and long-term progression.
-- Revisit the estate after time away; eligible offline advancement is computed and validated by the C# economy.
-- Use the interactive estate atlas, management panels, statistics and themed room presentation.
+- Click the growing chip stack to earn construction credits.
+- Buy finite upgrades across twelve casino buildings (up to level 8 each).
+- Buildings generate passive credits; the income also scales the value of active clicking. Either playstyle can make progress, but active clicking remains useful.
+- Each building has four visible development tiers (levels 1, 3, 5 and 8), shown on its expandable card.
+- A single permanent milestone display shows the next reachable construction goal and its credit progress. The interface gradually reveals new buildings.
+- Every 25th tap earns a deterministic triple-click reward. Reaching twenty building levels and the run-credit requirement unlocks a prestige reset with a permanent production multiplier.
+- Unattended earning is limited to four hours; there are no automatic building purchases.
 
-Empire has a **separate construction currency and economy** from ordinary casino wagers. Its owner-dividend mechanic is the controlled connection back to the shared play-money bankroll. It does not alter Blackjack rules, dice outcomes or slot-machine payout tables.
+The 1.0 reboot intentionally removes the legacy property portfolio, level-200 rooms, management automation, research trees, staff, projects, contracts, events, and owner dividend system. It also **removes the 18 former challenge-to-Empire production boosts** without altering the challenges themselves or their regular coins/cosmetics/pack rewards.
 
-## Architecture and saves
+## Architecture
 
-The C# `EmpireService` remains authoritative for production, prices, available upgrades, contracts and transactions. React can request a preview or action, but cannot choose the resulting money, state or rewards.
+The C# `EmpireService` is authoritative for taps, prices, passive income, unlock requirements and prestige. React renders the UI but cannot mint credits or purchase upgrades itself.
 
-Every management mutation is checked against the current session, revision and unique request ID. The accepted result is persisted before new state is presented; failed or stale commands must not buy an item twice. NativeShell owns the WebView2 lifecycle, detached window and browser recovery. **No WPF host or WPF fallback is included in the current application.**
+The WebView2 protocol is `empire.command` version **2**, accepting only `tap` (1–20 taps per batch), `building.upgrade`, or `prestige`. Each successful command is saved durably before an acknowledgement. Request IDs and expected revisions prevent duplicate payouts after retries and reconnects. The receipt cache is bounded; stale revisions cannot replay evicted commands.
 
-## Performance and acceptance
+The old Empire save schema 3 is **not compatible** with the new economy. Before loading a legacy started save, `PlayerStateStore` makes a one-time backup `player-state.pre-empire-clicker.json` alongside the native profile. The new Empire begins fresh; all non-Empire profile data is retained.
 
-Decorative PixiJS effects respect animation preferences and visibility. Real Windows verification is still needed for cold/warm opening time, detached-window lifecycle, DPI, GPU recovery, offline progression and extended management sessions.
+NativeShell embedded and detached WebView2 windows continue to use the same trusted route and profile writer. The outer casino bankroll stays independent of Empire construction credits.
 
-The detailed balancing rationale and migration measurements are preserved separately: [Empire balance guide](empire-balancing.md) and [historical implementation log](archive/casino-empire-history.md). See [architecture](architecture.md).
+## Next passes
+
+This is an initial playable foundation. Balancing, richer stage artwork, ability synergies, animations and late-game prestige choices will be iterated on after real Windows playtests. Do not confuse initial milestone pacing with a finished long-term economy.
