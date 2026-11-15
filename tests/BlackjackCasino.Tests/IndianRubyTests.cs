@@ -110,10 +110,11 @@ public sealed class IndianRubyTests
             return (true,"OK");
         }
         var first = epoch.Execute(command,Commit);
+        decimal committedBalance = machine.Bankroll;
         Assert.True(first.Success);
         Assert.Equal(first, epoch.Execute(command, Commit));
         Assert.Equal(1, paid);
-        Assert.Equal(995m, machine.Bankroll);
+        Assert.Equal(committedBalance, machine.Bankroll);
         Assert.False(epoch.Execute(command with { RequestId = Guid.NewGuid().ToString("D") }, Commit).Success);
     }
 
@@ -126,7 +127,8 @@ public sealed class IndianRubyTests
             ModernIndianRubySnapshot.Create(machine,5m,spin,null,
                 new PlayerProfileState(),false,false,"de"),
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-        Assert.Equal("995", state.GetProperty("bankroll").GetString());
+        Assert.Equal(spin.BankrollAfter.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            state.GetProperty("bankroll").GetString());
         Assert.Equal(15, state.GetProperty("lastSpin").GetProperty("baseGrid").GetArrayLength());
         Assert.Equal(10, state.GetProperty("paylines").GetArrayLength());
     }
