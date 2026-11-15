@@ -270,7 +270,7 @@ internal static class NativeShellWebSmoke
                             + " return a.bottom<=b.top+2 && b.bottom<=c.top+2"
                             + " && d.width>=150 && d.width<=260"
                             + " && wager.querySelectorAll('.sunset-bet-ticks span').length===9"
-                            + " && Boolean(wager.querySelector('[data-testid=\\\"ruby-bet-value\\\"]'));"
+                            + " && Boolean(wager.querySelector('[data-testid=ruby-bet-value]'));"
                             + " })()");
                         if (balancedLayout != "true")
                             throw new InvalidOperationException(
