@@ -277,8 +277,19 @@ internal static class NativeShellWebSmoke
                                 }
                             }
                             if (!firstSpinAnimated)
+                            {
+                                string diagnostic = await form.BrowserCore.ExecuteScriptAsync(
+                                    "JSON.stringify({phase:document.querySelector('.ruby-premium-shell')"
+                                    + "?.getAttribute('data-phase'),reduced:window.matchMedia("
+                                    + "'(prefers-reduced-motion: reduce)').matches,"
+                                    + "rolling:document.querySelectorAll('.ruby-reel-column.rolling').length,"
+                                    + "tapes:document.querySelectorAll('[data-tape-ready]').length,"
+                                    + "notice:document.querySelector('.ruby-bridge-notice')?.textContent,"
+                                    + "spinDisabled:document.querySelector('.ruby-spin')?.disabled})");
                                 throw new InvalidOperationException(
-                                    "Sunset Ruby first affordable spin skipped its reel animation.");
+                                    "Sunset Ruby first affordable spin skipped its reel animation. "
+                                    + diagnostic);
+                            }
                         }
                     }
                     Console.WriteLine("PASS: WPF-free WebView2 React UI-ready: " + mode);
