@@ -71,7 +71,7 @@ type Phase='idle'|'awaiting'|'base'|'bonus-intro'|'bonus'|'result';
 type Pending={id:string;expectedRevision:number;action:RubyIntent['action'];ackRevision:number|null};
 type Feedback='win'|'loss'|'push'|'none';
 type Transfer={id:string;kind:'win'|'loss';amount:number;x:number;y:number;dx:number;dy:number};
-const getFeedback=(net:string):Feedback=>Number(net)>0?'win':Number(net)<0?'loss':'push';
+const getFeedback=(net:string):Exclude<Feedback,'none'>=>Number(net)>0?'win':Number(net)<0?'loss':'push';
 
 function RubyScene({herd,reduced}:{herd:boolean;reduced:boolean}){
  return <div className={'ruby-landscape'+(herd?' herd-active':'')+(reduced?' no-motion':'')}
