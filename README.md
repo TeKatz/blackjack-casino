@@ -11,6 +11,7 @@ Play classic table games, original slot machines, puzzles, management games and 
 | **Blackjack** | Classic Blackjack with configurable table rules, solo play and AI opponents, including splitting, doubling, insurance and surrender. |
 | **Roulette** | Casino roulette with a shared virtual bankroll. |
 | **Midnight Reels** | A classic three-reel slot machine. |
+| **Indian Ruby** | Five-reel elephant-themed slot with Ruby wilds and a hold-and-respin Elephant Bonus, entered under Slots in the left navigation. |
 | **Midnight Manor** | A gothic five-reel slot with free spins and an interactive, integrated **3D Escape the Manor** bonus. |
 | **Neon Vault** | A futuristic 1,024-ways video slot with expanding Wilds, jackpots and Vault Break features. |
 | **Nine Lives** | A cat-themed slot with Pounce Wilds and bonus spins. |
