@@ -115,7 +115,7 @@ internal static class NativeLobbySnapshot
     {
         "blackjack" or "roulette" or "kniffel" => "Table games",
         "midnight-reels" => "Classic slots",
-        "neon-vault" or "nine-lives" or "midnight-manor" => "Video slots",
+        "neon-vault" or "nine-lives" or "midnight-manor" or "indian-ruby" => "Video slots",
         "casino-empire" => "Incremental clicker",
         "midnight-merge" => "Casino restoration",
         "chill-lounge" => "Relaxed games",
@@ -127,6 +127,7 @@ internal static class NativeLobbySnapshot
         "blackjack" => "Classic blackjack. Play your hand at the table.",
         "roulette" => "European roulette. Place your bets and spin.",
         "midnight-reels" => "Three reels, timeless symbols and classic wins.",
+        "indian-ruby" => "Five reels, ruby wilds and the Elephant Bonus.",
         "neon-vault" => "Five reels, wilds and electrifying vault bonuses.",
         "nine-lives" => "Find lucky cats and unlock free spins.",
         "midnight-manor" => "Haunted reels, hidden rooms and free spins.",
