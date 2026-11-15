@@ -9,6 +9,9 @@ describe('independent banner art plates',()=>{
     expect(html).toContain('lobby-hero-layer-back');
     expect(html).toContain('lobby-hero-layer-mid');
     expect(html).toContain('lobby-hero-layer-front');
+    // Keep the non-animated static fallback on the first server/client paint.
+    expect(html).toContain('class="lobby-hero"');
+    expect(html).not.toContain('data-art-ready');
     expect(html).not.toContain('lobby-hero-picture');
     expect(html).not.toContain('lobby-hero-foreground');
   });
