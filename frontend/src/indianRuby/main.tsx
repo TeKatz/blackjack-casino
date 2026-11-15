@@ -13,6 +13,7 @@ import {SunsetRules} from './SunsetRules';
 import './indianRuby.css';
 import './rubyPremium.css';
 import './sunsetExtensions.css';
+import './sunsetRefinements.css';
 
 const PREVIEW:SymbolId[]=[
  'Queen','Vase','Ace','Necklace','Ten',
@@ -70,7 +71,7 @@ const cash=(value:string|number)=>'$'+Number(value).toLocaleString('en-US',{
 type Phase='idle'|'awaiting'|'base'|'bonus-intro'|'bonus'|'result';
 type Pending={id:string;expectedRevision:number;action:RubyIntent['action'];ackRevision:number|null};
 type Feedback='win'|'loss'|'push'|'none';
-type Transfer={id:string;kind:'win'|'loss';amount:number;x:number;y:number;dx:number;dy:number};
+type Transfer={id:string;amount:number;x:number;y:number;dx:number;dy:number};
 const getFeedback=(net:string):Exclude<Feedback,'none'>=>Number(net)>0?'win':Number(net)<0?'loss':'push';
 
 function RubyScene({herd,reduced}:{herd:boolean;reduced:boolean}){
@@ -115,14 +116,25 @@ const BetSelector=memo(function BetSelector({bet,bets,canDecrease,canIncrease,on
  onBet:(bet:string)=>void;label:string;
 }){
  const index=bets.indexOf(bet);
- return <div className="ruby-stake" data-testid="ruby-stable-bet">
-  <small>{label}</small>
-  <div className="ruby-stepper">
+ return <div className="ruby-stake sunset-bet-console" data-testid="ruby-stable-bet">
+  <div className="sunset-bet-label" aria-hidden="true">
+   <span className="sunset-bet-label-gem">◆</span><small>{label}</small>
+   <span className="sunset-bet-label-gem">◆</span>
+  </div>
+  <div className="ruby-stepper sunset-bet-stepper">
    <button type="button" aria-label="Bet decrease" className="ruby-bet-minus"
-    disabled={!canDecrease||index<=0} onClick={()=>onBet(bets[index-1])}>−</button>
+    disabled={!canDecrease||index<=0} onClick={()=>onBet(bets[index-1])}>
+    <span aria-hidden="true">−</span>
+   </button>
    <output className="ruby-bet-value" data-testid="ruby-bet-value">{cash(bet)}</output>
    <button type="button" aria-label="Bet increase" className="ruby-bet-plus"
-    disabled={!canIncrease||index>=bets.length-1} onClick={()=>onBet(bets[index+1])}>+</button>
+    disabled={!canIncrease||index>=bets.length-1} onClick={()=>onBet(bets[index+1])}>
+    <span aria-hidden="true">+</span>
+   </button>
+  </div>
+  <div className="sunset-bet-ticks" aria-hidden="true">
+   {bets.map((value,i)=><span key={value}
+    className={i===index?'current':i<index?'passed':''}/>)}
   </div>
  </div>;
 });
@@ -209,12 +221,13 @@ function App(){
   setFeedback(outcome);
   const source=resultAreaRef.current?.getBoundingClientRect();
   const destination=balanceRef.current?.getBoundingClientRect();
-  if(source&&destination&&outcome!=='push'&&!reduced){
-   const win=outcome==='win';
-   const from=win?source:destination,to=win?destination:source;
-   const x=from.left+from.width/2,y=from.top+from.height/2;
-   setTransfer({id,kind:outcome,amount:Math.abs(Number(result.net)),x,y,
-    dx:to.left+to.width/2-x,dy:to.top+to.height/2-y});
+  // Positive net wins travel into the wallet. A loss remains a local red
+  // deduction inside the wallet panel — never a flying overlay.
+  if(source&&destination&&outcome==='win'&&!reduced){
+   const x=source.left+source.width/2,y=source.top+source.height/2;
+   setTransfer({id,amount:Number(result.net),x,y,
+    dx:destination.left+destination.width/2-x,
+    dy:destination.top+destination.height/2-y});
   }else setTransfer(null);
   schedule(()=>{setFeedback('none');setTransfer(null);},1650);
   if(Number(result.payout)>0)
@@ -423,14 +436,22 @@ function App(){
   </div>
   <header className="ruby-header">
    <button type="button" className="ruby-back" onClick={close}>← {t.back}</button>
-   <div className="ruby-title">
-    <small>{t.strap}</small><h1 className="sunset-title">SUNSET <span>RUBY</span></h1><p>{t.subtitle}</p>
+   <div className="ruby-title sunset-title-lockup">
+    <small className="sunset-title-strap">{t.strap}</small>
+    <h1 className="sunset-title">SUNSET <span>RUBY</span></h1>
+    <p className="sunset-title-subtitle">{t.subtitle}</p>
    </div>
    <div className={'ruby-top-balance sunset-balance'+(feedback!=='none'?' feedback-'+feedback:'')}
     ref={balanceRef}><small>{t.money}</small>
     <AnimatedBankroll balance={state?.bankroll??'0'} spin={spinResult}
      settled={!!spinResult&&settledId===spinResult.id}
-     reduced={reduced||!state?.animationsEnabled}/></div>
+     reduced={reduced||!state?.animationsEnabled}/>
+    {feedback==='loss'&&spinResult&&settledId===spinResult.id&&
+     !(reduced||!state?.animationsEnabled)&&
+     <span key={spinResult.id} className="sunset-bankroll-debit" aria-hidden="true">
+      −{cash(Math.abs(Number(spinResult.net)))}
+     </span>}
+   </div>
   </header>
   <main className="ruby-main">
    <aside className="ruby-story">
@@ -547,10 +568,10 @@ function App(){
   <footer className="ruby-footer">
    <span>{t.help}</span><span>{t.offline}</span>
   </footer>
-  {transfer&&<div key={transfer.id} className={'sunset-credit-transfer '+transfer.kind}
+  {transfer&&<div key={transfer.id} className="sunset-credit-transfer win"
     aria-hidden="true" style={{left:transfer.x,top:transfer.y,
      '--flow-x':transfer.dx+'px','--flow-y':transfer.dy+'px'} as CSSProperties}>
-    <span>{transfer.kind==='win'?'+':'−'}{cash(transfer.amount)}</span>
+    <span>+{cash(transfer.amount)}</span>
    </div>}
   {rules&&<SunsetRules state={state??null} language={de?'de':'en'}
     close={()=>setRules(false)}/>}

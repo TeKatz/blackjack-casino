@@ -1,0 +1,417 @@
+/* Sunset Ruby follow-up: screenshot-grounded composition and visual effects.
+   Kept separate from the previous cabinet styles to avoid altering other games. */
+
+/* The strap used to render INLINE beside an inline-block H1, overlapping the heading.
+   Make the entire lock-up a deliberate three-row stack, independent of font metrics. */
+.ruby-premium-shell .ruby-header{
+ grid-template-columns:minmax(130px,1fr) minmax(0,2.5fr) minmax(175px,1fr);
+ min-height:clamp(112px,13vh,138px);
+ align-items:start;
+ gap:clamp(10px,1.3vw,22px);
+}
+.ruby-premium-shell .ruby-title.sunset-title-lockup{
+ display:flex;
+ flex-direction:column;
+ align-items:center;
+ justify-content:flex-start;
+ gap:3px;
+ width:100%;
+ min-width:0;
+ text-align:center;
+ isolation:isolate;
+}
+.ruby-premium-shell .sunset-title-lockup .sunset-title-strap{
+ display:block;
+ flex:none;
+ width:100%;
+ margin:2px 0 0;
+ padding:0;
+ color:#e5be8d;
+ font:700 clamp(8px,.65vw,11px)/1.4 "Segoe UI",sans-serif;
+ letter-spacing:.27em;
+ text-shadow:0 1px 6px #16070e;
+ text-align:center;
+ white-space:nowrap;
+}
+.ruby-premium-shell .sunset-title-lockup h1.sunset-title{
+ display:block;
+ flex:none;
+ align-self:center;
+ width:max-content;
+ max-width:100%;
+ margin:1px auto 0;
+ padding:0 6px 3px;
+ font:700 clamp(29px,3.35vw,57px)/1.12 Georgia,serif;
+ letter-spacing:.055em;
+ white-space:nowrap;
+ text-align:center;
+}
+.ruby-premium-shell .sunset-title-lockup .sunset-title-subtitle{
+ display:block;
+ flex:none;
+ width:100%;
+ margin:0;
+ color:#f2d8ac;
+ font:600 clamp(9px,.7vw,12px)/1.45 "Segoe UI",sans-serif;
+ letter-spacing:.08em;
+ text-align:center;
+ white-space:nowrap;
+}
+.ruby-premium-shell .sunset-title-lockup::after{
+ display:block;
+ flex:none;
+ margin:4px auto 0;
+ width:min(300px,55%);
+ height:1px;
+ background:linear-gradient(90deg,transparent,#ffdca78c,transparent);
+}
+/* The old balance consumed the full 1fr header column (~400 px at 1600 px).
+   Its real content only needs a compact, right-anchored wallet card. */
+.ruby-premium-shell .ruby-top-balance.sunset-balance{
+ justify-self:end;
+ align-self:start;
+ display:flex;
+ flex-direction:column;
+ align-items:flex-end;
+ justify-content:center;
+ width:clamp(174px,14vw,226px);
+ max-width:100%;
+ min-width:0;
+ height:clamp(60px,7.4vh,70px);
+ padding:8px 12px 9px;
+ border-radius:9px;
+ overflow:hidden;
+ font-variant-numeric:tabular-nums;
+}
+.ruby-premium-shell .sunset-balance small{
+ position:relative;
+ z-index:2;
+ font:700 9px/1.3 "Segoe UI",sans-serif;
+ letter-spacing:.14em;
+ white-space:nowrap;
+}
+.ruby-premium-shell .sunset-balance .sunset-bankroll-value{
+ position:relative;
+ z-index:2;
+ display:block;
+ font:700 clamp(16px,1.65vw,24px)/1.18 Georgia,serif;
+ white-space:nowrap;
+ letter-spacing:.015em;
+ text-shadow:0 2px 7px #02010688;
+}
+/* The loss never becomes a travelling HUD object. A little local subtraction
+   briefly appears inside the wallet while the C# committed balance counts down. */
+.sunset-bankroll-debit{
+ position:absolute;
+ z-index:3;
+ left:9px;
+ top:10px;
+ color:#ff9a9f;
+ font:800 10px/1.2 "Segoe UI",sans-serif;
+ letter-spacing:.015em;
+ white-space:nowrap;
+ pointer-events:none;
+ text-shadow:0 0 6px #ff3b5899;
+ animation:sunset-wallet-debit 1.35s ease-out forwards;
+}
+@keyframes sunset-wallet-debit{
+ 0%{opacity:0;transform:translate3d(0,8px,0)}
+ 18%{opacity:1;transform:translate3d(0,0,0)}
+ 62%{opacity:1;transform:translate3d(0,-2px,0)}
+ 100%{opacity:0;transform:translate3d(0,-10px,0)}
+}
+.ruby-premium-shell .sunset-balance.feedback-loss .sunset-bankroll-value{
+ color:#ffb6af;
+ text-shadow:0 0 9px #ff41636a;
+}
+.ruby-premium-shell .sunset-balance.feedback-win .sunset-bankroll-value{
+ color:#bafac0;
+ text-shadow:0 0 9px #55e48770;
+}
+
+/* Premium wager console: engraved gold faceplate, polished metal keys,
+   inset glass counter and nine static illuminated value markers. */
+.ruby-premium-shell .ruby-stake.sunset-bet-console{
+ position:relative;
+ isolation:isolate;
+ overflow:hidden;
+ min-width:0;
+ min-height:0;
+ padding:7px clamp(7px,.85vw,12px) 6px;
+ border:1px solid #d1a469;
+ border-radius:10px;
+ background:
+  radial-gradient(ellipse at 50% -25%,#ad6b4554,transparent 64%),
+  linear-gradient(168deg,#43262a,#24151c 58%,#241018);
+ box-shadow:
+  inset 0 1px 0 #ffedbc8c,
+  inset 0 -6px 14px #13080fa3,
+  0 2px 0 #3b1a17,
+  0 0 0 1px #503026;
+ contain:layout style;
+ transform:none;
+ transition:none;
+}
+.ruby-premium-shell .sunset-bet-console::before{
+ content:"";
+ position:absolute;
+ inset:4px;
+ border:1px solid #dcad7d38;
+ border-radius:6px;
+ pointer-events:none;
+ z-index:-1;
+}
+.ruby-premium-shell .sunset-bet-label{
+ display:flex;
+ justify-content:center;
+ align-items:center;
+ gap:9px;
+ height:12px;
+ margin:0 0 3px;
+}
+.ruby-premium-shell .sunset-bet-label small{
+ font:700 9px/1.2 "Segoe UI",sans-serif;
+ color:#f9d9a5;
+ letter-spacing:.17em;
+ white-space:nowrap;
+ text-shadow:0 1px 5px #150711;
+}
+.sunset-bet-label-gem{
+ color:#c96c76;
+ font:700 8px/1 Georgia,serif;
+ text-shadow:0 0 7px #faad90a3;
+}
+.ruby-premium-shell .sunset-bet-console .sunset-bet-stepper{
+ display:grid;
+ grid-template-columns:36px minmax(0,1fr) 36px;
+ gap:6px;
+ height:35px;
+ margin:0;
+ align-items:stretch;
+}
+.ruby-premium-shell .sunset-bet-console .ruby-bet-value{
+ display:grid;
+ place-items:center;
+ width:100%;
+ min-width:0;
+ height:35px;
+ padding:0 5px;
+ overflow:hidden;
+ border:1px solid #a77952;
+ border-radius:6px;
+ background:
+  linear-gradient(180deg,#120d16d9 0%,#291b24ee 56%,#35202a 100%);
+ box-shadow:
+  inset 0 2px 7px #09070c,
+  inset 0 -1px 0 #fbd39d34,
+  0 1px 0 #e1b77c32;
+ font:700 clamp(16px,1.45vw,23px)/1 Georgia,serif;
+ letter-spacing:.018em;
+ color:#ffe7ba;
+ text-shadow:0 0 12px #e0a36a5a,0 1px 0 #000;
+ font-variant-numeric:tabular-nums;
+ font-feature-settings:"tnum" 1;
+ white-space:nowrap;
+ transform:none;
+ transition:none;
+}
+.ruby-premium-shell .sunset-bet-console .ruby-stepper button{
+ position:relative;
+ width:36px;
+ height:35px;
+ display:grid;
+ place-items:center;
+ margin:0;
+ padding:0;
+ border:1px solid #f4d69c;
+ border-radius:6px;
+ background:linear-gradient(152deg,#f1cb82 0%,#b77b49 48%,#754132 100%);
+ color:#3b1a1b;
+ box-shadow:inset 0 1px 0 #fff9dc9c,inset 0 -3px 4px #5f3033,0 2px 0 #28131a;
+ font:700 25px/1 Georgia,serif;
+ text-shadow:0 1px 0 #fff5cf66;
+ transform:none!important;
+ transition:filter .15s ease,box-shadow .15s ease;
+}
+.ruby-premium-shell .sunset-bet-console .ruby-stepper button:hover:enabled{
+ background:linear-gradient(152deg,#ffe6a0,#e2aa62 47%,#9a553b);
+ filter:brightness(1.07);
+ box-shadow:inset 0 1px #fff9e4,0 0 12px #f6cf8390,0 2px 0 #28131a;
+}
+.ruby-premium-shell .sunset-bet-console .ruby-stepper button:active:enabled{
+ filter:brightness(.95);
+ box-shadow:inset 0 2px 7px #4a2719,0 1px 0 #28131a;
+}
+.ruby-premium-shell .sunset-bet-console .ruby-stepper button:disabled{
+ opacity:1;
+ color:#836c60;
+ border-color:#a17e5c;
+ background:linear-gradient(#705446,#49313a);
+ box-shadow:inset 0 1px #f2cda134;
+}
+.sunset-bet-ticks{
+ height:4px;
+ margin:5px auto 0;
+ display:flex;
+ justify-content:center;
+ align-items:center;
+ gap:clamp(3px,.5vw,6px);
+ pointer-events:none;
+}
+.sunset-bet-ticks span{
+ width:clamp(11px,1.1vw,17px);
+ height:3px;
+ border-radius:2px;
+ background:#694741;
+ box-shadow:inset 0 1px #1a1113;
+ transition:background-color .18s,box-shadow .18s;
+}
+.sunset-bet-ticks span.passed{
+ background:#b07b4e;
+ box-shadow:0 0 3px #b78552;
+}
+.sunset-bet-ticks span.current{
+ background:#ffe6a1;
+ box-shadow:0 0 5px #ffda7c,0 0 9px #ed9d49aa;
+}
+/* Better winning-symbol staging: an inset foiled edge, a diagonal specular sweep,
+   restrained symbol lift, and independent sparkles. All GPU-friendly/paint-only. */
+.ruby-premium-shell .ruby-reels.is-winning .ruby-cell.winning{
+ z-index:1;
+ animation:sunset-symbol-frame 2.6s ease-in-out infinite;
+}
+@keyframes sunset-symbol-frame{
+ 0%,100%{box-shadow:inset 0 0 0 1px #ffe5a2,inset 0 0 10px #f6c178a3}
+ 40%{box-shadow:inset 0 0 0 2px #fff3ca,inset 0 0 19px #e5a452e3,0 0 14px #ffe6a896}
+ 65%{box-shadow:inset 0 0 0 2px #fff0b8,inset 0 0 13px #f1b95fa6,0 0 7px #ffe6a859}
+}
+.ruby-win-effects{
+ position:absolute;
+ inset:0;
+ z-index:5;
+ overflow:hidden;
+ pointer-events:none;
+}
+.ruby-win-edge{
+ position:absolute;
+ inset:3px;
+ border:2px solid #ffebbb;
+ border-radius:4px;
+ box-shadow:inset 0 0 13px #f6c06fa6,0 0 10px #f5c27e96;
+ animation:sunset-win-edge 2.6s ease-in-out infinite;
+}
+@keyframes sunset-win-edge{
+ 0%,100%{opacity:.32}
+ 30%,58%{opacity:1}
+}
+.ruby-win-sweep{
+ position:absolute;
+ top:-45%;
+ bottom:-45%;
+ left:-68%;
+ width:46%;
+ background:linear-gradient(90deg,transparent,#fff2be20 25%,#fffdec92 49%,#fff0b331 72%,transparent);
+ transform:translate3d(-15%,0,0) skewX(-17deg);
+ filter:blur(1.3px);
+ animation:sunset-win-sweep 2.65s cubic-bezier(.25,.6,.5,1) infinite;
+}
+@keyframes sunset-win-sweep{
+ 0%,12%{transform:translate3d(-60%,0,0) skewX(-17deg);opacity:0}
+ 22%{opacity:.96}
+ 66%{transform:translate3d(400%,0,0) skewX(-17deg);opacity:.85}
+ 72%,100%{transform:translate3d(400%,0,0) skewX(-17deg);opacity:0}
+}
+.ruby-win-flare{
+ position:absolute;
+ inset:4px;
+ border-radius:7px;
+ background:radial-gradient(ellipse at 50% 51%,#ffe1a125,transparent 67%);
+ animation:sunset-win-flare 2.6s ease-in-out infinite;
+}
+@keyframes sunset-win-flare{
+ 0%,100%{opacity:.22}
+ 38%,55%{opacity:.85}
+}
+.ruby-win-spark{
+ position:absolute;
+ width:4px;
+ height:4px;
+ border-radius:50%;
+ background:#fffce5;
+ box-shadow:0 0 6px #fff5ba,0 0 12px #ffd980;
+ transform:scale(.4);
+ animation:sunset-win-sparkle 2.6s ease-in-out infinite;
+}
+.ruby-win-spark.first{top:17%;left:16%;animation-delay:.12s}
+.ruby-win-spark.second{top:25%;right:17%;animation-delay:.55s}
+.ruby-win-spark.third{bottom:19%;left:66%;animation-delay:.95s}
+@keyframes sunset-win-sparkle{
+ 0%,13%,76%,100%{opacity:0;transform:scale(.25)}
+ 29%{opacity:1;transform:scale(1.75)}
+ 48%{opacity:.35;transform:scale(.7)}
+}
+.ruby-premium-shell .ruby-reels.is-winning .ruby-cell.winning .ruby-symbol-settled{
+ animation:sunset-win-symbol 2.6s ease-in-out infinite;
+}
+@keyframes sunset-win-symbol{
+ 0%,100%{transform:translateZ(0) scale(1);filter:brightness(1)}
+ 38%{transform:translateZ(0) scale(1.035);filter:brightness(1.16)}
+ 65%{transform:translateZ(0) scale(1);filter:brightness(1.05)}
+}
+.ruby-premium-shell .ruby-winning-lines{
+ filter:drop-shadow(0 0 3px #ffd98a);
+}
+.ruby-premium-shell .ruby-winning-lines polyline{
+ stroke:#ffe8a6;
+ stroke-width:2;
+ stroke-opacity:.65;
+ stroke-linecap:round;
+ stroke-linejoin:round;
+}
+@media(max-width:800px){
+ .ruby-premium-shell .ruby-header{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  min-height:0;
+ }
+ .ruby-premium-shell .sunset-title-lockup{
+  grid-column:1/-1;
+  grid-row:1;
+ }
+ .ruby-premium-shell .ruby-top-balance.sunset-balance{
+  grid-row:2;
+  width:clamp(170px,33vw,210px);
+ }
+ .ruby-premium-shell .sunset-title-lockup h1.sunset-title{
+  font-size:clamp(29px,7vw,49px);
+ }
+}
+@media(max-width:490px){
+ .ruby-premium-shell .sunset-title-lockup h1.sunset-title{
+  font-size:clamp(26px,7.9vw,36px);
+  letter-spacing:.02em;
+ }
+ .ruby-premium-shell .sunset-title-lockup .sunset-title-strap{
+  font-size:8px;
+  letter-spacing:.12em;
+ }
+ .ruby-premium-shell .sunset-title-lockup .sunset-title-subtitle{
+  white-space:normal;
+  font-size:9px;
+ }
+ .ruby-premium-shell .sunset-bet-console .ruby-bet-value{font-size:17px}
+}
+@media(prefers-reduced-motion:reduce){
+ .ruby-premium-shell .ruby-win-effects *,
+ .ruby-premium-shell .ruby-reels.is-winning .ruby-cell.winning,
+ .ruby-premium-shell .ruby-reels.is-winning .ruby-cell.winning .ruby-symbol-settled,
+ .ruby-premium-shell .sunset-bankroll-debit{
+  animation:none!important;
+ }
+ .ruby-premium-shell .sunset-bankroll-debit{display:none}
+}
+.ruby-premium-shell[data-reduced=true] .ruby-win-effects *,
+.ruby-premium-shell[data-reduced=true] .ruby-reels.is-winning .ruby-cell.winning,
+.ruby-premium-shell[data-reduced=true] .ruby-reels.is-winning .ruby-cell.winning .ruby-symbol-settled{
+ animation:none!important;
+}
+.ruby-premium-shell[data-reduced=true] .sunset-bankroll-debit{display:none}

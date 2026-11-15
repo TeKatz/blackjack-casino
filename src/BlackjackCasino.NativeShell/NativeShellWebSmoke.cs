@@ -256,6 +256,25 @@ internal static class NativeShellWebSmoke
                         if (headline != "true")
                             throw new InvalidOperationException(
                                 "Sunset Ruby lost its single premium title.");
+                        string balancedLayout = await form.BrowserCore.ExecuteScriptAsync(
+                            "(() => { const strap=document.querySelector('.sunset-title-strap');"
+                            + " const title=document.querySelector('.sunset-title');"
+                            + " const subtitle=document.querySelector('.sunset-title-subtitle');"
+                            + " const wallet=document.querySelector('.sunset-balance');"
+                            + " const wager=document.querySelector('.sunset-bet-console');"
+                            + " if(!strap||!title||!subtitle||!wallet||!wager)return false;"
+                            + " const a=strap.getBoundingClientRect();"
+                            + " const b=title.getBoundingClientRect();"
+                            + " const c=subtitle.getBoundingClientRect();"
+                            + " const d=wallet.getBoundingClientRect();"
+                            + " return a.bottom<=b.top+2 && b.bottom<=c.top+2"
+                            + " && d.width>=150 && d.width<=260"
+                            + " && wager.querySelectorAll('.sunset-bet-ticks span').length===9"
+                            + " && Boolean(wager.querySelector('[data-testid=ruby-bet-value]'));"
+                            + " })()");
+                        if (balancedLayout != "true")
+                            throw new InvalidOperationException(
+                                "Sunset Ruby header overlaps, wallet is too wide or bet console is incomplete.");
                         string canPlay = await form.BrowserCore.ExecuteScriptAsync(
                             "Boolean(document.querySelector('.ruby-spin')"
                             + " && !document.querySelector('.ruby-spin').disabled)");

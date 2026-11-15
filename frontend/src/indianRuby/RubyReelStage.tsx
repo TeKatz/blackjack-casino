@@ -88,6 +88,11 @@ const ReelCell=memo(function ReelCell({cell,symbol,held,winning,rolling,target,s
    <div className="ruby-symbol-settled"><RubySymbolArt symbol={symbol}/>
     {label(symbol)&&<small>{label(symbol)}</small>}</div>
    <span className="ruby-cell-sheen" aria-hidden="true"/>
+   {winning&&<span className="ruby-win-effects" aria-hidden="true">
+     <i className="ruby-win-edge"/><i className="ruby-win-sweep"/>
+     <i className="ruby-win-flare"/><i className="ruby-win-spark first"/>
+     <i className="ruby-win-spark second"/><i className="ruby-win-spark third"/>
+   </span>}
    {active&&<div className="ruby-cell-respin-viewport" aria-hidden="true">
      <div className="ruby-cell-respin-tape" ref={track}>
       {tape.map((item,i)=><div key={i} className="ruby-bonus-tile" data-symbol={item}>
@@ -195,7 +200,7 @@ function RubyReelStageView({displayGrid,targetBase,targetBonus,spinId,rollingRee
    viewBox="0 0 500 300" preserveAspectRatio="none" aria-hidden="true">
    {winningLines.map((line,i)=><polyline key={line} fill="none"
     points={lineCells[line]?.map(cell=>((cell%5)*100+50)+','+(Math.floor(cell/5)*100+50)).join(' ')??''}
-    style={{animationDelay:(i*.18)+'s'}}/>)}
+    style={{animationDelay:(i*.24)+'s'}}/>)}
   </svg>}
   <div className="ruby-reel-glass" aria-hidden="true"/>
  </div>;

@@ -46,3 +46,13 @@ The result is a first playable, not a mathematically verified retail clone.
 - Normal, Fast and Turbo scale base reel duration. The Elephant Bonus retains a long presentation across every speed; near misses slow only the actual outcome's final reel and do not manipulate C# symbols, winnings, odds or RNG.
 - The rules dialog lists the complete per-line C# multipliers, per-position symbol chances on outer and middle reels and exact prototype probability of two or more elephant symbols; these data are projected from the native C# rule definitions and explicitly differ from unverifiable proprietary retail odds.
 - Win/loss feedback uses **net** payout: a negative-net spin flashes red even if a smaller line payout occurs, while positive-net flashes green. The frame, 18 lamps on each rail, bankroll and a decorative credit transfer respond, but displayed balances reconcile to the native ledger.
+
+
+## Screenshot follow-up: header, wallet and win-field polish
+
+- The title lock-up is three deliberate stacked rows: collection eyebrow, one premium Sunset Ruby heading and subtitle. This removes the inline flow that pushed the eyebrow into the heading.
+- The header bankroll is a compact, right-aligned fixed-width instrument, rather than filling the entire responsive grid column.
+- Only positive **net** payouts spawn the green flight from the win display into the bankroll. Negative net payouts count down and flash red **inside** the header bankroll, with a brief local deduction badge; no loss flies across the reels or screen.
+- The wager panel keeps its stable memoized React component and gains an engraved glass amount, brass increment/decrement keys and nine static stake markers. Disabled states do not dim/recreate the entire panel.
+- Winning reel cells get independent light borders, reflective gold sweeps, accent sparkles and a subtle symbol lift. Animations are decorative and never alter native outcomes. Reduced-motion preferences retain static highlights without loops.
+- The Windows WebView2 regression now verifies nonoverlapping title rows, bounded wallet width and the stable nine-marker wager UI. Vitest ensures glints appear only on winning cells.
