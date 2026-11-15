@@ -330,3 +330,479 @@ button:focus-visible{outline:2px solid #f4d9a4;outline-offset:3px}
 }
 .ce-shell[data-motion="false"] *, .ce-shell[data-motion="false"] *::before,
 .ce-shell[data-motion="false"] *::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+
+
+/* ========================================================================
+   Casino Empire: structural layout reconstruction.
+   These structural rules deliberately follow the existing material effects.
+   Every interactive region owns its dimensions; no decorative badge is
+   positioned over content or outside a scrolling region.
+   ======================================================================== */
+
+html,body,#root{width:100%;height:100%;min-height:0;overflow:hidden}
+body{
+  background:#080d0d;
+  background-image:linear-gradient(90deg,rgba(2,11,10,.40),rgba(1,11,12,.28) 45%,rgba(1,10,10,.51)),
+    url('/lobby/art/ambient.png');
+  background-size:cover,cover;
+  background-position:center,center 48%;
+  background-repeat:no-repeat;
+  background-attachment:fixed;
+}
+body::before{
+  background:radial-gradient(ellipse at 48% 22%,rgba(44,105,85,.13),transparent 59%),
+    linear-gradient(180deg,rgba(3,13,12,.34),rgba(2,10,11,.11) 42%,rgba(1,7,8,.54));
+}
+.ce-shell{
+  width:100%;
+  max-width:none;
+  height:100dvh;
+  min-height:0;
+  display:grid;
+  grid-template-rows:92px minmax(0,1fr);
+  margin:0;
+  padding:0;
+  isolation:isolate;
+  overflow:hidden;
+}
+.ce-shell::before{content:none}
+.ce-scenery{
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 15% 28%,rgba(238,175,79,.16),transparent 19%),
+    radial-gradient(circle at 87% 46%,rgba(242,186,105,.1),transparent 27%),
+    radial-gradient(ellipse at 50% 82%,rgba(5,21,19,.25),transparent 57%);
+}
+.ce-header{
+  position:relative;
+  z-index:5;
+  display:block;
+  min-height:0;
+  height:92px;
+  border-bottom:1px solid rgba(236,191,117,.62);
+  background:linear-gradient(180deg,rgba(3,18,17,.96),rgba(9,36,30,.94) 73%,rgba(4,20,19,.97));
+  box-shadow:0 9px 30px rgba(0,0,0,.65),inset 0 -1px 0 rgba(255,226,163,.11);
+  backdrop-filter:blur(14px);
+}
+.ce-header::after{
+  left:12%;
+  right:12%;
+  bottom:-2px;
+  height:2px;
+  background:linear-gradient(90deg,transparent,rgba(244,205,134,.7),transparent);
+}
+.ce-header-inner{
+  display:grid;
+  grid-template-columns:minmax(120px,1fr) auto minmax(120px,1fr);
+  align-items:center;
+  gap:16px;
+  width:min(100% - 66px,1480px);
+  height:100%;
+  margin:0 auto;
+}
+.ce-back,.ce-prestige-badge{
+  margin:0;
+  align-self:center;
+}
+.ce-wordmark{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:1px;
+  padding:4px 16px 0;
+  min-width:0;
+  text-align:center;
+}
+.ce-wordmark-insignia{margin:-8px 0 -6px;font-size:22px}
+.ce-wordmark small{font-size:9px;line-height:1.1;letter-spacing:.27em}
+.ce-wordmark h1{margin:3px 0 0;font-size:clamp(25px,2.45vw,37px);line-height:1.05}
+.ce-wordmark-rule{margin:5px auto 0;width:79%}
+.ce-main{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(345px,390px);
+  gap:clamp(16px,1.55vw,27px);
+  align-items:stretch;
+  width:min(calc(100% - 68px),1480px);
+  height:100%;
+  min-height:0;
+  margin:0 auto;
+  padding:20px 0 22px;
+  overflow:hidden;
+}
+.ce-primary{
+  display:grid;
+  grid-template-rows:minmax(0,1fr) auto;
+  align-items:stretch;
+  gap:15px;
+  min-width:0;
+  min-height:0;
+  height:100%;
+  overflow:hidden;
+}
+.ce-stage-panel{
+  position:relative;
+  isolation:isolate;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr) auto;
+  min-height:0;
+  min-width:0;
+  overflow:hidden;
+  border:1px solid rgba(224,180,111,.54);
+  border-radius:19px;
+  background:
+    radial-gradient(ellipse at 50% 58%,rgba(25,84,67,.47),transparent 71%),
+    linear-gradient(125deg,rgba(3,25,23,.81),rgba(7,33,29,.9) 62%,rgba(4,21,20,.93));
+  box-shadow:inset 0 1px 0 rgba(253,223,160,.15),
+    inset 0 0 45px rgba(2,10,11,.26),
+    0 12px 35px rgba(0,0,0,.51);
+  backdrop-filter:blur(7px);
+}
+.ce-stage-panel::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:0;
+  pointer-events:none;
+  border-radius:inherit;
+  background:
+    linear-gradient(90deg,rgba(4,20,20,.65),rgba(1,23,21,.14) 43%,rgba(1,15,16,.58)),
+    url('/lobby/art/hero.png') center 47%/cover no-repeat;
+  opacity:.22;
+  filter:saturate(.78);
+}
+.ce-stage-panel::after{
+  content:"";
+  position:absolute;
+  inset:8px;
+  border:1px solid rgba(247,210,139,.08);
+  border-radius:13px;
+  pointer-events:none;
+}
+.ce-balance{
+  flex:none;
+  min-width:0;
+  padding:14px 15px 0;
+  z-index:2;
+}
+.ce-balance-title{font-size:10px}
+.ce-balance>strong{
+  margin:6px 0 0;
+  font-size:clamp(43px,4.0vw,62px);
+}
+.ce-balance p{margin:7px 0 0;font-size:12px}
+.ce-stack-zone{
+  position:relative;
+  width:100%;
+  min-width:0;
+  min-height:0;
+  max-height:none;
+  height:100%;
+  margin:0;
+  flex:none;
+  overflow:hidden;
+}
+.ce-stack-zone::before{inset:4% 3% 0}
+.ce-stage-sheen{inset:0}
+.ce-stack-button{
+  display:flex;
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  height:min(100%,510px);
+  width:min(100%,870px);
+  max-height:none;
+  min-height:0;
+  margin:0;
+  border-radius:22px;
+}
+.ce-stack-art{
+  width:100%;
+  height:100%;
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+}
+.ce-stack-hint{
+  bottom:7%;
+  z-index:4;
+}
+.ce-stats-row{
+  position:relative;
+  z-index:2;
+  display:flex;
+  flex:none;
+  width:100%;
+  margin:0;
+  padding:12px 15px;
+  border:0;
+  border-top:1px solid rgba(234,186,108,.24);
+  background:linear-gradient(180deg,rgba(2,20,18,.2),rgba(2,20,18,.73));
+  gap:14px;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+}
+.ce-stats-row>span{min-width:0}
+.ce-stats-separator{
+  font-size:9px;
+  color:#e8c27b;
+  opacity:.8;
+  margin:0 10px;
+}
+.ce-goal{
+  display:grid;
+  grid-template-columns:70px minmax(0,1fr);
+  gap:16px;
+  align-items:center;
+  width:100%;
+  min-height:145px;
+  margin:0;
+  padding:16px 24px 16px 20px;
+  border-radius:16px;
+  overflow:hidden;
+  background:
+    radial-gradient(ellipse at 80% 10%,rgba(172,126,62,.10),transparent 57%),
+    linear-gradient(115deg,rgba(13,52,42,.98),rgba(5,28,26,.99));
+  box-shadow:0 11px 28px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(246,214,142,.17);
+}
+.ce-goal::after{z-index:0}
+.ce-goal-crest{
+  position:relative;
+  top:auto;
+  left:auto;
+  flex:none;
+  display:grid;
+  place-items:center;
+  width:68px;
+  height:82px;
+  filter:none;
+  z-index:1;
+  transform:none;
+  clip-path:polygon(0 0,100% 0,100% 78%,50% 100%,0 78%);
+  background:linear-gradient(120deg,#205748,#092b27);
+  box-shadow:none;
+  border:1px solid rgba(223,181,114,.64);
+}
+.ce-goal-crest>span{width:44px;height:44px;font-size:26px}
+.ce-goal-content{
+  position:relative;
+  z-index:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+}
+.ce-goal-heading{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  min-width:0;
+}
+.ce-goal-heading small{
+  font-size:10px;
+  letter-spacing:.17em;
+  font-weight:740;
+  color:#ebc47e;
+}
+.ce-goal-heading strong{
+  color:#f6e8cf;
+  font:650 clamp(16px,1.38vw,21px)/1.23 Georgia,serif;
+  overflow-wrap:anywhere;
+}
+.ce-goal-track{
+  width:100%;
+  margin-top:12px;
+  flex:none;
+}
+.ce-goal-meta{font-size:11px;margin-top:5px}
+.ce-goal-reward{
+  font-size:11px;
+  min-height:16px;
+  margin:8px 0 0;
+  overflow-wrap:anywhere;
+}
+.ce-side{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  min-height:0;
+  max-height:none;
+  height:100%;
+  padding:12px;
+  overflow:hidden;
+  border:1px solid rgba(217,177,104,.53);
+  border-radius:18px;
+  background:linear-gradient(145deg,rgba(4,30,27,.94),rgba(5,24,23,.97));
+  box-shadow:0 15px 35px rgba(0,0,0,.57),
+    inset 0 1px 0 rgba(253,228,175,.15);
+  backdrop-filter:blur(9px);
+}
+.ce-side-frame{
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
+  overflow:hidden;
+}
+.ce-side-heading{
+  flex:none;
+  width:100%;
+  min-height:54px;
+  border-radius:11px;
+  background:linear-gradient(180deg,#1a5141,#0b352d);
+  border-color:rgba(225,188,116,.8);
+}
+.ce-building-region{
+  flex:1 1 auto;
+  min-height:0;
+  min-width:0;
+  overflow:hidden;
+}
+.ce-building-region[data-open="false"]{
+  flex:0 0 0;
+  height:0;
+  opacity:0;
+  pointer-events:none;
+}
+.ce-building-scroll{
+  height:100%;
+  min-height:0;
+  min-width:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(223,183,109,.62) rgba(10,35,29,.36);
+}
+.ce-building-scroll::-webkit-scrollbar{width:7px}
+.ce-building-scroll::-webkit-scrollbar-track{background:rgba(10,35,29,.28)}
+.ce-building-scroll::-webkit-scrollbar-thumb{
+  border-radius:6px;
+  background:linear-gradient(180deg,#c8ab71,#72623b);
+}
+.ce-buildings{padding:10px 4px 12px 1px}
+.ce-building{
+  margin:0;
+  flex:none;
+}
+.ce-building-trigger{min-height:83px}
+.ce-building-scene{height:66px;width:102px}
+.ce-prestige-panel{
+  flex:none;
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  margin:12px 0 0;
+  overflow:hidden;
+  border-radius:11px;
+  background:rgba(4,31,26,.9);
+}
+.ce-prestige-heading{
+  min-height:52px;
+  background:linear-gradient(180deg,rgba(43,71,53,.96),rgba(9,42,35,.99));
+  border-radius:10px;
+}
+.ce-prestige-heading small{font-size:10px}
+.ce-prestige-disclosure{
+  flex:none;
+  display:grid;
+  grid-template-rows:0fr;
+  transition:grid-template-rows .30s cubic-bezier(.15,.8,.28,1);
+  overflow:hidden;
+}
+.ce-prestige-disclosure[data-open="true"]{grid-template-rows:1fr}
+.ce-prestige-content{
+  display:block;
+  min-height:0;
+  overflow:hidden;
+  padding:0 16px;
+  border:none;
+  border-radius:0;
+  background:linear-gradient(180deg,rgba(11,44,36,.98),rgba(7,33,29,.98));
+}
+.ce-prestige-disclosure[data-open="true"] .ce-prestige-content{
+  padding:12px 16px 15px;
+}
+.ce-prestige-content p{margin:0 0 8px;line-height:1.45}
+.ce-prestige-content .ce-goal-track{margin-top:12px}
+.ce-prestige-content small{line-height:1.3;margin:9px 0 12px}
+.ce-prestige-panel .ce-upgrade{min-height:38px}
+.ce-building-details-inner{will-change:auto}
+
+/* Adaptive layout: no clipped prestige, hidden milestones or tiny stage. */
+@media (max-height:760px) and (min-width:981px){
+  .ce-shell{grid-template-rows:78px minmax(0,1fr)}
+  .ce-header{height:78px}
+  .ce-main{padding:13px 0 14px}
+  .ce-stage-panel{border-radius:15px}
+  .ce-goal{min-height:115px;padding:10px 17px}
+  .ce-goal-crest{height:66px;width:60px}
+  .ce-balance{padding-top:9px}
+  .ce-balance>strong{font-size:43px}
+  .ce-building-trigger{min-height:77px}
+  .ce-building-scene{height:60px;width:94px}
+}
+@media(max-width:980px){
+  html,body,#root{height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto}
+  body{background-attachment:scroll}
+  .ce-shell{
+    min-height:100dvh;
+    height:auto;
+    display:flex;
+    flex-direction:column;
+    overflow:visible;
+  }
+  .ce-header{height:88px;min-height:88px;flex:none}
+  .ce-header-inner{width:calc(100% - 32px)}
+  .ce-main{
+    display:grid;
+    grid-template-columns:1fr;
+    height:auto;
+    min-height:0;
+    width:min(calc(100% - 32px),790px);
+    padding:16px 0 30px;
+    overflow:visible;
+  }
+  .ce-primary{display:grid;grid-template-rows:auto auto;overflow:visible;height:auto}
+  .ce-stage-panel{min-height:480px;grid-template-rows:auto minmax(310px,1fr) auto}
+  .ce-goal{min-height:139px}
+  .ce-side{height:auto;max-height:none;overflow:visible}
+  .ce-side-frame{height:auto;overflow:visible}
+  .ce-building-region{flex:none;overflow:visible}
+  .ce-building-region[data-open="false"]{display:none}
+  .ce-building-scroll{height:auto;max-height:610px}
+  .ce-prestige-panel{margin-top:12px}
+}
+@media(max-width:540px){
+  .ce-header{height:78px;min-height:78px}
+  .ce-header-inner{grid-template-columns:auto 1fr auto;gap:7px;width:calc(100% - 20px)}
+  .ce-header .ce-back,.ce-header .ce-prestige-badge{margin:0;padding:8px 10px;min-width:0}
+  .ce-wordmark{padding:0 2px;max-width:100%;min-width:0}
+  .ce-wordmark-insignia{font-size:17px;margin:-4px 0 -3px}
+  .ce-wordmark small{font-size:7px;letter-spacing:.16em}
+  .ce-wordmark h1{font-size:clamp(16px,4.2vw,22px);letter-spacing:.04em}
+  .ce-main{width:calc(100% - 18px);padding:10px 0 24px;gap:10px}
+  .ce-stage-panel{min-height:388px;grid-template-rows:auto minmax(240px,1fr) auto}
+  .ce-stack-zone{min-height:0}
+  .ce-stack-button{min-height:0;height:100%}
+  .ce-stack-hint{bottom:5%;font-size:10px;min-height:34px;padding:8px 12px}
+  .ce-goal{grid-template-columns:48px minmax(0,1fr);gap:11px;min-height:140px;padding:15px 12px}
+  .ce-goal-crest{width:46px;height:67px}
+  .ce-goal-crest>span{width:34px;height:34px;font-size:24px}
+  .ce-goal-heading strong{font-size:15px}
+  .ce-goal-reward{font-size:10px}
+  .ce-side{padding:9px}
+  .ce-building-scroll{max-height:510px}
+  .ce-building-scene{width:90px;height:60px}
+  .ce-building-trigger{min-height:76px;gap:9px;padding:8px}
+}
+@media(prefers-reduced-motion:reduce){
+  .ce-scenery{animation:none!important}
+}

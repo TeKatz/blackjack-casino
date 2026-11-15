@@ -23,6 +23,17 @@ assert all(item in stack for item in ("ce-chip-column", "ce-felt", "ce-wood"))
 
 assert all(item in main for item in ("ce-stack-button", "ce-building", "ce-goal", "building.upgrade"))
 assert all(item in protocol for item in ('"tap"', '"building.upgrade"', '"prestige"'))
+# Layout regression: components must form independent, bounded regions.
+# The old badge was absolute-positioned over the milestone title, and
+# prestige used to live below an unbounded building column.
+assert "ce-stage-panel" in main and "ce-header-inner" in main
+assert 'className="ce-goal-content"' in main and 'className="ce-goal-crest"' in main
+assert 'className="ce-building-scroll"' in main
+assert 'className="ce-prestige-panel"' in main
+assert "setBuildingsOpen" in main and "setPrestigeOpen" in main
+assert "grid-template-rows:92px minmax(0,1fr)" in css
+assert ".ce-prestige-panel{" in css and "overflow-y:auto" in css
+assert "/lobby/art/ambient.png" in css
 assert not (ROOT / "src/BlackjackCasino.Core/Empire/EmpireAchievementBoostCatalog.cs").exists()
 assert not (ROOT / "frontend/src/empire/EmpireCommandCenter.tsx").exists()
 print("PASS: Casino Empire clicker has 12 capped buildings, four visual tiers, goals and no old command center.")
