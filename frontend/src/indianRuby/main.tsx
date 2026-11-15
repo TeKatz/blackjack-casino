@@ -301,6 +301,9 @@ function App(){
  const de=state?.language!=='en',t=languages[de?'de':'en'];
  const animating=phase==='awaiting'||phase==='base'||phase==='bonus-intro'||phase==='bonus';
  const canInteract=!!snapshot&&!pending&&!uncertain&&!animating;
+ // While a bet command is pending the clicks are guarded by pendingRef;
+ // do not toggle the visual disabled state (the original flicker source).
+ const canBet=!!snapshot&&!uncertain&&!animating;
  const idx=state?.bets.indexOf(state.bet)??-1;
  const onBet=useCallback((value:string)=>send({action:'bet.set',value}),[send]);
  const winAmount=spinResult?.payout??'0';
@@ -364,11 +367,11 @@ function App(){
     </div>
     <div className="ruby-controls">
      <BetSelector bet={state?.bet??'1'} bets={state?.bets??[]}
-      canDecrease={canInteract&&idx>0}
-      canIncrease={canInteract&&idx>=0&&idx<(state?.bets.length??0)-1}
+      canDecrease={canBet&&idx>0}
+      canIncrease={canBet&&idx>=0&&idx<(state?.bets.length??0)-1}
       onBet={onBet} label={t.choose}/>
      <button type="button" className="ruby-spin"
-      disabled={!canInteract||!state?.canSpin}
+      disabled={!state?.canSpin||animating||uncertain}
       onClick={()=>send({action:'spin'})}>
       <span className="ruby-spin-gem" aria-hidden="true">◆</span>
       <span>{t.spin}</span>
