@@ -244,6 +244,43 @@ internal static class NativeShellWebSmoke
                             throw new InvalidOperationException(mode
                                 + " did not dismiss the unified in-document loading mask.");
                     }
+                    if (mode == "indian-ruby")
+                    {
+                        // The first-ever spin used to skip motion because the initial empty
+                        // native snapshot did not trigger the first-result effect.
+                        string headline = await form.BrowserCore!.ExecuteScriptAsync(
+                            "Boolean(document.querySelector('.sunset-title')"
+                            + "?.textContent?.includes('SUNSET RUBY')"
+                            + " && !document.querySelector('.ruby-machine-top')"
+                            + "?.textContent?.includes('SUNSET RUBY'))");
+                        if (headline != "true")
+                            throw new InvalidOperationException(
+                                "Sunset Ruby lost its single premium title.");
+                        string canPlay = await form.BrowserCore.ExecuteScriptAsync(
+                            "Boolean(document.querySelector('.ruby-spin')"
+                            + " && !document.querySelector('.ruby-spin').disabled)");
+                        if (canPlay == "true")
+                        {
+                            await form.BrowserCore.ExecuteScriptAsync(
+                                "document.querySelector('.ruby-spin').click(); true");
+                            bool firstSpinAnimated = false;
+                            for (int frame = 0; frame < 28; frame++)
+                            {
+                                await Task.Delay(90);
+                                string isRolling = await form.BrowserCore.ExecuteScriptAsync(
+                                    "Boolean(document.querySelector('.ruby-reel-column.rolling'"
+                                    + " + '[data-tape-ready=\"true\"]'))");
+                                if (isRolling == "true")
+                                {
+                                    firstSpinAnimated = true;
+                                    break;
+                                }
+                            }
+                            if (!firstSpinAnimated)
+                                throw new InvalidOperationException(
+                                    "Sunset Ruby first affordable spin skipped its reel animation.");
+                        }
+                    }
                     Console.WriteLine("PASS: WPF-free WebView2 React UI-ready: " + mode);
                     form.ReturnForAcceptance();
                     if (form.BrowserMode is not null)
