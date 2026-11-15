@@ -35,6 +35,8 @@ internal static class EmpireModernProtocol
                 || !root.TryGetProperty("expectedRevision", out var revision)
                 || !revision.TryGetInt64(out long rev) || rev < 0) return null;
             if (action is not ("tap" or "building.upgrade" or "prestige")) return null;
+            if (root.TryGetProperty("preview", out var preview) &&
+                preview.ValueKind != JsonValueKind.False) return null;
             int count = 1;
             if (root.TryGetProperty("count", out var rawCount)
                 && (!rawCount.TryGetInt32(out count) || count is < 1 or > 20)) return null;
