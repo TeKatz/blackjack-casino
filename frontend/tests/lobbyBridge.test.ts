@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fallbackLobby, isLobbySnapshot } from '../src/lobby/lobbyBridge';
+import { fallbackLobby, isLobbyEmpireCreditsMessage, isLobbySnapshot } from '../src/lobby/lobbyBridge';
 
 describe('Modern lobby bridge: read-only C# snapshots', () => {
   it('accepts the eleven-mode offline preview and every mode identifier is unique', () => {
@@ -36,6 +36,24 @@ describe('Modern lobby bridge: read-only C# snapshots', () => {
       ...fallbackLobby, modes: fallbackLobby.modes.map((m, i) =>
         i === 0 ? { ...m, enabled: 'yes' } : m),
     })).toBe(false);
+  });
+
+  it('only accepts formatted, read-only Empire credits from the native host', () => {
+    expect(isLobbyEmpireCreditsMessage({
+      type:'lobby.empire-credits',data:{credits:'1,234,567 cr'},
+    })).toBe(true);
+    expect(isLobbyEmpireCreditsMessage({
+      type:'lobby.empire-credits',data:{credits:'0 cr'},
+    })).toBe(true);
+    expect(isLobbyEmpireCreditsMessage({
+      type:'lobby.empire-credits',data:{credits:'—'},
+    })).toBe(true);
+    for (const credits of [123, '-20 cr', '<b>20</b>', '1.5 cr', '1,23 cr']) {
+      expect(isLobbyEmpireCreditsMessage({
+        type:'lobby.empire-credits',data:{credits},
+      })).toBe(false);
+    }
+    expect(isLobbyEmpireCreditsMessage({type:'lobby.snapshot',data:{credits:'5 cr'}})).toBe(false);
   });
 
   it('never treats secondary actions as currency or payout requests', () => {
