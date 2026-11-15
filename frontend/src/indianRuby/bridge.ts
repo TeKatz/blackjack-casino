@@ -24,8 +24,8 @@ const money=(x:unknown):x is string=>typeof x==='string'&&/^(?:0|[1-9]\d*)(?:\.\
 const signed=(x:unknown):x is string=>typeof x==='string'&&/^-?(?:0|[1-9]\d*)(?:\.\d{1,28})?$/.test(x);
 const guid=(x:unknown):x is string=>typeof x==='string'&&/^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/i.test(x);
 const symbol=(x:unknown):x is SymbolId=>symbols.some(s=>s===x);
-const grid=(x:unknown)=>Array.isArray(x)&&x.length===15&&x.every(symbol);
-const indices=(x:unknown,max:number)=>Array.isArray(x)&&x.every(n=>integer(n)&&n<max)&&new Set(x).size===x.length;
+const grid=(x:unknown):x is SymbolId[]=>Array.isArray(x)&&x.length===15&&x.every(symbol);
+const indices=(x:unknown,max:number):x is number[]=>Array.isArray(x)&&x.every(n=>integer(n)&&n<max)&&new Set(x).size===x.length;
 
 export function isRubySpin(x:unknown):x is RubySpin {
  if(!obj(x)||!guid(x.id)||!money(x.bet)||!money(x.bankrollBefore)||!money(x.bankrollAfter)
@@ -33,7 +33,7 @@ export function isRubySpin(x:unknown):x is RubySpin {
   ||!grid(x.baseGrid)||!grid(x.finalGrid)||!indices(x.heldCells,15)||!indices(x.winningLines,10)
   ||typeof x.elephantBonus!=='boolean'||!integer(x.playerXp)||!integer(x.seasonXp)
   ||typeof x.levelUp!=='boolean')return false;
- if(x.elephantBonus!==x.baseGrid.filter(s=>s==='Elephant').length>=2)return false;
+ if(x.elephantBonus!==(x.baseGrid.filter(s=>s==='Elephant').length>=2))return false;
  if(!x.elephantBonus&&x.heldCells.length!==0)return false;
  if(x.heldCells.some(i=>x.baseGrid[i]!==x.finalGrid[i]||
      (x.baseGrid[i]!=='Elephant'&&x.baseGrid[i]!=='Ruby')))return false;
