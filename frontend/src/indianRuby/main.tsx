@@ -39,7 +39,7 @@ const languages={
   choose:'EINSATZ WÄHLEN',bonusInfo:'ELEPHANT BONUS · 2+ SYMBOLE',total:'GESAMTGEWINN',
   jackpot:'KÖNIGLICHER GEWINN',close:'Schließen',
  auto:'AUTO-SPINS',autoStart:'AUTO START',autoStop:'STOPP',autoCount:'ANZAHL',autoLeft:'ÜBRIG',
- speed:'GESCHWINDIGKEIT',normal:'Normal',fast:'Schnell',turbo:'Turbo',
+ speed:'SLOT SPEED',normal:'Normal',fast:'Fast',turbo:'Turbo',
  stopBonus:'Bei Bonus stoppen',nearMiss:'FAST! NUR EIN ELEFANT',
  },
  en:{
