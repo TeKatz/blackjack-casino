@@ -244,6 +244,69 @@ internal static class NativeShellWebSmoke
                             throw new InvalidOperationException(mode
                                 + " did not dismiss the unified in-document loading mask.");
                     }
+                    if (mode == "indian-ruby")
+                    {
+                        // The first-ever spin used to skip motion because the initial empty
+                        // native snapshot did not trigger the first-result effect.
+                        string headline = await form.BrowserCore!.ExecuteScriptAsync(
+                            "Boolean(document.querySelector('.sunset-title')"
+                            + "?.textContent?.includes('SUNSET RUBY')"
+                            + " && !document.querySelector('.ruby-machine-top')"
+                            + "?.textContent?.includes('SUNSET RUBY'))");
+                        if (headline != "true")
+                            throw new InvalidOperationException(
+                                "Sunset Ruby lost its single premium title.");
+                        string canPlay = await form.BrowserCore.ExecuteScriptAsync(
+                            "Boolean(document.querySelector('.ruby-spin')"
+                            + " && !document.querySelector('.ruby-spin').disabled)");
+                        if (canPlay == "true")
+                        {
+                            await form.BrowserCore.ExecuteScriptAsync(
+                                "document.querySelector('.ruby-spin').click(); true");
+                            bool firstSpinAnimated = false;
+                            for (int frame = 0; frame < 28; frame++)
+                            {
+                                await Task.Delay(90);
+                                string isRolling = await form.BrowserCore.ExecuteScriptAsync(
+                                    "Boolean(document.querySelector('.ruby-reel-column.rolling'"
+                                    + " + '[data-tape-ready=\"true\"]'))");
+                                if (isRolling == "true")
+                                {
+                                    firstSpinAnimated = true;
+                                    break;
+                                }
+                            }
+                            // GitHub Windows runners may enable system reduced-motion.
+                            // In that case the C# spin must settle without a tape by design.
+                            string reducedMode = await form.BrowserCore.ExecuteScriptAsync(
+                                "window.matchMedia('(prefers-reduced-motion: reduce)').matches");
+                            if (!firstSpinAnimated && reducedMode == "true")
+                            {
+                                string settled = await form.BrowserCore.ExecuteScriptAsync(
+                                    "document.querySelector('.ruby-premium-shell')"
+                                    + "?.getAttribute('data-phase')==='result'");
+                                if (settled == "true")
+                                {
+                                    firstSpinAnimated = true;
+                                    Console.WriteLine("PASS: Sunset Ruby first spin settles under reduced motion.");
+                                }
+                            }
+                            if (!firstSpinAnimated)
+                            {
+                                string diagnostic = await form.BrowserCore.ExecuteScriptAsync(
+                                    "JSON.stringify({phase:document.querySelector('.ruby-premium-shell')"
+                                    + "?.getAttribute('data-phase'),reduced:window.matchMedia("
+                                    + "'(prefers-reduced-motion: reduce)').matches,"
+                                    + "rolling:document.querySelectorAll('.ruby-reel-column.rolling').length,"
+                                    + "tapes:document.querySelectorAll('[data-tape-ready]').length,"
+                                    + "notice:document.querySelector('.ruby-bridge-notice')?.textContent,"
+                                    + "spinDisabled:document.querySelector('.ruby-spin')?.disabled})");
+                                throw new InvalidOperationException(
+                                    "Sunset Ruby first affordable spin skipped its reel animation. "
+                                    + diagnostic);
+                            }
+                        }
+                    }
                     Console.WriteLine("PASS: WPF-free WebView2 React UI-ready: " + mode);
                     form.ReturnForAcceptance();
                     if (form.BrowserMode is not null)

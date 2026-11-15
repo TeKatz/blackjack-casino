@@ -1,6 +1,6 @@
-# Indian Ruby — first playable desktop slot
+# Sunset Ruby — first playable desktop slot
 
-Indian Ruby is an elephant-focused five-reel, three-row, ten-line video slot in the offline play-money casino. It opens from the **Indian Ruby** subentry directly beneath **Slots** in the lobby's left navigation; it has **no lobby tile**. The existing lobby tile art, layout and PixiJS scenes remain unchanged.
+Sunset Ruby is an elephant-focused five-reel, three-row, ten-line video slot in the offline play-money casino. It opens from the **Sunset Ruby** subentry directly beneath **Slots** in the lobby's left navigation; it has **no lobby tile**. The existing lobby tile art, layout and PixiJS scenes remain unchanged.
 
 ## Current game
 
@@ -30,10 +30,19 @@ Indian Ruby is an elephant-focused five-reel, three-row, ten-line video slot in 
 
 ## Acceptance checks
 
-1. From the lobby, select the indented Indian Ruby subentry under Slots; verify no extra tile appears in the grid and existing tile animations still work.
+1. From the lobby, select the indented Sunset Ruby subentry under Slots; verify no extra tile appears in the grid and existing tile animations still work.
 2. Spin with valid and invalid balances; inspect shared bankroll after leaving and reopening the mode.
 3. Trigger two elephants with a test seed / repeated spins; confirm all elephant and ruby cells hold, then a herd traverses the background and remaining cells change to feature-only symbols.
 4. Test sound and animation settings, reduced motion, the ten-line payouts, and the Back/ESC navigation.
 5. Run C# unit/contract tests, frontend typecheck/Vitest, release packaging and the NativeShell WebView2 smoke on Windows; visually review the cabinet at several DPI scales.
 
 The result is a first playable, not a mathematically verified retail clone.
+
+## Sunset Ruby motion and controls update
+
+- The first actual spin animates: initial no-result snapshots are observed by session identity before any committed result is restored. Existing saved outcomes are displayed without replaying a spin.
+- The only player-facing title is the glowing **Sunset Ruby** header; the cabinet marquee presents a subtitle instead of a second game name. Internal `indian-ruby` identifiers, profile saves and WebView2 routes are retained to preserve installed player data and update compatibility.
+- 10/25/50/100 auto-spins execute strictly sequentially, waiting for each native result, animation, balance check and receipt; any failed acknowledgement, unavailable bet, manual stop, modal opening or navigation ends the sequence. Optional stop-on-bonus is enabled by default.
+- Normal, Fast and Turbo scale base reel duration. The Elephant Bonus retains a long presentation across every speed; near misses slow only the actual outcome's final reel and do not manipulate C# symbols, winnings, odds or RNG.
+- The rules dialog lists the complete per-line C# multipliers, per-position symbol chances on outer and middle reels and exact prototype probability of two or more elephant symbols; these data are projected from the native C# rule definitions and explicitly differ from unverifiable proprietary retail odds.
+- Win/loss feedback uses **net** payout: a negative-net spin flashes red even if a smaller line payout occurs, while positive-net flashes green. The frame, 18 lamps on each rail, bankroll and a decorative credit transfer respond, but displayed balances reconcile to the native ledger.

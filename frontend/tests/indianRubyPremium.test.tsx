@@ -2,7 +2,7 @@ import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {RubyReelStage} from '../src/indianRuby/RubyReelStage';
 import {baseReelDuration,baseReelTape,bonusCellDuration,bonusCellTape,
- bonusKeyframes,reelKeyframes} from '../src/indianRuby/reelMotion';
+ bonusKeyframes,reelKeyframes,bonusStartPause,isElephantNearMiss} from '../src/indianRuby/reelMotion';
 import type {SymbolId} from '../src/indianRuby/bridge';
 
 const spin='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -14,10 +14,13 @@ const grid:SymbolId[]=[
  'Ten','Spices','Ace','Vase','King',
 ];
 
-describe('Indian Ruby premium reel compositor',()=>{
+describe('Sunset Ruby premium reel compositor',()=>{
  it('uses true five-reel, staggered deterministic spin tapes that land on native targets',()=>{
   const durations=Array.from({length:5},(_,reel)=>baseReelDuration(reel));
-  expect(durations).toEqual([850,1140,1430,1720,2010]);
+  expect(durations).toEqual([1080,1460,1840,2210,2580]);
+  expect(baseReelDuration(4,'turbo')).toBeLessThan(baseReelDuration(4,'fast'));
+  expect(baseReelDuration(4,'fast')).toBeLessThan(baseReelDuration(4,'normal'));
+  expect(baseReelDuration(4,'normal',true)).toBeGreaterThan(baseReelDuration(4));
   expect(()=>baseReelDuration(5)).toThrow();
   for(let reel=0;reel<5;reel++){
    const strip=baseReelTape(spin,reel,from,to);
@@ -36,6 +39,10 @@ describe('Indian Ruby premium reel compositor',()=>{
   expect(strip.slice(-2)).toEqual(['Elephant','Elephant']);
   expect(strip).toEqual(bonusCellTape(spin,6,'Queen','Elephant'));
   expect(bonusCellDuration(0)).toBeLessThan(bonusCellDuration(14));
+  expect(bonusCellDuration(14,'turbo')).toBeGreaterThan(baseReelDuration(4,'turbo'));
+  expect(bonusStartPause('turbo')).toBeGreaterThan(1800);
+  expect(isElephantNearMiss(grid)).toBe(true);
+  expect(isElephantNearMiss(grid.map(s=>s==='Elephant'?'Ten':s))).toBe(false);
   expect(()=>bonusCellDuration(-1)).toThrow();
   expect(bonusKeyframes(65,strip.length).at(-1)?.transform)
    .toBe(`translate3d(0,${-(strip.length-2)*65}px,0)`);
@@ -44,7 +51,7 @@ describe('Indian Ruby premium reel compositor',()=>{
   const html=renderToStaticMarkup(<RubyReelStage displayGrid={grid}
    targetBase={null} targetBonus={null} spinId={null}
    rollingReels={[]} rollingCells={[]} heldCells={[4,6]} winningLines={[]}
-   showWins={false} anticipation={false} reducedMotion={false}
+   showWins={false} anticipation={false} nearMiss={false} speed="normal" reducedMotion={false}
    onBaseStop={()=>{}} onBonusStop={()=>{}}/>);
   expect(html).toContain('data-reel-engine="five-reel-compositor"');
   expect(html.match(/class="ruby-reel-column"/g)??[]).toHaveLength(5);

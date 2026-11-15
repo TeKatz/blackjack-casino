@@ -41,7 +41,7 @@ public static class NativeRouteCatalog
             new("blackjack", "Blackjack", "blackjack", "blackjack.html"),
             new("roulette", "Roulette", "roulette", "roulette.html"),
             new("midnight-reels", "Midnight Reels", "reels", "reels.html"),
-            new("indian-ruby", "Indian Ruby", "indian-ruby", "indian-ruby.html"),
+            new("indian-ruby", "Sunset Ruby", "indian-ruby", "indian-ruby.html"),
             new("neon-vault", "Neon Vault", "neon-vault", "neon-vault.html"),
             new("nine-lives", "Nine Lives", "nine-lives", "nine-lives.html"),
             new("midnight-manor", "Midnight Manor", "midnight-manor", "index.html"),

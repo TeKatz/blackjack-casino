@@ -519,12 +519,12 @@ internal sealed class NativeCasinoRuntime : IDisposable
             rubyAward = null;
         }
         else rubyMachine.SynchronizeBankroll(Bankroll);
-        status = "Indian Ruby ready.";
+        status = "Sunset Ruby ready.";
     }
 
     internal object IndianRubySnapshot()
     {
-        if (rubyMachine is null) throw new InvalidOperationException("Indian Ruby is not active.");
+        if (rubyMachine is null) throw new InvalidOperationException("Sunset Ruby is not active.");
         AreaPresentationSettings settings = Preferences.Presentation("indian-ruby");
         return ModernIndianRubySnapshot.Create(rubyMachine, rubyBet, rubyLastSpin, rubyAward,
             Profile, settings.SoundEnabled, settings.AnimationsEnabled,
@@ -533,7 +533,7 @@ internal sealed class NativeCasinoRuntime : IDisposable
 
     internal (bool Success, string Message) ApplyIndianRuby(ModernIndianRubyCommand command)
     {
-        if (disposed || rubyMachine is null) return (false, "Indian Ruby is not active.");
+        if (disposed || rubyMachine is null) return (false, "Sunset Ruby is not active.");
         try
         {
             switch (command.Action)
@@ -543,7 +543,7 @@ internal sealed class NativeCasinoRuntime : IDisposable
                     if (!IndianRubyRules.Bets.Contains(bet) || bet > rubyMachine.Bankroll)
                         return (false, "Select an affordable wager.");
                     rubyBet = bet;
-                    status = "Indian Ruby bet selected.";
+                    status = "Sunset Ruby bet selected.";
                     break;
                 case "sound.set":
                 case "animations.set":
@@ -552,7 +552,7 @@ internal sealed class NativeCasinoRuntime : IDisposable
                         ? settings with { SoundEnabled = command.Value == "true" }
                         : settings with { AnimationsEnabled = command.Value == "true" };
                     Preferences = Preferences.WithPresentation("indian-ruby", settings);
-                    status = "Indian Ruby presentation updated.";
+                    status = "Sunset Ruby presentation updated.";
                     break;
                 case "spin":
                     if (rubyBet > rubyMachine.Bankroll)
@@ -561,10 +561,10 @@ internal sealed class NativeCasinoRuntime : IDisposable
                     table.Session.ResetBankroll(result.BankrollAfter);
                     rubyAward = new SlotProgression(progression.Service).Process(result);
                     rubyLastSpin = result;
-                    status = "Indian Ruby spin settled.";
+                    status = "Sunset Ruby spin settled.";
                     break;
                 default:
-                    return (false, "Unsupported Indian Ruby action.");
+                    return (false, "Unsupported Sunset Ruby action.");
             }
             Persist();
             return (true, status);

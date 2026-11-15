@@ -132,5 +132,13 @@ public sealed class IndianRubyTests
             state.GetProperty("bankroll").GetString());
         Assert.Equal(15, state.GetProperty("lastSpin").GetProperty("baseGrid").GetArrayLength());
         Assert.Equal(10, state.GetProperty("paylines").GetArrayLength());
+        var rules = state.GetProperty("paytable");
+        Assert.Equal(10, rules.GetArrayLength());
+        var elephants = rules.EnumerateArray().Single(x => x.GetProperty("symbol").GetString() == "Elephant");
+        Assert.Equal(10m, elephants.GetProperty("two").GetDecimal());
+        var ruby = rules.EnumerateArray().Single(x => x.GetProperty("symbol").GetString() == "Ruby");
+        Assert.Equal(0, ruby.GetProperty("outerPercent").GetDouble());
+        Assert.True(state.GetProperty("bonusTriggerPercent").GetDouble() > 0);
+        Assert.Equal(13, state.GetProperty("bonusElephantPercent").GetDouble());
     }
 }

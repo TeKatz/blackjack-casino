@@ -127,7 +127,7 @@ internal static class NativeLobbySnapshot
         "blackjack" => "Classic blackjack. Play your hand at the table.",
         "roulette" => "European roulette. Place your bets and spin.",
         "midnight-reels" => "Three reels, timeless symbols and classic wins.",
-        "indian-ruby" => "Five reels, ruby wilds and the Elephant Bonus.",
+        "indian-ruby" => "Sunset Ruby: five reels, ruby wilds and the Elephant Bonus.",
         "neon-vault" => "Five reels, wilds and electrifying vault bonuses.",
         "nine-lives" => "Find lucky cats and unlock free spins.",
         "midnight-manor" => "Haunted reels, hidden rooms and free spins.",
