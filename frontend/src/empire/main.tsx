@@ -1,9 +1,10 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
-import type {CSSProperties} from 'react';
 import {createRoot} from 'react-dom/client';
 import {finishModeBoot} from '../boot/finishModeBoot';
 import {fmt,listen,post,send} from './empireBridge';
 import type {Building,Command,EmpireSnapshot} from './empireBridge';
+import CasinoStackArt from './CasinoStackArt';
+import BuildingArtwork from './BuildingArtwork';
 import './empire.css';
 
 const names:Record<string,string>={
@@ -25,41 +26,43 @@ const descriptions:Record<string,string>={
   vault:'Ein großer Tresor verbessert deine Klickwerte.',
   penthouse:'Das Penthouse ist die Krönung deines Casinos.',
 };
-const marks:Record<string,string>={
-  cashier:'$',slots:'◉',tables:'♠',bar:'◆',roulette:'◎',poker:'♣',
-  stage:'✦',vip:'♛','high-limit':'♦',hotel:'⌂',vault:'⬡',penthouse:'♜',
-};
 function localizedBuilding(building:Building,de:boolean){return de?(names[building.id]??building.name):building.name;}
 function BuildingTile({building,de,active,disabled,onSelect,onUpgrade}:{
   building:Building;de:boolean;active:boolean;disabled:boolean;onSelect:()=>void;onUpgrade:()=>void;
 }){
   const title=localizedBuilding(building,de);
-  const next=building.level===building.maxLevel?null:
-    building.visualTier<4&&[2,4,7].includes(building.level)?building.visualTier+1:null;
-  return <article className={'ce-building ce-tier-'+building.visualTier+(active?' is-expanded':'')+
-      (!building.unlocked?' is-locked':'')}>
-    <button className="ce-building-trigger" type="button" aria-expanded={active} onClick={onSelect}
-      title={building.unlocked?title:building.requirement}>
-      <span className="ce-building-art" aria-hidden="true"><span className="ce-building-symbol">{marks[building.id]}</span>
-        <span className="ce-building-lights"/><span className="ce-building-base"/></span>
-      <span className="ce-building-label"><strong>{title}</strong>
-        <span>{building.unlocked?(de?'Stufe ':'Level ')+building.level+' / 8':
-          (de?'Noch gesperrt':'Locked')}</span>
+  const visualNext=building.level<8&&[2,4,7].includes(building.level);
+  const maxed=building.level===building.maxLevel;
+  return <article className={'ce-building ce-tier-'+building.visualTier+
+    (active?' is-expanded':'')+(!building.unlocked?' is-locked':'')+
+    (building.canBuy?' is-affordable':'')}>
+    <button className="ce-building-trigger" type="button" aria-expanded={active}
+      aria-label={title+' · '+(building.unlocked?(de?'Stufe ':'Level ')+building.level+'/8':(de?'Gesperrt':'Locked'))}
+      onClick={onSelect} title={building.unlocked?title:building.requirement}>
+      <BuildingArtwork id={building.id} tier={building.visualTier}/>
+      <span className="ce-building-label">
+        <strong>{title}</strong>
+        <span className="ce-building-subtitle">{building.unlocked?
+          (de?'Stufe ':'Level ')+building.level+' / 8':(de?'Noch gesperrt':'Locked')}</span>
         <span className="ce-level-track"><i style={{width:building.level*12.5+'%'}}/></span>
       </span>
-      <span className="ce-building-toggle" aria-hidden="true">{active?'−':'+'}</span>
+      <span className="ce-building-toggle" aria-hidden="true">{active?'−':building.unlocked?'+':'⌑'}</span>
     </button>
     <div className="ce-building-details" data-open={active}>
       <div className="ce-building-details-inner">
-        <p>{de?descriptions[building.id]:building.description}</p>
+        <p className="ce-building-description">{de?descriptions[building.id]:building.description}</p>
         {building.unlocked?
-          <><div className="ce-building-stat"><span>{de?'Produktion':'Income'}</span><b>+{fmt(building.rate,de?'de':'en')} cr/s</b></div>
+          <>
+            <div className="ce-building-stat"><span>{de?'Laufender Ertrag':'Passive income'}</span>
+              <b>+{fmt(building.rate,de?'de':'en')} cr/s</b></div>
             {building.nextUnlock&&<p className="ce-unlock-hint">✦ {de?'Nächste Stufe schaltet frei: ':'Next level unlocks: '}{building.nextUnlock}</p>}
-            {next!==null&&<p className="ce-unlock-hint">✧ {de?'Nächste Stufe: neue Gebäudeoptik':'Next level: new visual tier'}</p>}
+            {visualNext&&<p className="ce-unlock-hint">✧ {de?'Nächster Ausbau: neue Optik':'Next level: visual evolution'}</p>}
             <button className="ce-upgrade" type="button" disabled={disabled||!building.canBuy}
-              onClick={onUpgrade}>{building.level===8?(de?'Maximal ausgebaut':'Maximum level'):
-              (de?'Ausbauen':'Upgrade')+' · '+fmt(building.cost,de?'de':'en')+' cr'}</button></>
-          :<p className="ce-unlock-hint">⌁ {de?'Voraussetzung: ':'Requires: '}{building.requirement}</p>}
+              onClick={onUpgrade}><span aria-hidden="true">♦</span>
+              {maxed?(de?'Vollständig ausgebaut':'Fully upgraded'):
+                (de?'Ausbauen':'Upgrade')+' · '+fmt(building.cost,de?'de':'en')+' cr'}</button>
+          </>:
+          <p className="ce-unlock-hint ce-locked-requirement">⌑ {de?'Freischalten durch: ':'Unlock by: '}{building.requirement}</p>}
       </div>
     </div>
   </article>;
@@ -155,8 +158,6 @@ function EmpireApp(){
   const {state}=snapshot;
   const e=state.economy,de=state.language==='de',language=state.language;
   const shown=e.buildings.filter(b=>b.visible);
-  const stacks=1+Math.min(3,Math.floor(e.totalLevels/10));
-  const height=Math.min(142,42+e.totalLevels*2+Math.min(25,Math.log10(e.clicks+1)*7));
   const disabled=!visible||pending||activeVisitId!==snapshot.visitId||!ready();
   const goal=e.goal;
   const name=(id:string|null)=>id?(de?names[id]??id:e.buildings.find(b=>b.id===id)?.name??id):'';
@@ -169,27 +170,39 @@ function EmpireApp(){
 
   return <div className="ce-shell" data-motion={state.animationsEnabled&&!lowMotion}>
     <header className="ce-header">
-      <button className="ce-back" type="button" onClick={()=>post('empire.close')}>← <span>{de?'Lobby':'Lobby'}</span></button>
-      <div className="ce-wordmark"><small>THE MIDNIGHT CLUB</small><h1>CASINO <em>EMPIRE</em></h1></div>
-      <div className="ce-prestige-badge" title={de?'Prestige-Stufe':'Prestige level'}>✧ P{e.prestige}</div>
+      <button className="ce-back" type="button" onClick={()=>post('empire.close')}>
+        <span className="ce-back-arrow" aria-hidden="true">←</span> {de?'Lobby':'Lobby'}
+      </button>
+      <div className="ce-wordmark">
+        <span className="ce-wordmark-insignia" aria-hidden="true">♠</span>
+        <small>THE MIDNIGHT CLUB</small><h1>CASINO <em>EMPIRE</em></h1>
+        <span className="ce-wordmark-rule" aria-hidden="true"/>
+      </div>
+      <div className="ce-prestige-badge" title={de?'Prestige-Stufe':'Prestige level'}>
+        <span aria-hidden="true">✧</span> P{e.prestige}
+      </div>
     </header>
     <main className="ce-main">
       <section className="ce-primary">
-        <div className="ce-balance"><span>{de?'CASINO-VERMÖGEN':'CASINO BALANCE'}</span>
+        <div className="ce-balance">
+          <span className="ce-balance-title">{de?'CASINO-VERMÖGEN':'CASINO BALANCE'}</span>
           <strong title={e.credits}>{fmt(e.credits,language)} <small>cr</small></strong>
-          <p>+{fmt(e.rate,language)} cr/s <span>·</span> {de?'Aktiver Klick:':'Click:'} +{fmt(e.tapValue,language)} cr</p>
+          <p><span className="ce-rate">+{fmt(e.rate,language)} cr/s</span>
+            <span className="ce-rate-separator">·</span>
+            <span>{de?'Klick: ':'Click: '}+{fmt(e.tapValue,language)} cr</span></p>
         </div>
         <div className="ce-stack-zone">
+          <span className="ce-stage-sheen" aria-hidden="true"/>
+          <span className="ce-stage-mote ce-mote-one" aria-hidden="true"/>
+          <span className="ce-stage-mote ce-mote-two" aria-hidden="true"/>
+          <span className="ce-stage-mote ce-mote-three" aria-hidden="true"/>
           <button className="ce-stack-button" type="button" onClick={click} disabled={!ready()}
             aria-label={de?'Chips stapeln und Credits verdienen':'Stack chips to earn credits'}>
-            <span className="ce-table-rim" aria-hidden="true"/>
-            <span className="ce-chip-platform" aria-hidden="true">
-              {Array.from({length:stacks},(_,i)=><span key={i} className={'ce-chip-tower ce-tower-'+i}
-                style={{'--stack-height':(height-(i*17))+'px'} as CSSProperties}>
-                <span className="ce-chip-top"/><span className="ce-chip-body"/><span className="ce-chip-shine"/></span>)}
-            </span>
+            <CasinoStackArt levels={e.totalLevels} clicks={e.clicks}/>
             {pulse>0&&<span key={pulse} className="ce-click-pop" aria-hidden="true">+{fmt(e.tapValue,language)}</span>}
-            <span className="ce-stack-hint">{de?'CHIPS STAPELN':'STACK CHIPS'}</span>
+            {pulse>0&&<span key={'r'+pulse} className="ce-click-ripple" aria-hidden="true"/>}
+            <span className="ce-stack-hint"><span aria-hidden="true">♠</span>
+              {de?'CHIPS STAPELN':'STACK CHIPS'}<span aria-hidden="true">♠</span></span>
           </button>
         </div>
         <div className="ce-stats-row">
@@ -197,12 +210,15 @@ function EmpireApp(){
           <span>{de?'Ausbaustufen':'Building levels'} <b>{e.totalLevels}</b></span>
         </div>
         <section className="ce-goal" aria-label={de?'Nächstes Ziel':'Next goal'}>
-          <div className="ce-goal-title"><span className="ce-goal-icon">✧</span>
-            <div><small>{de?'NÄCHSTER MEILENSTEIN':'NEXT MILESTONE'}</small><strong>{goalTitle}</strong></div></div>
+          <div className="ce-goal-title">
+            <span className="ce-goal-crest" aria-hidden="true"><span>✦</span></span>
+            <div><small>{de?'NÄCHSTER MEILENSTEIN':'NEXT MILESTONE'}</small>
+              <strong>{goalTitle}</strong></div>
+          </div>
           <div className="ce-goal-track"><i style={{width:Math.round(goal.progress*100)+'%'}}/></div>
           <div className="ce-goal-meta"><span>{goal.id?fmt(goal.current,language)+' / '+fmt(goal.target,language)+' cr':(de?'Abgeschlossen':'Complete')}</span>
             <span>{Math.round(goal.progress*100)}%</span></div>
-          <p>{goalReward}</p>
+          <p className="ce-goal-reward"><span aria-hidden="true">↗</span> {goalReward}</p>
         </section>
       </section>
       <section className="ce-side">
