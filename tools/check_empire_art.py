@@ -12,7 +12,15 @@ protocol = (ROOT / "src/BlackjackCasino.HostShared/EmpireModernProtocol.cs").rea
 assert "MaximumLevel = 8" in catalog, "Buildings must be capped at eight levels."
 ids = re.findall(r'^\s*new\("([a-z-]+)",', catalog, re.MULTILINE)
 assert len(ids) == len(set(ids)) == 12, "Casino Empire needs twelve distinct buildings."
-assert all(item in css for item in (".ce-chip-tower", ".ce-accordion", ".ce-goal", ".ce-tier-4"))
+asset = (ROOT / "frontend/src/empire/BuildingArtwork.tsx").read_text(encoding="utf-8")
+stack = (ROOT / "frontend/src/empire/CasinoStackArt.tsx").read_text(encoding="utf-8")
+scene = ROOT / "frontend/src/empire/art/casino-atmosphere.svg"
+images = sorted((ROOT / "src/BlackjackCasino.Assets/Empire").glob("*.png"))
+assert len(images) == 11 and scene.is_file()
+assert all(item in css for item in (".ce-stack-art", ".ce-accordion", ".ce-goal", ".ce-scene-tier-4"))
+assert "rooms-atlas.png" in asset and "luxury-hotel" in asset
+assert all(item in stack for item in ("ce-chip-column", "ce-felt", "ce-wood"))
+
 assert all(item in main for item in ("ce-stack-button", "ce-building", "ce-goal", "building.upgrade"))
 assert all(item in protocol for item in ('"tap"', '"building.upgrade"', '"prestige"'))
 assert not (ROOT / "src/BlackjackCasino.Core/Empire/EmpireAchievementBoostCatalog.cs").exists()
