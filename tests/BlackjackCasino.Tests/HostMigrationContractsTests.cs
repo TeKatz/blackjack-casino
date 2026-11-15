@@ -10,7 +10,7 @@ public sealed class HostMigrationContractsTests
     {
         string[] expected =
         [
-            "blackjack", "roulette", "midnight-reels", "neon-vault", "nine-lives",
+            "blackjack", "roulette", "midnight-reels", "indian-ruby", "neon-vault", "nine-lives",
             "midnight-manor", "casino-empire", "midnight-merge", "chill-lounge",
             "kniffel", "midnight-descent",
         ];
@@ -30,6 +30,7 @@ public sealed class HostMigrationContractsTests
     [InlineData("casino-empire", "empire.html")]
     [InlineData("chill-lounge", "lounge.html")]
     [InlineData("reels", "reels.html")]
+    [InlineData("indian-ruby", "indian-ruby.html")]
     [InlineData("neon-vault", "neon-vault.html")]
     [InlineData("nine-lives", "nine-lives.html")]
     [InlineData("midnight-merge", "midnight-merge.html")]
@@ -44,7 +45,7 @@ public sealed class HostMigrationContractsTests
     [Fact]
     public void NativeRouteAllowlistRejectsUnknownBrowserModes()
     {
-        Assert.Equal(10, NativeRouteCatalog.WebRoutes.Count);
+        Assert.Equal(11, NativeRouteCatalog.WebRoutes.Count);
         Assert.True(NativeRouteCatalog.IsWebRoute("roulette"));
         Assert.True(NativeRouteCatalog.IsWebRoute("casino-empire"));
         Assert.True(NativeRouteCatalog.IsWebRoute("chill-lounge"));
@@ -60,8 +61,8 @@ public sealed class HostMigrationContractsTests
     [Fact]
     public void NativeRouteInventoryNeverOffersUnmappedOrDuplicateModes()
     {
-        Assert.Equal(11, NativeRouteCatalog.CasinoRoutes.Count);
-        Assert.Equal(10, NativeRouteCatalog.WebRoutes.Count);
+        Assert.Equal(12, NativeRouteCatalog.CasinoRoutes.Count);
+        Assert.Equal(11, NativeRouteCatalog.WebRoutes.Count);
         Assert.All(NativeRouteCatalog.CasinoRoutes, route =>
         {
             Assert.False(string.IsNullOrWhiteSpace(route.DesktopModeId));

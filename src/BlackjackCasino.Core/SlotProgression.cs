@@ -70,6 +70,13 @@ public sealed class SlotProgression(ProgressionService progression)
         return award;
     }
 
+    public ProgressionAward Process(IndianRubySpinResult spin)
+    {
+        ArgumentNullException.ThrowIfNull(spin);
+        return ProcessCore(progression.State.IndianRuby, spin.SpinId, spin.CompletedAt,
+            spin.Stake, spin.Payout, spin.Net);
+    }
+
     public ProgressionAward Process(NineLivesSpinResult spin)
     {
         ArgumentNullException.ThrowIfNull(spin);

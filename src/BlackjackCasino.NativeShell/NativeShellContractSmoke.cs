@@ -60,13 +60,15 @@ internal static class NativeShellContractSmoke
                 || NativeHostAudio.TrackFor("midnight-manor") != Soundtrack.Manor)
                 throw new InvalidOperationException("WPF-free native music routes are incomplete.");
 
-            if (NativeRouteCatalog.WebRoutes.Count != 10
+            if (NativeRouteCatalog.WebRoutes.Count != 11
                 || !NativeRouteCatalog.IsWebRoute("midnight-manor")
                 || !NativeRouteCatalog.IsWebRoute("roulette")
                 || !NativeRouteCatalog.IsWebRoute("casino-empire")
                 || !NativeRouteCatalog.IsWebRoute("chill-lounge")
+                || !NativeRouteCatalog.IsWebRoute("indian-ruby")
 
-                || NativeRouteCatalog.WebPageFor("reels") != "reels.html")
+                || NativeRouteCatalog.WebPageFor("reels") != "reels.html"
+                || NativeRouteCatalog.WebPageFor("indian-ruby") != "indian-ruby.html")
                 throw new InvalidOperationException("Host parity manifest is inconsistent.");
             string descentFixture = Path.Combine(directory, "descent-fixture");
             string descentPath = NativeDescentLaunch.Executable(descentFixture);
@@ -108,6 +110,8 @@ internal static class NativeShellContractSmoke
                 || BlackjackModernProtocol.Trusted("https://midnight-manor.local/reels.html")
                 || !ModernReelsProtocol.Trusted("https://midnight-manor.local/reels.html")
                 || ModernReelsProtocol.Trusted("https://example.com/reels.html")
+                || !ModernIndianRubyProtocol.Trusted("https://midnight-manor.local/indian-ruby.html")
+                || ModernIndianRubyProtocol.Trusted("https://example.com/indian-ruby.html")
                 || !ModernNeonVaultProtocol.Trusted("https://midnight-manor.local/neon-vault.html")
                 || ModernNeonVaultProtocol.Trusted("https://midnight-manor.local/nine-lives.html")
                 || !ModernNineLivesProtocol.Trusted("https://midnight-manor.local/nine-lives.html")
@@ -128,7 +132,7 @@ internal static class NativeShellContractSmoke
                 {
                     var root = lobby.RootElement;
                     if (!root.GetProperty("nativePreview").GetBoolean()
-                        || root.GetProperty("modes").GetArrayLength() != 11
+                        || root.GetProperty("modes").GetArrayLength() != 12
                         || root.GetProperty("bankrollValue").GetDecimal() != session.Bankroll
                         || !root.GetProperty("dailyLogin").GetProperty("canClaim").GetBoolean())
                         throw new InvalidOperationException("Native lobby emitted demo or invalid state.");
@@ -293,6 +297,15 @@ internal static class NativeShellContractSmoke
                 if (spinEpoch.Execute(spin, _ => throw new Exception("Replayed spin!")) != receipt)
                     throw new InvalidOperationException("Reels spin executed twice.");
                 session.CloseReels();
+                session.OpenIndianRuby();
+                var rubyEpoch = new ModernIndianRubySession();
+                var rubyCommand = new ModernIndianRubyCommand(Guid.NewGuid().ToString("D"),
+                    rubyEpoch.Id, 0, "spin", null);
+                ModernIndianRubyReply rubyReceipt = rubyEpoch.Execute(rubyCommand, session.ApplyIndianRuby);
+                if (!rubyReceipt.Success || rubyEpoch.Execute(rubyCommand,
+                    _ => throw new Exception("Duplicate Indian Ruby spin!")) != rubyReceipt)
+                    throw new InvalidOperationException("Indian Ruby receipt was not idempotent.");
+                session.CloseIndianRuby();
                 session.OpenNeonVault();
                 var neonEpoch = new ModernNeonVaultSession();
                 var neonCommand = new ModernNeonVaultCommand(Guid.NewGuid().ToString("D"),
@@ -418,7 +431,7 @@ internal static class NativeShellContractSmoke
             if (english != "Midnight Merge" || !german.Contains("RESTAURIERUNG", StringComparison.Ordinal))
                 throw new InvalidOperationException("Original English/German Merge resources were not loaded.");
 
-            Console.WriteLine("PASS: WPF-free WinForms host; Blackjack, Reels, Neon Vault, "
+            Console.WriteLine("PASS: WPF-free WinForms host; Blackjack, Reels, Indian Ruby, Neon Vault, "
                 + "Nine Lives, Merge and Dice; original C# commands, replay protection and isolated saves.");
             return 0;
         }

@@ -181,7 +181,7 @@ internal static class NativeShellWebSmoke
                 Console.WriteLine("PASS: WPF-free native startup lobby restored imported state.");
 
                 foreach (string mode in new[]
-                    { "blackjack", "roulette", "reels", "neon-vault", "nine-lives", "casino-empire", "chill-lounge", "midnight-merge",
+                    { "blackjack", "roulette", "reels", "indian-ruby", "neon-vault", "nine-lives", "casino-empire", "chill-lounge", "midnight-merge",
                         "midnight-dice", "midnight-manor" })
                 {
                     // Move the real Windows pointer inside the transitioning

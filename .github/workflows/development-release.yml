@@ -160,7 +160,7 @@ jobs:
         shell: pwsh
         run: |
           foreach ($page in @("lobby.html", "blackjack.html", "roulette.html",
-              "empire.html", "lounge.html", "reels.html", "neon-vault.html",
+              "empire.html", "lounge.html", "reels.html", "indian-ruby.html", "neon-vault.html",
               "nine-lives.html", "midnight-merge.html", "midnight-dice.html", "index.html")) {
             if (!(Test-Path "artifacts/app/ModernFrontend/$page")) {
               throw "NativeShell package lacks: $page"

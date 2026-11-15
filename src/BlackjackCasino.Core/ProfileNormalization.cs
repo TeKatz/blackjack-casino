@@ -38,6 +38,7 @@ public static class ProfileNormalization
         state.Slots ??= new();
         state.NeonVault ??= new();
         state.NineLives ??= new();
+        state.IndianRuby ??= new();
         state.LegacyPooledSlots ??= new();
         state.Adventure = AdventureMetaProgressState.Normalize(state.Adventure);
 

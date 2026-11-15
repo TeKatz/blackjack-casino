@@ -105,6 +105,7 @@ public sealed class PlayerProfileState
     public SlotStatistics Slots { get; set; } = new();
     public NeonVaultStatistics NeonVault { get; set; } = new();
     public NineLivesStatistics NineLives { get; set; } = new();
+    public SlotStatistics IndianRuby { get; set; } = new();
     /// <summary>Unattributable historical Reels + Neon Vault totals; never used for game-specific goals.</summary>
     public SlotStatistics LegacyPooledSlots { get; set; } = new();
     public StatisticsSnapshot LifetimeStatistics { get; set; } = new();

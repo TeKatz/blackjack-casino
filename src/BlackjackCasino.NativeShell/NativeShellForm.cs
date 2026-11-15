@@ -87,6 +87,7 @@ internal sealed class NativeShellForm : Form
     private WebView2? browser;
     private BlackjackModernSession? blackjackEpoch;
     private ModernReelsSession? reelsEpoch;
+    private ModernIndianRubySession? rubyEpoch;
     private ModernNeonVaultSession? neonEpoch;
     private ModernNineLivesSession? nineEpoch;
     private ModernMergeSession? mergeEpoch;
@@ -448,6 +449,7 @@ internal sealed class NativeShellForm : Form
             return;
         }
         if (activeMode == "reels") runtime.CloseReels();
+        if (activeMode == "indian-ruby") runtime.CloseIndianRuby();
         if (activeMode == "neon-vault") runtime.CloseNeonVault();
         if (activeMode == "nine-lives") runtime.CloseNineLives();
         if (activeMode == "midnight-merge")
@@ -666,6 +668,7 @@ internal sealed class NativeShellForm : Form
         await routeTransition.CoverAsync(mode, !runtime.Preferences.AnimationsEnabled);
         if (closing) return;
         if (activeMode == "reels" && mode != "reels") runtime.CloseReels();
+        if (activeMode == "indian-ruby" && mode != "indian-ruby") runtime.CloseIndianRuby();
         if (activeMode == "neon-vault" && mode != "neon-vault") runtime.CloseNeonVault();
         if (activeMode == "nine-lives" && mode != "nine-lives") runtime.CloseNineLives();
         if (activeMode == "midnight-merge" && mode != "midnight-merge")
@@ -695,6 +698,7 @@ internal sealed class NativeShellForm : Form
             empireEpoch = null;
         }
         if (mode == "reels") runtime.OpenReels();
+        if (mode == "indian-ruby") runtime.OpenIndianRuby();
         if (mode == "neon-vault") runtime.OpenNeonVault();
         if (mode == "nine-lives") runtime.OpenNineLives();
         if (mode == "midnight-merge") runtime.OpenMerge();
@@ -722,6 +726,7 @@ internal sealed class NativeShellForm : Form
         browserStartupPhase = "initializing " + mode + " WebView2";
         blackjackEpoch = mode == "blackjack" ? new BlackjackModernSession() : null;
         reelsEpoch = mode == "reels" ? new ModernReelsSession() : null;
+        rubyEpoch = mode == "indian-ruby" ? new ModernIndianRubySession() : null;
         neonEpoch = mode == "neon-vault" ? new ModernNeonVaultSession() : null;
         nineEpoch = mode == "nine-lives" ? new ModernNineLivesSession() : null;
         // Keep Merge's request receipts when only the WebView process restarts.
@@ -814,6 +819,7 @@ internal sealed class NativeShellForm : Form
         "casino-empire" => EmpireModernProtocol.Trusted(source),
         "chill-lounge" => string.Equals(source, "https://" + VirtualHost + "/lounge.html", StringComparison.Ordinal),
         "reels" => ModernReelsProtocol.Trusted(source),
+        "indian-ruby" => ModernIndianRubyProtocol.Trusted(source),
         "neon-vault" => ModernNeonVaultProtocol.Trusted(source),
         "nine-lives" => ModernNineLivesProtocol.Trusted(source),
         "midnight-merge" => ModernMergeProtocol.Trusted(source),
@@ -1022,6 +1028,7 @@ internal sealed class NativeShellForm : Form
                 }
                 case "blackjack.ready" when activeMode == "blackjack":
                 case "reels.ready" when activeMode == "reels":
+                case "indian-ruby.ready" when activeMode == "indian-ruby":
                 case "neon-vault.ready" when activeMode == "neon-vault":
                 case "nine-lives.ready" when activeMode == "nine-lives":
                 case "midnight-merge.ready" when activeMode == "midnight-merge":
@@ -1032,6 +1039,7 @@ internal sealed class NativeShellForm : Form
                     break;
                 case "blackjack.ui-ready" when activeMode == "blackjack":
                 case "reels.ui-ready" when activeMode == "reels":
+                case "indian-ruby.ui-ready" when activeMode == "indian-ruby":
                 case "neon-vault.ui-ready" when activeMode == "neon-vault":
                 case "nine-lives.ui-ready" when activeMode == "nine-lives":
                 case "midnight-merge.ui-ready" when activeMode == "midnight-merge":
@@ -1045,6 +1053,7 @@ internal sealed class NativeShellForm : Form
                     break;
                 case "blackjack.refresh" when activeMode == "blackjack":
                 case "reels.refresh" when activeMode == "reels":
+                case "indian-ruby.refresh" when activeMode == "indian-ruby":
                 case "neon-vault.refresh" when activeMode == "neon-vault":
                 case "nine-lives.refresh" when activeMode == "nine-lives":
                 case "midnight-merge.refresh" when activeMode == "midnight-merge":
@@ -1053,6 +1062,7 @@ internal sealed class NativeShellForm : Form
                     break;
                 case "blackjack.close" when activeMode == "blackjack":
                 case "reels.close" when activeMode == "reels":
+                case "indian-ruby.close" when activeMode == "indian-ruby":
                 case "neon-vault.close" when activeMode == "neon-vault":
                 case "nine-lives.close" when activeMode == "nine-lives":
                 case "midnight-merge.close" when activeMode == "midnight-merge":
@@ -1077,6 +1087,16 @@ internal sealed class NativeShellForm : Form
                     Post("reels.result", reply);
                     if (reply.Success && command.Action is not ("sound.set" or "animations.set"))
                         hostAudio.PlayGameCue(activeMode, command.Action, SoundEnabledForCurrentMode());
+                    status.Text = reply.Message;
+                    RefreshGameSnapshot();
+                    break;
+                }
+                case "indian-ruby.command" when activeMode == "indian-ruby" && listening && ready:
+                {
+                    ModernIndianRubyCommand? command = ModernIndianRubyProtocol.Parse(args.WebMessageAsJson);
+                    if (command is null || rubyEpoch is null) break;
+                    ModernIndianRubyReply reply = rubyEpoch.Execute(command, runtime.ApplyIndianRuby);
+                    Post("indian-ruby.result", reply);
                     status.Text = reply.Message;
                     RefreshGameSnapshot();
                     break;
@@ -1161,7 +1181,7 @@ internal sealed class NativeShellForm : Form
             }
             if (activeMode is null && listening && ready)
                 HandleLobbyAction(message ?? string.Empty, root);
-            else if (ready && message is "reels.command" or "neon-vault.command"
+            else if (ready && message is "reels.command" or "indian-ruby.command" or "neon-vault.command"
                 or "nine-lives.command" or "midnight-merge.command" or "midnight-dice.command"
                 or "lounge.sudoku.command" or "lounge.solitaire.command"
                 or "lounge.word-search.command" or "lounge.memory.command"
@@ -1689,6 +1709,14 @@ internal sealed class NativeShellForm : Form
                 Session = reelsEpoch.Id,
                 reelsEpoch.Revision,
                 State = runtime.ReelsSnapshot(),
+            });
+        else if (activeMode == "indian-ruby" && rubyEpoch is not null)
+            Post("indian-ruby.snapshot", new
+            {
+                Version = ModernIndianRubyProtocol.Version,
+                Session = rubyEpoch.Id,
+                rubyEpoch.Revision,
+                State = runtime.IndianRubySnapshot(),
             });
         else if (activeMode == "neon-vault" && neonEpoch is not null)
             Post("neon-vault.snapshot", new
