@@ -66,8 +66,7 @@ internal static class NativeLobbySnapshot
             FrameVariant = CosmeticCatalog.Get(player.EquippedFrameId).VisualVariant ?? "classic",
             Bankroll = Cash(session.Bankroll),
             BankrollValue = session.Bankroll,
-            EmpireCredits = session.EmpireStarted
-                ? session.EmpireCredits.ToString("N0", CultureInfo.InvariantCulture) + " cr" : "—",
+            EmpireCredits = EmpireCreditsLabel(session),
             AlbumOwned = player.Collection.OwnedCardIds.Count,
             AlbumTotal = CollectionCatalog.Cards.Count,
             AlbumPacksReady = CollectionService.UnopenedPackCount(player),
@@ -104,6 +103,10 @@ internal static class NativeLobbySnapshot
             }).ToArray(),
         };
     }
+
+    internal static string EmpireCreditsLabel(NativeCasinoRuntime session) =>
+        session.EmpireStarted
+            ? session.EmpireCredits.ToString("N0", CultureInfo.InvariantCulture) + " cr" : "—";
 
     private static string Cash(decimal money) =>
         money.ToString("C2", CultureInfo.GetCultureInfo("en-US"));
