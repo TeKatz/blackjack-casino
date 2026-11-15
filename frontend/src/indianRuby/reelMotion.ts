@@ -1,9 +1,22 @@
 import {symbols} from './bridge';
 import type {SymbolId} from './bridge';
 
-export const BASE_STOP_MS=[850,1140,1430,1720,2010] as const;
-export const BONUS_START_PAUSE_MS=1160;
-export const BONUS_FINISH_PAUSE_MS=320;
+export type SunsetSpeed='normal'|'fast'|'turbo';
+export const BASE_STOP_MS=[1080,1460,1840,2210,2580] as const;
+export const BONUS_START_PAUSE_MS=2450;
+export const BONUS_FINISH_PAUSE_MS=500;
+const BASE_SPEED:Record<SunsetSpeed,number>={normal:1,fast:.68,turbo:.44};
+const BONUS_SPEED:Record<SunsetSpeed,number>={normal:1,fast:.89,turbo:.80};
+export function bonusStartPause(speed:SunsetSpeed):number{
+ return Math.round(BONUS_START_PAUSE_MS*BONUS_SPEED[speed]);
+}
+export function bonusFinishPause(speed:SunsetSpeed):number{
+ return Math.round(BONUS_FINISH_PAUSE_MS*BONUS_SPEED[speed]);
+}
+/** Only the real native outcome may qualify: one elephant is one short of the feature. */
+export function isElephantNearMiss(grid:readonly SymbolId[]):boolean{
+ return grid.length===15&&grid.filter(symbol=>symbol==='Elephant').length===1;
+}
 const hash=(input:string)=>{
  let n=2166136261;
  for(let i=0;i<input.length;i++)n=Math.imul(n^input.charCodeAt(i),16777619)>>>0;
@@ -17,13 +30,16 @@ function makeRng(key:string){
  };
 }
 const draw=(next:()=>number):SymbolId=>symbols[next()%10];
-export function baseReelDuration(reel:number):number{
+export function baseReelDuration(reel:number,speed:SunsetSpeed='normal',nearMiss=false):number{
  if(!Number.isInteger(reel)||reel<0||reel>=5)throw new RangeError('Invalid reel');
- return BASE_STOP_MS[reel];
+ // The real, unaltered outcome has exactly one elephant. Pause at the final reel.
+ const emphasis=nearMiss&&reel===4?730:0;
+ return Math.round((BASE_STOP_MS[reel]+emphasis)*BASE_SPEED[speed]);
 }
-export function bonusCellDuration(cell:number):number{
+export function bonusCellDuration(cell:number,speed:SunsetSpeed='normal'):number{
  if(!Number.isInteger(cell)||cell<0||cell>=15)throw new RangeError('Invalid cell');
- return 540+(cell%5)*105+Math.floor(cell/5)*75;
+ // Even Turbo cannot rush through the elephant feature.
+ return Math.round((1650+(cell%5)*160+Math.floor(cell/5)*120)*BONUS_SPEED[speed]);
 }
 /** Completely presentation-only deterministic tape; no browser money RNG. */
 export function baseReelTape(spinId:string,reel:number,previous:readonly SymbolId[],
