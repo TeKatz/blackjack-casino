@@ -43,7 +43,7 @@ internal sealed class NativeHostAudio : IDisposable
     {
         null => Soundtrack.Lobby,
         "blackjack" or "roulette" => Soundtrack.Blackjack,
-        "reels" or "neon-vault" or "nine-lives" => Soundtrack.Reels,
+        "reels" or "neon-vault" or "nine-lives" or "indian-ruby" => Soundtrack.Reels,
         "midnight-manor" => Soundtrack.Manor,
         "midnight-dice" => Soundtrack.DiceLounge,
         "chill-lounge" => Soundtrack.ChillLounge,
