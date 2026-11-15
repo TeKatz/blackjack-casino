@@ -2,7 +2,6 @@ using System.Globalization;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Adventure;
 using BlackjackCasino.Core.Collections;
-using BlackjackCasino.Core.Empire;
 using BlackjackCasino.Core.Jigsaw;
 using BlackjackCasino.Core.Manor;
 using BlackjackCasino.Core.Sudoku;
@@ -86,8 +85,6 @@ internal sealed class NativeLobbyPanels(NativeCasinoRuntime runtime)
             decimal progress = ChallengeRegistry.Progress(profile, challenge);
             bool complete = progress >= challenge.Goal;
             bool claimed = ChallengeRegistry.IsClaimed(profile, challenge);
-            EmpireAchievementBoost? empire = EmpireAchievementBoostCatalog.All
-                .FirstOrDefault(boost => boost.ChallengeId == challenge.Id);
             return new
             {
                 challenge.Id,
@@ -112,10 +109,6 @@ internal sealed class NativeLobbyPanels(NativeCasinoRuntime runtime)
                     ? CosmeticCatalog.Get(variantId).VisualVariant : null,
                 Pack = challenge.Category == ChallengeCategory.Jigsaw ? null
                     : ProgressionService.ChallengePack(challenge)?.ToString(),
-                EmpireBoost = empire is null ? null
-                    : $"+{empire.Percent:P1} · "
-                      + (empire.RoomId is null ? "All rooms"
-                          : EmpireCatalog.Find(empire.RoomId)?.Name ?? empire.RoomId),
             };
         }).ToArray();
         var ready = entries.Where(x => x.CanClaim).ToArray();
