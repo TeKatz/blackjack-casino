@@ -58,6 +58,7 @@ const ReelCell=memo(function ReelCell({cell,symbol,held,winning,rolling,target,s
    if(closed||finished||animation)return;
    const height=viewport.clientHeight;
    if(height<=0)return;
+   if(fallback!==null){clearTimeout(fallback);fallback=null;}
    rail.style.setProperty('--ruby-bonus-tile-height',height+'px');
    rail.style.visibility='visible';
    rail.style.transform='translate3d(0,0,0)';
@@ -127,6 +128,7 @@ function ReelColumn({reel,displayGrid,baseGrid,bonusGrid,spinId,rolling,rollingC
    const gap=Number.parseFloat(getComputedStyle(element).rowGap)||5;
    const tile=(element.clientHeight-gap*2)/3;
    if(tile<=0)return;
+   if(fallback!==null){clearTimeout(fallback);fallback=null;}
    rail.style.setProperty('--ruby-reel-tile-height',tile+'px');
    rail.style.setProperty('--ruby-reel-track-gap',gap+'px');
    rail.style.transform=`translate3d(0,${-(tile+gap)}px,0)`;
