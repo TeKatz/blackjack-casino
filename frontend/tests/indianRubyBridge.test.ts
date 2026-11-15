@@ -15,9 +15,13 @@ const lines=[
  [0,6,12,8,4],[10,6,2,8,14],[0,1,7,3,4],
  [10,11,7,13,14],[5,1,2,3,9],[5,11,12,13,9],[0,6,7,8,14],
 ];
+const paytable=['Elephant','Ruby','Necklace','Vase','Spices','Ace','King','Queen','Jack','Ten']
+ .map(symbol=>({symbol,two:symbol==='Elephant'?10:0,three:25,four:75,five:250,
+  outerPercent:symbol==='Ruby'?0:3.5,innerPercent:3}));
 const state={
  language:'de',bankroll:'975',bet:'25',canSpin:true,soundEnabled:true,animationsEnabled:true,
  bets:['1','5','10','25','50','100','250','500','1000'],paylines:lines,
+ paytable,bonusTriggerPercent:8.7,bonusElephantPercent:13,bonusRubyInnerPercent:9,
  profile:{level:1,prestige:0,coins:0},stats:{spins:1,wins:0,netProfit:'-25',biggestPayout:'0'},
  lastSpin:spin,
 };
@@ -27,6 +31,8 @@ describe('Indian Ruby host bridge',()=>{
   expect(isRubySnapshot(snapshot)).toBe(true);
   expect(isRubySnapshot({...snapshot,state:{...state,bankroll:975}})).toBe(false);
   expect(isRubySnapshot({...snapshot,state:{...state,paylines:lines.slice(0,9)}})).toBe(false);
+  expect(isRubySnapshot({...snapshot,state:{...state,paytable:[]}})).toBe(false);
+  expect(isRubySnapshot({...snapshot,state:{...state,bonusTriggerPercent:'99'}})).toBe(false);
   expect(isRubySnapshot({...snapshot,state:{...state,bets:['25']}})).toBe(false);
   expect(isRubySnapshot({...snapshot,revision:-1})).toBe(false);
   expect(isRubySpin({...spin,payout:'$1000'})).toBe(false);
