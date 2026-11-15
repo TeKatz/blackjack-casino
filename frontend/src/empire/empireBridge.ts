@@ -4,7 +4,21 @@ export type Building = {
   unlocked:boolean;visible:boolean;canBuy:boolean;cost:string;rate:string;
   visualTier:number;requirement:string;nextUnlock:string|null;
 };
+export type LegacyUpgrade = {
+  id:string;path:'active'|'passive'|'hybrid';name:string;description:string;
+  cost:number;minimumPrestige:number;previousId:string|null;
+  owned:boolean;unlocked:boolean;canBuy:boolean;
+};
+export type LegacyMilestone = {
+  id:string;name:string;description:string;category:'clicks'|'credits'|'levels'|'prestige';
+  target:string;current:string;earned:boolean;progress:number;
+};
+export type EmpireLegacy = {
+  unlocked:boolean;tokens:number;earned:number;total:number;
+  upgrades:LegacyUpgrade[];milestones:LegacyMilestone[];
+};
 export type Economy = {
+  legacy:EmpireLegacy;
   credits:string;rate:string;tapValue:string;clicks:number;prestige:number;
   totalLevels:number;runCredits:string;prestigeRequirement:string;canPrestige:boolean;
   buildings:Building[];
@@ -16,7 +30,7 @@ export type EmpireSnapshot={
   lastReply:Reply|null;offline:unknown|null;
   state:{language:'de'|'en';animationsEnabled:boolean;soundEnabled:boolean;detached:boolean;economy:Economy};
 };
-export type Command={action:'tap'|'building.upgrade'|'prestige';id?:string;count?:number};
+export type Command={action:'tap'|'building.upgrade'|'prestige'|'legacy.buy';id?:string;count?:number};
 const record=(x:unknown):x is Record<string,unknown>=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const decimal=(x:unknown):x is string=>typeof x==='string'&&/^\d+(?:\.\d+)?$/.test(x)&&x.length<=60;
 const int=(x:unknown):x is number=>typeof x==='number'&&Number.isSafeInteger(x)&&x>=0;
@@ -41,6 +55,25 @@ export function isEmpireSnapshot(x:unknown):x is EmpireSnapshot{
     &&b.level<=b.maxLevel&&b.maxLevel===8&&b.visualTier<=4
     &&['unlocked','visible','canBuy'].every(k=>typeof b[k]==='boolean')
     &&decimal(b.cost)&&decimal(b.rate)))return false;
+  const l=e.legacy;
+  if(!record(l)||typeof l.unlocked!=='boolean'||!int(l.tokens)
+    ||!int(l.earned)||!int(l.total)||l.total!==20
+    ||!Array.isArray(l.upgrades)||l.upgrades.length!==15
+    ||!Array.isArray(l.milestones)||l.milestones.length!==20
+    ||l.earned>l.total)return false;
+  if(!l.upgrades.every((u:unknown)=>record(u)
+    &&['id','path','name','description'].every(k=>typeof u[k]==='string')
+    &&['active','passive','hybrid'].includes(String(u.path))
+    &&int(u.cost)&&int(u.minimumPrestige)
+    &&(u.previousId===null||typeof u.previousId==='string')
+    &&['owned','unlocked','canBuy'].every(k=>typeof u[k]==='boolean')))return false;
+  if(!l.milestones.every((m:unknown)=>record(m)
+    &&['id','name','description'].every(k=>typeof m[k]==='string')
+    &&['clicks','credits','levels','prestige'].includes(String(m.category))
+    &&decimal(m.current)&&decimal(m.target)
+    &&typeof m.earned==='boolean'
+    &&typeof m.progress==='number'&&Number.isFinite(m.progress)
+    &&m.progress>=0&&m.progress<=1))return false;
   const g=e.goal;
   return record(g)&&(g.id===null||typeof g.id==='string')
     &&typeof g.title==='string'&&typeof g.description==='string'

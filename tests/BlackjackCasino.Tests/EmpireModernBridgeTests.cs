@@ -18,6 +18,9 @@ public class EmpireModernBridgeTests
         Assert.NotNull(EmpireModernProtocol.Parse(Make("tap", count: 20)));
         Assert.NotNull(EmpireModernProtocol.Parse(Make("building.upgrade", "cashier")));
         Assert.NotNull(EmpireModernProtocol.Parse(Make("prestige")));
+        Assert.NotNull(EmpireModernProtocol.Parse(Make("legacy.buy", "active-1")));
+        Assert.Null(EmpireModernProtocol.Parse(Make("legacy.buy", "fake-node")));
+        Assert.Null(EmpireModernProtocol.Parse(Make("legacy.buy", "active-1", count: 2)));
         Assert.Null(EmpireModernProtocol.Parse(Make("upgrade", "slots")));
         Assert.Null(EmpireModernProtocol.Parse(Make("research", "construction")));
         Assert.Null(EmpireModernProtocol.Parse(Make("automation")));
@@ -50,6 +53,10 @@ public class EmpireModernBridgeTests
             new JsonSerializerOptions(JsonSerializerDefaults.Web)));
         JsonElement state = doc.RootElement;
         Assert.Equal(12, state.GetProperty("buildings").GetArrayLength());
+        JsonElement legacy = state.GetProperty("legacy");
+        Assert.False(legacy.GetProperty("unlocked").GetBoolean());
+        Assert.Equal(15, legacy.GetProperty("upgrades").GetArrayLength());
+        Assert.Equal(20, legacy.GetProperty("milestones").GetArrayLength());
         Assert.Equal(0, state.GetProperty("prestige").GetInt32());
         Assert.Equal("cashier", state.GetProperty("goal").GetProperty("id").GetString());
         Assert.True(state.GetProperty("buildings")[0].GetProperty("unlocked").GetBoolean());

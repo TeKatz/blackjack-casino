@@ -35,8 +35,43 @@ internal static class EmpireModernSnapshot
                 .OrderBy(service.NextCost).FirstOrDefault();
         decimal target = goal is null ? 1m : service.NextCost(goal);
         decimal current = Math.Min(target, service.Credits);
+        var permanentUpgrades = EmpireLegacyCatalog.Upgrades.Select(upgrade =>
+        {
+            bool owned = service.OwnsLegacyUpgrade(upgrade.Id);
+            bool prerequisite = upgrade.PreviousId is null ||
+                service.OwnsLegacyUpgrade(upgrade.PreviousId);
+            return new
+            {
+                upgrade.Id, upgrade.Path, upgrade.Name, upgrade.Description,
+                upgrade.Cost, upgrade.MinimumPrestige, upgrade.PreviousId,
+                Owned = owned,
+                Unlocked = service.Prestige >= upgrade.MinimumPrestige && prerequisite,
+                CanBuy = service.CanBuyLegacyUpgrade(upgrade),
+            };
+        }).ToArray();
+        var milestones = EmpireLegacyCatalog.Milestones.Select(milestone =>
+        {
+            decimal current = Math.Min(service.MilestoneValue(milestone), milestone.Target);
+            return new
+            {
+                milestone.Id, milestone.Name, milestone.Description,
+                Category = milestone.Kind, Target = Decimal(milestone.Target),
+                Current = Decimal(current),
+                Earned = service.CompletedMilestones.Contains(milestone.Id, StringComparer.Ordinal),
+                Progress = milestone.Target == 0m ? 1d :
+                    (double)(current / milestone.Target),
+            };
+        }).ToArray();
         return new
         {
+            Legacy = new
+            {
+                Unlocked = service.Prestige >= 1,
+                Tokens = service.PrestigeTokens,
+                Earned = milestones.Count(m => m.Earned),
+                Total = milestones.Length,
+                Upgrades = permanentUpgrades, Milestones = milestones,
+            },
             Credits = Decimal(service.Credits), Rate = Decimal(service.CreditsPerSecond),
             TapValue = Decimal(service.CreditsPerClick), service.Clicks, service.Prestige,
             service.TotalLevels, RunCredits = Decimal(service.RunCredits),

@@ -3,6 +3,14 @@ import {fmt,isEmpireActivation,isEmpireSnapshot,isReply} from '../src/empire/emp
 const fixture={
   version:2,session:'demo',revision:0,visitId:1,notice:null,lastReply:null,offline:null,
   state:{language:'de',animationsEnabled:true,soundEnabled:true,detached:false,economy:{
+    legacy:{unlocked:false,tokens:0,earned:0,total:20,
+      upgrades:Array.from({length:15},(_,i)=>({id:'upgrade-'+i,path:i<5?'active':i<10?'passive':'hybrid',
+        name:'Upgrade',description:'Effect',cost:1,minimumPrestige:1,previousId:null,
+        owned:false,unlocked:false,canBuy:false})),
+      milestones:Array.from({length:20},(_,i)=>({id:'milestone-'+i,
+        name:'Milestone',description:'Goal',category:'clicks',target:'100',
+        current:'0',earned:false,progress:0})),
+    },
     credits:'0',rate:'0',tapValue:'1',clicks:0,prestige:0,totalLevels:0,runCredits:'0',
     prestigeRequirement:'250000',canPrestige:false,
     buildings:Array.from({length:12},(_,i)=>({id:'building-'+i,name:'Building '+i,description:'Demo',
@@ -18,6 +26,12 @@ describe('Empire clicker bridge',()=>{
    expect(isEmpireSnapshot({...fixture,visitId:0})).toBe(false);
    expect(isEmpireSnapshot({...fixture,state:{...fixture.state,economy:{...fixture.state.economy,buildings:[]}}})).toBe(false);
    expect(isEmpireSnapshot({...fixture,state:{...fixture.state,economy:{...fixture.state.economy,credits:42}}})).toBe(false);
+   expect(isEmpireSnapshot({...fixture,state:{...fixture.state,economy:{
+     ...fixture.state.economy,legacy:{...fixture.state.economy.legacy,upgrades:[]}
+   }}})).toBe(false);
+   expect(isEmpireSnapshot({...fixture,state:{...fixture.state,economy:{
+     ...fixture.state.economy,legacy:{...fixture.state.economy.legacy,earned:25}
+   }}})).toBe(false);
  });
  it('enforces valid clicker receipts and activations',()=>{
    expect(isReply({requestId:'x',success:true,message:'OK',revision:2})).toBe(true);
