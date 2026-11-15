@@ -251,7 +251,7 @@ function EmpireApp(){
             </span>
             <span aria-hidden="true">{buildingsOpen?'−':'+'}</span>
           </button>
-          <div className="ce-building-region" data-open={buildingsOpen}>
+          <div className="ce-building-region" data-open={buildingsOpen} inert={!buildingsOpen}>
             <div className="ce-building-scroll" role="region"
               aria-label={de?'Gebäudeliste':'Building list'} tabIndex={0}>
               <div className="ce-buildings">
@@ -271,7 +271,7 @@ function EmpireApp(){
                 </span>
                 <span aria-hidden="true">{prestigeOpen?'−':'+'}</span>
               </button>
-              <div className="ce-prestige-disclosure" data-open={prestigeOpen}>
+              <div className="ce-prestige-disclosure" data-open={prestigeOpen} inert={!prestigeOpen}>
                 <div className="ce-prestige-content">
                   <p>{de?'Baue dein Casino neu auf und erhöhe Klick- und Gebäudeerträge dauerhaft.':
                     'Rebuild the casino with a permanent boost to clicks and building income.'}</p>
