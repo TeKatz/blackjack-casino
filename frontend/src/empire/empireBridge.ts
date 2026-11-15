@@ -19,7 +19,7 @@ export type EmpireSnapshot={
 export type Command={action:'tap'|'building.upgrade'|'prestige';id?:string;count?:number};
 const record=(x:unknown):x is Record<string,unknown>=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const decimal=(x:unknown):x is string=>typeof x==='string'&&/^\d+(?:\.\d+)?$/.test(x)&&x.length<=60;
-const int=(x:unknown)=>typeof x==='number'&&Number.isSafeInteger(x)&&x>=0;
+const int=(x:unknown):x is number=>typeof x==='number'&&Number.isSafeInteger(x)&&x>=0;
 export function isReply(x:unknown):x is Reply{
   return record(x)&&typeof x.requestId==='string'&&typeof x.success==='boolean'
     &&typeof x.message==='string'&&int(x.revision);
@@ -37,7 +37,7 @@ export function isEmpireSnapshot(x:unknown):x is EmpireSnapshot{
     ||typeof e.canPrestige!=='boolean'||!Array.isArray(e.buildings)||e.buildings.length!==12)return false;
   if(!e.buildings.every((b:unknown)=>record(b)&&['id','name','description','requirement'].every(k=>typeof b[k]==='string')
     &&(b.nextUnlock===null||typeof b.nextUnlock==='string')
-    &&['level','maxLevel','visualTier'].every(k=>int(b[k]))
+    &&int(b.level)&&int(b.maxLevel)&&int(b.visualTier)
     &&b.level<=b.maxLevel&&b.maxLevel===8&&b.visualTier<=4
     &&['unlocked','visible','canBuy'].every(k=>typeof b[k]==='boolean')
     &&decimal(b.cost)&&decimal(b.rate)))return false;
