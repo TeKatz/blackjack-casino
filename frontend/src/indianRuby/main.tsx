@@ -12,6 +12,7 @@ import type {SunsetSpeed} from './reelMotion';
 import {SunsetRules} from './SunsetRules';
 import './indianRuby.css';
 import './rubyPremium.css';
+import './sunsetExtensions.css';
 
 const PREVIEW:SymbolId[]=[
  'Queen','Vase','Ace','Necklace','Ten',
@@ -395,6 +396,7 @@ function App(){
   },speed==='turbo'?300:speed==='fast'?520:790);
  },[phase,spinResult?.id,pending,snapshot?.state.canSpin,send,schedule,stopAutoSpins,
     speed,stopBonus,rules,uncertain]);
+ useEffect(()=>{if(rules&&autoRef.current.active)stopAutoSpins();},[rules,stopAutoSpins]);
 
  const de=state?.language!=='en',t=languages[de?'de':'en'];
  const animating=phase==='awaiting'||phase==='base'||phase==='bonus-intro'||phase==='bonus';
@@ -406,7 +408,7 @@ function App(){
  const onBet=useCallback((value:string)=>send({action:'bet.set',value}),[send]);
  const winAmount=spinResult?.payout??'0';
  const hasWin=phase==='result'&&!!spinResult&&Number(winAmount)>0;
- const outcome=feedback;
+
  const isHerd=phase==='bonus-intro'||phase==='bonus';
  const bonusLive=isHerd||phase==='result'&&!!spinResult?.elephantBonus;
  return <div className="ruby-shell ruby-premium-shell"
