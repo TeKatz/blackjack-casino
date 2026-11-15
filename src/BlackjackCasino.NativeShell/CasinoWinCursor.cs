@@ -1,5 +1,5 @@
 using System.Drawing;
-using System.Text;
+using System.Runtime.InteropServices;
 
 namespace BlackjackCasino.NativeShell;
 
@@ -53,59 +53,121 @@ internal static class CasinoWinCursor
         foreach (Control child in node.Controls) Attach(host, child);
     }
 
+[StructLayout(LayoutKind.Sequential)]
+    private struct IconInfo
+    {
+        [MarshalAs(UnmanagedType.Bool)]
+        public bool IsIcon;
+        public uint XHotspot, YHotspot;
+        public IntPtr Mask, Color;
+    }
+
+    [DllImport("gdi32.dll", SetLastError = true)]
+    private static extern IntPtr CreateDIBSection(IntPtr hdc, IntPtr bitmapInfo,
+        uint usage, out IntPtr bits, IntPtr section, uint offset);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr CreateIconIndirect(ref IconInfo info);
+
+    [DllImport("gdi32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool DeleteObject(IntPtr handle);
+
+    /// <summary>
+    /// CreateIconIndirect with two actual top-down DIB sections. The former
+    /// hand-built CUR stream loaded but rendered as an all-black cursor on
+    /// some Windows/GDI paths. The alpha pixels and AND mask are explicitly
+    /// set according to Win32's alpha-blended cursor contract.
+    /// </summary>
     private static Cursor Create(bool down)
     {
         try
         {
-            // Bitmap data is shared byte-for-byte with the browser cursor.
-            // Use Windows' reliable classic BGRA/DIB .cur format: PNG-compressed
-            // .cur frames are not accepted by all supported Windows 10 builds.
             using var png = new MemoryStream(Convert.FromBase64String(
                 down ? PressedPngBase64 : NormalPngBase64));
             using var picture = new Bitmap(png);
             if (picture.Width != Size || picture.Height != Size)
                 throw new InvalidDataException("Casino cursor raster must be 32x32.");
-            // Standard Windows .cur with a 32-bit color DIB + AND transparency mask.
-            // No P/Invoke, no process-wide cursor side effects.
-            using var data = new MemoryStream();
-            using (var writer = new BinaryWriter(data, Encoding.UTF8, leaveOpen: true))
+
+            // A 40-byte BITMAPINFOHEADER plus the two RGBQUAD palette entries
+            // needed by the monochrome mask. Each plane is 32 x 32.
+            IntPtr bitmapInfo = Marshal.AllocHGlobal(48);
+            IntPtr color = IntPtr.Zero, mask = IntPtr.Zero;
+            try
             {
-                const int xorBytes = Size * Size * 4;
-                const int andBytes = Size * 4; // 1bpp, aligned to 32-bit rows
-                const int imageBytes = 40 + xorBytes + andBytes;
-                writer.Write((ushort)0); writer.Write((ushort)2); writer.Write((ushort)1);
-                writer.Write((byte)Size); writer.Write((byte)Size);
-                writer.Write((byte)0); writer.Write((byte)0);
-                writer.Write((ushort)4); writer.Write((ushort)2);
-                writer.Write((uint)imageBytes); writer.Write((uint)22);
-                writer.Write((uint)40);
-                writer.Write(Size); writer.Write(Size * 2);
-                writer.Write((ushort)1); writer.Write((ushort)32);
-                writer.Write(0u); writer.Write((uint)(xorBytes + andBytes));
-                writer.Write(0); writer.Write(0); writer.Write(0u); writer.Write(0u);
-                for (int y = Size - 1; y >= 0; --y)
-                    for (int x = 0; x < Size; ++x)
+                for (int i = 0; i < 48; i++)Marshal.WriteByte(bitmapInfo, i, 0);
+                Marshal.WriteInt32(bitmapInfo, 0, 40);
+                Marshal.WriteInt32(bitmapInfo, 4, Size);
+                Marshal.WriteInt32(bitmapInfo, 8, -Size);  // top-down rows
+                Marshal.WriteInt16(bitmapInfo, 12, 1);
+                Marshal.WriteInt16(bitmapInfo, 14, 32);
+                Marshal.WriteInt32(bitmapInfo, 20, Size * Size * 4);
+                color = CreateDIBSection(IntPtr.Zero, bitmapInfo, 0,
+                    out IntPtr colorBits, IntPtr.Zero, 0);
+                if (color == IntPtr.Zero || colorBits == IntPtr.Zero)
+                    throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+
+                byte[] rgba = new byte[Size * Size * 4];
+                byte[] andBits = new byte[Size * 4]; // 1 bpp mask, 32-bit aligned
+                for (int y = 0; y < Size; y++)
+                {
+                    for (int x = 0; x < Size; x++)
                     {
                         Color pixel = picture.GetPixel(x, y);
-                        writer.Write(pixel.B); writer.Write(pixel.G);
-                        writer.Write(pixel.R); writer.Write(pixel.A);
+                        int a = pixel.A;
+                        int i = (y * Size + x) * 4;
+                        // Windows alpha-blended icons require premultiplied BGRA.
+                        rgba[i] = (byte)((pixel.B * a + 127) / 255);
+                        rgba[i + 1] = (byte)((pixel.G * a + 127) / 255);
+                        rgba[i + 2] = (byte)((pixel.R * a + 127) / 255);
+                        rgba[i + 3] = (byte)a;
+                        if (a == 0)
+                            andBits[y * 4 + (x / 8)] |= (byte)(0x80 >> (x % 8));
                     }
-                for (int y = Size - 1; y >= 0; --y)
-                    for (int byteIndex = 0; byteIndex < 4; ++byteIndex)
-                    {
-                        int mask = 0;
-                        for (int bit = 0; bit < 8; ++bit)
-                            if (picture.GetPixel(byteIndex * 8 + bit, y).A < 16)
-                                mask |= 1 << (7 - bit);
-                        writer.Write((byte)mask);
-                    }
+                }
+                Marshal.Copy(rgba, 0, colorBits, rgba.Length);
+
+                // The palette is black/white RGBQUAD, not RGBA.
+                Marshal.WriteInt16(bitmapInfo, 14, 1);
+                Marshal.WriteInt32(bitmapInfo, 20, andBits.Length);
+                Marshal.WriteInt32(bitmapInfo, 32, 2); // biClrUsed
+                Marshal.WriteInt32(bitmapInfo, 40, 0); // black palette entry
+                Marshal.WriteInt32(bitmapInfo, 44, 0x00ffffff); // white palette
+                mask = CreateDIBSection(IntPtr.Zero, bitmapInfo, 0,
+                    out IntPtr maskBits, IntPtr.Zero, 0);
+                if (mask == IntPtr.Zero || maskBits == IntPtr.Zero)
+                    throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+                Marshal.Copy(andBits, 0, maskBits, andBits.Length);
+
+                var icon = new IconInfo
+                {
+                    IsIcon = false,
+                    XHotspot = 4,
+                    YHotspot = 2,
+                    Color = color,
+                    Mask = mask,
+                };
+                IntPtr cursorHandle = CreateIconIndirect(ref icon);
+                if (cursorHandle == IntPtr.Zero)
+                    throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+
+                // Two HCURSOR instances are cached for the process lifetime;
+                // their GDI source bitmaps are freed immediately below.
+                return new Cursor(cursorHandle);
             }
-            data.Position = 0;
-            return new Cursor(data);
+            finally
+            {
+                if (color != IntPtr.Zero) DeleteObject(color);
+                if (mask != IntPtr.Zero) DeleteObject(mask);
+                Marshal.FreeHGlobal(bitmapInfo);
+            }
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException
-            or System.Runtime.InteropServices.ExternalException)
+            or System.Runtime.InteropServices.ExternalException
+            or System.ComponentModel.Win32Exception)
         {
+            // A pointer failure must never prevent the player from opening
+            // the casino. CI fails if either native cursor falls back here.
             return down ? Cursors.Hand : Cursors.Arrow;
         }
     }
