@@ -2,6 +2,7 @@ import {memo,useLayoutEffect,useMemo,useRef} from 'react';
 import {RubySymbolArt} from './SymbolArt';
 import {baseReelDuration,baseReelTape,bonusCellDuration,bonusCellTape,bonusKeyframes,reelKeyframes} from './reelMotion';
 import type {SymbolId} from './bridge';
+import type {SunsetSpeed} from './reelMotion';
 
 type Props={
  displayGrid:readonly SymbolId[];
@@ -14,6 +15,8 @@ type Props={
  winningLines:readonly number[];
  showWins:boolean;
  anticipation:boolean;
+ nearMiss:boolean;
+ speed:SunsetSpeed;
  reducedMotion:boolean;
  onBaseStop:(id:string,reel:number)=>void;
  onBonusStop:(id:string,cell:number)=>void;
@@ -32,9 +35,9 @@ const label=(symbol:SymbolId)=>symbol==='Elephant'?'ELEPHANT':symbol==='Ruby'?'W
  symbol==='Empty'?'':undefined;
 
 const ReelCell=memo(function ReelCell({cell,symbol,held,winning,rolling,target,spinId,
- reducedMotion,onStop}:{cell:number;symbol:SymbolId;held:boolean;winning:boolean;
+ reducedMotion,onStop,speed}:{cell:number;symbol:SymbolId;held:boolean;winning:boolean;
  rolling:boolean;target:SymbolId|null;spinId:string|null;reducedMotion:boolean;
- onStop:(id:string,cell:number)=>void}){
+ onStop:(id:string,cell:number)=>void;speed:SunsetSpeed}){
  const element=useRef<HTMLDivElement>(null),track=useRef<HTMLDivElement>(null);
  const stop=useRef(onStop);stop.current=onStop;
  const tape=useMemo(()=>rolling&&target&&spinId
@@ -53,7 +56,7 @@ const ReelCell=memo(function ReelCell({cell,symbol,held,winning,rolling,target,s
    if(fallback!==null)clearTimeout(fallback);
    stop.current(spinId,cell);
   };
-  const duration=bonusCellDuration(cell);
+  const duration=bonusCellDuration(cell,speed);
   const start=()=>{
    if(closed||finished||animation)return;
    const height=viewport.clientHeight;
@@ -78,7 +81,7 @@ const ReelCell=memo(function ReelCell({cell,symbol,held,winning,rolling,target,s
    if(viewport)delete viewport.dataset.tapeReady;
    animation?.cancel();
   };
- },[active,spinId,cell,tape.length]);
+ },[active,spinId,cell,tape.length,speed]);
  return <div ref={element} className={'ruby-cell s-'+symbol.toLowerCase()+
    (held?' held':'')+(winning?' winning':'')+(active?' is-respinning':'')}
    data-index={cell} data-symbol={symbol} data-held={held?'true':'false'}>
@@ -96,11 +99,11 @@ const ReelCell=memo(function ReelCell({cell,symbol,held,winning,rolling,target,s
 });
 
 function ReelColumn({reel,displayGrid,baseGrid,bonusGrid,spinId,rolling,rollingCells,heldCells,
- winningCells,reducedMotion,onBaseStop,onBonusStop}:{reel:number;
+ winningCells,reducedMotion,onBaseStop,onBonusStop,speed,nearMiss}:{reel:number;
  displayGrid:readonly SymbolId[];baseGrid:readonly SymbolId[]|null;
  bonusGrid:readonly SymbolId[]|null;spinId:string|null;rolling:boolean;
  rollingCells:readonly number[];heldCells:readonly number[];winningCells:ReadonlySet<number>;
- reducedMotion:boolean;onBaseStop:(id:string,reel:number)=>void;
+ reducedMotion:boolean;speed:SunsetSpeed;nearMiss:boolean;onBaseStop:(id:string,reel:number)=>void;
  onBonusStop:(id:string,cell:number)=>void}){
  const viewport=useRef<HTMLDivElement>(null),track=useRef<HTMLDivElement>(null);
  const stop=useRef(onBaseStop);stop.current=onBaseStop;
@@ -122,7 +125,7 @@ function ReelColumn({reel,displayGrid,baseGrid,bonusGrid,spinId,rolling,rollingC
    if(fallback!==null)clearTimeout(fallback);
    stop.current(spinId,reel);
   };
-  const duration=baseReelDuration(reel);
+  const duration=baseReelDuration(reel,speed,nearMiss);
   const start=()=>{
    if(closed||finished||animation)return;
    const gap=Number.parseFloat(getComputedStyle(element).rowGap)||5;
@@ -149,14 +152,14 @@ function ReelColumn({reel,displayGrid,baseGrid,bonusGrid,spinId,rolling,rollingC
    if(element)delete element.dataset.tapeReady;
    animation?.cancel();
   };
- },[active,reel,spinId,tape.length]);
+ },[active,reel,spinId,tape.length,speed,nearMiss]);
  return <div className={'ruby-reel-column'+(active?' rolling':'')} data-reel={reel} ref={viewport}>
   {visible.map((symbol,row)=>{
    const cell=row*5+reel;
    return <ReelCell key={row} cell={cell} symbol={symbol}
     held={heldCells.includes(cell)} winning={winningCells.has(cell)}
     rolling={rollingCells.includes(cell)} target={bonusGrid?.[cell]??null}
-    spinId={spinId} reducedMotion={reducedMotion} onStop={onBonusStop}/>;
+    spinId={spinId} reducedMotion={reducedMotion} onStop={onBonusStop} speed={speed}/>;
   })}
   {active&&<div className="ruby-reel-viewport" aria-hidden="true">
     <div className="ruby-reel-tape" ref={track}>
@@ -169,7 +172,7 @@ function ReelColumn({reel,displayGrid,baseGrid,bonusGrid,spinId,rolling,rollingC
 }
 
 function RubyReelStageView({displayGrid,targetBase,targetBonus,spinId,rollingReels,
- rollingCells,heldCells,winningLines,showWins,anticipation,reducedMotion,onBaseStop,onBonusStop}:Props){
+ rollingCells,heldCells,winningLines,showWins,anticipation,nearMiss,speed,reducedMotion,onBaseStop,onBonusStop}:Props){
  const winners=useMemo(()=>{
   const cells=new Set<number>();
   if(showWins)for(const line of winningLines){
@@ -178,14 +181,15 @@ function RubyReelStageView({displayGrid,targetBase,targetBonus,spinId,rollingRee
   return cells;
  },[winningLines,showWins]);
  return <div className={'ruby-reels'+(anticipation?' anticipating':'')+
-   (showWins&&winningLines.length?' is-winning':'')} data-testid="indian-ruby-reels"
+   (showWins&&winningLines.length?' is-winning':'')} data-testid="sunset-ruby-reels"
    data-reel-engine="five-reel-compositor" aria-label={displayGrid.join(', ')} role="img">
   <div className="ruby-reels-surface">
    {Array.from({length:5},(_,reel)=><ReelColumn key={reel} reel={reel}
     displayGrid={displayGrid} baseGrid={targetBase} bonusGrid={targetBonus}
     spinId={spinId} rolling={rollingReels.includes(reel)}
     rollingCells={rollingCells} heldCells={heldCells} winningCells={winners}
-    reducedMotion={reducedMotion} onBaseStop={onBaseStop} onBonusStop={onBonusStop}/>)}
+    reducedMotion={reducedMotion} onBaseStop={onBaseStop} onBonusStop={onBonusStop}
+    speed={speed} nearMiss={nearMiss}/>)}
   </div>
   {showWins&&winningLines.length>0&&<svg className="ruby-winning-lines"
    viewBox="0 0 500 300" preserveAspectRatio="none" aria-hidden="true">
