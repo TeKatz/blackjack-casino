@@ -14,7 +14,7 @@ const grid:SymbolId[]=[
  'Ten','Spices','Ace','Vase','King',
 ];
 
-describe('Indian Ruby premium reel compositor',()=>{
+describe('Sunset Ruby premium reel compositor',()=>{
  it('uses true five-reel, staggered deterministic spin tapes that land on native targets',()=>{
   const durations=Array.from({length:5},(_,reel)=>baseReelDuration(reel));
   expect(durations).toEqual([1080,1460,1840,2210,2580]);
