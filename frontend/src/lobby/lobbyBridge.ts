@@ -96,6 +96,7 @@ export const fallbackLobby: LobbySnapshot = {
     {id:'chill-lounge',title:'Chill Lounge',category:'Relaxed games',description:'Offline games at your own pace: Sudoku and Solitaire.',enabled:true,secondary:false},
     {id:'casino-empire',title:'Casino Empire',category:'Incremental clicker',description:'Stack chips, build your casino and unlock lasting progress.',enabled:true,secondary:true},
     {id:'midnight-reels',title:'Midnight Reels',category:'Classic slots',description:'Three reels, a centre payline and old-school charm.',enabled:true,secondary:false},
+    {id:'indian-ruby',title:'Indian Ruby',category:'Video slots',description:'Five reels, elephants, rubies and the Elephant Bonus.',enabled:true,secondary:false},
     {id:'neon-vault',title:'Neon Vault',category:'Video slots',description:'Five reels, 1,024 ways and Vault Break Free Spins.',enabled:true,secondary:false},
     {id:'nine-lives',title:'Nine Lives',category:'Video slots',description:'Five lines, Pounce Wilds and nine bonus spins.',enabled:true,secondary:false},
     {id:'midnight-manor',title:'Midnight Manor',category:'Video slots',description:'Five haunted reels, Free Spins and rooms that remember.',enabled:true,secondary:false},
