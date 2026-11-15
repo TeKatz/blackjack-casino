@@ -68,7 +68,8 @@ public sealed class IndianRubyTests
         grid[1] = IndianRubySymbol.Ruby;
         grid[2] = IndianRubySymbol.Elephant;
         Assert.Equal(0m, IndianRubyRules.Evaluate(grid).Multiplier);
-        Assert.Equal(100m, IndianRubyRules.Evaluate(grid, elephantOnly:true).Multiplier);
+        // Two lines share the first elephant/ruby combination: x100 + x20.
+        Assert.Equal(120m, IndianRubyRules.Evaluate(grid, elephantOnly:true).Multiplier);
     }
 
     [Fact]
