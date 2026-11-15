@@ -69,7 +69,20 @@ internal sealed class NativeShellForm : Form
         ForeColor = Color.FromArgb(225, 210, 174),
         BackColor = Color.FromArgb(14, 32, 29),
     };
-    private readonly System.Windows.Forms.Timer watchdog = new() { Interval = 18000 };
+    // Cold WebView2 environment/controller initialization and React document
+    // readiness are distinct phases. Never charge a cold browser startup against
+    // the UI's acknowledgement deadline.
+    internal const int BrowserInitializationTimeoutMs = 60000;
+    internal const int BrowserUiReadyTimeoutMs = 25000;
+    private readonly System.Windows.Forms.Timer initializationWatchdog =
+        new() { Interval = BrowserInitializationTimeoutMs };
+    private readonly System.Windows.Forms.Timer watchdog =
+        new() { Interval = BrowserUiReadyTimeoutMs };
+    private string browserStartupPhase = "idle";
+    internal string BrowserStartupDiagnostic =>
+        $"phase={browserStartupPhase}; ready={ready}; listening={listening}; " +
+        $"browserCore={browser?.CoreWebView2 is not null}; disabled={lobbyBrowserDisabled}; " +
+        $"failed={browserFailed}; mode={activeMode ?? "lobby"}";
     private readonly Lazy<Task<CoreWebView2Environment>> environment;
     private WebView2? browser;
     private BlackjackModernSession? blackjackEpoch;
@@ -98,10 +111,12 @@ internal sealed class NativeShellForm : Form
     private DateTimeOffset empireLastPersist = DateTimeOffset.UtcNow;
     private readonly string frontendFolder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
 
+    private readonly bool unattendedSmoke;
     internal NativeShellForm(string? profileDirectory = null, bool migrationCandidate = false,
-        bool managedRelease = false)
+        bool managedRelease = false, bool unattendedSmoke = false)
     {
         this.managedRelease = managedRelease;
+        this.unattendedSmoke = unattendedSmoke;
         fullscreenKeyFilter = new FullscreenKeyFilter(this);
         Application.AddMessageFilter(fullscreenKeyFilter);
         string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -156,10 +171,17 @@ internal sealed class NativeShellForm : Form
                 empireLastPersist = DateTimeOffset.UtcNow;
             }
         };
+        initializationWatchdog.Tick += (_, _) =>
+        {
+            initializationWatchdog.Stop();
+            if (!ready && !closing)
+                FailBrowser("WebView2 initialization exceeded its cold-start deadline.");
+        };
         watchdog.Tick += (_, _) =>
         {
             watchdog.Stop();
-            if (!ready && !closing) FailBrowser("The game browser did not acknowledge startup.");
+            if (!ready && !closing)
+                FailBrowser("The React page did not acknowledge UI readiness after navigation.");
         };
         KeyDown += (_, e) =>
         {
@@ -535,14 +557,16 @@ internal sealed class NativeShellForm : Form
         content.Controls.Clear();
         content.Controls.Add(web);
         listening = ready = browserFailed = false;
+        browserStartupPhase = "initializing lobby WebView2";
         status.Text = "Loading native React casino lobby…";
-        watchdog.Start();
+        initializationWatchdog.Start();
         try
         {
             CoreWebView2Environment env = await environment.Value;
             if (closing || browser != web || activeMode is not null) return;
             await web.EnsureCoreWebView2Async(env);
             if (closing || browser != web || activeMode is not null) return;
+            browserStartupPhase = "configuring lobby WebView2";
             CoreWebView2 core = web.CoreWebView2
                 ?? throw new InvalidOperationException("Lobby WebView2 initialization failed.");
             core.Settings.AreDefaultContextMenusEnabled = false;
@@ -559,6 +583,7 @@ internal sealed class NativeShellForm : Form
                 + "e.stopImmediatePropagation();"
                 + "window.chrome.webview.postMessage({type:'host.fullscreen.toggle'});"
                 + "}},true);");
+            if (closing || browser != web || activeMode is not null) return;
             core.SetVirtualHostNameToFolderMapping(
                 VirtualHost, frontendFolder, CoreWebView2HostResourceAccessKind.DenyCors);
             core.NavigationStarting += (_, args) =>
@@ -573,6 +598,9 @@ internal sealed class NativeShellForm : Form
             };
             core.ProcessFailed += (_, _) => ScheduleFailure("React lobby browser failed.");
             core.WebMessageReceived += OnMessage;
+            initializationWatchdog.Stop();
+            browserStartupPhase = "awaiting lobby React UI-ready";
+            watchdog.Start();
             web.Source = new Uri("https://" + VirtualHost + "/lobby.html");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
@@ -666,6 +694,7 @@ internal sealed class NativeShellForm : Form
         activeMode = mode;
         hostAudio.Update(activeMode, runtime.Preferences);
         listening = ready = browserFailed = false;
+        browserStartupPhase = "initializing " + mode + " WebView2";
         blackjackEpoch = mode == "blackjack" ? new BlackjackModernSession() : null;
         reelsEpoch = mode == "reels" ? new ModernReelsSession() : null;
         neonEpoch = mode == "neon-vault" ? new ModernNeonVaultSession() : null;
@@ -691,13 +720,14 @@ internal sealed class NativeShellForm : Form
         browser = web;
         content.Controls.Add(web);
         status.Text = "Loading " + mode + "…";
-        watchdog.Start();
+        initializationWatchdog.Start();
         try
         {
             CoreWebView2Environment env = await environment.Value;
             if (closing || browser != web) return;
             await web.EnsureCoreWebView2Async(env);
             if (closing || browser != web) return;
+            browserStartupPhase = "configuring " + mode + " WebView2";
             CoreWebView2 core = web.CoreWebView2
                 ?? throw new InvalidOperationException("WebView2 core was not initialized.");
             core.Settings.AreDefaultContextMenusEnabled = false;
@@ -714,6 +744,7 @@ internal sealed class NativeShellForm : Form
                 + "e.stopImmediatePropagation();"
                 + "window.chrome.webview.postMessage({type:'host.fullscreen.toggle'});"
                 + "}},true);");
+            if (closing || browser != web) return;
             core.SetVirtualHostNameToFolderMapping(
                 VirtualHost, frontendFolder, CoreWebView2HostResourceAccessKind.DenyCors);
 
@@ -729,6 +760,9 @@ internal sealed class NativeShellForm : Form
             };
             core.ProcessFailed += (_, _) => ScheduleFailure("WebView2 process exited unexpectedly.");
             core.WebMessageReceived += OnMessage;
+            initializationWatchdog.Stop();
+            browserStartupPhase = "awaiting " + mode + " React UI-ready";
+            watchdog.Start();
             web.Source = new Uri("https://" + VirtualHost + "/" + document);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
@@ -790,6 +824,8 @@ internal sealed class NativeShellForm : Form
                     break;
                 case "lobby.ui-ready" when activeMode is null && listening:
                     ready = true;
+                    browserStartupPhase = "ready: lobby";
+                    initializationWatchdog.Stop();
                     watchdog.Stop();
                     status.Text = "Native React lobby · native profile · $" + runtime.Bankroll.ToString("N2");
                     RevealRouteWhenReady();
@@ -1767,6 +1803,11 @@ internal sealed class NativeShellForm : Form
     private void FailBrowser(string message)
     {
         if (closing || browserFailed) return;
+        // Keep the failing phase for the real Windows smoke-test diagnostics.
+        string failure = message + " [" + BrowserStartupDiagnostic + "]";
+        browserStartupPhase = "failed: " + failure;
+        initializationWatchdog.Stop();
+        watchdog.Stop();
         routeSwitchPending = false;
         routeTransition.Dismiss(); // Recovery controls must never be hidden.
         empireRefresh.Stop();
@@ -1779,8 +1820,8 @@ internal sealed class NativeShellForm : Form
             lobbyBrowserDisabled = true;
             DisposeBrowser();
             ShowHome();
-            status.Text = message;
-            if (managedRelease)
+            status.Text = failure;
+            if (managedRelease && !unattendedSmoke)
                 System.Windows.Forms.MessageBox.Show(this, message,
                     "NativeShell browser recovery", MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
@@ -1847,6 +1888,7 @@ internal sealed class NativeShellForm : Form
 
     private void DisposeBrowser()
     {
+        initializationWatchdog.Stop();
         watchdog.Stop();
         listening = ready = false;
         WebView2? old = browser;
@@ -1896,6 +1938,7 @@ internal sealed class NativeShellForm : Form
         empireRefresh.Dispose();
         loungeRefresh.Dispose();
         loungeTowerRefresh.Dispose();
+        initializationWatchdog.Dispose();
         watchdog.Dispose();
         base.OnFormClosing(e);
     }
