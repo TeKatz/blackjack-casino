@@ -5,7 +5,7 @@ export type ChallengeEntry={
   id:string;name:string;description:string;category:string;isAdventure:boolean;isEndgame:boolean;
   progress:number;goal:number;progressLabel:string;goalLabel:string;fraction:number;
   complete:boolean;claimed:boolean;canClaim:boolean;automaticallyAwarded:boolean;
-  coinReward:number;pack:string|null;empireBoost:string|null;
+  coinReward:number;pack:string|null;
   cosmeticReward?:string|null;cosmeticRewardVariant?:string|null;
 };
 export type ChallengesSnapshot={
@@ -74,7 +74,7 @@ export function isChallenges(x:unknown):x is ChallengesSnapshot{
     &&['name','description','category','progressLabel','goalLabel'].every(k=>str(e[k]))
     &&['isAdventure','isEndgame','complete','claimed','canClaim','automaticallyAwarded'].every(k=>typeof e[k]==='boolean')
     &&num(e.progress)&&num(e.goal)&&pct(e.fraction)&&count(e.coinReward)
-    &&(e.pack===null||str(e.pack))&&(e.empireBoost===null||str(e.empireBoost))
+    &&(e.pack===null||str(e.pack))
     &&(e.cosmeticReward===undefined||e.cosmeticReward===null||str(e.cosmeticReward))
     &&(e.cosmeticRewardVariant===undefined||e.cosmeticRewardVariant===null
        ||str(e.cosmeticRewardVariant)&&/^[a-z0-9-]{1,100}$/.test(e.cosmeticRewardVariant)));
@@ -192,13 +192,13 @@ export const previewChallenges:ChallengesSnapshot={
   entries:[
     {id:'bj-50',name:'A Seat at the Table',description:'Play 50 Blackjack rounds.',category:'Blackjack',
       isAdventure:false,isEndgame:false,progress:50,goal:50,progressLabel:'50',goalLabel:'50',
-      fraction:1,complete:true,claimed:false,canClaim:true,automaticallyAwarded:false,coinReward:250,pack:'Common',empireBoost:null},
+      fraction:1,complete:true,claimed:false,canClaim:true,automaticallyAwarded:false,coinReward:250,pack:'Common'},
     {id:'manor-500',name:'After Dark',description:'Play 500 paid spins in Midnight Manor.',category:'Midnight Manor',
       isAdventure:false,isEndgame:false,progress:180,goal:500,progressLabel:'180',goalLabel:'500',
-      fraction:.36,complete:false,claimed:false,canClaim:false,automaticallyAwarded:false,coinReward:500,pack:null,empireBoost:null},
+      fraction:.36,complete:false,claimed:false,canClaim:false,automaticallyAwarded:false,coinReward:500,pack:null},
     {id:'bj-1000',name:'Master Dealer',description:'Play 1000 rounds.',category:'Blackjack',
       isAdventure:false,isEndgame:true,progress:50,goal:1000,progressLabel:'50',goalLabel:'1,000',
-      fraction:.05,complete:false,claimed:false,canClaim:false,automaticallyAwarded:false,coinReward:1200,pack:null,empireBoost:null},
+      fraction:.05,complete:false,claimed:false,canClaim:false,automaticallyAwarded:false,coinReward:1200,pack:null},
   ],
 };
 export const previewAccount:AccountSnapshot={
