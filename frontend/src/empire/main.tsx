@@ -74,6 +74,7 @@ function EmpireApp(){
   const confirmRef=useRef(false);confirmRef.current=confirm;
   const [pulse,setPulse]=useState(0);
   const [visible,setVisible]=useState(true);
+  const [activeVisitId,setActiveVisitId]=useState<number|null>(null);
   const [pending,setPending]=useState(false);
   const [lowMotion,setLowMotion]=useState(matchMedia('(prefers-reduced-motion: reduce)').matches);
   const live=useRef<EmpireSnapshot|null>(null);
@@ -109,10 +110,10 @@ function EmpireApp(){
           pendingId.current=null;setPending(false);
           if(!message.data.success)setNotice(message.data.message);
         }
-      }else if(message.type==='activated'){activeVisit.current=message.visitId;}
+      }else if(message.type==='activated'){activeVisit.current=message.visitId;setActiveVisitId(message.visitId);}
       else if(message.type==='visibility'){
         visibleRef.current=message.visible;setVisible(message.visible);
-        if(!message.visible){activeVisit.current=null;queuedTaps.current=0;}
+        if(!message.visible){activeVisit.current=null;setActiveVisitId(null);queuedTaps.current=0;}
       }else if(message.type==='escape'){if(confirmRef.current)setConfirm(false);else post('empire.close');}
       else if(message.type==='invalid')setNotice('Empire command rejected. Reopen the game.');
     });
@@ -156,7 +157,7 @@ function EmpireApp(){
   const shown=e.buildings.filter(b=>b.visible);
   const stacks=1+Math.min(3,Math.floor(e.totalLevels/10));
   const height=Math.min(142,42+e.totalLevels*2+Math.min(25,Math.log10(e.clicks+1)*7));
-  const disabled=!visible||pending||!ready();
+  const disabled=!visible||pending||activeVisitId!==snapshot.visitId||!ready();
   const goal=e.goal;
   const name=(id:string|null)=>id?(de?names[id]??id:e.buildings.find(b=>b.id===id)?.name??id):'';
   const goalTitle=goal.id?(de?'Nächster Ausbau: ':'Next upgrade: ')+name(goal.id):
