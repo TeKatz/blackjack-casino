@@ -38,6 +38,10 @@ internal sealed class NativeCasinoRuntime : IDisposable
     private NeonVaultSpinResult? neonLastSpin;
     private ProgressionAward? neonAward;
     private decimal neonBet;
+    private IndianRubySession? rubyMachine;
+    private IndianRubySpinResult? rubyLastSpin;
+    private ProgressionAward? rubyAward;
+    private decimal rubyBet = 25m;
     private NineLivesSession? nineMachine;
     private NineLivesSpinResult? nineLastSpin;
     // Read-only, authoritative results for presentation-only audio. Never
@@ -500,6 +504,89 @@ internal sealed class NativeCasinoRuntime : IDisposable
         Persist();
     }
 
+
+    internal void OpenIndianRuby()
+    {
+        if (disposed || HandInProgress)
+            throw new InvalidOperationException("Finish the active Blackjack hand first.");
+        AccountCompletedRound();
+        if (rubyMachine is null)
+        {
+            rubyMachine = new IndianRubySession(Bankroll);
+            rubyBet = IndianRubyRules.Bets.Where(b => b <= Bankroll).DefaultIfEmpty(1m)
+                .OrderBy(b => Math.Abs(b - 25m)).First();
+            rubyLastSpin = null;
+            rubyAward = null;
+        }
+        else rubyMachine.SynchronizeBankroll(Bankroll);
+        status = "Indian Ruby ready.";
+    }
+
+    internal object IndianRubySnapshot()
+    {
+        if (rubyMachine is null) throw new InvalidOperationException("Indian Ruby is not active.");
+        AreaPresentationSettings settings = Preferences.Presentation("indian-ruby");
+        return ModernIndianRubySnapshot.Create(rubyMachine, rubyBet, rubyLastSpin, rubyAward,
+            Profile, settings.SoundEnabled, settings.AnimationsEnabled,
+            Preferences.Language == UiLanguagePreference.German ? "de" : "en");
+    }
+
+    internal (bool Success, string Message) ApplyIndianRuby(ModernIndianRubyCommand command)
+    {
+        if (disposed || rubyMachine is null) return (false, "Indian Ruby is not active.");
+        try
+        {
+            switch (command.Action)
+            {
+                case "bet.set":
+                    decimal bet = decimal.Parse(command.Value!, CultureInfo.InvariantCulture);
+                    if (!IndianRubyRules.Bets.Contains(bet) || bet > rubyMachine.Bankroll)
+                        return (false, "Select an affordable wager.");
+                    rubyBet = bet;
+                    status = "Indian Ruby bet selected.";
+                    break;
+                case "sound.set":
+                case "animations.set":
+                    AreaPresentationSettings settings = Preferences.Presentation("indian-ruby");
+                    settings = command.Action == "sound.set"
+                        ? settings with { SoundEnabled = command.Value == "true" }
+                        : settings with { AnimationsEnabled = command.Value == "true" };
+                    Preferences = Preferences.WithPresentation("indian-ruby", settings);
+                    status = "Indian Ruby presentation updated.";
+                    break;
+                case "spin":
+                    if (rubyBet > rubyMachine.Bankroll)
+                        return (false, "Insufficient play money.");
+                    IndianRubySpinResult result = rubyMachine.Spin(rubyBet);
+                    table.Session.ResetBankroll(result.BankrollAfter);
+                    rubyAward = new SlotProgression(progression.Service).Process(result);
+                    rubyLastSpin = result;
+                    status = "Indian Ruby spin settled.";
+                    break;
+                default:
+                    return (false, "Unsupported Indian Ruby action.");
+            }
+            Persist();
+            return (true, status);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException
+            or OverflowException or FormatException)
+        {
+            return (false, ex.Message);
+        }
+    }
+
+    internal void CloseIndianRuby(bool interrupted = false)
+    {
+        if (rubyMachine is null) return;
+        if (!interrupted)
+        {
+            rubyMachine = null;
+            rubyLastSpin = null;
+            rubyAward = null;
+        }
+        Persist();
+    }
 
     internal void OpenNeonVault()
     {
@@ -1271,6 +1358,7 @@ internal sealed class NativeCasinoRuntime : IDisposable
         {
             if (reelsMachine is not null) CloseReels();
             if (neonMachine is not null) CloseNeonVault();
+            if (rubyMachine is not null) CloseIndianRuby();
             if (nineMachine is not null) CloseNineLives();
             if (mergeBoard is not null) CloseMerge();
             if (diceGame is not null) CloseDice();
