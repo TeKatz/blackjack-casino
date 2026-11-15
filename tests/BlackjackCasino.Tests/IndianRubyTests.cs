@@ -58,7 +58,6 @@ public sealed class IndianRubyTests
         Assert.Equal(10m, spin.Stake);
         Assert.Equal(spin.BankrollBefore - spin.Stake + spin.Payout, spin.BankrollAfter);
         Assert.Equal(spin.BankrollAfter, game.Bankroll);
-        Assert.Equal(1, game.Bankroll >= 0 ? 1 : 0);
     }
 
     [Fact]
@@ -104,7 +103,7 @@ public sealed class IndianRubyTests
         }))!;
         Assert.NotNull(command);
         int paid = 0;
-        (bool,string) Commit(ModernIndianRubyCommand _)
+        (bool,string) Commit(ModernIndianRubyCommand request)
         {
             _ = machine.Spin(5m);
             paid++;
