@@ -61,12 +61,12 @@ internal sealed class ModernIndianRubySession
         Func<ModernIndianRubyCommand, (bool Success, string Message)> commit)
     {
         if (command.Session != Id)
-            return new(command.RequestId, false, "Expired Indian Ruby session.", Revision);
+            return new(command.RequestId, false, "Expired Sunset Ruby session.", Revision);
         if (receipts.TryGetValue(command.RequestId, out var receipt)) return receipt;
         if (command.ExpectedRevision != Revision)
-            return new(command.RequestId, false, "Indian Ruby state changed. Refresh to continue.", Revision);
+            return new(command.RequestId, false, "Sunset Ruby state changed. Refresh to continue.", Revision);
         if (receipts.Count >= 4096)
-            return new(command.RequestId, false, "Please reopen Indian Ruby.", Revision);
+            return new(command.RequestId, false, "Please reopen Sunset Ruby.", Revision);
         var (ok, message) = commit(command);
         if (ok) Revision++;
         var result = new ModernIndianRubyReply(command.RequestId, ok, message, Revision);
