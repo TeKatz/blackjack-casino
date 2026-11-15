@@ -24,6 +24,9 @@ internal static class NativeShellContractSmoke
                     name.Name is "PresentationFramework" or "PresentationCore" or "WindowsBase"))
                 throw new InvalidOperationException("Native shell still references WPF assemblies.");
 
+            if (!CasinoWinCursor.HasNativeArtwork)
+                throw new InvalidOperationException(
+                    "Native casino pointer fell back to a Windows system cursor.");
             if (NativeRouteTransitionOverlay.VisibleOpacity(0) <= 0
                 || NativeRouteTransitionOverlay.VisibleOpacity(-5) <= 0
                 || NativeRouteTransitionOverlay.VisibleOpacity(.5) != .5

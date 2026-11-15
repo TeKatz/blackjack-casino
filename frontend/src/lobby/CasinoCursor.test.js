@@ -17,16 +17,18 @@ describe('two-state global casino pointer',()=>{
    const css=read('public/cursor/casino-cursor.css');
    expect(css).toContain('forced-colors:active');
    expect(css).toContain('casino-pressed.svg'); // vector source noted in CSS
-   // Cursor data must be ready with the stylesheet, without a subsequent
-   // SVG fetch while the native overlay fades in/out.
-   for (const state of ['normal','pressed']) {
-     const vector=read('public/cursor/casino-'+state+'.svg').replace(/\r\n/g,'\n').trim();
-     expect(css).toContain('data:image/svg+xml,'+encodeURIComponent(vector));
-   }
+   // The browser and native window must never use different cursor artwork.
+   // Both PNG payloads are embedded before React initializes.
+   const native=readFileSync(new URL('../../../src/BlackjackCasino.NativeShell/CasinoWinCursor.cs',
+     import.meta.url),'utf8');
+   const png=[...css.matchAll(/data:image\/png;base64,([A-Za-z0-9+/=]+)/g)]
+     .map(match=>match[1]);
+   expect(png).toHaveLength(2);
+   for(const image of png)expect(native).toContain(image);
  });
  it('has one stable cursor owner during React and WebView2 loading',()=>{
    const css=read('public/cursor/casino-cursor.css');
-   expect(css).toContain('html {cursor:url("data:image/svg+xml,');
+   expect(css).toContain('html {cursor:url("data:image/png;base64,');
    expect(css).toContain("html[data-casino-cursor='pressed']");
    expect(css).toContain('cursor:inherit!important');
    expect(css).not.toContain("html body *,html body *::before,html body *::after {\\n    cursor:url");
