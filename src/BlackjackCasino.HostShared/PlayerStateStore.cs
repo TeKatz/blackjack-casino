@@ -76,7 +76,7 @@ internal static class PlayerStateStore
         }
     }
 
-    // Cash dividends and their consumed reserve must survive as a single durable snapshot.
+    // Durable casino progression changes must survive as a single atomic snapshot.
     internal static void SaveOrThrow(AppPreferences state, string? directory = null)
     {
         ArgumentNullException.ThrowIfNull(state);
