@@ -49,7 +49,7 @@ const categoryById: Record<string, string> = {
 };
 const navigation: {id: Filter; en: string; de: string}[] = [
   {id:'all',en:'Lobby',de:'Lobby'}, {id:'tables',en:'Table Games',de:'Tischspiele'},
-  {id:'slots',en:'Slots',de:'Slots'}, {id:'ruby',en:'Indian Ruby',de:'Indian Ruby'},
+  {id:'slots',en:'Slots',de:'Slots'}, {id:'ruby',en:'Sunset Ruby',de:'Sunset Ruby'},
   {id:'relax',en:'Relaxed',de:'Entspannt'},
   {id:'empire',en:'Empire',de:'Empire'}, {id:'collections',en:'Collections',de:'Sammlungen'},
   {id:'shop',en:'Shop',de:'Shop'}, {id:'stats',en:'Statistics',de:'Statistik'},
