@@ -1,6 +1,6 @@
 namespace BlackjackCasino.Core.Empire;
 
-/// <summary>Version 4 is an intentional fresh start, not a projection of the old idle economy.</summary>
+/// <summary>Version 4 remains compatible with existing clicker saves; new legacy fields are optional.</summary>
 public sealed record EmpireState
 {
     public const int CurrentSchemaVersion = 4;
@@ -13,6 +13,12 @@ public sealed record EmpireState
     public long Clicks { get; init; }
     public DateTimeOffset LastAccruedAt { get; init; }
     public Dictionary<string, int> Buildings { get; init; } = new(StringComparer.Ordinal);
+    // Additive fields: never bump the schema for an optional Prestige-I feature.
+    public int PrestigeTokens { get; init; }
+    public int GrantedPrestigeLevels { get; init; }
+    public int PeakBuildingLevels { get; init; }
+    public List<string> PermanentUpgrades { get; init; } = [];
+    public List<string> CompletedMilestones { get; init; } = [];
 
     public static EmpireState Normalize(EmpireState? source)
     {
@@ -31,6 +37,12 @@ public sealed record EmpireState
             if (building.RequiresId is not null && levels.GetValueOrDefault(building.RequiresId) < building.RequiresLevel)
                 levels[building.Id] = 0;
         }
+        var upgrades = EmpireLegacyCatalog.Upgrades
+            .Where(x => source.PermanentUpgrades?.Contains(x.Id, StringComparer.Ordinal) == true)
+            .Select(x => x.Id).ToList();
+        var milestones = EmpireLegacyCatalog.Milestones
+            .Where(x => source.CompletedMilestones?.Contains(x.Id, StringComparer.Ordinal) == true)
+            .Select(x => x.Id).ToList();
         return source with
         {
             SchemaVersion = CurrentSchemaVersion,
@@ -40,6 +52,14 @@ public sealed record EmpireState
             Prestige = Math.Clamp(source.Prestige, 0, EmpireCatalog.MaximumPrestige),
             Clicks = Math.Max(0, source.Clicks),
             Buildings = levels,
+            PrestigeTokens = Math.Clamp(source.PrestigeTokens, 0, EmpireLegacyCatalog.MaximumTokens),
+            GrantedPrestigeLevels = Math.Clamp(source.GrantedPrestigeLevels, 0,
+                Math.Clamp(source.Prestige, 0, EmpireCatalog.MaximumPrestige)),
+            PeakBuildingLevels = Math.Clamp(
+                Math.Max(source.PeakBuildingLevels, levels.Values.Sum()),
+                0, EmpireCatalog.MaximumLevel * EmpireCatalog.Buildings.Count),
+            PermanentUpgrades = upgrades,
+            CompletedMilestones = milestones,
         };
     }
 }
