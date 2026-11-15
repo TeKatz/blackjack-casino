@@ -112,7 +112,7 @@ public sealed class EmpireService
             Credits = Add(Credits, income),
             LifetimeCredits = Add(LifetimeCredits, income),
             RunCredits = Add(RunCredits, income),
-            Clicks = Math.Min(long.MaxValue, state.Clicks + count),
+            Clicks = state.Clicks > long.MaxValue - count ? long.MaxValue : state.Clicks + count,
         };
         return new(true, "Clicks collected.");
     }
