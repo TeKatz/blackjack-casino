@@ -12,6 +12,13 @@ namespace BlackjackCasino.NativeShell;
 /// </summary>
 internal static class NativeShellWebSmoke
 {
+    // WebView2's cold environment/controller initialization can be substantially
+    // slower on a clean GitHub Actions Windows runner than on a developer PC.
+    // The UI acknowledgement has a separate bounded deadline in NativeShellForm.
+    private const int StartupPollAttempts =
+        (NativeShellForm.BrowserInitializationTimeoutMs +
+         NativeShellForm.BrowserUiReadyTimeoutMs + 5000) / 100;
+
     internal static int Run()
     {
         string root = Path.Combine(Path.GetTempPath(),
@@ -39,7 +46,7 @@ internal static class NativeShellWebSmoke
         // occupy the entire native window, without the migration tab strip or
         // preview diagnostic footer.
         using var form = new NativeShellForm(candidate,
-            migrationCandidate: true, managedRelease: true);
+            migrationCandidate: true, managedRelease: true, unattendedSmoke: true);
         if (form.Controls.Count != 1 || form.Controls[0] is not Panel host
             || host.Dock != DockStyle.Fill)
             throw new InvalidOperationException(
@@ -52,7 +59,7 @@ internal static class NativeShellWebSmoke
                 // Exercise the actual startup path and avoid racing a second
                 // WebView2 initialization against the initial React lobby.
                 bool startupLobbyReady = false;
-                for (int attempt = 0; attempt < 180; attempt++)
+                for (int attempt = 0; attempt < StartupPollAttempts; attempt++)
                 {
                     if (form.BrowserMode is null && form.BrowserReady
                         && form.BrowserCore is not null)
@@ -60,11 +67,14 @@ internal static class NativeShellWebSmoke
                         startupLobbyReady = true;
                         break;
                     }
+                    if (form.BrowserStartupDiagnostic.Contains("phase=failed:", StringComparison.Ordinal))
+                        break;
                     await Task.Delay(100);
                 }
                 if (!startupLobbyReady)
                     throw new InvalidOperationException(
-                        "Native React startup lobby did not acknowledge its UI within the watchdog.");
+                        "Native React startup lobby did not acknowledge its UI. " +
+                        form.BrowserStartupDiagnostic);
                 string imported = await form.BrowserCore!.ExecuteScriptAsync(
                     "(()=>{const p=document.querySelector('.profile-widget');"
                     + "const b=document.querySelector('.lobby-finances');"
@@ -198,7 +208,7 @@ internal static class NativeShellWebSmoke
                         throw new InvalidOperationException(mode
                             + " detached its WebView without the native transition veil.");
                     bool ready = false;
-                    for (int attempt = 0; attempt < 180; attempt++)
+                    for (int attempt = 0; attempt < StartupPollAttempts; attempt++)
                     {
                         if (form.BrowserMode == mode && form.BrowserReady
                             && form.BrowserCore is not null)
@@ -206,11 +216,14 @@ internal static class NativeShellWebSmoke
                             ready = true;
                             break;
                         }
+                        if (form.BrowserStartupDiagnostic.Contains("phase=failed:", StringComparison.Ordinal))
+                            break;
                         await Task.Delay(100);
                     }
                     if (!ready)
                         throw new InvalidOperationException(
-                            $"{mode} did not acknowledge its React UI within the startup watchdog.");
+                            $"{mode} did not acknowledge its React UI. " +
+                            form.BrowserStartupDiagnostic);
 
                     string domReady = await form.BrowserCore!.ExecuteScriptAsync(
                         "Boolean(document.readyState==='complete' && document.body"
@@ -239,7 +252,7 @@ internal static class NativeShellWebSmoke
                     // before attempting the next game rather than racing its
                     // initializing WebView2 controller.
                     bool returnedToLobby = false;
-                    for (int attempt = 0; attempt < 180; attempt++)
+                    for (int attempt = 0; attempt < StartupPollAttempts; attempt++)
                     {
                         if (form.BrowserMode is null && form.BrowserReady
                             && form.BrowserCore is not null)
@@ -247,16 +260,19 @@ internal static class NativeShellWebSmoke
                             returnedToLobby = true;
                             break;
                         }
+                        if (form.BrowserStartupDiagnostic.Contains("phase=failed:", StringComparison.Ordinal))
+                            break;
                         await Task.Delay(100);
                     }
                     if (!returnedToLobby)
                         throw new InvalidOperationException(mode
-                            + " could not restore the ready React lobby.");
+                            + " could not restore the ready React lobby. " +
+                            form.BrowserStartupDiagnostic);
                 }
                 // Returning from a real game must show the real React lobby,
                 // not a dead WinForms test menu or an untrusted document.
                 bool lobbyReady = false;
-                for (int attempt = 0; attempt < 180; attempt++)
+                for (int attempt = 0; attempt < StartupPollAttempts; attempt++)
                 {
                     if (form.BrowserMode is null && form.BrowserReady
                         && form.BrowserCore is not null)
