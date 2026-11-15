@@ -58,7 +58,7 @@
 .ruby-premium-shell .ruby-story,.ruby-premium-shell .ruby-detail-card{
  background:linear-gradient(140deg,#6a312caf 0%,#30141fdc 44%,#190d16ed 100%);
  border:1px solid #c28b53a8;box-shadow:inset 0 0 0 1px #f8ca8650,inset 0 12px 40px #1d0a1685,0 14px 40px #10040cbb;
- position:relative;overflow:hidden;backdrop-filter:blur(4px)}
+ position:relative;overflow:hidden}
 .ruby-premium-shell .ruby-story{border-radius:18px 18px 6px 6px;text-align:center;padding:15px 15px 19px;min-height:260px}
 .ruby-premium-shell .ruby-story::before,.ruby-premium-shell .ruby-detail-card::before{
  content:"";position:absolute;inset:7px;border:1px solid #f4d19d25;border-radius:inherit;pointer-events:none}
