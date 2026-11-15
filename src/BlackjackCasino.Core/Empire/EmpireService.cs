@@ -7,7 +7,11 @@ public sealed record EmpireAccrual(decimal Credits, TimeSpan Elapsed, bool Cappe
 public sealed class EmpireService
 {
     private EmpireState state;
-    public EmpireService(EmpireState? saved = null) => state = EmpireState.Normalize(saved);
+    public EmpireService(EmpireState? saved = null)
+    {
+        state = EmpireState.Normalize(saved);
+        ReconcileProgression();
+    }
     public EmpireState Snapshot => EmpireState.Normalize(state);
     public bool Started => state.Started;
     public decimal Credits => state.Credits;
@@ -15,6 +19,37 @@ public sealed class EmpireService
     public decimal RunCredits => state.RunCredits;
     public long Clicks => state.Clicks;
     public int Prestige => state.Prestige;
+    public int PrestigeTokens => state.PrestigeTokens;
+    public int PeakBuildingLevels => state.PeakBuildingLevels;
+    public IReadOnlyList<string> PermanentUpgrades => state.PermanentUpgrades;
+    public IReadOnlyList<string> CompletedMilestones => state.CompletedMilestones;
+    public bool OwnsLegacyUpgrade(string id) => state.PermanentUpgrades.Contains(id, StringComparer.Ordinal);
+    public bool CanBuyLegacyUpgrade(EmpireLegacyUpgrade upgrade) =>
+        Started && Prestige >= 1 && Prestige >= upgrade.MinimumPrestige
+        && !OwnsLegacyUpgrade(upgrade.Id)
+        && (upgrade.PreviousId is null || OwnsLegacyUpgrade(upgrade.PreviousId))
+        && PrestigeTokens >= upgrade.Cost;
+    public decimal MilestoneValue(EmpireLegacyMilestone milestone) => milestone.Kind switch
+    {
+        "clicks" => Clicks,
+        "credits" => LifetimeCredits,
+        "levels" => PeakBuildingLevels,
+        "prestige" => Prestige,
+        _ => 0m,
+    };
+    private decimal Bonus(params (string Id, decimal Value)[] values) =>
+        values.Where(x => OwnsLegacyUpgrade(x.Id)).Sum(x => x.Value);
+    public decimal LegacyProductionMultiplier => 1m + Bonus(
+        ("passive-1", .15m), ("passive-2", .10m), ("passive-3", .22m),
+        ("passive-4", .25m), ("passive-5", .40m),
+        ("hybrid-1", .08m), ("hybrid-2", .12m), ("hybrid-3", .15m),
+        ("hybrid-4", .18m), ("hybrid-5", .25m));
+    public decimal LegacyClickMultiplier => 1m + Bonus(
+        ("active-1", .15m), ("active-3", .25m), ("active-5", .50m),
+        ("hybrid-1", .08m), ("hybrid-2", .12m), ("hybrid-3", .15m),
+        ("hybrid-4", .18m), ("hybrid-5", .25m));
+    public int CriticalClickInterval => OwnsLegacyUpgrade("active-4") ? 20 : 25;
+    public decimal CriticalClickMultiplier => OwnsLegacyUpgrade("active-2") ? 4m : 3m;
     public int TotalLevels => state.Buildings.Values.Sum();
     public int Level(string id) => state.Buildings.GetValueOrDefault(id);
     public decimal PrestigeMultiplier => 1m + state.Prestige * .30m;
@@ -41,7 +76,7 @@ public sealed class EmpireService
         if (building.Id is "bar" or "stage" && Level("stage") >= 3) synergy += .15m;
         if (Level("hotel") >= 5) synergy += .10m;
         return decimal.Floor(building.BaseRate * level * (1m + (level - 1) * .30m)
-            * tier * synergy * PrestigeMultiplier * 100m) / 100m;
+            * tier * synergy * PrestigeMultiplier * LegacyProductionMultiplier * 100m) / 100m;
     }
 
     public decimal CreditsPerSecond => EmpireCatalog.Buildings.Sum(Production);
@@ -52,7 +87,7 @@ public sealed class EmpireService
         {
             decimal baseValue = 1m + EmpireCatalog.Buildings.Sum(b => b.ClickPower * Level(b.Id));
             decimal passiveContribution = decimal.Floor(CreditsPerSecond * (.60m + Level("bar") * .025m));
-            return Math.Max(1m, decimal.Floor((baseValue + passiveContribution) * PrestigeMultiplier));
+            return Math.Max(1m, decimal.Floor((baseValue + passiveContribution) * PrestigeMultiplier * LegacyClickMultiplier));
         }
     }
 
@@ -65,12 +100,48 @@ public sealed class EmpireService
     public bool CanPrestige => Started && Prestige < EmpireCatalog.MaximumPrestige
         && TotalLevels >= 20 && RunCredits >= PrestigeRequirement;
 
+    private void ReconcileProgression()
+    {
+        if (!state.Started) return;
+
+        // Retroactively grant resets from pre-update v4 saves. The granted
+        // counter makes this idempotent across reloads and repeated snapshots.
+        int missingResets = Math.Max(0, state.Prestige - state.GrantedPrestigeLevels);
+        int balance = Math.Min(EmpireLegacyCatalog.MaximumTokens,
+            state.PrestigeTokens + missingResets * EmpireLegacyCatalog.PrestigeTokensPerReset);
+        int peak = Math.Max(state.PeakBuildingLevels, TotalLevels);
+        var earned = new List<string>(state.CompletedMilestones);
+        foreach (EmpireLegacyMilestone milestone in EmpireLegacyCatalog.Milestones)
+        {
+            decimal value = milestone.Kind switch
+            {
+                "clicks" => Clicks,
+                "credits" => LifetimeCredits,
+                "levels" => peak,
+                "prestige" => Prestige,
+                _ => 0m,
+            };
+            if (value < milestone.Target || earned.Contains(milestone.Id, StringComparer.Ordinal))
+                continue;
+            earned.Add(milestone.Id);
+            balance = Math.Min(EmpireLegacyCatalog.MaximumTokens, balance + 1);
+        }
+        state = state with
+        {
+            PrestigeTokens = balance,
+            GrantedPrestigeLevels = state.Prestige,
+            PeakBuildingLevels = peak,
+            CompletedMilestones = earned,
+        };
+    }
+
     private static decimal Add(decimal a, decimal b) =>
         Math.Min(EmpireCatalog.MaximumCredits, a + Math.Min(Math.Max(0m, b), EmpireCatalog.MaximumCredits - a));
 
     public void Start(DateTimeOffset now)
     {
         if (!Started) state = state with { Started = true, LastAccruedAt = now };
+        ReconcileProgression();
     }
 
     public EmpireAccrual Accrue(DateTimeOffset now)
@@ -93,6 +164,7 @@ public sealed class EmpireService
             RunCredits = Add(RunCredits, income),
             LastAccruedAt = now,
         };
+        ReconcileProgression();
         return new(income, elapsed, absence > elapsed);
     }
 
@@ -104,8 +176,8 @@ public sealed class EmpireService
         // Every 25th click gives a deterministic bonus, avoiding random payout replay.
         for (int i = 1; i <= count; i++)
         {
-            bool critical = (state.Clicks + i) % 25 == 0;
-            income = Add(income, value * (critical ? 3m : 1m));
+            bool critical = (state.Clicks + i) % CriticalClickInterval == 0;
+            income = Add(income, value * (critical ? CriticalClickMultiplier : 1m));
         }
         state = state with
         {
@@ -114,6 +186,7 @@ public sealed class EmpireService
             RunCredits = Add(RunCredits, income),
             Clicks = state.Clicks > long.MaxValue - count ? long.MaxValue : state.Clicks + count,
         };
+        ReconcileProgression();
         return new(true, "Clicks collected.");
     }
 
@@ -127,6 +200,7 @@ public sealed class EmpireService
             [building.Id] = Level(building.Id) + 1,
         };
         state = state with { Buildings = levels, Credits = Credits - NextCost(building) };
+        ReconcileProgression();
         return new(true, building.Name + " upgraded.");
     }
 
@@ -142,7 +216,23 @@ public sealed class EmpireService
             Buildings = new Dictionary<string, int>(StringComparer.Ordinal),
             LastAccruedAt = now,
         };
+        ReconcileProgression();
         return new(true, "New prestige unlocked.");
+    }
+
+    public EmpireActionResult BuyLegacyUpgrade(string? id, DateTimeOffset now)
+    {
+        if (EmpireLegacyCatalog.FindUpgrade(id) is not { } upgrade)
+            return new(false, "Unknown permanent upgrade.");
+        Accrue(now);
+        if (!CanBuyLegacyUpgrade(upgrade))
+            return new(false, "Permanent upgrade locked, already owned or insufficient tokens.");
+        state = state with
+        {
+            PrestigeTokens = state.PrestigeTokens - upgrade.Cost,
+            PermanentUpgrades = [.. state.PermanentUpgrades, upgrade.Id],
+        };
+        return new(true, upgrade.Name + " unlocked permanently.");
     }
 
     /// <summary>Commit the candidate to disk before making it visible in this process.</summary>
