@@ -1,4 +1,5 @@
 import {memo,useCallback,useEffect,useRef,useState} from 'react';
+import type {CSSProperties} from 'react';
 import {createRoot} from 'react-dom/client';
 import {finishModeBoot} from '../boot/finishModeBoot';
 import {onRubyMessage,sendRuby} from './bridge';
@@ -6,7 +7,9 @@ import type {RubyIntent,RubySnapshot,RubySpin,SymbolId} from './bridge';
 import {RubyReelStage} from './RubyReelStage';
 import {RubySymbolArt,RubyHerdElephant} from './SymbolArt';
 import {playRubyCue} from './rubyAudio';
-import {BONUS_FINISH_PAUSE_MS,BONUS_START_PAUSE_MS} from './reelMotion';
+import {bonusFinishPause,bonusStartPause,isElephantNearMiss} from './reelMotion';
+import type {SunsetSpeed} from './reelMotion';
+import {SunsetRules} from './SunsetRules';
 import './indianRuby.css';
 import './rubyPremium.css';
 
@@ -23,17 +26,20 @@ const languages={
   info:'Spielregeln',stats:'SPIELSTATISTIK',rounds:'Drehs',wins:'Gewinne',max:'Rekordgewinn',
   bonus:'ELEPHANT BONUS',herd:'DIE HERDE KOMMT',noWin:'Die nächste Runde wartet.',
   ready:'Der Schatz wartet auf dich.',rolling:'Die Walzen drehen …',anticipation:'Ein Elefant nähert sich …',
-  err:'Das Ergebnis konnte nicht bestätigt werden. Öffne Indian Ruby erneut.',
+  err:'Das Ergebnis konnte nicht bestätigt werden. Öffne Sunset Ruby erneut.',
   help:'LEERTASTE · Drehen     ESC · Lobby',
   wild:'Rubin-Wild ersetzt reguläre Symbole und verdoppelt den jeweiligen Liniengewinn.',
   elephants:'Zwei Elefanten irgendwo auf den Walzen starten den Elephant Bonus. Elefanten und Rubine bleiben stehen, die übrigen Felder drehen erneut.',
   tuning:'Eigene Test-Wahrscheinlichkeiten – keine bestätigte Merkur-Gewinnmathematik.',
   base:'Basisgewinn',feature:'Bonusertrag',winLines:'Gewinnlinien',disabled:'Nicht genug Spielgeld',
-  notNative:'Indian Ruby ist über das Desktop-Casino spielbar.',offline:'OFFLINE · NUR SPIELGELD',
+  notNative:'Sunset Ruby ist über das Desktop-Casino spielbar.',offline:'OFFLINE · NUR SPIELGELD',
   subtitle:'Ein Schatz aus Gold, Rubinen und Elefanten',
   marquee:'ROYAL ELEPHANT EDITION',held:'GEHALTENE SYMBOLE',presentation:'PRÄSENTATION',
   choose:'EINSATZ WÄHLEN',bonusInfo:'ELEPHANT BONUS · 2+ SYMBOLE',total:'GESAMTGEWINN',
   jackpot:'KÖNIGLICHER GEWINN',close:'Schließen',
+ auto:'AUTO-SPINS',autoStart:'AUTO START',autoStop:'STOPP',autoCount:'ANZAHL',autoLeft:'ÜBRIG',
+ speed:'GESCHWINDIGKEIT',normal:'Normal',fast:'Schnell',turbo:'Turbo',
+ stopBonus:'Bei Bonus stoppen',nearMiss:'FAST! NUR EIN ELEFANT',
  },
  en:{
   back:'Casino lobby',strap:'THE MIDNIGHT CLUB · ROYAL COLLECTION',tag:'5 REELS · 10 PAYLINES',
@@ -41,17 +47,20 @@ const languages={
   info:'Game rules',stats:'YOUR RECORD',rounds:'Spins',wins:'Wins',max:'Top payout',
   bonus:'ELEPHANT BONUS',herd:'THE HERD APPROACHES',noWin:'Another spin awaits.',
   ready:'Your treasure awaits.',rolling:'Reels in motion …',anticipation:'An elephant is approaching …',
-  err:'Result not confirmed. Reopen Indian Ruby to reconcile.',
+  err:'Result not confirmed. Reopen Sunset Ruby to reconcile.',
   help:'SPACE · Spin     ESC · Lobby',
   wild:'Ruby Wild replaces regular symbols and doubles that line’s win.',
   elephants:'Two elephants anywhere trigger an Elephant Bonus. Elephants and Rubies stay in place while other positions respin.',
   tuning:'Independent prototype odds – not manufacturer-verified reel math.',
   base:'Base payout',feature:'Feature payout',winLines:'Winning lines',disabled:'Not enough play money',
-  notNative:'Play Indian Ruby inside the desktop casino.',offline:'OFFLINE · PLAY MONEY ONLY',
+  notNative:'Play Sunset Ruby inside the desktop casino.',offline:'OFFLINE · PLAY MONEY ONLY',
   subtitle:'A treasure of gold, rubies and elephants',
   marquee:'ROYAL ELEPHANT EDITION',held:'HELD SYMBOLS',presentation:'PRESENTATION',
   choose:'SELECT BET',bonusInfo:'ELEPHANT BONUS · 2+ SYMBOLS',total:'TOTAL WIN',
   jackpot:'ROYAL PAYOUT',close:'Close',
+ auto:'AUTO SPINS',autoStart:'START AUTO',autoStop:'STOP',autoCount:'SPINS',autoLeft:'LEFT',
+ speed:'SLOT SPEED',normal:'Normal',fast:'Fast',turbo:'Turbo',
+ stopBonus:'Stop on bonus',nearMiss:'CLOSE! ONE ELEPHANT',
  },
 };
 const cash=(value:string|number)=>'$'+Number(value).toLocaleString('en-US',{
@@ -59,6 +68,9 @@ const cash=(value:string|number)=>'$'+Number(value).toLocaleString('en-US',{
 });
 type Phase='idle'|'awaiting'|'base'|'bonus-intro'|'bonus'|'result';
 type Pending={id:string;expectedRevision:number;action:RubyIntent['action'];ackRevision:number|null};
+type Feedback='win'|'loss'|'push'|'none';
+type Transfer={id:string;kind:'win'|'loss';amount:number;x:number;y:number;dx:number;dy:number};
+const getFeedback=(net:string):Feedback=>Number(net)>0?'win':Number(net)<0?'loss':'push';
 
 function RubyScene({herd,reduced}:{herd:boolean;reduced:boolean}){
  return <div className={'ruby-landscape'+(herd?' herd-active':'')+(reduced?' no-motion':'')}
@@ -113,8 +125,41 @@ const BetSelector=memo(function BetSelector({bet,bets,canDecrease,canIncrease,on
   </div>
  </div>;
 });
+function AnimatedBankroll({balance,spin,settled,reduced}:{balance:string;spin:RubySpin|null;settled:boolean;reduced:boolean}){
+ const [shown,setShown]=useState(()=>Number(balance));
+ useEffect(()=>{
+  const before=spin?Number(spin.bankrollBefore):Number(balance);
+  const after=spin?Number(spin.bankrollAfter):Number(balance);
+  if(!spin){setShown(after);return;}
+  if(!settled){setShown(before);return;}
+  if(reduced||before===after){setShown(after);return;}
+  let frame=0;
+  const start=performance.now();
+  const tick=(time:number)=>{
+   const progress=Math.min(1,(time-start)/1150);
+   setShown(before+(after-before)*(1-Math.pow(1-progress,3)));
+   if(progress<1)frame=requestAnimationFrame(tick);
+  };
+  frame=requestAnimationFrame(tick);
+  return()=>cancelAnimationFrame(frame);
+ },[balance,spin?.id,settled,reduced]);
+ return <strong className="sunset-bankroll-value" aria-label={cash(balance)}>{cash(shown)}</strong>;
+}
 function App(){
  const [snapshot,setSnapshot]=useState<RubySnapshot|null>(null);
+ const [speed,setSpeed]=useState<SunsetSpeed>('normal');
+ const speedRef=useRef<SunsetSpeed>('normal');
+ const [autoCount,setAutoCount]=useState(10);
+ const [autoActive,setAutoActive]=useState(false);
+ const [autoLeft,setAutoLeft]=useState(0);
+ const [stopBonus,setStopBonus]=useState(true);
+ const autoRef=useRef({active:false,remaining:0,lastHandled:''});
+ const [nearMiss,setNearMiss]=useState(false);
+ const [feedback,setFeedback]=useState<Feedback>('none');
+ const [settledId,setSettledId]=useState<string|null>(null);
+ const [transfer,setTransfer]=useState<Transfer|null>(null);
+ const balanceRef=useRef<HTMLDivElement>(null);
+ const resultAreaRef=useRef<HTMLDivElement>(null);
  const snapshotRef=useRef<RubySnapshot|null>(null);
  const [pending,setPending]=useState(false);
  const pendingRef=useRef<Pending|null>(null);
@@ -157,9 +202,23 @@ function App(){
   setHeld(result.elephantBonus?result.heldCells:[]);
   setWinners(result.winningLines);
   setPhase('result');
+  setSettledId(id);
+  setNearMiss(isElephantNearMiss(result.baseGrid)&&!result.elephantBonus);
+  const outcome=getFeedback(result.net);
+  setFeedback(outcome);
+  const source=resultAreaRef.current?.getBoundingClientRect();
+  const destination=balanceRef.current?.getBoundingClientRect();
+  if(source&&destination&&outcome!=='push'&&!reduced){
+   const win=outcome==='win';
+   const from=win?source:destination,to=win?destination:source;
+   const x=from.left+from.width/2,y=from.top+from.height/2;
+   setTransfer({id,kind:outcome,amount:Math.abs(Number(result.net)),x,y,
+    dx:to.left+to.width/2-x,dy:to.top+to.height/2-y});
+  }else setTransfer(null);
+  schedule(()=>{setFeedback('none');setTransfer(null);},1650);
   if(Number(result.payout)>0)
    makeSound(Number(result.payout)>=Number(result.bet)*30?'big-win':'win');
- },[makeSound]);
+ },[makeSound,reduced,schedule]);
  const onBonusStop=useCallback((id:string,cell:number)=>{
   const result=resultRef.current;
   if(!result||result.id!==id||!pendingBonus.current.delete(cell))return;
@@ -169,7 +228,7 @@ function App(){
    gridRef.current=next;return next;
   });
   makeSound('stop');
-  if(pendingBonus.current.size===0)schedule(()=>finishSpin(id),BONUS_FINISH_PAUSE_MS);
+  if(pendingBonus.current.size===0)schedule(()=>finishSpin(id),bonusFinishPause(speedRef.current));
  },[finishSpin,makeSound,schedule]);
  const onBaseStop=useCallback((id:string,reel:number)=>{
   const result=resultRef.current;
@@ -183,7 +242,7 @@ function App(){
   makeSound('stop');
   const elephantCount=result.baseGrid.filter((symbol,index)=>
    symbol==='Elephant'&&stoppedReels.current.has(index%5)).length;
-  if(result.elephantBonus&&elephantCount>0&&!anticipated.current
+  if(elephantCount>0&&!anticipated.current
     &&stoppedReels.current.size<5){
    anticipated.current=true;setAnticipation(true);makeSound('anticipation');
   }
@@ -199,23 +258,25 @@ function App(){
    if(free.length===0){finishSpin(id);return;}
    pendingBonus.current=new Set(free);
    setRollingCells(free);setPhase('bonus');
-  },BONUS_START_PAUSE_MS);
+  },bonusStartPause(speedRef.current));
  },[finishSpin,makeSound,schedule]);
  const send=useCallback((intent:RubyIntent)=>{
   const current=snapshotRef.current;
   if(!current||pendingRef.current||uncertain||
-   phase==='awaiting'||phase==='base'||phase==='bonus-intro'||phase==='bonus')return;
-  if(intent.action==='spin'&&!current.state.canSpin)return;
+   phase==='awaiting'||phase==='base'||phase==='bonus-intro'||phase==='bonus')return false;
+  if(intent.action==='spin'&&!current.state.canSpin)return false;
   const id=sendRuby(current,intent);
   pendingRef.current={id,expectedRevision:current.revision,action:intent.action,ackRevision:null};
   setPending(true);setNotice('');
   if(intent.action==='spin'){
    clearTimers();resultRef.current=null;setSpinResult(null);
+   setFeedback('none');setSettledId(null);setTransfer(null);setNearMiss(false);
    stoppedReels.current.clear();pendingBonus.current.clear();anticipated.current=false;
    setAnticipation(false);setWinners([]);setHeld([]);setRollingReels([]);setRollingCells([]);
    setTargetBase(null);setTargetBonus(null);setPhase('awaiting');
    makeSound('spin');
   }else if(intent.action==='bet.set')makeSound('bet');
+  return true;
  },[uncertain,phase,clearTimers,makeSound]);
  useEffect(()=>{
   const release=(revision:number)=>{
@@ -234,6 +295,7 @@ function App(){
    }else if(event.data.requestId===pendingRef.current?.id){
     if(!event.data.success){
      pendingRef.current=null;setPending(false);setPhase('idle');
+     autoRef.current.active=false;setAutoActive(false);setAutoLeft(0);
      setNotice(event.data.message);
     }else{
      pendingRef.current.ackRevision=event.data.revision;
@@ -271,17 +333,25 @@ function App(){
   const motion=snapshot.state.animationsEnabled&&!reduced;
   if(!motion){finishSpin(result.id);return;}
   setRollingReels([...REELS]);setPhase('base');
- },[snapshot?.state.lastSpin?.id,clearTimers,finishSpin,reduced]);
+ },[snapshot?.session,snapshot?.state.lastSpin?.id,clearTimers,finishSpin,reduced]);
  useEffect(()=>{
   if(!pending)return;
   const id=setTimeout(()=>{
    if(!pendingRef.current)return;
+   autoRef.current.active=false;setAutoActive(false);setAutoLeft(0);
    setUncertain(true);setNotice(languages[snapshotRef.current?.state.language??'de'].err);
    setPending(false);setPhase('idle');
   },10000);
   return()=>clearTimeout(id);
  },[pending]);
- const close=useCallback(()=>window.chrome?.webview?.postMessage({type:'indian-ruby.close'}),[]);
+ const stopAutoSpins=useCallback(()=>{
+  autoRef.current.active=false;autoRef.current.remaining=0;
+  setAutoActive(false);setAutoLeft(0);
+ },[]);
+ const close=useCallback(()=>{
+  autoRef.current.active=false;
+  window.chrome?.webview?.postMessage({type:'indian-ruby.close'});
+ },[]);
  useEffect(()=>{
   const onKey=(event:KeyboardEvent)=>{
    if(event.key==='Escape'){
@@ -297,16 +367,46 @@ function App(){
   return()=>document.removeEventListener('keydown',onKey);
  },[send,rules,close]);
  const state=snapshot?.state;
+ const setSlotSpeed=useCallback((next:SunsetSpeed)=>{
+  if(phase==='base'||phase==='bonus'||phase==='bonus-intro'||phase==='awaiting'||autoRef.current.active)return;
+  speedRef.current=next;setSpeed(next);
+ },[phase]);
+ const startAutoSpins=useCallback(()=>{
+  if(autoRef.current.active||pendingRef.current||rules||uncertain)return;
+  if(!send({action:'spin'}))return;
+  autoRef.current={active:true,remaining:autoCount-1,lastHandled:''};
+  setAutoActive(true);setAutoLeft(autoCount);
+ },[autoCount,rules,send,uncertain]);
+ useEffect(()=>{
+  const result=spinResult;
+  if(phase!=='result'||!result||pending||!autoRef.current.active||
+   autoRef.current.lastHandled===result.id)return;
+  autoRef.current.lastHandled=result.id;
+  if((result.elephantBonus&&stopBonus)||autoRef.current.remaining<=0||
+   !snapshot?.state.canSpin||rules||uncertain){
+   stopAutoSpins();return;
+  }
+  schedule(()=>{
+   if(!autoRef.current.active||pendingRef.current||rules||uncertain)return;
+   if(send({action:'spin'})){
+    autoRef.current.remaining--;
+    setAutoLeft(autoRef.current.remaining+1);
+   }else stopAutoSpins();
+  },speed==='turbo'?300:speed==='fast'?520:790);
+ },[phase,spinResult?.id,pending,snapshot?.state.canSpin,send,schedule,stopAutoSpins,
+    speed,stopBonus,rules,uncertain]);
+
  const de=state?.language!=='en',t=languages[de?'de':'en'];
  const animating=phase==='awaiting'||phase==='base'||phase==='bonus-intro'||phase==='bonus';
  const canInteract=!!snapshot&&!pending&&!uncertain&&!animating;
  // While a bet command is pending the clicks are guarded by pendingRef;
  // do not toggle the visual disabled state (the original flicker source).
- const canBet=!!snapshot&&!uncertain&&!animating;
+ const canBet=!!snapshot&&!uncertain&&!animating&&!autoActive;
  const idx=state?.bets.indexOf(state.bet)??-1;
  const onBet=useCallback((value:string)=>send({action:'bet.set',value}),[send]);
  const winAmount=spinResult?.payout??'0';
  const hasWin=phase==='result'&&!!spinResult&&Number(winAmount)>0;
+ const outcome=feedback;
  const isHerd=phase==='bonus-intro'||phase==='bonus';
  const bonusLive=isHerd||phase==='result'&&!!spinResult?.elephantBonus;
  return <div className="ruby-shell ruby-premium-shell"
@@ -322,10 +422,13 @@ function App(){
   <header className="ruby-header">
    <button type="button" className="ruby-back" onClick={close}>← {t.back}</button>
    <div className="ruby-title">
-    <small>{t.strap}</small><h1>INDIAN <span>RUBY</span></h1><p>{t.subtitle}</p>
+    <small>{t.strap}</small><h1 className="sunset-title">SUNSET <span>RUBY</span></h1><p>{t.subtitle}</p>
    </div>
-   <div className="ruby-top-balance"><small>{t.money}</small>
-    <strong>{cash(state?.bankroll??'0')}</strong></div>
+   <div className={'ruby-top-balance sunset-balance'+(feedback!=='none'?' feedback-'+feedback:'')}
+    ref={balanceRef}><small>{t.money}</small>
+    <AnimatedBankroll balance={state?.bankroll??'0'} spin={spinResult}
+     settled={!!spinResult&&settledId===spinResult.id}
+     reduced={reduced||!state?.animationsEnabled}/></div>
   </header>
   <main className="ruby-main">
    <aside className="ruby-story">
@@ -335,12 +438,13 @@ function App(){
     <p>{t.elephants}</p>
     <div className="ruby-story-diamonds" aria-hidden="true">✦ ◆ ✦</div>
    </aside>
-   <section className={'ruby-machine'+(isHerd?' bonus-illuminated':'')+(hasWin?' win-illuminated':'')}
+   <section className={'ruby-machine'+(isHerd?' bonus-illuminated':'')+
+    (hasWin?' win-illuminated':'')+(feedback!=='none'?' outcome-'+feedback:'')}
     aria-label={t.tag}>
     <RubyLamps/>
     <div className="ruby-machine-top">
      <span className="ruby-marquee-left" aria-hidden="true">❖</span>
-     <div><small>{t.marquee}</small><strong>INDIAN RUBY</strong></div>
+     <div><strong className="sunset-cabinet-crest">✦ {t.marquee} ✦</strong></div>
      <span className="ruby-marquee-right" aria-hidden="true">❖</span>
     </div>
     <div className="ruby-reel-bezel">
@@ -349,14 +453,15 @@ function App(){
       spinId={spinResult?.id??null} rollingReels={rollingReels} rollingCells={rollingCells}
       heldCells={held} winningLines={winners}
       showWins={phase==='result'&&winners.length>0}
-      anticipation={anticipation} reducedMotion={reduced||!state?.animationsEnabled}
+      anticipation={anticipation} nearMiss={isElephantNearMiss(spinResult?.baseGrid??[])}
+      speed={speed} reducedMotion={reduced||!state?.animationsEnabled}
       onBaseStop={onBaseStop} onBonusStop={onBonusStop}/>
      <div className="ruby-side-jewels right" aria-hidden="true"><i/><i/><i/></div>
     </div>
-    <div className={'ruby-result'+(hasWin?' has-win':'')} role="status" aria-live="polite">
+    <div ref={resultAreaRef} className={'ruby-result'+(hasWin?' has-win':'')} role="status" aria-live="polite">
      <div className="ruby-result-title">
       {isHerd?t.herd:anticipation?t.anticipation:animating?t.rolling:
-       hasWin?t.total:spinResult?t.noWin:notice||t.ready}
+       hasWin?t.total:nearMiss?t.nearMiss:spinResult?t.noWin:notice||t.ready}
      </div>
      <div className="ruby-result-amount">
       <AnimatedWin value={phase==='result'?winAmount:'0'}
@@ -370,7 +475,7 @@ function App(){
       canIncrease={canBet&&idx>=0&&idx<(state?.bets.length??0)-1}
       onBet={onBet} label={t.choose}/>
      <button type="button" className="ruby-spin"
-      disabled={!state?.canSpin||animating||uncertain}
+      disabled={!state?.canSpin||animating||uncertain||autoActive||pending}
       onClick={()=>send({action:'spin'})}>
       <span className="ruby-spin-gem" aria-hidden="true">◆</span>
       <span>{t.spin}</span>
@@ -400,6 +505,34 @@ function App(){
      <button type="button" disabled={!canInteract}
       onClick={()=>send({action:'animations.set',value:String(!state?.animationsEnabled)})}>
       {t.motion}<strong>{state?.animationsEnabled?'ON':'OFF'}</strong></button>
+    </div>
+    <div className="ruby-detail-card sunset-auto-panel">
+     <h2>{t.auto} · {t.speed}</h2>
+     <div className="sunset-speed-tabs" role="group" aria-label={t.speed}>
+      {(['normal','fast','turbo'] as const).map(option=><button key={option}
+       type="button" className={speed===option?'selected':''}
+       aria-pressed={speed===option} disabled={animating||autoActive||pending}
+       onClick={()=>setSlotSpeed(option)}>
+       {t[option]}</button>)}
+     </div>
+     <div className="sunset-auto-row">
+      <label htmlFor="sunset-auto-count">{t.autoCount}</label>
+      <select id="sunset-auto-count" value={autoCount} disabled={autoActive||animating||pending}
+       onChange={event=>setAutoCount(Number(event.currentTarget.value))}>
+       {[10,25,50,100].map(count=><option key={count} value={count}>{count}</option>)}
+      </select>
+     </div>
+     <label className="sunset-stop-bonus">
+      <input type="checkbox" checked={stopBonus} disabled={autoActive}
+       onChange={event=>setStopBonus(event.currentTarget.checked)}/>
+      {t.stopBonus}
+     </label>
+     <button className={'sunset-auto-trigger'+(autoActive?' running':'')} type="button"
+      disabled={!autoActive&&(!canInteract||!state?.canSpin||rules)}
+      onClick={autoActive?stopAutoSpins:startAutoSpins}>
+      {autoActive?t.autoStop:t.autoStart}
+     </button>
+     {autoActive&&<p className="sunset-auto-left">{t.autoLeft}: {autoLeft}</p>}
     </div>
     {spinResult?.elephantBonus&&<div className="ruby-detail-card ruby-feature-receipt">
      <h2>{t.bonus}</h2>
