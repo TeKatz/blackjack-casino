@@ -276,6 +276,21 @@ internal static class NativeShellWebSmoke
                                     break;
                                 }
                             }
+                            // GitHub Windows runners may enable system reduced-motion.
+                            // In that case the C# spin must settle without a tape by design.
+                            string reducedMode = await form.BrowserCore.ExecuteScriptAsync(
+                                "window.matchMedia('(prefers-reduced-motion: reduce)').matches");
+                            if (!firstSpinAnimated && reducedMode == "true")
+                            {
+                                string settled = await form.BrowserCore.ExecuteScriptAsync(
+                                    "document.querySelector('.ruby-premium-shell')"
+                                    + "?.getAttribute('data-phase')==='result'");
+                                if (settled == "true")
+                                {
+                                    firstSpinAnimated = true;
+                                    Console.WriteLine("PASS: Sunset Ruby first spin settles under reduced motion.");
+                                }
+                            }
                             if (!firstSpinAnimated)
                             {
                                 string diagnostic = await form.BrowserCore.ExecuteScriptAsync(
