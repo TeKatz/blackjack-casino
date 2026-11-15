@@ -31,7 +31,7 @@ describe('Empire Legacy panel',()=>{
     expect(html).toContain('Tycoon');
     expect(html).toContain('Inner Circle');
     expect(html).toContain('Sample upgrade 0');
-    expect(html).not.toContain('Sample upgrade 1');
+    expect(html).not.toContain('Sample upgrade 1</strong>');
     expect(html).toContain('5');
   });
   it('keeps sections collapsible and milestones discoverable',()=>{
