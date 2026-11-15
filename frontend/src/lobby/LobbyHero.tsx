@@ -1,5 +1,5 @@
 import {useEffect,useRef} from 'react';
-import {enhancedHeroAtlas} from './heroResolution';
+// The native AVIF stays on a stable texture for the lifetime of the banner.
 
 /**
  * The club banner uses three independently authored image plates, not three
@@ -57,20 +57,18 @@ export function LobbyHero({de,motionEnabled}:{de:boolean;motionEnabled:boolean})
     };
   },[motionEnabled]);
   useEffect(()=>{
-    // Upgrade off the critical first paint. If image decode or Canvas fails,
-    // the original atlas remains visible with no navigation impact.
+    const element=host.current;
+    if(!element)return;
+    // Do not display the planes until their shared texture is decoded.
+    // The static banner beneath remains visible if the codec is unavailable.
     let live=true;
-    const job=window.setTimeout(()=>{
-      void enhancedHeroAtlas().then(url=>{
-        if(live&&url&&host.current)
-          host.current.style.setProperty('--hero-atlas',`url("${url}")`);
-      });
-    },350);
-    return ()=>{
-      live=false;
-      window.clearTimeout(job);
-      host.current?.style.removeProperty('--hero-atlas');
-    };
+    const image=new Image();
+    image.decoding='async';
+    image.src='/lobby/art/hero-parallax.avif';
+    void image.decode().then(()=>{
+      if(live)element.dataset.artReady='true';
+    }).catch(()=>{/* Keep the static fallback without a black replacement frame. */});
+    return ()=>{live=false;delete element.dataset.artReady;};
   },[]);
   return <div ref={host} className="lobby-hero">
     <div className="lobby-hero-art" aria-hidden="true">
