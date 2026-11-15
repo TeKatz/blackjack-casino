@@ -27,6 +27,26 @@ internal static class NativeShellContractSmoke
             if (!CasinoWinCursor.HasNativeArtwork)
                 throw new InvalidOperationException(
                     "Native casino pointer fell back to a Windows system cursor.");
+            // Real GDI reproduction of both hardware cursor shapes. The old
+            // separately authored native DIB sometimes appeared completely
+            // black even though the React vector looked gold.
+            foreach (bool pressed in new[] { false, true })
+            {
+                using var rendered = new System.Drawing.Bitmap(32, 32);
+                using (System.Drawing.Graphics canvas =
+                    System.Drawing.Graphics.FromImage(rendered))
+                {
+                    canvas.Clear(System.Drawing.Color.FromArgb(18, 30, 26));
+                    CasinoWinCursor.ForState(pressed).Draw(canvas,
+                        new System.Drawing.Rectangle(0, 0, 32, 32));
+                }
+                System.Drawing.Color gold = rendered.GetPixel(4, 10);
+                if (gold.R < 140 || gold.G < 90 || gold.B < 30 ||
+                    gold.R <= gold.G || gold.G <= gold.B)
+                    throw new InvalidOperationException(
+                        "Native casino cursor is missing its gold/emerald color at "
+                        + (pressed ? "pressed" : "normal") + " state.");
+            }
             if (NativeRouteTransitionOverlay.VisibleOpacity(0) <= 0
                 || NativeRouteTransitionOverlay.VisibleOpacity(-5) <= 0
                 || NativeRouteTransitionOverlay.VisibleOpacity(.5) != .5
