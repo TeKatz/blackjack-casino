@@ -110,8 +110,6 @@ internal sealed class NativeCasinoRuntime : IDisposable
             initialHistory: PlayerProfileStore.LoadHistory(directory),
             historySaver: entries => SaveHistoryToDisk(directory, entries));
         empire = new EmpireService(Preferences.Empire);
-        empire.SetClaimedAchievements(Profile.ClaimedChallengeIds);
-        empire.SetActivitySnapshot(EmpireActivitySnapshot.FromProfile(Profile));
         table = new BlackjackTableController(Preferences);
         reelsBet = Math.Clamp(Preferences.SlotBet, SlotMachineRules.MinimumBet, SlotMachineRules.MaximumBet);
         neonBet = NeonVaultRules.Bets.OrderBy(bet => Math.Abs(bet - Preferences.NeonVaultBet)).First();
@@ -242,12 +240,10 @@ internal sealed class NativeCasinoRuntime : IDisposable
     {
         if (disposed || HandInProgress || ManorRequiresRestart || rouletteRequiresRestart)
             throw new InvalidOperationException("Finish the active game before opening Empire.");
-        empire.SetClaimedAchievements(Profile.ClaimedChallengeIds);
-        empire.SetActivitySnapshot(EmpireActivitySnapshot.FromProfile(Profile));
         empire.Start(DateTimeOffset.UtcNow);
         empire.Accrue(DateTimeOffset.UtcNow);
         Persist();
-        status = "Casino Empire management ready.";
+        status = "Casino Empire clicker ready.";
     }
 
     internal void CloseEmpire()
@@ -263,62 +259,30 @@ internal sealed class NativeCasinoRuntime : IDisposable
         AnimationsEnabled = Preferences.Presentation("casino-empire").AnimationsEnabled,
         SoundEnabled = Preferences.Presentation("casino-empire").SoundEnabled,
         Detached = detached,
-        CanClaimDividend = !HandInProgress && !ManorRequiresRestart && !rouletteRequiresRestart,
         Economy = EmpireModernSnapshot.Create(empire),
     };
-
-    internal object EmpirePreview(EmpireModernCommand command) =>
-        EmpireModernSnapshot.Preview(empire.Preview(
-            command.InspectRoomId ?? command.RoomId
-                ?? EmpireCatalog.Find(command.Id ?? "")?.Id ?? "slots",
-            (candidate, at) => EmpireModernProtocol.Apply(candidate, command, at)));
 
     internal EmpireActionResult CommitEmpire(EmpireModernCommand command)
     {
         if (disposed || ManorRequiresRestart || rouletteRequiresRestart || HandInProgress)
-            return new(false, "Finish the active game or recover the save before managing Empire.");
+            return new(false, "Finish the active game or recover the save before playing Empire.");
         try
         {
-            EmpireActionResult result;
-            if (command.Action == "dividend")
-            {
-                decimal paid = empire.ClaimDividend(DateTimeOffset.UtcNow, (state, cash) =>
+            EmpireActionResult result = empire.Transact(
+                candidate => EmpireModernProtocol.Apply(candidate, command, DateTimeOffset.UtcNow),
+                newState =>
                 {
-                    var candidate = Preferences with
-                    {
-                        Empire = state,
-                        Bankroll = checked(Bankroll + cash),
-                    };
-                    // A single durable snapshot owns both the owner reserve and cash.
-                    PlayerStateStore.SaveOrThrow(candidate, directory);
-                    Preferences = candidate;
-                    table.Session.ResetBankroll(candidate.Bankroll);
+                    var preferences = Preferences with { Empire = newState, Bankroll = Bankroll };
+                    PlayerStateStore.SaveOrThrow(preferences, directory);
+                    Preferences = preferences;
                 });
-                result = paid > 0m
-                    ? new(true, $"Owner dividend: {paid:C2} added to casino cash.")
-                    : new(false, "No owner dividend is available.");
-            }
-            else
-            {
-                result = empire.Transact(candidate =>
-                {
-                    candidate.ObserveActivity(
-                        EmpireActivitySnapshot.FromProfile(Profile), DateTimeOffset.UtcNow);
-                    return EmpireModernProtocol.Apply(candidate, command, DateTimeOffset.UtcNow);
-                }, state =>
-                {
-                    var candidate = Preferences with { Empire = state, Bankroll = Bankroll };
-                    PlayerStateStore.SaveOrThrow(candidate, directory);
-                    Preferences = candidate;
-                });
-            }
             status = result.Message;
             return result;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or OverflowException
-            or InvalidOperationException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or OverflowException or InvalidOperationException)
         {
-            status = "Empire change was not saved. Verify the stored state and retry.";
+            status = "Empire action was not saved. Refresh the game.";
             return new(false, status + " " + ex.Message);
         }
     }
