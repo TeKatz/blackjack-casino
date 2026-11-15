@@ -100,8 +100,9 @@ public static class IndianRubyRules
                 {
                     IndianRubySymbol actual = grid[cell];
                     if (actual == target) { count++; continue; }
-                    // A ruby cannot replace an elephant, particularly on a bonus trigger.
-                    if (actual == IndianRubySymbol.Ruby && target != IndianRubySymbol.Elephant)
+                    // A ruby does not trigger an elephant bonus. During the feature it can
+                    // help complete an elephant line; the held trigger is already settled.
+                    if (actual == IndianRubySymbol.Ruby && (target != IndianRubySymbol.Elephant || elephantOnly))
                     {
                         count++; usesRuby = true; continue;
                     }
@@ -174,7 +175,7 @@ public sealed class IndianRubySession
                     final[index] = IndianRubyRules.RandomBonus(index % IndianRubyRules.Reels, next);
             }
         }
-        var (baseMultiplier, _) = IndianRubyRules.Evaluate(baseGrid);
+        var (baseMultiplier, baseLines) = IndianRubyRules.Evaluate(baseGrid);
         var (bonusMultiplier, bonusLines) = bonus
             ? IndianRubyRules.Evaluate(final, elephantOnly: true)
             : (0m, Array.Empty<int>());
@@ -184,6 +185,7 @@ public sealed class IndianRubySession
         decimal after = checked(before - bet + basePayout + bonusPayout);
         Bankroll = after;
         return new IndianRubySpinResult(Guid.NewGuid(), DateTimeOffset.UtcNow, bet,
-            before, after, baseGrid, final, held, bonusLines, bonus, basePayout, bonusPayout);
+            before, after, baseGrid, final, held, baseLines.Concat(bonusLines).Distinct().ToArray(),
+            bonus, basePayout, bonusPayout);
     }
 }
