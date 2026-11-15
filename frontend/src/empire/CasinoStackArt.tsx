@@ -101,7 +101,7 @@ function CasinoStackArt({levels,clicks}:{levels:number;clicks:number}){
     </defs>
     <ellipse cx="453" cy="462" rx="405" ry="72" fill="#000" opacity=".6" filter="url(#ce-shadow)"/>
     <ellipse cx="449" cy="391" rx="404" ry="160" fill="#080d0c" opacity=".86"/>
-    <!-- dimensioned dark wood side beneath the metal lip -->
+    {/* dimensioned dark wood side beneath the metal lip */}
     <path d="M48 365C48 278 220 218 449 218S852 278 852 365V408C852 493 668 525 449 525S48 487 48 408Z"
       fill="url(#ce-lip)" stroke="#0c100e" strokeWidth="9"/>
     <path d="M67 410C156 493 731 514 831 411" fill="none" stroke="#e2a85e" strokeWidth="2.5" opacity=".58"/>
@@ -117,9 +117,9 @@ function CasinoStackArt({levels,clicks}:{levels:number;clicks:number}){
       <ellipse cx="456" cy="330" rx="200" ry="125" fill="url(#ce-amber-illum)" opacity=".4"/>
     </g>
     <ellipse cx="445" cy="403" rx="195" ry="50" fill="#000" opacity=".48" filter="url(#ce-shadow)"/>
-    <!-- individual ceramic chips with curved edges and distinct top faces -->
+    {/* individual ceramic chips with curved edges and distinct top faces */}
     {columns.map(column=><Column key={column.key} column={column}/>)}
-    <!-- side halo dots highlight tangible tabletop -->
+    {/* side halo dots highlight tangible tabletop */}
     <g fill="#ffe1a1">
       <ellipse cx="112" cy="362" rx="5" ry="3.5"/>
       <ellipse cx="780" cy="351" rx="6" ry="3.4"/>
