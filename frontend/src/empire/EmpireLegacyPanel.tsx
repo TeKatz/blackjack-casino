@@ -71,15 +71,10 @@ function ProgressDots({count}:{count:number}){
   </span>;
 }
 
-export function EmpireLegacyPanel({legacy,prestige,de,disabled,buy}:Props){
-  const [section,setSection]=useState<'upgrades'|'milestones'|null>('upgrades');
-  const [path,setPath]=useState<string>('active');
-  const [category,setCategory]=useState<string>('clicks');
-  const owned=legacy.upgrades.filter(u=>u.owned).length;
-  const visibleMilestones=legacy.milestones.filter(m=>m.earned).length;
-  const language=de?'de':'en';
-
-  function UpgradePath({id}:{id:string}){
+function UpgradePath({id,legacy,prestige,de,disabled,buy,path,setPath}:{
+  id:string;legacy:EmpireLegacy;prestige:number;de:boolean;disabled:boolean;
+  buy:(id:string)=>void;path:string;setPath:(id:string)=>void;
+}){
     const config=paths.find(p=>p.id===id)!;
     const track=legacy.upgrades.filter(u=>u.path===id);
     const purchased=track.filter(u=>u.owned).length;
@@ -117,7 +112,11 @@ export function EmpireLegacyPanel({legacy,prestige,de,disabled,buy}:Props){
     </div>;
   }
 
-  function MilestoneGroup({id}:{id:string}){
+
+function MilestoneGroup({id,legacy,de,category,setCategory}:{
+  id:string;legacy:EmpireLegacy;de:boolean;category:string;setCategory:(id:string)=>void;
+}){
+  const language=de?'de':'en';
     const group=groups.find(g=>g.id===id)!;
     const entries=legacy.milestones.filter(m=>m.category===id);
     const earned=entries.filter(m=>m.earned).length;
@@ -156,6 +155,15 @@ export function EmpireLegacyPanel({legacy,prestige,de,disabled,buy}:Props){
     </div>;
   }
 
+export function EmpireLegacyPanel({legacy,prestige,de,disabled,buy}:Props){
+  const [section,setSection]=useState<'upgrades'|'milestones'|null>('upgrades');
+  const [path,setPath]=useState<string>('active');
+  const [category,setCategory]=useState<string>('clicks');
+  const owned=legacy.upgrades.filter(u=>u.owned).length;
+  const visibleMilestones=legacy.milestones.filter(m=>m.earned).length;
+  const language=de?'de':'en';
+
+
   return <div className="ce-legacy-panel">
     <div className="ce-legacy-header">
       <div className="ce-legacy-emblem" aria-hidden="true">✧</div>
@@ -179,7 +187,8 @@ export function EmpireLegacyPanel({legacy,prestige,de,disabled,buy}:Props){
       </button>
       <div className="ce-legacy-section-content" data-open={section==='upgrades'} inert={section!=='upgrades'}>
         <div className="ce-legacy-section-inner">
-          {paths.map(p=><UpgradePath key={p.id} id={p.id}/>)}
+          {paths.map(p=><UpgradePath key={p.id} id={p.id} legacy={legacy} prestige={prestige} de={de}
+              disabled={disabled} buy={buy} path={path} setPath={setPath}/>)}
         </div>
       </div>
     </div>
@@ -194,7 +203,8 @@ export function EmpireLegacyPanel({legacy,prestige,de,disabled,buy}:Props){
         <div className="ce-legacy-section-inner">
           <p className="ce-legacy-explainer">{de?'Jedes Ziel vergibt einmalig einen Prestige-Punkt.':
             'Each milestone awards one permanent point, only once.'}</p>
-          {groups.map(g=><MilestoneGroup key={g.id} id={g.id}/>)}
+          {groups.map(g=><MilestoneGroup key={g.id} id={g.id} legacy={legacy} de={de}
+              category={category} setCategory={setCategory}/>)}
         </div>
       </div>
     </div>
