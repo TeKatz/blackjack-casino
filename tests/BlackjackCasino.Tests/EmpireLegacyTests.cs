@@ -69,6 +69,7 @@ public class EmpireLegacyTests
             Buildings = new() { ["cashier"] = 5 },
         });
         decimal initialClick = service.CreditsPerClick;
+        int initialTokens = service.PrestigeTokens; // includes auto-earned building and prestige milestones
         Assert.False(service.BuyLegacyUpgrade("active-3", Now).Success);
         Assert.True(service.BuyLegacyUpgrade("active-1", Now).Success);
         Assert.True(service.CreditsPerClick > initialClick);
@@ -76,9 +77,9 @@ public class EmpireLegacyTests
         Assert.Equal(4m, service.CriticalClickMultiplier);
         Assert.False(service.BuyLegacyUpgrade("active-2", Now).Success);
         Assert.False(service.BuyLegacyUpgrade("active-3", Now).Success);
-        Assert.Equal(1, service.PrestigeTokens);
+        Assert.Equal(initialTokens - 3, service.PrestigeTokens);
         var reloaded = new EmpireService(service.Snapshot);
-        Assert.Equal(1, reloaded.PrestigeTokens);
+        Assert.Equal(initialTokens - 3, reloaded.PrestigeTokens);
         Assert.True(reloaded.OwnsLegacyUpgrade("active-1"));
         Assert.True(reloaded.OwnsLegacyUpgrade("active-2"));
     }
