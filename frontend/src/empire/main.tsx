@@ -2,7 +2,7 @@ import {useCallback,useEffect,useRef,useState} from 'react';
 import type {CSSProperties} from 'react';
 import {createRoot} from 'react-dom/client';
 import {finishModeBoot} from '../boot/finishModeBoot';
-import {fmt,isEmpireSnapshot,listen,post,send} from './empireBridge';
+import {fmt,listen,post,send} from './empireBridge';
 import type {Building,Command,EmpireSnapshot} from './empireBridge';
 import './empire.css';
 
@@ -54,7 +54,7 @@ function BuildingTile({building,de,active,disabled,onSelect,onUpgrade}:{
         <p>{de?descriptions[building.id]:building.description}</p>
         {building.unlocked?
           <><div className="ce-building-stat"><span>{de?'Produktion':'Income'}</span><b>+{fmt(building.rate,de?'de':'en')} cr/s</b></div>
-            {building.nextUnlock&&<p className="ce-unlock-hint">✦ {de?'Nächste Stufe schaltet frei: ':'Next level unlocks: '}{de?names[Object.keys(names).find(id=>building.nextUnlock===Object.keys(names).find(k=>names[k]===building.nextUnlock))??'']??building.nextUnlock:building.nextUnlock}</p>}
+            {building.nextUnlock&&<p className="ce-unlock-hint">✦ {de?'Nächste Stufe schaltet frei: ':'Next level unlocks: '}{building.nextUnlock}</p>}
             {next!==null&&<p className="ce-unlock-hint">✧ {de?'Nächste Stufe: neue Gebäudeoptik':'Next level: new visual tier'}</p>}
             <button className="ce-upgrade" type="button" disabled={disabled||!building.canBuy}
               onClick={onUpgrade}>{building.level===8?(de?'Maximal ausgebaut':'Maximum level'):
@@ -69,8 +69,9 @@ function EmpireApp(){
   const [snapshot,setSnapshot]=useState<EmpireSnapshot|null>(null);
   const [notice,setNotice]=useState<string|null>(null);
   const [selected,setSelected]=useState<string|null>(null);
-  const [expanded,setExpanded]=useState<'buildings'|'prestige'>('buildings');
+  const [expanded,setExpanded]=useState<'buildings'|'prestige'|null>('buildings');
   const [confirm,setConfirm]=useState(false);
+  const confirmRef=useRef(false);confirmRef.current=confirm;
   const [pulse,setPulse]=useState(0);
   const [visible,setVisible]=useState(true);
   const [pending,setPending]=useState(false);
@@ -112,7 +113,7 @@ function EmpireApp(){
       else if(message.type==='visibility'){
         visibleRef.current=message.visible;setVisible(message.visible);
         if(!message.visible){activeVisit.current=null;queuedTaps.current=0;}
-      }else if(message.type==='escape'){if(confirm)setConfirm(false);else post('empire.close');}
+      }else if(message.type==='escape'){if(confirmRef.current)setConfirm(false);else post('empire.close');}
       else if(message.type==='invalid')setNotice('Empire command rejected. Reopen the game.');
     });
     post('empire.ready');
@@ -120,7 +121,7 @@ function EmpireApp(){
     const update=()=>setLowMotion(media.matches);
     media.addEventListener('change',update);
     return()=>{stop();media.removeEventListener('change',update);};
-  },[confirm]);
+  },[]);
 
   useEffect(()=>{
     if(snapshot?.visitId!==undefined){
@@ -138,7 +139,7 @@ function EmpireApp(){
       if(queuedTaps.current<1||pendingId.current||!ready())return;
       const count=Math.min(20,queuedTaps.current);
       if(command({action:'tap',count}))queuedTaps.current-=count;
-    },160);
+    },350);
     return()=>window.clearInterval(timer);
   },[command]);
 
@@ -154,7 +155,7 @@ function EmpireApp(){
   const e=state.economy,de=state.language==='de',language=state.language;
   const shown=e.buildings.filter(b=>b.visible);
   const stacks=1+Math.min(3,Math.floor(e.totalLevels/10));
-  const height=Math.min(142,42+e.totalLevels*3);
+  const height=Math.min(142,42+e.totalLevels*2+Math.min(25,Math.log10(e.clicks+1)*7));
   const disabled=!visible||pending||!ready();
   const goal=e.goal;
   const name=(id:string|null)=>id?(de?names[id]??id:e.buildings.find(b=>b.id===id)?.name??id):'';
@@ -204,7 +205,7 @@ function EmpireApp(){
         </section>
       </section>
       <section className="ce-side">
-        <button className="ce-accordion-head" type="button" onClick={()=>setExpanded(v=>v==='buildings'?'prestige':'buildings')}
+        <button className="ce-accordion-head" type="button" onClick={()=>setExpanded(v=>v==='buildings'?null:'buildings')}
           aria-expanded={expanded==='buildings'}>
           <span>{de?'DEIN CASINO':'YOUR CASINO'} <small>{shown.filter(b=>b.level>0).length}/{e.buildings.length} {de?'eröffnet':'opened'}</small></span>
           <span>{expanded==='buildings'?'−':'+'}</span>
@@ -221,7 +222,7 @@ function EmpireApp(){
         </div>
         {(e.totalLevels>=12||e.prestige>0)&&<section className="ce-prestige-panel">
           <button className="ce-accordion-head" type="button"
-            onClick={()=>setExpanded(v=>v==='prestige'?'buildings':'prestige')}
+            onClick={()=>setExpanded(v=>v==='prestige'?null:'prestige')}
             aria-expanded={expanded==='prestige'}>
             <span>✧ PRESTIGE <small>{e.canPrestige?(de?'Bereit':'Ready'):(de?'Langzeitziel':'Long-term goal')}</small></span>
             <span>{expanded==='prestige'?'−':'+'}</span>
