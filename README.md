@@ -16,14 +16,14 @@ Play classic table games, original slot machines, puzzles, management games and 
 | **Nine Lives** | A cat-themed slot with Pounce Wilds and bonus spins. |
 | **Midnight Dice** | A Kniffel-style dice game, casually or at paid tables against AI. |
 | **Midnight Merge** | Restore a casino room by room through matching, deliveries and unlockable renovations. |
-| **Casino Empire** | Build and manage a casino property portfolio, research upgrades and earn progress while away. |
+| **Casino Empire** | Grow a casino with a satisfying chip-stack clicker, twelve evolving buildings and prestige. |
 | **Chill Lounge** | Eight activities: Sudoku, Solitaire, Word Search, Memory, Jigsaw Puzzle, Tales from the Backroom, **Midnight Bastion** tower defense and **Midnight Sweep** minesweeper. |
 | **Arcade** | 20 small skill-based games with independent high scores and challenges. |
 | **Midnight Descent** | A separate Godot action roguelite with dungeon exploration, combat, character builds, relics and bosses. |
 
 ## Beyond the games
 
-- **One virtual casino bankroll** for wagering modes, with a separate management economy in Casino Empire.
+- **One virtual casino bankroll** for wagering modes, with a separate incremental clicker economy in Casino Empire.
 - **Long-term progression:** levels, Prestige, seasonal rewards, challenges, daily bonuses and player statistics.
 - **Customization and collecting:** cosmetic Coins, unlockable titles and frames, shop items, the **Collector's Album** and Casino Vault.
 - **Designed for offline play:** locally bundled game artwork, sound and music; progress is saved on your computer.
