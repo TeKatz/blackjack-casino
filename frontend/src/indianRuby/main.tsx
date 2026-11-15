@@ -545,18 +545,13 @@ function App(){
   <footer className="ruby-footer">
    <span>{t.help}</span><span>{t.offline}</span>
   </footer>
-  {rules&&<div className="ruby-modal-backdrop" onClick={()=>setRules(false)}>
-   <section className="ruby-modal" role="dialog" aria-modal="true" aria-label={t.info}
-    onClick={event=>event.stopPropagation()}>
-    <button className="ruby-modal-close" onClick={()=>setRules(false)}
-     aria-label={t.close}>×</button>
-    <h2>{t.info}</h2><p>{t.wild}</p><p>{t.elephants}</p>
-    <p>Elephant 2/3/4/5: ×10 / ×50 / ×200 / ×1000</p>
-    <p>Necklace 3/4/5: ×25 / ×100 / ×500</p>
-    <p>{t.tuning}</p>
-    <button onClick={()=>setRules(false)}>{t.close}</button>
-   </section>
-  </div>}
+  {transfer&&<div key={transfer.id} className={'sunset-credit-transfer '+transfer.kind}
+    aria-hidden="true" style={{left:transfer.x,top:transfer.y,
+     '--flow-x':transfer.dx+'px','--flow-y':transfer.dy+'px'} as CSSProperties}>
+    <span>{transfer.kind==='win'?'+':'−'}{cash(transfer.amount)}</span>
+   </div>}
+  {rules&&<SunsetRules state={state??null} language={de?'de':'en'}
+    close={()=>setRules(false)}/>
  </div>;
 }
 createRoot(document.getElementById('root')!).render(<App/>);
