@@ -144,14 +144,10 @@ internal sealed class NativeEmpireDetachedForm : Form
                 {
                     EmpireModernCommand? intent = EmpireModernProtocol.Parse(e.WebMessageAsJson);
                     if (intent is null) break;
-                    EmpireModernReply reply = commands.Execute(intent,
-                        runtime.CommitEmpire, runtime.EmpirePreview);
+                    EmpireModernReply reply = commands.Execute(intent, runtime.CommitEmpire);
                     Post("empire.result", reply);
-                    if (!intent.Preview)
-                    {
-                        RefreshEmpire();
-                        parentChanged();
-                    }
+                    RefreshEmpire();
+                    if (reply.Success) parentChanged();
                     break;
                 }
             }
