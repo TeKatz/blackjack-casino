@@ -122,7 +122,7 @@ export function isLobbyEmpireCreditsMessage(x: unknown): x is
   {type:'lobby.empire-credits';data:{credits:string}} {
   return object(x) && x.type === 'lobby.empire-credits' && object(x.data)
     && string(x.data.credits)
-    && (x.data.credits === '—' || /^\\d{1,3}(?:,\\d{3})* cr$/.test(x.data.credits));
+    && (x.data.credits === '—' || /^\d{1,3}(?:,\d{3})* cr$/.test(x.data.credits));
 }
 
 export function onLobbyEmpireCredits(onCredits: (credits:string)=>void):()=>void {
