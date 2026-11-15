@@ -191,7 +191,7 @@ function App(){
   setAnticipation(false);
   if(!result.elephantBonus){schedule(()=>finishSpin(id),190);return;}
   setHeld(result.heldCells);setPhase('bonus-intro');
-  makeSound('bonus');
+  makeSound('bonus');makeSound('hoof');
   schedule(()=>{
    if(resultRef.current?.id!==id)return;
    const free=Array.from({length:15},(_,index)=>index)
@@ -199,7 +199,6 @@ function App(){
    if(free.length===0){finishSpin(id);return;}
    pendingBonus.current=new Set(free);
    setRollingCells(free);setPhase('bonus');
-   makeSound('hoof');
   },BONUS_START_PAUSE_MS);
  },[finishSpin,makeSound,schedule]);
  const send=useCallback((intent:RubyIntent)=>{
