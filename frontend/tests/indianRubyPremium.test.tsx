@@ -59,4 +59,21 @@ describe('Sunset Ruby premium reel compositor',()=>{
   expect(html.match(/data-held="true"/g)??[]).toHaveLength(2);
   expect(html).not.toContain('🐘');
  });
+ it('limits layered win-glint overlays to winning cells instead of decorating all reels',()=>{
+  const html=renderToStaticMarkup(<RubyReelStage displayGrid={grid}
+   targetBase={null} targetBonus={null} spinId={null}
+   rollingReels={[]} rollingCells={[]} heldCells={[]} winningLines={[0]}
+   showWins={true} anticipation={false} nearMiss={false} speed="normal" reducedMotion={false}
+   onBaseStop={()=>{}} onBonusStop={()=>{}}/>);
+  expect(html.match(/class="ruby-cell [^"]*winning"/g)??[]).toHaveLength(5);
+  expect(html.match(/class="ruby-win-effects"/g)??[]).toHaveLength(5);
+  expect(html.match(/class="ruby-win-sweep"/g)??[]).toHaveLength(5);
+  expect(html.match(/class="ruby-win-spark first"/g)??[]).toHaveLength(5);
+  const cleared=renderToStaticMarkup(<RubyReelStage displayGrid={grid}
+   targetBase={null} targetBonus={null} spinId={null}
+   rollingReels={[]} rollingCells={[]} heldCells={[]} winningLines={[]}
+   showWins={false} anticipation={false} nearMiss={false} speed="normal" reducedMotion={false}
+   onBaseStop={()=>{}} onBonusStop={()=>{}}/>);
+  expect(cleared).not.toContain('ruby-win-effects');
+ });
 });
