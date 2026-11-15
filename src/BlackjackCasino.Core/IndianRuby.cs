@@ -40,6 +40,10 @@ public static class IndianRubyRules
         (IndianRubySymbol.Jack, 135), (IndianRubySymbol.Ten, 145),
     ];
 
+    // Public, immutable view of the prototype's actual symbol weights for the rules dialog.
+    public static IReadOnlyList<(IndianRubySymbol Symbol, int Weight)> BaseSymbolWeights { get; }
+        = Array.AsReadOnly(Symbols);
+
     public static int Index(int row, int reel) => row * Reels + reel;
 
     public static IndianRubySymbol RandomBase(int reel, Func<int, int> next)
@@ -156,7 +160,7 @@ public sealed class IndianRubySession
     public IndianRubySpinResult Spin(decimal bet)
     {
         if (!IndianRubyRules.Bets.Contains(bet) || bet > Bankroll)
-            throw new InvalidOperationException("Select an affordable Indian Ruby wager.");
+            throw new InvalidOperationException("Select an affordable Sunset Ruby wager.");
         var baseGrid = new IndianRubySymbol[IndianRubyRules.Cells];
         for (int row = 0; row < IndianRubyRules.Rows; row++)
             for (int reel = 0; reel < IndianRubyRules.Reels; reel++)
