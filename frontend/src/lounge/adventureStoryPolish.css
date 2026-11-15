@@ -1,0 +1,288 @@
+/* Tales from the Backroom: a calm, editorial scene surface.
+   Intentionally scoped to story mode. No hooks, overlays or game logic here. */
+.backroom-shell[data-testid="modern-adventure-story"]{
+ --tale-gold:#dfc28c;--tale-cream:#f2e7d0;--tale-mint:#aed1ba;
+ padding-top:clamp(18px,2.2vw,34px);padding-bottom:42px;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-story-grid{
+ grid-template-columns:minmax(0,1fr) minmax(300px,322px);
+ gap:clamp(16px,1.3vw,24px);align-items:start;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-story-column{
+ display:grid;gap:14px;min-width:0;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-story-panel{
+ position:relative;isolation:isolate;overflow:hidden;
+ padding:clamp(22px,2vw,34px);border-radius:18px;
+ border:1px solid #698c778c;
+ background:radial-gradient(ellipse at 95% 0%,#37664a3c,transparent 43%),
+ linear-gradient(153deg,#152921,#0b1a17 62%,#081511);
+ box-shadow:inset 0 1px #dff4da16,0 16px 45px #010b087c;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-story-panel::before{
+ content:"";position:absolute;inset:0 25px auto;height:2px;pointer-events:none;
+ background:linear-gradient(90deg,transparent,#dabb7f99 16%,#dbc69c44 64%,transparent);
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-scene-top{
+ display:flex;justify-content:space-between;align-items:flex-start;gap:20px;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-scene-identity{
+ display:flex;align-items:flex-start;gap:16px;flex:1 1 420px;min-width:0;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-scene-sigil{
+ display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;
+ color:#f0d5a1;font:24px Georgia,serif;border:1px solid #d2b57b86;
+ border-radius:13px;background:linear-gradient(145deg,#345348,#112921);
+ box-shadow:inset 0 1px #ffeacb3a,0 6px 18px #0006;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-scene-heading{min-width:0}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-scene-meta{
+ display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin:2px 0 10px;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-scene-index{
+ padding-left:13px;border-left:1px solid #b6c29a52;
+ color:#9ac7af;font:700 10px "Segoe UI",system-ui,sans-serif;
+ letter-spacing:.12em;text-transform:uppercase;font-variant-numeric:tabular-nums;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-scene-heading h1{
+ margin:0 0 10px;color:#f7e7c7;
+ font:500 clamp(32px,2.7vw,45px)/1.13 Georgia,serif;letter-spacing:-.025em;
+ text-wrap:balance;overflow-wrap:anywhere;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-scene-location{
+ display:inline-flex;align-items:center;gap:8px;
+ color:#b1cdb9;font:600 12px "Segoe UI",system-ui,sans-serif;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-scene-location>span{color:#d5b883}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-top-actions{
+ max-width:48%;align-items:center;justify-content:flex-end;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-top-actions button{
+ padding:10px 12px;border:1px solid #63816c95;border-radius:9px;
+ background:linear-gradient(120deg,#254038,#132b25);color:#ecdfc7;
+ font:700 10px/1.3 "Segoe UI",system-ui,sans-serif;
+ box-shadow:inset 0 1px #e6f1d316;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-top-actions button:hover,
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-top-actions button:focus-visible{
+ background:#315246;border-color:#dbbd84;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-story-prose{
+ margin-top:25px;padding-top:24px;min-height:0;border-top:1px solid #6c907a6b;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-story-prose>p{
+ margin:9px 0 19px;max-width:75ch;color:#e8decf;
+ font:normal clamp(17px,1.12vw,19px)/1.8 Georgia,serif;
+ text-wrap:pretty;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-speaker{
+ display:inline-block;margin:0 0 7px;color:#aed2b7;
+ font:800 10px "Segoe UI",system-ui,sans-serif;letter-spacing:.11em;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choices{
+ margin-top:24px;padding-top:19px;border-top:1px solid #6c907a50;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choices h3{
+ margin:0 0 15px;display:flex;align-items:center;gap:13px;
+ color:#b6d7c5;font:800 11px "Segoe UI",system-ui,sans-serif;letter-spacing:.15em;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choices h3::after{
+ content:"";height:1px;max-width:210px;flex:1;
+ background:linear-gradient(90deg,#aec6a65c,transparent);
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choice{
+ position:relative;display:flex;align-items:center;gap:15px;
+ width:100%;min-height:70px;margin:0 0 10px;padding:13px 17px;
+ text-align:left;border:1px solid #587c6a;border-radius:12px;
+ background:linear-gradient(112deg,#1f3a31,#172e28 66%,#122821);
+ box-shadow:inset 0 1px #dfedd10f,0 3px 12px #0002;
+ transition:translate .22s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choice::before{
+ content:"";position:absolute;left:0;top:16px;bottom:16px;
+ width:3px;border-radius:0 4px 4px 0;background:#d7ba7e;opacity:.35;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choice:hover:not(:disabled),
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choice:focus-visible{
+ translate:3px 0;border-color:#dfc28b;
+ background:linear-gradient(114deg,#294b3c,#204035 66%,#18372c);
+ box-shadow:inset 0 1px #e1edda16,0 9px 23px #0006;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choice:focus-visible{
+ outline:2px solid #f2d59d;outline-offset:3px;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choice:hover::before,
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choice:focus-visible::before,
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choice.event-choice::before{
+ opacity:1;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choice-index{
+ flex:0 0 38px;width:38px;height:38px;display:grid;place-items:center;
+ border-radius:10px;border:1px solid #99886185;background:#233d32;
+ color:#e6ca91;font:700 14px Georgia,serif;font-variant-numeric:tabular-nums;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choice-copy{
+ flex:1;min-width:0;gap:6px;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choice-copy strong{
+ color:#f4e8d3;font:600 14px/1.5 "Segoe UI",system-ui,sans-serif;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choice-copy small{
+ color:#dfc58c;font:750 10px/1.45 "Segoe UI",system-ui,sans-serif;letter-spacing:.065em;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choice-arrow{
+ flex:0 0 auto;margin-left:auto;color:#d6b880;
+ font:normal 22px Georgia,serif;opacity:.63;
+ transition:transform .2s ease,opacity .2s ease;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choice:hover .backroom-choice-arrow,
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choice:focus-visible .backroom-choice-arrow{
+ transform:translate(3px,-2px);opacity:1;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-choice.encounter{
+ border-color:#5e9a7a;background:linear-gradient(110deg,#18392f,#142a25);
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-check-result{
+ border-color:#c2a06e;background:linear-gradient(110deg,#302e20,#1a271e);
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-sheet{
+ position:relative;overflow:hidden;padding:23px 19px 19px;
+ border:1px solid #6b9378a6;border-radius:18px;
+ background:radial-gradient(ellipse at 72% 0%,#4b7c5532,transparent 47%),
+ linear-gradient(160deg,#183529,#10251e 58%,#0a1b17);
+ box-shadow:inset 0 1px #dfedd717,0 17px 42px #0007;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-sheet-head{
+ display:flex;align-items:center;gap:12px;margin-bottom:18px;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-sheet-sigil{
+ flex:0 0 42px;width:42px;height:42px;display:grid;place-items:center;
+ border-radius:50%;border:1px solid #c1a57189;background:#204331;
+ color:#f0d6a5;font:24px Georgia,serif;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-sheet-identity{min-width:0}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-sheet-identity h2{
+ color:#f3e2c4;margin:4px 0 5px;font:500 27px/1.15 Georgia,serif;overflow-wrap:anywhere;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-sheet-identity p{
+ margin:0;color:#b5d1bc;font:650 11px "Segoe UI",system-ui,sans-serif;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-vitals{gap:7px}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-vitals>div{
+ padding:13px 4px;border-radius:10px;border:1px solid #567a679e;
+ background:linear-gradient(145deg,#132d25,#0c1e19);
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-vitals>div:first-child{
+ border-color:#b89c6c99;background:linear-gradient(145deg,#243b2c,#13271f);
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-vitals strong{
+ color:#f0d7a6;font-size:19px;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-health-meter{
+ height:6px;margin:12px 2px 21px;border:1px solid #7393708c;border-radius:99px;
+ overflow:hidden;background:#061a11;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-health-meter span{
+ display:block;height:100%;background:linear-gradient(90deg,#66a886,#afd49b,#e2d294);
+ transition:width .3s ease;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-sheet h3{
+ font:750 11px "Segoe UI",system-ui,sans-serif;letter-spacing:.13em;color:#b7d4bd;
+ margin:20px 0 11px;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-abilities>div{
+ padding:9px 4px;border-radius:10px;background:linear-gradient(145deg,#173127,#11241e);
+ border-color:#587c6a90;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-abilities>div.highlight{
+ border-color:#e5cb96;box-shadow:inset 0 0 13px #d8bb6526;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-abilities strong{color:#f1e1c4}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-skills{max-height:185px;gap:0}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-skills>div{
+ padding:8px 2px;border-color:#53785f5a;color:#d8e6db;
+ font:550 11px "Segoe UI",system-ui,sans-serif;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-skills b{color:#e3c68a}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-d20{
+ margin-top:23px;padding:15px 12px;border-radius:16px;border-color:#8a997d91;
+ background:radial-gradient(ellipse at 50% 43%,#2f594b55,transparent 65%),
+ linear-gradient(150deg,#121e24,#0c1619);
+ box-shadow:inset 0 1px #dfddb716,0 7px 22px #010d0a69;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-d20.active{
+ border-color:#dec08a;box-shadow:0 0 0 1px #bba87952,0 8px 24px #010d0a69;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-d20-stage{margin:0 auto}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-d20 .backroom-primary{
+ min-height:43px;min-width:140px;border-radius:9px;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-inventory{
+ margin:0;padding:18px 23px;border:1px solid #6388789e;border-radius:16px;
+ background:linear-gradient(110deg,#162e24,#0d2119);
+ box-shadow:inset 0 1px #d5e6d314,0 8px 23px #0004;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-inventory-heading{
+ display:flex;align-items:center;gap:10px;margin-bottom:12px;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-inventory-heading h3{margin:0}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-inventory-mark{
+ width:26px;height:26px;display:grid;place-items:center;
+ border-radius:8px;border:1px solid #ae996564;color:#e5c995;background:#254134;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-items{align-items:center;gap:11px}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-items>p{
+ margin:0;font-size:13px;color:#bdd0c0;
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-item{
+ border-radius:11px;background:linear-gradient(115deg,#234032,#112b22);
+}
+.backroom-shell[data-testid="modern-adventure-story"] .backroom-item.coins{border-color:#af9a6585}
+.backroom-shell[data-testid="modern-adventure-story"] button[aria-disabled="true"]{opacity:.68}
+@media(max-width:1160px){
+ .backroom-shell[data-testid="modern-adventure-story"] .backroom-story-grid{
+  grid-template-columns:minmax(0,1fr);
+ }
+ .backroom-shell[data-testid="modern-adventure-story"] .backroom-top-actions{
+  max-width:none;
+ }
+}
+@media(max-width:730px){
+ .backroom-shell[data-testid="modern-adventure-story"] .backroom-story-panel{
+  padding:19px 16px;
+ }
+ .backroom-shell[data-testid="modern-adventure-story"] .backroom-scene-sigil{
+  width:36px;height:36px;flex-basis:36px;border-radius:10px;
+ }
+ .backroom-shell[data-testid="modern-adventure-story"] .backroom-scene-identity{gap:11px}
+ .backroom-shell[data-testid="modern-adventure-story"] .backroom-scene-heading h1{
+  font-size:clamp(26px,6vw,34px);
+ }
+ .backroom-shell[data-testid="modern-adventure-story"] .backroom-top-actions{
+  width:100%;justify-content:flex-start;
+ }
+ .backroom-shell[data-testid="modern-adventure-story"] .backroom-choice{
+  padding:12px 11px;gap:10px;min-height:62px;
+ }
+ .backroom-shell[data-testid="modern-adventure-story"] .backroom-choice-index{
+  width:33px;height:33px;flex-basis:33px;
+ }
+ .backroom-shell[data-testid="modern-adventure-story"] .backroom-inventory{padding:16px}
+}
+@media(prefers-reduced-motion:reduce){
+ .backroom-shell[data-testid="modern-adventure-story"] .backroom-choice,
+ .backroom-shell[data-testid="modern-adventure-story"] .backroom-choice-arrow,
+ .backroom-shell[data-testid="modern-adventure-story"] .backroom-health-meter span{
+  transition:none!important;
+ }
+ .backroom-shell[data-testid="modern-adventure-story"] .backroom-choice:hover{translate:none}
+}
+.backroom-shell[data-testid="modern-adventure-story"][data-motion="off"] .backroom-story-panel{
+ animation:none!important;
+}
+.backroom-shell[data-testid="modern-adventure-story"][data-motion="off"] .backroom-choice,
+.backroom-shell[data-testid="modern-adventure-story"][data-motion="off"] .backroom-choice-arrow,
+.backroom-shell[data-testid="modern-adventure-story"][data-motion="off"] .backroom-health-meter span{
+ transition:none!important;
+}
+.backroom-shell[data-testid="modern-adventure-story"][data-motion="off"] .backroom-choice:hover{translate:none}
