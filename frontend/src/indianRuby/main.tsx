@@ -553,7 +553,7 @@ function App(){
     <span>{transfer.kind==='win'?'+':'−'}{cash(transfer.amount)}</span>
    </div>}
   {rules&&<SunsetRules state={state??null} language={de?'de':'en'}
-    close={()=>setRules(false)}/>
+    close={()=>setRules(false)}/>}
  </div>;
 }
 createRoot(document.getElementById('root')!).render(<App/>);
