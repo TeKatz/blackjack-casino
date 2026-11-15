@@ -117,6 +117,24 @@ export function onLobbySnapshot(onSnapshot: (snapshot: LobbySnapshot) => void): 
   host.addEventListener('message', handler);
   return () => host.removeEventListener('message', handler);
 }
+/** Compact, read-only credit updates; no full lobby snapshot on every income tick. */
+export function isLobbyEmpireCreditsMessage(x: unknown): x is
+  {type:'lobby.empire-credits';data:{credits:string}} {
+  return object(x) && x.type === 'lobby.empire-credits' && object(x.data)
+    && string(x.data.credits)
+    && (x.data.credits === '—' || /^\d{1,3}(?:,\d{3})* cr$/.test(x.data.credits));
+}
+
+export function onLobbyEmpireCredits(onCredits: (credits:string)=>void):()=>void {
+  const host=window.chrome?.webview;
+  if(!host)return ()=>{};
+  const handler=(event:MessageEvent)=>{
+    if(isLobbyEmpireCreditsMessage(event.data))onCredits(event.data.data.credits);
+  };
+  host.addEventListener('message',handler);
+  return ()=>host.removeEventListener('message',handler);
+}
+
 export function lobbyCommand(type: string, id?: string): void {
   const allowed = ['lobby.ready','lobby.ui-ready','lobby.open','lobby.open-secondary',
     'lobby.progression','lobby.profile','lobby.profile.native','lobby.profile.equip','lobby.profile.prestige','lobby.profile.export','lobby.profile.folder','lobby.vault','lobby.daily.claim','lobby.language.set','lobby.exit','lobby.exit.cancel','lobby.refresh',

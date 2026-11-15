@@ -33,7 +33,7 @@ import { onRecordsMessage, previewChallenges, previewStatistics, previewAccount,
 import type { ChallengesSnapshot, StatisticsSnapshot, AccountSnapshot, PrestigeOutcome, HistorySnapshot, VaultSnapshot, VaultReward, SeasonsSnapshot, RecordsPage } from './recordsBridge';
 import { onShopMessages, previewShop } from './shopBridge';
 import type { ShopSnapshot } from './shopBridge';
-import { embeddedLobby, fallbackLobby, lobbyCommand, onLobbySnapshot, renamePlayer } from './lobbyBridge';
+import { embeddedLobby, fallbackLobby, lobbyCommand, onLobbyEmpireCredits, onLobbySnapshot, renamePlayer } from './lobbyBridge';
 import type { LobbyMode, LobbySnapshot } from './lobbyBridge';
 import './lobby.css';
 
@@ -66,6 +66,13 @@ function Progress({value, tone = 'green'}:{value:number; tone?:'green'|'gold'}) 
       <span style={{width: percent(value)}}/>
     </div>;
 }
+function EmpireCreditsCounter({value}:{value:string}) {
+  const [credits,setCredits]=useState(value);
+  useEffect(()=>setCredits(value),[value]);
+  useEffect(()=>onLobbyEmpireCredits(setCredits),[]);
+  return <strong>{credits}</strong>;
+}
+
 function GameTile({ mode, hidden, language, motionEnabled, onOpen, onSecondary }:{
   mode:LobbyMode; hidden:boolean; language:'de'|'en'; motionEnabled:boolean;
   onOpen:(id:string)=>void; onSecondary:(id:string)=>void;
@@ -485,7 +492,7 @@ function LobbyApp() {
         <span><small>BANKROLL</small><BankrollCounter value={data.bankroll}
           numeric={data.bankrollValue} receipt={claimReceipt}
           enabled={!lowMotion && data.animationsEnabled}/></span>
-        {data.showEmpireBalance&&<span className="empire-wallet"><small>EMPIRE CREDITS</small><strong>{data.empireCredits}</strong></span>}
+        {data.showEmpireBalance&&<span className="empire-wallet"><small>EMPIRE CREDITS</small><EmpireCreditsCounter value={data.empireCredits}/></span>}
       </div>
       <button type="button" className="lobby-exit" onClick={()=>setExitOpen(true)}>
         ↪ <span>{de?'Beenden':'Exit'}</span>

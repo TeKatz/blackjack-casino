@@ -108,6 +108,8 @@ internal sealed class NativeShellForm : Form
     private readonly System.Windows.Forms.Timer loungeRefresh = new() { Interval = 1000 };
     private readonly System.Windows.Forms.Timer loungeTowerRefresh = new() { Interval = 100 };
     private readonly System.Windows.Forms.Timer empireRefresh = new() { Interval = 2000 };
+    private readonly System.Windows.Forms.Timer lobbyEmpireRefresh = new() { Interval = 1000 };
+    private string? lastLobbyEmpireCredits;
     private DateTimeOffset empireLastPersist = DateTimeOffset.UtcNow;
     private readonly string frontendFolder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
 
@@ -166,6 +168,29 @@ internal sealed class NativeShellForm : Form
             runtime.TickEmpire();
             RefreshGameSnapshot();
             if (DateTimeOffset.UtcNow - empireLastPersist >= TimeSpan.FromSeconds(30))
+            {
+                runtime.Persist();
+                empireLastPersist = DateTimeOffset.UtcNow;
+            }
+        };
+        // The lobby stays mounted while a detached Empire window is active.
+        // Accrue on the authoritative runtime and send only changed display text.
+        lobbyEmpireRefresh.Tick += (_, _) =>
+        {
+            if (closing || activeMode is not null || !ready || !runtime.EmpireStarted) return;
+            runtime.TickEmpire();
+            if (runtime.Preferences.ShowEmpireBalance)
+            {
+                string credits = NativeLobbySnapshot.EmpireCreditsLabel(runtime);
+                if (!string.Equals(credits, lastLobbyEmpireCredits, StringComparison.Ordinal))
+                {
+                    lastLobbyEmpireCredits = credits;
+                    Post("lobby.empire-credits", new { Credits = credits });
+                }
+            }
+            // Detached Empire already checkpoints the shared state.
+            if (detachedEmpire is not { IsDisposed: false }
+                && DateTimeOffset.UtcNow - empireLastPersist >= TimeSpan.FromSeconds(30))
             {
                 runtime.Persist();
                 empireLastPersist = DateTimeOffset.UtcNow;
@@ -824,6 +849,8 @@ internal sealed class NativeShellForm : Form
                     break;
                 case "lobby.ui-ready" when activeMode is null && listening:
                     ready = true;
+                    lastLobbyEmpireCredits = null;
+                    lobbyEmpireRefresh.Start();
                     browserStartupPhase = "ready: lobby";
                     initializationWatchdog.Stop();
                     watchdog.Stop();
@@ -1888,6 +1915,8 @@ internal sealed class NativeShellForm : Form
 
     private void DisposeBrowser()
     {
+        lobbyEmpireRefresh.Stop();
+        lastLobbyEmpireCredits = null;
         initializationWatchdog.Stop();
         watchdog.Stop();
         listening = ready = false;
@@ -1914,6 +1943,7 @@ internal sealed class NativeShellForm : Form
             if (answer != DialogResult.Yes) { e.Cancel = true; return; }
         }
         closing = true;
+        lobbyEmpireRefresh.Stop();
         if (descentProcess is { HasExited: false } process)
         {
             try { process.Kill(); }
@@ -1936,6 +1966,7 @@ internal sealed class NativeShellForm : Form
         hostAudio.Dispose();
         CasinoAudio.Shutdown();
         empireRefresh.Dispose();
+        lobbyEmpireRefresh.Dispose();
         loungeRefresh.Dispose();
         loungeTowerRefresh.Dispose();
         initializationWatchdog.Dispose();
