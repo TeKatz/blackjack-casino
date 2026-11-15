@@ -7,9 +7,11 @@ export type RubySpin={
  elephantBonus:boolean;basePayout:string;bonusPayout:string;payout:string;net:string;
  playerXp:number;seasonXp:number;levelUp:boolean;
 };
+export type RubyPayrow={symbol:SymbolId;two:number;three:number;four:number;five:number;outerPercent:number;innerPercent:number};
 export type RubyState={
  language:'de'|'en';bankroll:string;bet:string;canSpin:boolean;soundEnabled:boolean;
- animationsEnabled:boolean;bets:string[];paylines:number[][];
+ animationsEnabled:boolean;bets:string[];paylines:number[][];paytable:RubyPayrow[];
+ bonusTriggerPercent:number;bonusElephantPercent:number;bonusRubyInnerPercent:number;
  profile:{level:number;prestige:number;coins:number};
  stats:{spins:number;wins:number;netProfit:string;biggestPayout:string};
  lastSpin:RubySpin|null;
@@ -48,6 +50,12 @@ export function isRubySnapshot(x:unknown):x is RubySnapshot {
   &&typeof s.canSpin==='boolean'&&typeof s.soundEnabled==='boolean'
   &&typeof s.animationsEnabled==='boolean'
   &&Array.isArray(s.bets)&&s.bets.length===9&&s.bets.every(money)
+  &&Array.isArray(s.paytable)&&s.paytable.length===10
+  &&s.paytable.every((item:unknown)=>obj(item)&&symbol(item.symbol)
+   &&['two','three','four','five','outerPercent','innerPercent']
+     .every(key=>typeof item[key]==='number'&&Number.isFinite(item[key])&&item[key]>=0))
+  &&['bonusTriggerPercent','bonusElephantPercent','bonusRubyInnerPercent']
+    .every(key=>typeof s[key]==='number'&&Number.isFinite(s[key])&&(s[key] as number)>=0)
   &&Array.isArray(s.paylines)&&s.paylines.length===10
   &&s.paylines.every((line:unknown)=>Array.isArray(line)&&line.length===5&&line.every((v:unknown)=>integer(v)&&v<15))
   &&obj(s.profile)&&integer(s.profile.level)&&integer(s.profile.prestige)&&integer(s.profile.coins)
