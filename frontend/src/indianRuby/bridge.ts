@@ -33,10 +33,12 @@ export function isRubySpin(x:unknown):x is RubySpin {
   ||!grid(x.baseGrid)||!grid(x.finalGrid)||!indices(x.heldCells,15)||!indices(x.winningLines,10)
   ||typeof x.elephantBonus!=='boolean'||!integer(x.playerXp)||!integer(x.seasonXp)
   ||typeof x.levelUp!=='boolean')return false;
- if(x.elephantBonus!==(x.baseGrid.filter(s=>s==='Elephant').length>=2))return false;
- if(!x.elephantBonus&&x.heldCells.length!==0)return false;
- if(x.heldCells.some(i=>x.baseGrid[i]!==x.finalGrid[i]||
-     (x.baseGrid[i]!=='Elephant'&&x.baseGrid[i]!=='Ruby')))return false;
+ const baseGrid=x.baseGrid as SymbolId[],finalGrid=x.finalGrid as SymbolId[];
+ const heldCells=x.heldCells as number[];
+ if(x.elephantBonus!==(baseGrid.filter(s=>s==='Elephant').length>=2))return false;
+ if(!x.elephantBonus&&heldCells.length!==0)return false;
+ if(heldCells.some(i=>baseGrid[i]!==finalGrid[i]||
+     (baseGrid[i]!=='Elephant'&&baseGrid[i]!=='Ruby')))return false;
  return true;
 }
 export function isRubySnapshot(x:unknown):x is RubySnapshot {
