@@ -47,9 +47,9 @@ describe('Indian Ruby premium reel compositor',()=>{
    showWins={false} anticipation={false} reducedMotion={false}
    onBaseStop={()=>{}} onBonusStop={()=>{}}/>);
   expect(html).toContain('data-reel-engine="five-reel-compositor"');
-  expect((html.match(/class="ruby-reel-column"/g)??[]).toHaveLength(5);
-  expect((html.match(/class="ruby-cell /g)??[]).toHaveLength(15);
-  expect((html.match(/data-held="true"/g)??[])).toHaveLength(2);
+  expect(html.match(/class="ruby-reel-column"/g)??[]).toHaveLength(5);
+  expect(html.match(/class="ruby-cell /g)??[]).toHaveLength(15);
+  expect(html.match(/data-held="true"/g)??[]).toHaveLength(2);
   expect(html).not.toContain('🐘');
  });
 });
