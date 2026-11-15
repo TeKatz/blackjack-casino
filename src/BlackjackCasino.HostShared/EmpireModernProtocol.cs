@@ -34,7 +34,7 @@ internal static class EmpireModernProtocol
                 || !Guid.TryParseExact(session, "D", out _)
                 || !root.TryGetProperty("expectedRevision", out var revision)
                 || !revision.TryGetInt64(out long rev) || rev < 0) return null;
-            if (action is not ("tap" or "building.upgrade" or "prestige")) return null;
+            if (action is not ("tap" or "building.upgrade" or "prestige" or "legacy.buy")) return null;
             if (root.TryGetProperty("preview", out var preview) &&
                 preview.ValueKind != JsonValueKind.False) return null;
             int count = 1;
@@ -42,6 +42,7 @@ internal static class EmpireModernProtocol
                 && (!rawCount.TryGetInt32(out count) || count is < 1 or > 20)) return null;
             if (action == "tap" && id is not null) return null;
             if (action == "building.upgrade" && EmpireCatalog.Find(id) is null) return null;
+            if (action == "legacy.buy" && EmpireLegacyCatalog.FindUpgrade(id) is null) return null;
             if (action == "prestige" && id is not null) return null;
             if (action != "tap" && count != 1) return null;
             return new(request!, session!, rev, action!, id, count);
@@ -56,6 +57,7 @@ internal static class EmpireModernProtocol
         "tap" => service.Tap(command.Count, now),
         "building.upgrade" => service.Upgrade(command.Id, now),
         "prestige" => service.ResetForPrestige(now),
+        "legacy.buy" => service.BuyLegacyUpgrade(command.Id, now),
         _ => new(false, "Unsupported Empire action."),
     };
 }
