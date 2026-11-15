@@ -26,7 +26,7 @@ const state={
  lastSpin:spin,
 };
 const snapshot={version:1,session:guid,revision:1,state};
-describe('Indian Ruby host bridge',()=>{
+describe('Sunset Ruby host bridge',()=>{
  it('accepts only native, complete 5 by 3 outcomes and ten lines',()=>{
   expect(isRubySnapshot(snapshot)).toBe(true);
   expect(isRubySnapshot({...snapshot,state:{...state,bankroll:975}})).toBe(false);
