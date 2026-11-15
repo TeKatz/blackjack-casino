@@ -1,3 +1,4 @@
+import type {} from '../bridge/protocol';
 export type Building = {
   id:string;name:string;description:string;level:number;maxLevel:number;
   unlocked:boolean;visible:boolean;canBuy:boolean;cost:string;rate:string;
