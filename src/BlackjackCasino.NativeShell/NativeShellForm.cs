@@ -923,17 +923,13 @@ internal sealed class NativeShellForm : Form
                 {
                     EmpireModernCommand? command = EmpireModernProtocol.Parse(args.WebMessageAsJson);
                     if (command is null || empireEpoch is null) break;
-                    EmpireModernReply reply = empireEpoch.Execute(command,
-                        runtime.CommitEmpire, runtime.EmpirePreview);
+                    EmpireModernReply reply = empireEpoch.Execute(command, runtime.CommitEmpire);
                     Post("empire.result", reply);
                     status.Text = reply.Message;
-                    if (!command.Preview)
-                    {
-                        if (reply.Success)
-                            hostAudio.PlayGameCue(activeMode, command.Action,
-                                SoundEnabledForCurrentMode());
-                        RefreshGameSnapshot();
-                    }
+                    if (reply.Success && command.Action == "building.upgrade")
+                        hostAudio.PlayGameCue(activeMode, command.Action,
+                            SoundEnabledForCurrentMode());
+                    RefreshGameSnapshot();
                     break;
                 }
                 case "roulette.ready" when activeMode == "roulette":

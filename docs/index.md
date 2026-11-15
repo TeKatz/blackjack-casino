@@ -10,7 +10,7 @@ This is the documentation entry point for **The Midnight Club**. The [README](..
 | Roulette and classic slots | [Midnight Reels](slots.md) |
 | Slot machines | [Midnight Manor](midnight-manor-design.md), [3D Escape bonus](manor-godot-bonus.md), [Neon Vault](neon-vault.md), [Nine Lives](nine-lives.md) |
 | Dice and merging | [Midnight Dice](kniffel.md), [Midnight Merge](midnight-merge-foundation.md) |
-| Casino management | [Casino Empire](casino-empire.md) |
+| Casino incremental clicker | [Casino Empire](casino-empire.md) |
 | Lounge: puzzles | [Sudoku](sudoku.md), [Jigsaw](jigsaw.md), [Solitaire](solitaire-modernization.md), [Word Search](word-search-modernization.md), [Memory](memory-modernization.md) |
 | Lounge: adventure and strategy | [Tales from the Backroom](adventure-engine.md), [Midnight Bastion](tower-defense-phase2.md), [Midnight Sweep](midnight-sweep.md) |
 | Action roguelite | [Midnight Descent](midnight-descent.md) |

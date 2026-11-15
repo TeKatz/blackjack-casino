@@ -19,7 +19,7 @@
   <data name="Lobby.Category.TableGames" xml:space="preserve"><value>Tischspiele</value></data>
   <data name="Lobby.Category.ClassicSlots" xml:space="preserve"><value>Klassische Slots</value></data>
   <data name="Lobby.Category.VideoSlots" xml:space="preserve"><value>Video-Slots</value></data>
-  <data name="Lobby.Category.IdleCasino" xml:space="preserve"><value>Idle-Casino</value></data>
+  <data name="Lobby.Category.IdleCasino" xml:space="preserve"><value>Incremental-Clicker</value></data>
   <data name="Lobby.Category.RelaxedGames" xml:space="preserve"><value>Entspannte Spiele</value></data>
   <data name="Lobby.Blackjack.Subtitle" xml:space="preserve"><value>Die Samttische</value></data>
   <data name="Lobby.Blackjack.Description" xml:space="preserve"><value>Ein ruhiger Platz, ein frischer Shoe und deine nächste Entscheidung. Solo oder mit den Stammgästen des Hauses.</value></data>
@@ -32,7 +32,7 @@
   <data name="Lobby.Manor.Subtitle" xml:space="preserve"><value>Hinter den mondbeschienenen Türen</value></data>
   <data name="Lobby.Manor.Description" xml:space="preserve"><value>Fünf verfluchte Walzen. Freispiele. Ein Manor, dessen Räume sich an deine Entscheidungen erinnern.</value></data>
   <data name="Lobby.Empire.Subtitle" xml:space="preserve"><value>Dein Name über der Tür</value></data>
-  <data name="Lobby.Empire.Description" xml:space="preserve"><value>Baue dein Mitternachts-Wahrzeichen mit dauerhaften Upgrades, Idle-Einnahmen und Besitzer-Dividenden aus.</value></data>
+  <data name="Lobby.Empire.Description" xml:space="preserve"><value>Stapele Chips, baue dein Casino mit sich entwickelnden Gebäuden aus und schalte dauerhaften Fortschritt frei.</value></data>
   <data name="Lobby.Chill.Subtitle" xml:space="preserve"><value>Eine ruhigere Ecke</value></data>
   <data name="Lobby.Chill.Description" xml:space="preserve"><value>Offline-Spiele in deinem eigenen Tempo. Entspanne bei Sudoku oder Midnight Solitaire — keine Einsätze, kein Zeitdruck.</value></data>
   <data name="Lobby.Dice.Subtitle" xml:space="preserve"><value>Die Würfel-Lounge</value></data>

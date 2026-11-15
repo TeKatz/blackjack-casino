@@ -1,5 +1,4 @@
 using BlackjackCasino.Core;
-using BlackjackCasino.Core.Empire;
 
 namespace BlackjackCasino.Tests;
 
@@ -117,13 +116,4 @@ public sealed class CardSetAndNineLivesProgressionTests
         Assert.Equal(123m, ChallengeCatalog.Progress(profile, plays));
     }
 
-    [Fact]
-    public void ClaimedNineLivesAchievements_CanBoostEmpireRooms()
-    {
-        decimal slots = EmpireAchievementBoostCatalog.BonusForRoom(["nine-pounce-25"], "slots");
-        decimal highLimit = EmpireAchievementBoostCatalog.BonusForRoom(["nine-frenzy-1"], "high-limit-slots");
-
-        Assert.Equal(.05m, slots);
-        Assert.Equal(.10m, highLimit);
-    }
 }

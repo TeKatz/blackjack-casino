@@ -41,12 +41,6 @@ try {
     foreach ($atlas in $manifest.Atlases) {
         Require-PackageFile "ModernFrontend/album/atlas/$($atlas.File)" $atlas.Sha256
     }
-    $empireImages = @(Get-ChildItem (Join-Path $source 'Empire') -Filter '*.png' -File)
-    if ($empireImages.Count -ne 11) { throw 'Expected eleven original Empire images.' }
-    foreach ($art in $empireImages) {
-        $relative = "ModernFrontend/empire-art/$($art.Name)"
-        Require-PackageFile $relative (Get-FileHash $art.FullName -Algorithm SHA256).Hash
-    }
     $nineLives = @(Get-ChildItem (Join-Path $source 'NineLives') -Filter '*.jpg' -File)
     if ($nineLives.Count -ne 8) { throw 'Expected eight original Nine Lives images.' }
     foreach ($art in $nineLives) {
@@ -61,7 +55,7 @@ try {
         Success = $true
         Host = 'NativeShell'
         AtlasCount = @($manifest.Atlases).Count
-        EmpireCount = $empireImages.Count
+        EmpireCount = 0
         NineLivesCount = $nineLives.Count
         LicensedSoundtracks = $soundtracks.Count
         Files = $checked.ToArray()

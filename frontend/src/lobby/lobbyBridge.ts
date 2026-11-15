@@ -94,7 +94,7 @@ export const fallbackLobby: LobbySnapshot = {
     {id:'blackjack',title:'Blackjack',category:'Table games',description:'A quiet seat, a fresh shoe and your next decision.',enabled:true,secondary:false},
     {id:'kniffel',title:'Midnight Dice',category:'Table games',description:'Five dice and your score sheet. Play solo or with AI opponents.',enabled:true,secondary:false},
     {id:'chill-lounge',title:'Chill Lounge',category:'Relaxed games',description:'Offline games at your own pace: Sudoku and Solitaire.',enabled:true,secondary:false},
-    {id:'casino-empire',title:'Casino Empire',category:'Idle casino',description:'Build your midnight landmark with lasting upgrades.',enabled:true,secondary:true},
+    {id:'casino-empire',title:'Casino Empire',category:'Incremental clicker',description:'Stack chips, build your casino and unlock lasting progress.',enabled:true,secondary:true},
     {id:'midnight-reels',title:'Midnight Reels',category:'Classic slots',description:'Three reels, a centre payline and old-school charm.',enabled:true,secondary:false},
     {id:'neon-vault',title:'Neon Vault',category:'Video slots',description:'Five reels, 1,024 ways and Vault Break Free Spins.',enabled:true,secondary:false},
     {id:'nine-lives',title:'Nine Lives',category:'Video slots',description:'Five lines, Pounce Wilds and nine bonus spins.',enabled:true,secondary:false},

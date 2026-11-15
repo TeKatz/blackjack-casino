@@ -264,19 +264,17 @@ internal static class NativeShellContractSmoke
                     requestId = empireId,
                     session = empireEpoch.Id,
                     expectedRevision = 0,
-                    action = "upgrade",
-                    id = "slots",
-                    levels = 1,
+                    action = "tap",
+                    count = 2,
                 });
                 EmpireModernCommand? empireCommand = EmpireModernProtocol.Parse(empireCommandJson);
                 if (empireCommand is null)
                     throw new InvalidOperationException("Native Empire command parsing failed.");
                 EmpireModernReply empireReceipt = empireEpoch.Execute(empireCommand,
-                    session.CommitEmpire, session.EmpirePreview);
+                    session.CommitEmpire);
                 if (!empireReceipt.Success || empireReceipt.Revision != 1
                     || empireEpoch.Execute(empireCommand,
-                        _ => throw new Exception("Empire action replayed."),
-                        _ => throw new Exception("Empire preview replayed.")) != empireReceipt)
+                        _ => throw new Exception("Empire action replayed.")) != empireReceipt)
                     throw new InvalidOperationException("Native Empire duplicate purchase or missing checkpoint.");
                 session.CloseEmpire();
 

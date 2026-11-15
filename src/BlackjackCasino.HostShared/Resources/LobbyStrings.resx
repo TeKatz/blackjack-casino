@@ -19,7 +19,7 @@
   <data name="Lobby.Category.TableGames" xml:space="preserve"><value>Table games</value></data>
   <data name="Lobby.Category.ClassicSlots" xml:space="preserve"><value>Classic slots</value></data>
   <data name="Lobby.Category.VideoSlots" xml:space="preserve"><value>Video slots</value></data>
-  <data name="Lobby.Category.IdleCasino" xml:space="preserve"><value>Idle casino</value></data>
+  <data name="Lobby.Category.IdleCasino" xml:space="preserve"><value>Incremental clicker</value></data>
   <data name="Lobby.Category.RelaxedGames" xml:space="preserve"><value>Relaxed games</value></data>
   <data name="Lobby.Blackjack.Subtitle" xml:space="preserve"><value>The velvet tables</value></data>
   <data name="Lobby.Blackjack.Description" xml:space="preserve"><value>A quiet seat, a fresh shoe and your next decision. Solo or with the house regulars.</value></data>
@@ -32,7 +32,7 @@
   <data name="Lobby.Manor.Subtitle" xml:space="preserve"><value>Beyond the moonlit doors</value></data>
   <data name="Lobby.Manor.Description" xml:space="preserve"><value>Five haunted reels. Free Spins. A Manor whose rooms remember your choices.</value></data>
   <data name="Lobby.Empire.Subtitle" xml:space="preserve"><value>Your name above the door</value></data>
-  <data name="Lobby.Empire.Description" xml:space="preserve"><value>Build your midnight landmark with lasting upgrades, idle income and owner dividends.</value></data>
+  <data name="Lobby.Empire.Description" xml:space="preserve"><value>Stack chips, grow your casino with evolving buildings and unlock lasting progress.</value></data>
   <data name="Lobby.Chill.Subtitle" xml:space="preserve"><value>A quieter corner</value></data>
   <data name="Lobby.Chill.Description" xml:space="preserve"><value>Offline games at your own pace. Settle into Sudoku or Midnight Solitaire — no wagers, no rush.</value></data>
   <data name="Lobby.Dice.Subtitle" xml:space="preserve"><value>The dice lounge</value></data>

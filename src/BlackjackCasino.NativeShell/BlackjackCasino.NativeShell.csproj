@@ -103,9 +103,6 @@
              Link="ModernFrontend/%(RecursiveDir)%(Filename)%(Extension)"
              CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"
              Condition="Exists('../../frontend/dist/index.html')" />
-    <None Include="../BlackjackCasino.Assets/Empire/*.png"
-          Link="ModernFrontend/empire-art/%(Filename)%(Extension)"
-          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Include="../BlackjackCasino.Assets/NineLives/*.jpg"
           Link="ModernFrontend/nine-lives-art/%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />

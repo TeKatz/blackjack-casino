@@ -1,90 +1,72 @@
 namespace BlackjackCasino.Core.Empire;
 
-public sealed record EmpireAccrual(decimal Credits, decimal Dividend, TimeSpan Elapsed, bool Capped, IReadOnlyDictionary<string, decimal>? RoomCredits = null)
-{
-    public IReadOnlyDictionary<string, decimal> Rooms { get; init; } = RoomCredits ?? new Dictionary<string, decimal>(StringComparer.Ordinal);
-    public IReadOnlyDictionary<string, decimal> Properties { get; init; } = new Dictionary<string, decimal>(StringComparer.Ordinal);
-}
-public sealed record EmpireUpgradeQuote(string RoomId, int RequestedLevels, int Levels, int StartLevel, int TargetLevel, decimal Cost, bool Unlocked);
-public sealed record EmpirePrestigeResult(bool Success, int Prestige, decimal PermanentProductionBonus, string Message);
 public sealed record EmpireActionResult(bool Success, string Message);
+public sealed record EmpireAccrual(decimal Credits, TimeSpan Elapsed, bool Capped);
 
-/// <summary>Deterministic portfolio simulation. The only cash bridge is the bounded owner dividend.</summary>
-public sealed partial class EmpireService
+/// <summary>Authoritative, intentionally compact incremental clicker economy.</summary>
+public sealed class EmpireService
 {
-    private static readonly EmpireTag[] ProductionTags = Enum.GetValues<EmpireTag>().Where(tag => tag != EmpireTag.None).ToArray();
     private EmpireState state;
-    private readonly HashSet<string> claimedAchievements = new(StringComparer.Ordinal);
-    private EmpireActivitySnapshot activity = new();
-    private EmpirePropertyState Estate => state.Properties[state.ActivePropertyId];
-    public EmpireService(EmpireState? savedState = null) => state = EmpireState.Normalize(savedState);
+    public EmpireService(EmpireState? saved = null) => state = EmpireState.Normalize(saved);
     public EmpireState Snapshot => EmpireState.Normalize(state);
-    public EmpirePropertyState PropertySnapshot(string id) => Snapshot.Properties[id];
     public bool Started => state.Started;
-    public string ActivePropertyId => state.ActivePropertyId;
-    public EmpirePropertyDefinition ActiveProperty => EmpirePropertyCatalog.Find(ActivePropertyId)!;
-    public IReadOnlyList<EmpirePropertyDefinition> OwnedProperties => EmpirePropertyCatalog.All.Where(p => state.Properties.ContainsKey(p.Id)).ToArray();
-    public decimal Credits => Estate.Credits;
-    public decimal Dividend => state.Dividend;
-    public decimal ClaimableDividend => decimal.Floor(state.Dividend * 100m) / 100m;
-    public int Prestige => Estate.Prestige;
-    public int TotalPrestige => state.Properties.Values.Sum(p => p.Prestige);
-    public decimal PrestigeMultiplier => EmpireRules.PrestigeMultiplier(Prestige);
-    public decimal PrestigeBonusPercent => PrestigeMultiplier - 1;
-    public int TotalLevels => Estate.Levels.Values.Sum();
-    public int MainFloorLevels => EmpireCatalog.Floor(1).Sum(room => Level(room.Id));
-    public int OpenRooms => Estate.Levels.Values.Count(level => level > 0);
-    public decimal CreditsPerSecond => ProductionForEstate(Estate, ActivePropertyId);
-    public decimal TotalCreditsPerSecond => state.Properties.Sum(pair => ProductionForEstate(pair.Value, pair.Key));
-    public decimal CashPerHour => Math.Min(60m, Math.Min(48m, 3m + state.Properties.Values.Sum(p => p.Levels.Values.Sum()) * .4m)
-        * (1 + ResearchRank("guests") * .05m + state.Properties.Values.Count(p => p.Projects.Contains("penthouse-suites")) * .05m));
-    public decimal DividendCapacity => Math.Min(640m, EmpireRules.MaximumDividend + ResearchRank("guests") * 40m + state.Properties.Values.Count(p => p.Projects.Contains("casino-vault")) * 160m);
-    public TimeSpan OfflineCapacity => EmpireRules.MaximumCatchUp + TimeSpan.FromHours(ResearchRank("night-shift") * 2);
-    public int Level(string id) => Estate.Levels.GetValueOrDefault(id);
-    public bool FloorUnlocked(int floor) => FloorUnlockedFor(Estate, floor);
-    public bool Floor2Unlocked => FloorUnlocked(2);
-    public int OpenRoomsOnFloor(int floor) => EmpireCatalog.Floor(floor).Count(room => Level(room.Id) > 0);
-    public IReadOnlyList<EmpireAchievementBoost> ActiveAchievementBoosts => EmpireAchievementBoostCatalog.Active(claimedAchievements);
-    public int PrestigeMainFloorLevelRequirement => EmpireRules.PrestigeMainFloorLevelRequirement(Prestige);
-    public decimal PrestigeRunCreditRequirement => EmpireRules.PrestigeRunCreditRequirement(Prestige);
-    public bool CanPrestige => Started && Prestige < EmpireRules.MaximumPrestige && EmpireCatalog.Floor(1).All(r => Level(r.Id) > 0)
-        && MainFloorLevels >= PrestigeMainFloorLevelRequirement && Estate.RunCredits >= PrestigeRunCreditRequirement;
+    public decimal Credits => state.Credits;
+    public decimal LifetimeCredits => state.LifetimeCredits;
+    public decimal RunCredits => state.RunCredits;
+    public long Clicks => state.Clicks;
+    public int Prestige => state.Prestige;
+    public int TotalLevels => state.Buildings.Values.Sum();
+    public int Level(string id) => state.Buildings.GetValueOrDefault(id);
+    public decimal PrestigeMultiplier => 1m + state.Prestige * .30m;
 
-    private void Put(string id, EmpirePropertyState estate)
-    {
-        // EmpireService owns the normalized state graph. Snapshot/constructor boundaries clone
-        // dictionaries for callers, so cloning the whole property map for every internal tick is
-        // unnecessary allocation churn. Mutating this private map preserves the same public value semantics.
-        state.Properties[id] = estate;
-        EmpirePropertyState active = state.Properties[ActivePropertyId];
-        state = state with { Credits = active.Credits, RunCredits = active.RunCredits, Prestige = active.Prestige, Levels = active.Levels };
-    }
-    public void SetClaimedAchievements(IEnumerable<string>? ids)
-    {
-        claimedAchievements.Clear();
-        if (ids is not null) claimedAchievements.UnionWith(ids);
-    }
-    public decimal AchievementBonusPercent(string roomId) => EmpireAchievementBoostCatalog.BonusForRoom(claimedAchievements, roomId);
-    public decimal RoomCreditsPerSecond(string id) => RoomRate(Estate, ActivePropertyId, EmpireCatalog.Find(id), state.LastAccruedAt);
-    private decimal ProductionForEstate(EmpirePropertyState estate, string propertyId) => EmpireCatalog.Departments.Sum(room => RoomRate(estate, propertyId, room, state.LastAccruedAt));
-    private static bool FloorUnlockedFor(EmpirePropertyState estate, int floor) => EmpireFloorCatalog.Find(floor) is { } definition
-        && estate.Prestige >= definition.Requirement.Prestige && (definition.Requirement.ProjectId is null || estate.Projects.Contains(definition.Requirement.ProjectId));
-    public void SetActivitySnapshot(EmpireActivitySnapshot current) => activity = current;
+    public bool Unlocked(EmpireBuilding building) => building.RequiresId is null
+        || Level(building.RequiresId) >= building.RequiresLevel;
 
-    public EmpireActionResult Transact(Func<EmpireService, EmpireActionResult> change, Action<EmpireState> commit)
+    public bool Visible(EmpireBuilding building)
     {
-        ArgumentNullException.ThrowIfNull(change);
-        ArgumentNullException.ThrowIfNull(commit);
-        var candidate = new EmpireService(Snapshot);
-        candidate.SetClaimedAchievements(claimedAchievements);
-        candidate.activity = activity;
-        EmpireActionResult result = change(candidate);
-        if (!result.Success) return result;
-        commit(candidate.Snapshot);
-        state = candidate.state;
-        activity = candidate.activity;
-        return result;
+        if (Unlocked(building)) return true;
+        if (building.RequiresId is null) return true;
+        EmpireBuilding? previous = EmpireCatalog.Find(building.RequiresId);
+        return previous is not null && Unlocked(previous);
     }
+
+    public decimal Production(EmpireBuilding building)
+    {
+        int level = Level(building.Id);
+        if (level <= 0) return 0m;
+        decimal tier = level >= 8 ? 2.6m : level >= 5 ? 1.75m : level >= 3 ? 1.3m : 1m;
+        decimal synergy = 1m;
+        if (building.Id is "slots" or "roulette" && Level("roulette") >= 3) synergy += .15m;
+        if (building.Id is "tables" or "poker" && Level("poker") >= 3) synergy += .15m;
+        if (building.Id is "bar" or "stage" && Level("stage") >= 3) synergy += .15m;
+        if (Level("hotel") >= 5) synergy += .10m;
+        return decimal.Floor(building.BaseRate * level * (1m + (level - 1) * .30m)
+            * tier * synergy * PrestigeMultiplier * 100m) / 100m;
+    }
+
+    public decimal CreditsPerSecond => EmpireCatalog.Buildings.Sum(Production);
+
+    public decimal CreditsPerClick
+    {
+        get
+        {
+            decimal baseValue = 1m + EmpireCatalog.Buildings.Sum(b => b.ClickPower * Level(b.Id));
+            decimal passiveContribution = decimal.Floor(CreditsPerSecond * (.60m + Level("bar") * .025m));
+            return Math.Max(1m, decimal.Floor((baseValue + passiveContribution) * PrestigeMultiplier));
+        }
+    }
+
+    public decimal NextCost(EmpireBuilding building) => EmpireCatalog.NextCost(building, Level(building.Id));
+    public bool CanBuy(EmpireBuilding building) =>
+        Started && Unlocked(building) && Level(building.Id) < EmpireCatalog.MaximumLevel
+        && Credits >= NextCost(building);
+
+    public decimal PrestigeRequirement => 250_000m * (Prestige + 1m) * (Prestige + 1m);
+    public bool CanPrestige => Started && Prestige < EmpireCatalog.MaximumPrestige
+        && TotalLevels >= 20 && RunCredits >= PrestigeRequirement;
+
+    private static decimal Add(decimal a, decimal b) =>
+        Math.Min(EmpireCatalog.MaximumCredits, a + Math.Min(Math.Max(0m, b), EmpireCatalog.MaximumCredits - a));
 
     public void Start(DateTimeOffset now)
     {
@@ -93,156 +75,86 @@ public sealed partial class EmpireService
 
     public EmpireAccrual Accrue(DateTimeOffset now)
     {
-        if (!Started) return EmptyAccrual();
-        if (state.LastAccruedAt == default) { state = state with { LastAccruedAt = now }; return EmptyAccrual(); }
-        if (now <= state.LastAccruedAt) return EmptyAccrual();
+        if (!Started) return new(0m, TimeSpan.Zero, false);
+        if (state.LastAccruedAt == default)
+        {
+            state = state with { LastAccruedAt = now };
+            return new(0m, TimeSpan.Zero, false);
+        }
+        if (now <= state.LastAccruedAt) return new(0m, TimeSpan.Zero, false);
         TimeSpan absence = now - state.LastAccruedAt;
-        TimeSpan offlineCapacity = OfflineCapacity;
-        TimeSpan elapsed = absence > offlineCapacity ? offlineCapacity : absence;
-        DateTimeOffset cursor = state.LastAccruedAt, end = cursor + elapsed;
-        var rooms = new Dictionary<string, decimal>(StringComparer.Ordinal);
-        var properties = new Dictionary<string, decimal>(StringComparer.Ordinal);
-        IReadOnlyList<EmpireDepartment> departments = EmpireCatalog.Departments;
-        string[] propertyIds = state.Properties.Keys.ToArray();
-        var earnedByRoom = new decimal[departments.Count];
-        decimal dividendCapacity = DividendCapacity;
-        decimal paid = 0, cash = 0;
-        while (cursor < end)
+        TimeSpan elapsed = absence > EmpireCatalog.MaximumOfflineTime ? EmpireCatalog.MaximumOfflineTime : absence;
+        decimal income = Math.Min(EmpireCatalog.MaximumCredits - Credits,
+            CreditsPerSecond * (decimal)elapsed.Ticks / TimeSpan.TicksPerSecond);
+        state = state with
         {
-            // At most one automation decision per property per 30 seconds. Online and
-            // offline calls visit the same boundaries; tick frequency cannot increase spending.
-            foreach (string id in propertyIds)
-            {
-                EmpirePropertyState estate = ExpireEffects(state.Properties[id], cursor);
-                if (AutomationUnlockedFor(estate) && estate.Automation.Enabled)
-                {
-                    if (estate.NextAutomationAt == default) estate = estate with { NextAutomationAt = cursor.AddSeconds(30) };
-                    if (estate.NextAutomationAt <= cursor)
-                        estate = Automate(estate) with { NextAutomationAt = cursor.AddSeconds(30) };
-                }
-                Put(id, estate);
-            }
-            DateTimeOffset boundary = end;
-            foreach (EmpirePropertyState estate in state.Properties.Values)
-            {
-                if (estate.Event is { } ev && ev.EndsAt > cursor && ev.EndsAt < boundary) boundary = ev.EndsAt;
-                if (estate.ContractBuff is { } buff && cursor.AddSeconds((double)buff.RemainingSeconds) < boundary)
-                    boundary = cursor.AddSeconds((double)buff.RemainingSeconds);
-                if (AutomationUnlockedFor(estate) && estate.Automation.Enabled && estate.NextAutomationAt > cursor && estate.NextAutomationAt < boundary)
-                    boundary = estate.NextAutomationAt;
-            }
-            decimal seconds = (decimal)(boundary - cursor).Ticks / TimeSpan.TicksPerSecond;
-            decimal cashRate = CashPerHour;
-            foreach (string id in propertyIds)
-            {
-                EmpirePropertyState estate = state.Properties[id];
-                decimal potential = 0;
-                for (int index = 0; index < departments.Count; index++)
-                {
-                    decimal roomEarned = RoomRate(estate, id, departments[index], cursor) * seconds;
-                    earnedByRoom[index] = roomEarned;
-                    potential += roomEarned;
-                }
-                decimal earned = Math.Min(Math.Max(0, EmpireRules.MaximumCredits - estate.Credits), potential);
-                decimal factor = potential > 0 ? earned / potential : 0;
-                var tags = new Dictionary<EmpireTag, decimal>(estate.ProducedByTag);
-                for (int index = 0; index < departments.Count; index++)
-                {
-                    EmpireDepartment room = departments[index];
-                    decimal value = earnedByRoom[index] * factor;
-                    if (value <= 0) continue;
-                    if (id == ActivePropertyId) rooms[room.Id] = rooms.GetValueOrDefault(room.Id) + value;
-                    foreach (EmpireTag tag in ProductionTags)
-                        if (room.Tags.HasFlag(tag)) tags[tag] = Math.Min(EmpireRules.MaximumCredits, tags.GetValueOrDefault(tag) + value);
-                }
-                Put(id, estate with
-                {
-                    Credits = estate.Credits + earned, LifetimeCredits = Math.Min(EmpireRules.MaximumCredits, estate.LifetimeCredits + earned),
-                    RunCredits = Math.Min(EmpireRules.MaximumCredits, estate.RunCredits + earned), ProducedByTag = tags,
-                    ContractBuff = estate.ContractBuff is { } activeBuff ? activeBuff with { RemainingSeconds = Math.Max(0, activeBuff.RemainingSeconds - seconds) } : null,
-                });
-                properties[id] = properties.GetValueOrDefault(id) + earned;
-                paid += earned;
-            }
-            decimal rateSeconds = cashRate * seconds + state.DividendRemainder;
-            decimal earnedCash = decimal.Truncate(rateSeconds / 36m) / 100m;
-            decimal dividend = Math.Min(dividendCapacity - state.Dividend, earnedCash);
-            cash += dividend;
-            state = state with
-            {
-                Dividend = state.Dividend + dividend,
-                DividendRemainder = state.Dividend + dividend >= dividendCapacity ? 0 : rateSeconds - earnedCash * 3600m,
-            };
-            cursor = boundary;
-        }
-        foreach (string id in propertyIds)
-        {
-            EmpirePropertyState estate = ExpireEffects(state.Properties[id], now);
-            // Execute a decision exactly on the end boundary, not one tick later.
-            if (AutomationUnlockedFor(estate) && estate.Automation.Enabled && estate.NextAutomationAt <= now)
-                estate = (absence <= offlineCapacity ? Automate(estate) : estate) with { NextAutomationAt = now.AddSeconds(30) };
-            Put(id, estate);
-        }
-        state = state with { LastAccruedAt = now, LifetimeCredits = Math.Min(EmpireRules.MaximumCredits, state.LifetimeCredits + paid) };
-        return new(paid, cash, elapsed, absence > offlineCapacity, rooms) { Properties = properties };
+            Credits = Add(Credits, income),
+            LifetimeCredits = Add(LifetimeCredits, income),
+            RunCredits = Add(RunCredits, income),
+            LastAccruedAt = now,
+        };
+        return new(income, elapsed, absence > elapsed);
     }
 
-    public EmpireUpgradeQuote QuoteUpgrade(string id, int requestedLevels) => QuoteFor(Estate, id, requestedLevels);
-    private EmpireUpgradeQuote QuoteFor(EmpirePropertyState estate, string id, int requestedLevels)
+    public EmpireActionResult Tap(int count, DateTimeOffset now)
     {
-        EmpireDepartment? room = EmpireCatalog.Find(id);
-        int start = estate.Levels.GetValueOrDefault(id);
-        bool unlocked = room is not null && FloorUnlockedFor(estate, room.Floor) && RequirementsMet(estate, room.Requirements ?? new());
-        if (!unlocked || room is null || requestedLevels <= 0 || start >= EmpireRules.MaximumLevel) return new(id, requestedLevels, 0, start, start, 0, unlocked);
-        int levels = Math.Min(requestedLevels, EmpireRules.MaximumLevel - start);
-        decimal discount = ConstructionDiscountFor(estate, id);
-        decimal cost = Enumerable.Range(start, levels).Sum(level => decimal.Ceiling(EmpireRules.UpgradeCost(room, level) * (1 - discount)));
-        return new(id, requestedLevels, levels, start, start + levels, cost, true);
+        if (!Started || count is < 1 or > 20) return new(false, "Invalid click batch.");
+        Accrue(now);
+        decimal value = CreditsPerClick, income = 0m;
+        // Every 25th click gives a deterministic bonus, avoiding random payout replay.
+        for (int i = 1; i <= count; i++)
+        {
+            bool critical = (state.Clicks + i) % 25 == 0;
+            income = Add(income, value * (critical ? 3m : 1m));
+        }
+        state = state with
+        {
+            Credits = Add(Credits, income),
+            LifetimeCredits = Add(LifetimeCredits, income),
+            RunCredits = Add(RunCredits, income),
+            Clicks = state.Clicks > long.MaxValue - count ? long.MaxValue : state.Clicks + count,
+        };
+        return new(true, "Clicks collected.");
     }
-    public bool Upgrade(string id, DateTimeOffset now) => UpgradeMany(id, 1, now);
-    public bool UpgradeMany(string id, int requestedLevels, DateTimeOffset now)
+
+    public EmpireActionResult Upgrade(string? id, DateTimeOffset now)
+    {
+        if (EmpireCatalog.Find(id) is not { } building) return new(false, "Unknown building.");
+        Accrue(now);
+        if (!CanBuy(building)) return new(false, "Building locked or insufficient credits.");
+        var levels = new Dictionary<string, int>(state.Buildings, StringComparer.Ordinal)
+        {
+            [building.Id] = Level(building.Id) + 1,
+        };
+        state = state with { Buildings = levels, Credits = Credits - NextCost(building) };
+        return new(true, building.Name + " upgraded.");
+    }
+
+    public EmpireActionResult ResetForPrestige(DateTimeOffset now)
     {
         Accrue(now);
-        EmpireUpgradeQuote quote = QuoteUpgrade(id, requestedLevels);
-        if (!Started || !quote.Unlocked || quote.Levels <= 0 || Credits < quote.Cost) return false;
-        Put(ActivePropertyId, BuyLevels(Estate, quote));
-        return true;
+        if (!CanPrestige) return new(false, "Prestige requirements not met.");
+        state = state with
+        {
+            Prestige = Prestige + 1,
+            Credits = 0m,
+            RunCredits = 0m,
+            Buildings = new Dictionary<string, int>(StringComparer.Ordinal),
+            LastAccruedAt = now,
+        };
+        return new(true, "New prestige unlocked.");
     }
-    private static EmpirePropertyState BuyLevels(EmpirePropertyState estate, EmpireUpgradeQuote quote) => estate with
+
+    /// <summary>Commit the candidate to disk before making it visible in this process.</summary>
+    public EmpireActionResult Transact(Func<EmpireService, EmpireActionResult> action, Action<EmpireState> persist)
     {
-        Credits = estate.Credits - quote.Cost,
-        Levels = new(estate.Levels, StringComparer.Ordinal) { [quote.RoomId] = quote.TargetLevel },
-        LevelsPurchased = Math.Min(long.MaxValue - quote.Levels, estate.LevelsPurchased) + quote.Levels,
-    };
-    public EmpirePrestigeResult PrestigeEmpire(DateTimeOffset now)
-    {
-        Accrue(now);
-        if (!CanPrestige) return new(false, Prestige, PrestigeBonusPercent, PrestigeRequirementText());
-        int next = Prestige + 1;
-        var levels = EmpireCatalog.Departments.ToDictionary(room => room.Id, _ => 0, StringComparer.Ordinal);
-        levels["slots"] = 1;
-        Put(ActivePropertyId, Estate with { Prestige = next, Credits = 150, RunCredits = 0, Levels = levels, Event = null, NextAutomationAt = (now > state.LastAccruedAt ? now : state.LastAccruedAt).AddSeconds(30) });
-        return new(true, next, PrestigeBonusPercent, $"Empire Prestige {next}. Production +{PrestigeBonusPercent:P0}. +1 Legacy Point. Research and capital projects retained.");
+        ArgumentNullException.ThrowIfNull(action);
+        ArgumentNullException.ThrowIfNull(persist);
+        var candidate = new EmpireService(Snapshot);
+        EmpireActionResult result = action(candidate);
+        if (!result.Success) return result;
+        persist(candidate.Snapshot);
+        state = candidate.state;
+        return result;
     }
-    public string PrestigeRequirementText()
-    {
-        if (Prestige >= EmpireRules.MaximumPrestige) return "Maximum Empire prestige reached.";
-        int missing = EmpireCatalog.Floor(1).Count(room => Level(room.Id) == 0);
-        if (missing > 0) return $"Open every Main Floor room first ({missing} remaining).";
-        if (MainFloorLevels < PrestigeMainFloorLevelRequirement) return $"Reach {PrestigeMainFloorLevelRequirement:N0} Main Floor levels ({MainFloorLevels:N0}/{PrestigeMainFloorLevelRequirement:N0}).";
-        if (Estate.RunCredits < PrestigeRunCreditRequirement) return $"Produce {PrestigeRunCreditRequirement:N0} credits this run ({Estate.RunCredits:N0}/{PrestigeRunCreditRequirement:N0}).";
-        return "Ready for Empire Prestige. Keep projects and research; reset this property's levels, credits and active event.";
-    }
-    public decimal ClaimDividend(DateTimeOffset now, Action<EmpireState, decimal> commit)
-    {
-        ArgumentNullException.ThrowIfNull(commit);
-        Accrue(now);
-        decimal amount = ClaimableDividend;
-        if (amount <= 0) return 0;
-        EmpireState proposed = Snapshot with { Dividend = state.Dividend - amount, LifetimeCashClaimed = Math.Min(EmpireRules.MaximumCredits, state.LifetimeCashClaimed + amount) };
-        commit(proposed, amount);
-        state = proposed;
-        return amount;
-    }
-    private static EmpireAccrual EmptyAccrual() => new(0, 0, TimeSpan.Zero, false);
 }

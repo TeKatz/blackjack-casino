@@ -41,6 +41,15 @@ internal static class PlayerStateStore
 
             string json = File.ReadAllText(path);
             AppPreferences? state = JsonSerializer.Deserialize<AppPreferences>(json, JsonOptions);
+            // Preserve the full pre-reboot save once. The new schema intentionally
+            // starts Empire fresh, but no old casino data is silently discarded.
+            if (state?.Empire is { Started: true } oldEmpire
+                && oldEmpire.SchemaVersion != BlackjackCasino.Core.Empire.EmpireState.CurrentSchemaVersion)
+            {
+                string backup = Path.Combine(Path.GetDirectoryName(path)!, "player-state.pre-empire-clicker.json");
+                try { if (!File.Exists(backup)) File.Copy(path, backup); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            }
             return Sanitize(state ?? new AppPreferences());
         }
         catch
@@ -67,7 +76,7 @@ internal static class PlayerStateStore
         }
     }
 
-    // Cash dividends and their consumed reserve must survive as a single durable snapshot.
+    // Durable casino progression changes must survive as a single atomic snapshot.
     internal static void SaveOrThrow(AppPreferences state, string? directory = null)
     {
         ArgumentNullException.ThrowIfNull(state);

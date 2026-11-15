@@ -81,7 +81,6 @@
 .challenge-reward>div{display:flex;flex-direction:column;gap:4px;}
 .challenge-reward strong{font-size:13px;color:#efd093;}
 .challenge-reward small{font-size:10px;color:#a3c6b0;}
-.challenge-reward .empire-reward{color:#9cf3c3;}
 .record-claim{min-width:90px;min-height:36px;padding:7px 10px;background:#294436;color:#a5c8af;
   border:1px solid #506e57;border-radius:8px;font-size:11px;font-weight:800;}
 .record-claim.available{background:linear-gradient(135deg,#ffe4a0,#bb8b40);border-color:#ffecb3;color:#202a1c;}
