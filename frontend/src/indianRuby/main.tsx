@@ -13,6 +13,7 @@ import {SunsetRules} from './SunsetRules';
 import './indianRuby.css';
 import './rubyPremium.css';
 import './sunsetExtensions.css';
+import './sunsetRefinements.css';
 
 const PREVIEW:SymbolId[]=[
  'Queen','Vase','Ace','Necklace','Ten',
