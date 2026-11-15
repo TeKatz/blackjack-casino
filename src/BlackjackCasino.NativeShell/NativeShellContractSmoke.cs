@@ -274,8 +274,7 @@ internal static class NativeShellContractSmoke
                     session.CommitEmpire);
                 if (!empireReceipt.Success || empireReceipt.Revision != 1
                     || empireEpoch.Execute(empireCommand,
-                        _ => throw new Exception("Empire action replayed."),
-                        _ => throw new Exception("Empire preview replayed.")) != empireReceipt)
+                        _ => throw new Exception("Empire action replayed.")) != empireReceipt)
                     throw new InvalidOperationException("Native Empire duplicate purchase or missing checkpoint.");
                 session.CloseEmpire();
 
