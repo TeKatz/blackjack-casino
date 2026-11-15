@@ -272,6 +272,8 @@ internal sealed class NativeShellForm : Form
     // Minimal internal acceptance interface; never used by React or game commands.
     internal bool BrowserReady => ready && !browserFailed;
     internal bool TransitionVisible => routeTransition.Visible && routeTransition.Opacity > .1;
+    internal bool TransitionOwnsPointerAt(Point screenPoint) =>
+        routeTransition.OwnsPointerAt(screenPoint);
     internal string? BrowserMode => activeMode;
     internal CoreWebView2? BrowserCore => browser?.CoreWebView2;
     internal Task OpenForAcceptanceAsync(string mode) => OpenModeAsync(mode);

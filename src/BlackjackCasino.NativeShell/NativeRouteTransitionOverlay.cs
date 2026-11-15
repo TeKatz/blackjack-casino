@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
+using System.Runtime.InteropServices;
 
 namespace BlackjackCasino.NativeShell;
 
@@ -21,6 +22,39 @@ internal sealed class NativeRouteTransitionOverlay : Form
     private int durationMs, requestVersion;
     private bool fading, reducedMotion;
     private long frameIndex;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private readonly struct ScreenPoint
+    {
+        public readonly int X, Y;
+        public ScreenPoint(Point p) { X=p.X; Y=p.Y; }
+    }
+
+    [DllImport("user32.dll", ExactSpelling = true)]
+    private static extern IntPtr WindowFromPoint(ScreenPoint point);
+    [DllImport("user32.dll", ExactSpelling = true)]
+    private static extern IntPtr GetForegroundWindow();
+
+    // Unlike an alpha/opacity-only regression, this verifies the actual HWND
+    // receiving pointer hit tests on a real Windows desktop.
+    internal bool OwnsPointerAt(Point point) =>
+        Visible && !IsDisposed && IsHandleCreated &&
+        WindowFromPoint(new ScreenPoint(point)) == Handle;
+
+    private void KeepNativeCursorWhileCovering()
+    {
+        if (!Visible || IsDisposed || !IsHandleCreated || !host.IsHandleCreated
+            || !Bounds.Contains(System.Windows.Forms.Cursor.Position)
+            || GetForegroundWindow() != host.Handle)
+            return;
+        // The mouse can still be captured by the outgoing WebView2 child until
+        // Windows has processed its input-release messages. Correct the native
+        // cursor during *all* cover frames, not only on WM_SETCURSOR.
+        var expected = CasinoWinCursor.ForState(
+            (Control.MouseButtons & MouseButtons.Left) == MouseButtons.Left);
+        if (System.Windows.Forms.Cursor.Current?.Handle != expected.Handle)
+            System.Windows.Forms.Cursor.Current = expected;
+    }
 
     // A zero-alpha layered window is omitted from Win32 hit-testing. During a
     // WebView2 HWND replacement that lets WM_SETCURSOR bounce between the old
@@ -125,12 +159,13 @@ internal sealed class NativeRouteTransitionOverlay : Form
             Opacity = MinimumInteractiveOpacity;
             Show(host);
             AlignToViewport();
+            KeepNativeCursorWhileCovering();
         }
         if (useReducedMotion || instant)
         {
             fading = false;
             Opacity = 1;
-            frames.Interval = 50;
+            frames.Interval = 16;
             frames.Start();
             Invalidate();
             return Task.CompletedTask;
@@ -196,6 +231,7 @@ internal sealed class NativeRouteTransitionOverlay : Form
     {
         if (IsDisposed || !Visible) { frames.Stop(); return; }
         AlignToViewport();
+        KeepNativeCursorWhileCovering();
         ++frameIndex;
         if (fading)
         {
@@ -215,7 +251,7 @@ internal sealed class NativeRouteTransitionOverlay : Form
                     Dismiss();
                     return;
                 }
-                frames.Interval = 50;
+                frames.Interval = 16; // Keep cursor ownership stable while loading.
             }
         }
         // Small branded activity dots are cheap while the browser loads.

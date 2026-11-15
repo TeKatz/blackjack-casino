@@ -174,7 +174,26 @@ internal static class NativeShellWebSmoke
                     { "blackjack", "roulette", "reels", "neon-vault", "nine-lives", "casino-empire", "chill-lounge", "midnight-merge",
                         "midnight-dice", "midnight-manor" })
                 {
-                    await form.OpenForAcceptanceAsync(mode);
+                    // Move the real Windows pointer inside the transitioning
+                    // viewport. Without this probe earlier tests stayed green
+                    // even when the default OS cursor flashed during loading.
+                    Point cursorBefore = System.Windows.Forms.Cursor.Position;
+                    Point cursorProbe = form.PointToScreen(
+                        new Point(form.ClientSize.Width / 2, form.ClientSize.Height / 2));
+                    bool canProbe = SystemInformation.UserInteractive;
+                    try
+                    {
+                        if (canProbe) System.Windows.Forms.Cursor.Position = cursorProbe;
+                        await form.OpenForAcceptanceAsync(mode);
+                        if (canProbe && System.Windows.Forms.Cursor.Position == cursorProbe
+                            && !form.TransitionOwnsPointerAt(cursorProbe))
+                            throw new InvalidOperationException(mode +
+                                " transition window lost native pointer hit-testing.");
+                    }
+                    finally
+                    {
+                        if (canProbe) System.Windows.Forms.Cursor.Position = cursorBefore;
+                    }
                     if (!form.TransitionVisible)
                         throw new InvalidOperationException(mode
                             + " detached its WebView without the native transition veil.");
