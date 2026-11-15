@@ -9,7 +9,17 @@ Indian Ruby is an elephant-focused five-reel, three-row, ten-line video slot in 
 - At least two Elephant symbols anywhere on the original 5 × 3 grid trigger the Elephant Bonus. Existing Elephant and Ruby cells are held. All other cells receive one special respin, drawing only Elephant, Ruby or blank; the feature awards Elephant-line payouts. Base payouts and feature payouts are combined before the native result is shown to React.
 - The first-pass cabinet has a sunset palace, its own rolling and win presentation, a passing herd, original synthesized elephant/trampling cues, mute/animation switches, and English/German labels. Reduced-motion preferences disable the herd movement.
 
-**Prototype limitation:** The maker's proprietary reel strips, weight mapping, exact RTP and licensed sounds/art are not included. The prototype's symbol weights, multipliers and soundtrack are independent initial tuning, even where public paytable conventions are followed. The passing herd and elephant symbols are currently lightweight placeholders intended for future artwork and sampled audio.
+**Prototype limitation:** The maker's proprietary reel strips, weight mapping, exact RTP and licensed sounds/art are not included. The prototype's symbol weights, multipliers and soundtrack are independent initial tuning, even where public paytable conventions are followed. The current symbol and herd artwork is newly authored scalable SVG, with an expanded original Web Audio synthesis palette. The illustrations and sounds are independent of the retail slot and can be replaced by commissioned, licensed art/audio later.
+
+## Premium visual and motion pass
+
+- The cabinet uses layered brass, red gemstone inlays, animated lamp rails, glass glints, ambient dust and refined gold-and-claret typography. Every illustration uses authored scalable paths rather than emoji art.
+- `RubyReelStage` is a memoized five-column compositor: each reel uses a deterministic, presentation-only symbol strip and Web Animations API easing with staggered stops, overshoot and bounce. The result is *always* the native C# output.
+- When two Elephant symbols occur, anticipation starts as the reels settle; a bonus fanfare and passing illustrated herd lead into isolated per-cell respins. Held Elephant and Ruby cells never spin, and all final symbols and monetary totals come from the already committed result.
+- The win panel counts up the committed payout while winning lines and cells glow; no UI animation submits a second spin.
+- `BetSelector` stays mounted through every host revision, with stable dimensions and tabular numerals. Native bet acknowledgements no longer briefly dim the entire control desk or reset reel artwork, addressing the prior flicker.
+- Sound cues include original layered elephant/brass, heavy footsteps, soft mechanical stops, bonus, anticipation and variable win sounds. Sound and reduced-motion switches are respected without changing odds or wagers.
+- The reel subtree is independent from transient bet and settings state; presentation-only animations are cancelled on unmount and have guarded completion fallbacks.
 
 ## Architecture and state ownership
 
