@@ -5,6 +5,7 @@ import {fmt,listen,post,send} from './empireBridge';
 import type {Building,Command,EmpireSnapshot} from './empireBridge';
 import CasinoStackArt from './CasinoStackArt';
 import BuildingArtwork from './BuildingArtwork';
+import {EmpireLegacyPanel} from './EmpireLegacyPanel';
 import './empire.css';
 
 const names:Record<string,string>={
@@ -74,6 +75,8 @@ function EmpireApp(){
   const [selected,setSelected]=useState<string|null>(null);
   const [buildingsOpen,setBuildingsOpen]=useState(true);
   const [prestigeOpen,setPrestigeOpen]=useState(false);
+  const [legacyOpen,setLegacyOpen]=useState(false);
+  const [compactLegacy,setCompactLegacy]=useState(matchMedia('(max-width: 1220px)').matches);
   const [confirm,setConfirm]=useState(false);
   const confirmRef=useRef(false);confirmRef.current=confirm;
   const [pulse,setPulse]=useState(0);
@@ -122,10 +125,14 @@ function EmpireApp(){
       else if(message.type==='invalid')setNotice('Empire command rejected. Reopen the game.');
     });
     post('empire.ready');
+    const compact=matchMedia('(max-width: 1220px)');
+    const updateCompact=()=>setCompactLegacy(compact.matches);
+    compact.addEventListener('change',updateCompact);
     const media=matchMedia('(prefers-reduced-motion: reduce)');
     const update=()=>setLowMotion(media.matches);
     media.addEventListener('change',update);
-    return()=>{stop();media.removeEventListener('change',update);};
+    return()=>{stop();media.removeEventListener('change',update);
+      compact.removeEventListener('change',updateCompact);};
   },[]);
 
   useEffect(()=>{
@@ -158,6 +165,7 @@ function EmpireApp(){
 
   const {state}=snapshot;
   const e=state.economy,de=state.language==='de',language=state.language;
+  const legacyUnlocked=e.legacy.unlocked;
   const shown=e.buildings.filter(b=>b.visible);
   const disabled=!visible||pending||activeVisitId!==snapshot.visitId||!ready();
   const goal=e.goal;
@@ -169,13 +177,21 @@ function EmpireApp(){
     ? (de?'Schaltet frei: ':'Unlocks: ')+(de?names[e.buildings.find(b=>b.name===goalBuilding.nextUnlock)?.id??'']??goalBuilding.nextUnlock:goalBuilding.nextUnlock)
     :de?'Mehr Leistung und sichtbarer Fortschritt':'More production and visible progress';
 
-  return <div className="ce-shell" data-motion={state.animationsEnabled&&!lowMotion}>
+  return <div className={'ce-shell'+(legacyUnlocked?' ce-has-legacy':'')}
+    data-motion={state.animationsEnabled&&!lowMotion}>
     <div className="ce-scenery" aria-hidden="true"/>
     <header className="ce-header">
       <div className="ce-header-inner">
-        <button className="ce-back" type="button" onClick={()=>post('empire.close')}>
-          <span className="ce-back-arrow" aria-hidden="true">←</span> Lobby
-        </button>
+        <div className="ce-header-left">
+          <button className="ce-back" type="button" onClick={()=>post('empire.close')}>
+            <span className="ce-back-arrow" aria-hidden="true">←</span> Lobby
+          </button>
+          {legacyUnlocked&&<button className="ce-legacy-launch" type="button"
+            aria-expanded={legacyOpen} aria-controls="empire-legacy"
+            onClick={()=>setLegacyOpen(v=>!v)}>
+            ✧ {de?'Vermächtnis':'Legacy'} <span aria-hidden="true">{legacyOpen?'−':'+'}</span>
+          </button>}
+        </div>
         <div className="ce-wordmark">
           <span className="ce-wordmark-insignia" aria-hidden="true">♠</span>
           <small>THE MIDNIGHT CLUB</small>
@@ -188,7 +204,16 @@ function EmpireApp(){
       </div>
     </header>
 
-    <main className="ce-main">
+    {legacyUnlocked&&compactLegacy&&legacyOpen&&
+      <button type="button" className="ce-legacy-scrim"
+        onClick={()=>setLegacyOpen(false)} aria-label={de?'Vermächtnis schließen':'Close legacy'}/>}
+    <main className={'ce-main'+(legacyUnlocked?' ce-main-with-legacy':'')}>
+      {legacyUnlocked&&<aside id="empire-legacy" className="ce-progress-rail"
+        data-open={legacyOpen} inert={compactLegacy&&!legacyOpen}
+        aria-label={de?'Dauerhafter Prestige-Fortschritt':'Permanent prestige progression'}>
+        <EmpireLegacyPanel legacy={e.legacy} prestige={e.prestige} de={de}
+          disabled={disabled} buy={id=>command({action:'legacy.buy',id})}/>
+      </aside>}
       <section className="ce-primary" aria-label={de?'Casino-Spielbereich':'Casino play area'}>
         <section className="ce-stage-panel" aria-label={de?'Chips stapeln':'Stack chips'}>
           <div className="ce-balance">
