@@ -11,7 +11,7 @@ static func machine(canvas: CanvasItem, at: Vector2, kind: String, direction: in
 	var texture: Texture2D = Atlas.get_texture()
 	if texture == null:
 		return
-	var index := {"miner": 0, "belt": 1, "smelter": 2, "storage": 3}.get(kind, 0)
+	var index: int = int({"miner": 0, "belt": 1, "smelter": 2, "storage": 3}.get(kind, 0))
 	var opacity := 0.68 if ghost else 1.0
 	var center := at + Vector2(TILE * 0.5, TILE * 0.5)
 	if not ghost:
