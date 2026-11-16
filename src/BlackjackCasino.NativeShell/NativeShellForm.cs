@@ -106,6 +106,7 @@ internal sealed class NativeShellForm : Form
     // after visiting a game. Never persist this flag in the player's profile.
     private bool startupNewsAcknowledged;
     private Process? descentProcess;
+    private Process? industriesProcess;
     private EmpireModernSession? empireEpoch;
     private NativeLoungeCaseBoardForm? loungeBoard;
     private NativeEmpireDetachedForm? detachedEmpire;
@@ -404,6 +405,8 @@ internal sealed class NativeShellForm : Form
         actions.Controls.Add(MakeButton("CHILL LOUNGE", () => _ = OpenModeAsync("chill-lounge")));
         if (NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory))
             actions.Controls.Add(MakeButton("MIDNIGHT DESCENT", () => _ = OpenDescentAsync()));
+        if (NativeIndustriesLaunch.IsPackaged(AppContext.BaseDirectory))
+            actions.Controls.Add(MakeButton("MIDNIGHT INDUSTRIES", () => _ = OpenIndustriesAsync()));
         page.Controls.Add(actions, 0, 2);
         page.Controls.Add(new Label
         {
@@ -551,6 +554,48 @@ internal sealed class NativeShellForm : Form
         finally
         {
             if (ReferenceEquals(descentProcess, process)) descentProcess = null;
+            process?.Dispose();
+            if (!closing && !IsDisposed)
+            {
+                Enabled = true;
+                WindowState = previousState == FormWindowState.Minimized
+                    ? FormWindowState.Normal : previousState;
+                Activate();
+                RefreshLobbySnapshot();
+                hostAudio.Update(activeMode, runtime.Preferences);
+            }
+        }
+    }
+
+    private async Task OpenIndustriesAsync()
+    {
+        if (closing || industriesProcess is not null || runtime.HandInProgress) return;
+
+        FormWindowState previousState = WindowState;
+        hostAudio.Suspend();
+        Process? process = null;
+        try
+        {
+            bool german = runtime.Preferences.Language == UiLanguagePreference.German;
+            ProcessStartInfo start = NativeIndustriesLaunch.CreateStartInfo(
+                AppContext.BaseDirectory, german);
+            process = Process.Start(start)
+                ?? throw new InvalidOperationException("Godot could not be started.");
+            industriesProcess = process;
+            Enabled = false;
+            WindowState = FormWindowState.Minimized;
+            status.Text = "Midnight Industries is running.";
+            await process.WaitForExitAsync();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            if (!closing && !IsDisposed)
+                status.Text = "Midnight Industries: " + ex.Message;
+        }
+        finally
+        {
+            if (ReferenceEquals(industriesProcess, process)) industriesProcess = null;
             process?.Dispose();
             if (!closing && !IsDisposed)
             {
@@ -888,9 +933,12 @@ internal sealed class NativeShellForm : Form
                         route => string.Equals(route.DesktopModeId, id, StringComparison.Ordinal));
                     if (mode?.WebModeId is { } alias)
                         BeginInvoke(new Action(() => { _ = OpenModeAsync(alias); }));
-                    else if (mode?.HasNativeProcess == true &&
+                    else if (mode?.DesktopModeId == "midnight-descent" &&
                              NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory))
                         BeginInvoke(new Action(() => { _ = OpenDescentAsync(); }));
+                    else if (mode?.DesktopModeId == "midnight-industries" &&
+                             NativeIndustriesLaunch.IsPackaged(AppContext.BaseDirectory))
+                        BeginInvoke(new Action(() => { _ = OpenIndustriesAsync(); }));
                     break;
                 }
                 case "lobby.open-secondary" when activeMode is null && listening && ready:
@@ -2023,6 +2071,12 @@ internal sealed class NativeShellForm : Form
         if (descentProcess is { HasExited: false } process)
         {
             try { process.Kill(); }
+            catch (InvalidOperationException) { }
+            catch (System.ComponentModel.Win32Exception) { }
+        }
+        if (industriesProcess is { HasExited: false } factory)
+        {
+            try { factory.Kill(); }
             catch (InvalidOperationException) { }
             catch (System.ComponentModel.Win32Exception) { }
         }
