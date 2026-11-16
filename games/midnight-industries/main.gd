@@ -134,20 +134,13 @@ func _make_label(value: String, size: int = 14, color: Color = TEXT) -> Label:
 func _machine_icon(kind: String) -> Texture2D:
 	if icon_cache.has(kind):
 		return icon_cache[kind]
-	var atlas: Texture2D = Atlas.get_texture()
-	if atlas == null:
-		return null
-	var icon := AtlasTexture.new()
-	icon.atlas = atlas
-	icon.region = Atlas.region(int({"miner":0, "belt":1, "smelter":2, "storage":3}.get(kind, 0)))
+	var index: int = int({"miner":0, "belt":1, "smelter":2, "storage":3}.get(kind, 0))
+	var icon: Texture2D = Atlas.sprite(index)
 	icon_cache[kind] = icon
 	return icon
 
 func _material_icon(index: int) -> Texture2D:
-	var icon := AtlasTexture.new()
-	icon.atlas = Atlas.get_texture()
-	icon.region = Atlas.region(index, 1)
-	return icon
+	return Atlas.sprite(index, 1)
 
 func _button(value: String, handler: Callable, destructive: bool = false) -> Button:
 	var b := Button.new()

@@ -31,37 +31,28 @@ uniform sampler2D stone_detail : filter_linear_mipmap, repeat_enable;
 void fragment() {
 	vec2 tiles = UV * vec2(128.0, 96.0);
 	float mask = texture(rock_influence, UV).r;
-
-	// Both materials sample 1024px textures at several physical scales.
-	// The fine sampling stays detailed even at the maximum camera zoom.
-	float grass_macro = texture(terrain_detail, tiles * 0.018).r;
-	float grass_mid = texture(terrain_detail, tiles * 0.053 + vec2(0.28, 0.41)).r;
-	float grass_fine = texture(terrain_detail, tiles * 0.105 + vec2(0.63, 0.15)).r;
-	float blades = texture(terrain_detail, tiles * 0.21 + vec2(0.11, 0.72)).r;
-	float stone_macro = texture(stone_detail, tiles * 0.020).r;
-	float stone_mid = texture(stone_detail, tiles * 0.072 + vec2(0.72, 0.34)).r;
-	float stone_fine = texture(stone_detail, tiles * 0.135 + vec2(0.34, 0.07)).r;
-	float stone_grit = texture(stone_detail, tiles * 0.24 + vec2(0.53, 0.18)).r;
-	float edge_noise = (grass_mid - 0.5) * 0.17 + (stone_macro - 0.5) * 0.16;
+	// Each tile receives ~128 source texels at the close-detail scale.
+	// Actual painted blades and sharp grit survive zooming; the previous
+	// smooth-noise-only ground blurred even with 1024px source images.
+	float g_macro = texture(terrain_detail, tiles * 0.019).r;
+	float g_mid = texture(terrain_detail, tiles * 0.055 + vec2(0.28, 0.41)).r;
+	float g_blades = texture(terrain_detail, tiles * 0.125 + vec2(0.63, 0.15)).r;
+	float g_specks = texture(terrain_detail, tiles * 0.165 + vec2(0.11, 0.72)).r;
+	float s_macro = texture(stone_detail, tiles * 0.022).r;
+	float s_mid = texture(stone_detail, tiles * 0.061 + vec2(0.72, 0.34)).r;
+	float s_grit = texture(stone_detail, tiles * 0.125 + vec2(0.34, 0.07)).r;
+	float s_grains = texture(stone_detail, tiles * 0.175 + vec2(0.53, 0.18)).r;
+	float edge_noise = (g_mid - 0.5) * 0.15 + (s_macro - 0.5) * 0.16;
 	float rock = smoothstep(0.17, 0.79, mask + edge_noise);
 
-	vec3 meadow = mix(vec3(0.128, 0.209, 0.108),
-		vec3(0.217, 0.292, 0.150), grass_macro * 0.42 + grass_mid * 0.58);
-	meadow += (grass_fine - 0.5) * vec3(0.065, 0.087, 0.036);
-	// Delicate blades and soil flecks add crisp texture, without a noisy grid.
-	float blade_highlights = smoothstep(0.62, 0.79, blades);
-	float blade_shadows = 1.0 - smoothstep(0.25, 0.41, blades);
-	meadow += blade_highlights * vec3(0.029, 0.050, 0.011);
-	meadow -= blade_shadows * vec3(0.016, 0.023, 0.010);
-
+	vec3 meadow = mix(vec3(0.130, 0.213, 0.111),
+		vec3(0.215, 0.292, 0.154), g_macro * 0.44 + g_mid * 0.56);
+	meadow += (g_blades - 0.5) * vec3(0.145, 0.167, 0.079);
+	meadow += (g_specks - 0.5) * vec3(0.041, 0.063, 0.016);
 	vec3 stones = mix(vec3(0.227, 0.224, 0.207),
-		vec3(0.343, 0.332, 0.295), stone_macro * 0.35 + stone_mid * 0.65);
-	stones += (stone_fine - 0.5) * vec3(0.091, 0.083, 0.075);
-	float granular_highlight = smoothstep(0.69, 0.83, stone_grit);
-	float granular_shadow = 1.0 - smoothstep(0.22, 0.36, stone_grit);
-	stones += granular_highlight * vec3(0.069, 0.062, 0.052);
-	stones -= granular_shadow * vec3(0.034, 0.032, 0.031);
-
+		vec3(0.343, 0.333, 0.295), s_macro * 0.35 + s_mid * 0.65);
+	stones += (s_grit - 0.5) * vec3(0.175, 0.159, 0.140);
+	stones += (s_grains - 0.5) * vec3(0.062, 0.057, 0.049);
 	float transition = smoothstep(0.08, 0.40, rock) *
 		(1.0 - smoothstep(0.67, 0.98, rock));
 	vec3 result = mix(meadow, stones, rock);
@@ -78,24 +69,50 @@ void fragment() {
 
 func _grass_texture() -> Texture2D:
 	if _grass_detail_cache == null:
-		_grass_detail_cache = _noise_texture(17291, 0.017)
+		_grass_detail_cache = _surface_texture(17291, 0.022, false)
 	return _grass_detail_cache
 
 func _stone_texture() -> Texture2D:
 	if _stone_detail_cache == null:
-		_stone_detail_cache = _noise_texture(28719, 0.033)
+		_stone_detail_cache = _surface_texture(28719, 0.042, true)
 	return _stone_detail_cache
 
-func _noise_texture(seed: int, frequency: float) -> Texture2D:
-	# FastNoiseLite fills these 1024px greyscale textures in native code
-	# instead of looping through millions of pixels in GDScript.
+func _surface_texture(seed: int, frequency: float, stone: bool) -> Texture2D:
+	# Native seamless base gives organic large-scale color, then sharp
+	# individual blades or gravel facets are painted at source resolution.
+	# Unlike smooth noise alone, close camera zoom reveals real fine shapes.
 	var noise := FastNoiseLite.new()
 	noise.seed = seed
 	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
 	noise.frequency = frequency
 	noise.fractal_type = FastNoiseLite.FRACTAL_FBM
-	noise.fractal_octaves = 5
+	noise.fractal_octaves = 4
 	var image: Image = noise.get_seamless_image(1024, 1024)
+	image.convert(Image.FORMAT_RGBA8)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed
+	var count := 27000 if stone else 23000
+	for i in range(count):
+		var x := rng.randi_range(0, 1023)
+		var y := rng.randi_range(0, 1023)
+		var bright := rng.randf() > 0.53
+		var tone := rng.randf_range(0.70, 0.89) if bright else rng.randf_range(0.18, 0.35)
+		var color := Color(tone, tone, tone, 1.0)
+		if stone:
+			# Broken gravel flecks, usually 2-4 source pixels across.
+			var width := rng.randi_range(1, 4)
+			var height := rng.randi_range(1, 3)
+			for dy in range(height):
+				for dx in range(width):
+					image.set_pixel(posmod(x + dx, 1024), posmod(y + dy, 1024), color)
+		else:
+			# Slender, slightly slanted grass strokes, not round noise blobs.
+			var length := rng.randi_range(4, 10)
+			var slant := -1 if rng.randf() < 0.52 else 1
+			for pixel in range(length):
+				var px := posmod(x + slant * (pixel / 4), 1024)
+				var py := posmod(y - pixel, 1024)
+				image.set_pixel(px, py, color)
 	image.generate_mipmaps()
 	return ImageTexture.create_from_image(image)
 

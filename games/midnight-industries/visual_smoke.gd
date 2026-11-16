@@ -56,6 +56,12 @@ func _run() -> void:
 	if Art.ore_layout(0) == Art.ore_layout(1) or Art.ore_layout(3) == Art.ore_layout(7):
 		_fail("Ground ore clusters lack distinct arrangements")
 		return
+	for index in range(4):
+		var approved: Image = Atlas.get_texture().get_image()
+		var isolated: Image = Atlas.sprite(index, 1).get_image()
+		if isolated.get_pixel(72, 72) != approved.get_pixel(index * 144 + 72, 144 + 72):
+			_fail("Source mineral or ingot artwork was altered")
+			return
 	# Belts facing north and south must have separate, correctly lit artwork.
 	var down: Texture2D = BeltArt.texture(1)
 	var north_belt: Texture2D = BeltArt.texture(3)
@@ -69,9 +75,18 @@ func _run() -> void:
 	if warehouse_rect.position.x < 0.0 or warehouse_rect.end.x > 48.0:
 		_fail("Warehouse sprite draws over its left or right neighbor")
 		return
-	if Art.machine_source("storage").position.x <= Atlas.region(3).position.x:
-		_fail("Warehouse source still samples the adjacent atlas cell")
+	var warehouse: Texture2D = Atlas.sprite(3)
+	var isolated_belt: Texture2D = Atlas.sprite(1)
+	if warehouse == null or isolated_belt == null:
+		_fail("Machine sprites are not isolated from neighboring atlas cells")
 		return
+	if warehouse.get_width() != 144 or isolated_belt.get_width() != 144:
+		_fail("Isolated machine sprites lost their 144px source detail")
+		return
+	for y in [25, 72, 120]:
+		if warehouse.get_image().get_pixel(0, y).a > 0.02:
+			_fail("Warehouse has a left-edge sprite bleed fringe")
+			return
 	if Art.machine_destination("smelter", Vector2.ZERO).position.y >= 0.0:
 		_fail("Furnace outlet was not moved up to belt height")
 		return
