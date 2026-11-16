@@ -42,3 +42,8 @@ jobs:
           fi
           "$godot" --headless --path "$project" --script res://smoke_test.gd 2>&1 | tee /tmp/industries-smoke.log
           grep -Fq "Midnight Industries factory simulation smoke PASS" /tmp/industries-smoke.log
+          "$godot" --headless --path "$project" --script res://ui_smoke.gd 2>&1 | tee /tmp/industries-ui.log
+          grep -Fq "Midnight Industries menu, inspector and build visual smoke PASS" /tmp/industries-ui.log
+          if grep -Eq 'SCRIPT ERROR:|Parse Error:|^ERROR:' /tmp/industries-ui.log; then exit 1; fi
+          "$godot" --headless --path "$project" --script res://performance_smoke.gd 2>&1 | tee /tmp/industries-perf.log
+          grep -Fq "Midnight Industries large-grid simulation smoke PASS" /tmp/industries-perf.log
