@@ -110,18 +110,3 @@ function RubySymbolArtView({symbol}:{symbol:SymbolId}){
  </svg>;
 }
 export const RubySymbolArt=memo(RubySymbolArtView);
-
-/** Used only in the decorative passing herd, never the outcome grid. */
-export function RubyHerdElephant({small=false}:{small?:boolean}){
- return <svg viewBox="0 0 140 100" className={'ruby-herd-elephant'+(small?' is-small':'')} aria-hidden="true">
-  <path d="M17 33Q19 12 47 12H95Q121 15 123 43L122 69L113 74L108 49
-    L103 88L84 88L82 62L52 63L49 89L29 89L29 63L17 64L15 89L1 89
-    L2 50Q-2 32 17 33Z" fill="currentColor"/>
-  <path d="M17 35Q-1 32 2 56Q5 72 17 75Q22 62 17 35Z" fill="currentColor"/>
-  <path d="M112 30Q131 25 131 49L134 70Q137 78 141 66Q142 88 127 84Q116 80 119 58L111 49Z"
-    fill="currentColor"/>
-  <path d="M10 59Q4 66 8 72" fill="none" stroke="#c68e53" strokeWidth="2"/>
-  <circle cx="120" cy="38" r="2" fill="#eac895"/>
-  <path d="M37 14Q67 5 96 15" stroke="#bd8c52" strokeWidth="3" fill="none"/>
- </svg>;
-}

@@ -1,11 +1,12 @@
 import {memo,useCallback,useEffect,useRef,useState} from 'react';
-import type {CSSProperties} from 'react';
+import type {CSSProperties,RefObject} from 'react';
 import {createRoot} from 'react-dom/client';
 import {finishModeBoot} from '../boot/finishModeBoot';
 import {onRubyMessage,sendRuby} from './bridge';
 import type {RubyIntent,RubySnapshot,RubySpin,SymbolId} from './bridge';
 import {RubyReelStage} from './RubyReelStage';
-import {RubySymbolArt,RubyHerdElephant} from './SymbolArt';
+import {RubySymbolArt} from './SymbolArt';
+import {RubyBonusHerd} from './RubyBonusHerd';
 import {playRubyCue} from './rubyAudio';
 import {bonusFinishPause,bonusStartPause,isElephantNearMiss} from './reelMotion';
 import type {SunsetSpeed} from './reelMotion';
@@ -74,20 +75,15 @@ type Feedback='win'|'loss'|'push'|'none';
 type Transfer={id:string;amount:number;x:number;y:number;dx:number;dy:number};
 const getFeedback=(net:string):Exclude<Feedback,'none'>=>Number(net)>0?'win':Number(net)<0?'loss':'push';
 
-function RubyScene({herd,reduced}:{herd:boolean;reduced:boolean}){
- return <div className={'ruby-landscape'+(herd?' herd-active':'')+(reduced?' no-motion':'')}
-  aria-hidden="true">
+const RubyScene=memo(function RubyScene({herdBackground}:{herdBackground:RefObject<HTMLDivElement|null>}){
+ return <div className="ruby-landscape" aria-hidden="true">
   <div className="ruby-sun"/><div className="ruby-palace"><i/><i/><i/><i/><i/></div>
   <div className="ruby-hills"/>
   <div className="ruby-palace-lamps"><i/><i/><i/><i/><i/><i/></div>
-  <div className="ruby-herd">
-   <RubyHerdElephant/><RubyHerdElephant small/><RubyHerdElephant/>
-   <RubyHerdElephant small/><RubyHerdElephant/>
-  </div>
-  <div className="ruby-dust"/>
   <div className="ruby-mist"/>
+  <div className="ruby-herd-background" ref={herdBackground}/>
  </div>;
-}
+});
 const RubyLamps=memo(function RubyLamps({count=18}:{count?:number}){
  return <div className="ruby-light-rail" aria-hidden="true">
   {Array.from({length:count},(_,i)=><i key={i} style={{animationDelay:(i*.17)+'s'}}/>)}
@@ -189,6 +185,7 @@ function App(){
  const [held,setHeld]=useState<readonly number[]>([]);
  const [winners,setWinners]=useState<readonly number[]>([]);
  const [phase,setPhase]=useState<Phase>('idle');
+ const herdForeground=useRef<HTMLDivElement>(null),herdBackground=useRef<HTMLDivElement>(null);
  const [anticipation,setAnticipation]=useState(false);
  const [rules,setRules]=useState(false);
  const timers=useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -424,10 +421,15 @@ function App(){
 
  const isHerd=phase==='bonus-intro'||phase==='bonus';
  const bonusLive=isHerd||phase==='result'&&!!spinResult?.elephantBonus;
+ const herdPhase=phase==='base'?'prepare':phase==='bonus-intro'?'intro':phase==='bonus'?'background':null;
+ const motionEnabled=!reduced&&!!state?.animationsEnabled;
  return <div className="ruby-shell ruby-premium-shell"
    data-reduced={reduced||!state?.animationsEnabled} data-phase={phase}
    data-bonus={bonusLive?'true':'false'}>
-  <RubyScene herd={isHerd} reduced={reduced||!state?.animationsEnabled}/>
+  <RubyScene herdBackground={herdBackground}/>
+  {motionEnabled&&spinResult?.elephantBonus&&herdPhase&&
+   <RubyBonusHerd key={spinResult.id} phase={herdPhase} introDuration={bonusStartPause(speed)}
+    foreground={herdForeground} background={herdBackground}/>}
   <div className="ruby-atmosphere" aria-hidden="true">
    {Array.from({length:17},(_,i)=><i key={i} style={{
     left:((i*37+8)%96)+'%',top:((i*27+9)%83)+'%',
@@ -457,7 +459,7 @@ function App(){
    <aside className="ruby-story">
     <div className="ruby-story-crest"><RubySymbolArt symbol="Elephant"/></div>
     <p className="ruby-eyebrow">{t.bonusInfo}</p>
-    <h2>{isHerd?t.herd:t.bonus}</h2>
+    <h2>{phase==='bonus-intro'?t.herd:t.bonus}</h2>
     <p>{t.elephants}</p>
     <div className="ruby-story-diamonds" aria-hidden="true">✦ ◆ ✦</div>
    </aside>
@@ -478,12 +480,12 @@ function App(){
       showWins={phase==='result'&&winners.length>0}
       anticipation={anticipation} nearMiss={isElephantNearMiss(spinResult?.baseGrid??[])}
       speed={speed} reducedMotion={reduced||!state?.animationsEnabled}
-      onBaseStop={onBaseStop} onBonusStop={onBonusStop}/>
+      onBaseStop={onBaseStop} onBonusStop={onBonusStop} herdForeground={herdForeground}/>
      <div className="ruby-side-jewels right" aria-hidden="true"><i/><i/><i/></div>
     </div>
     <div ref={resultAreaRef} className={'ruby-result'+(hasWin?' has-win':'')} role="status" aria-live="polite">
      <div className="ruby-result-title">
-      {isHerd?t.herd:anticipation?t.anticipation:animating?t.rolling:
+      {isHerd?(phase==='bonus-intro'?t.herd:t.bonus):anticipation?t.anticipation:animating?t.rolling:
        hasWin?t.total:nearMiss?t.nearMiss:spinResult?t.noWin:notice||t.ready}
      </div>
      <div className="ruby-result-amount">

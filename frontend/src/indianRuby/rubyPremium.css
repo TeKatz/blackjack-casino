@@ -19,16 +19,10 @@
 .ruby-atmosphere i{position:absolute;width:3px;height:3px;background:#ffe5ab;border-radius:50%;
  opacity:.06;box-shadow:0 0 13px #ffe2a6;animation:ruby-float 5.2s ease-in-out infinite alternate;will-change:transform,opacity}
 @keyframes ruby-float{0%{opacity:.06;transform:translate3d(0,8px,0)}100%{opacity:.7;transform:translate3d(10px,-21px,0)}}
-.ruby-landscape .ruby-herd{left:-63%;bottom:11%;height:auto;min-height:0;align-items:end;gap:clamp(8px,1.8vw,30px);
- color:#281818;opacity:0;filter:drop-shadow(0 10px 4px #20100f88);will-change:transform}
-.ruby-herd-elephant{width:clamp(106px,15vw,220px);height:auto;flex:none;transform:scaleX(-1);opacity:.9}
-.ruby-herd-elephant.is-small{width:clamp(80px,10vw,170px);opacity:.8}
-.ruby-landscape.herd-active .ruby-herd{opacity:.91;animation:ruby-premium-herd-pass 2.35s cubic-bezier(.23,.2,.66,.77) forwards}
-@keyframes ruby-premium-herd-pass{from{transform:translate3d(0,0,0)}to{transform:translate3d(160vw,0,0)}}
-.ruby-dust{position:absolute;left:0;right:0;bottom:8%;height:14%;background:linear-gradient(90deg,transparent,#f7ad5a27,transparent);
- opacity:0;pointer-events:none}
-.ruby-landscape.herd-active .ruby-dust{animation:ruby-dust 2.4s ease-out}
-@keyframes ruby-dust{0%,100%{opacity:0}45%{opacity:.7}}
+.ruby-herd-background,.ruby-herd-foreground{position:absolute;overflow:hidden;pointer-events:none}
+.ruby-herd-background{left:0;right:0;bottom:2%;height:clamp(112px,25vh,280px)}
+.ruby-herd-foreground{inset:0;z-index:8}
+.ruby-herd-background canvas,.ruby-herd-foreground canvas{display:block}
 .ruby-premium-shell .ruby-header{min-height:clamp(80px,10vh,122px);grid-template-columns:1fr 2fr 1fr;align-items:start;gap:12px}
 .ruby-premium-shell .ruby-title{position:relative;filter:none}
 .ruby-premium-shell .ruby-title::after{content:"";display:block;width:46%;height:1px;margin:8px auto 0;
@@ -246,7 +240,7 @@
 .ruby-premium-shell .ruby-bridge-notice{margin:4px 0;color:#ffe2ae;font-size:11px}
 .ruby-premium-shell .ruby-modal{border-color:#ffd99a;background:linear-gradient(140deg,#653629,#25131c);
  box-shadow:0 20px 90px #000,inset 0 0 0 2px #ffffff23}
-.ruby-premium-shell[data-reduced=true] .ruby-atmosphere,.ruby-premium-shell[data-reduced=true] .ruby-herd{display:none}
+.ruby-premium-shell[data-reduced=true] .ruby-atmosphere{display:none}
 .ruby-premium-shell[data-reduced=true] .ruby-light-rail i,
 .ruby-premium-shell[data-reduced=true] .ruby-reels *{animation:none!important;transition:none!important}
 @media(max-width:1140px){
@@ -295,7 +289,7 @@
  .ruby-premium-shell .ruby-story p:not(.ruby-eyebrow){font-size:10px}
 }
 @media(prefers-reduced-motion:reduce){
- .ruby-premium-shell .ruby-atmosphere,.ruby-premium-shell .ruby-herd{display:none}
+ .ruby-premium-shell .ruby-atmosphere{display:none}
  .ruby-premium-shell .ruby-light-rail i,.ruby-premium-shell .ruby-reels *{animation:none!important}
  .ruby-premium-shell *{scroll-behavior:auto!important}
 }

@@ -9,13 +9,13 @@ Sunset Ruby is an elephant-focused five-reel, three-row, ten-line video slot in 
 - At least two Elephant symbols anywhere on the original 5 × 3 grid trigger the Elephant Bonus. Existing Elephant and Ruby cells are held. All other cells receive one special respin, drawing only Elephant, Ruby or blank; the feature awards Elephant-line payouts. Base payouts and feature payouts are combined before the native result is shown to React.
 - The first-pass cabinet has a sunset palace, its own rolling and win presentation, a passing herd, original synthesized elephant/trampling cues, mute/animation switches, and English/German labels. Reduced-motion preferences disable the herd movement.
 
-**Prototype limitation:** The maker's proprietary reel strips, weight mapping, exact RTP and licensed sounds/art are not included. The prototype's symbol weights, multipliers and soundtrack are independent initial tuning, even where public paytable conventions are followed. The current symbol and herd artwork is newly authored scalable SVG, with an expanded original Web Audio synthesis palette. The illustrations and sounds are independent of the retail slot and can be replaced by commissioned, licensed art/audio later.
+**Prototype limitation:** The maker's proprietary reel strips, weight mapping, exact RTP and licensed sounds/art are not included. The prototype's symbol weights, multipliers and soundtrack are independent initial tuning, even where public paytable conventions are followed. The symbol artwork uses authored SVG, the animated herd uses PixiJS graphics, and the sound effects use original Web Audio synthesis. The illustrations and sounds are independent of the retail slot and can be replaced by commissioned, licensed art/audio later.
 
 ## Premium visual and motion pass
 
 - The cabinet uses layered brass, red gemstone inlays, animated lamp rails, glass glints, ambient dust and refined gold-and-claret typography. Every illustration uses authored scalable paths rather than emoji art.
 - `RubyReelStage` is a memoized five-column compositor: each reel uses a deterministic, presentation-only symbol strip and Web Animations API easing with staggered stops, overshoot and bounce. The result is *always* the native C# output.
-- When two Elephant symbols occur, anticipation starts as the reels settle; a bonus fanfare and passing illustrated herd lead into isolated per-cell respins. Held Elephant and Ruby cells never spin, and all final symbols and monetary totals come from the already committed result.
+- When two Elephant symbols occur, anticipation starts as the reels settle. A bonus fanfare accompanies the PixiJS herd across the reel glass. The same canvas then moves to the sunset landscape behind the cabinet, where the herd keeps walking until the feature settles. Held Elephant and Ruby cells never spin, and all final symbols and monetary totals come from the already committed result.
 - The win panel counts up the committed payout while winning lines and cells glow; no UI animation submits a second spin.
 - `BetSelector` stays mounted through every host revision, with stable dimensions and tabular numerals. Native bet acknowledgements no longer briefly dim the entire control desk or reset reel artwork, addressing the prior flicker.
 - Sound cues include original layered elephant/brass, heavy footsteps, soft mechanical stops, bonus, anticipation and variable win sounds. Sound and reduced-motion switches are respected without changing odds or wagers.
@@ -32,7 +32,7 @@ Sunset Ruby is an elephant-focused five-reel, three-row, ten-line video slot in 
 
 1. From the lobby, select the indented Sunset Ruby subentry under Slots; verify no extra tile appears in the grid and existing tile animations still work.
 2. Spin with valid and invalid balances; inspect shared bankroll after leaving and reopening the mode.
-3. Trigger two elephants with a test seed / repeated spins; confirm all elephant and ruby cells hold, then a herd traverses the background and remaining cells change to feature-only symbols.
+3. Trigger two elephants with a test seed / repeated spins; confirm all Elephant and Ruby cells hold, watch the herd cross the reel window once, then verify it keeps walking behind the cabinet while free cells respin and disappears when the result settles.
 4. Test sound and animation settings, reduced motion, the ten-line payouts, and the Back/ESC navigation.
 5. Run C# unit/contract tests, frontend typecheck/Vitest, release packaging and the NativeShell WebView2 smoke on Windows; visually review the cabinet at several DPI scales.
 

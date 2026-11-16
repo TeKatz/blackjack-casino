@@ -1,4 +1,5 @@
 import {memo,useLayoutEffect,useMemo,useRef} from 'react';
+import type {RefObject} from 'react';
 import {RubySymbolArt} from './SymbolArt';
 import {baseReelDuration,baseReelTape,bonusCellDuration,bonusCellTape,bonusKeyframes,reelKeyframes} from './reelMotion';
 import type {SymbolId} from './bridge';
@@ -18,6 +19,7 @@ type Props={
  nearMiss:boolean;
  speed:SunsetSpeed;
  reducedMotion:boolean;
+ herdForeground?:RefObject<HTMLDivElement|null>;
  onBaseStop:(id:string,reel:number)=>void;
  onBonusStop:(id:string,cell:number)=>void;
 };
@@ -177,7 +179,7 @@ function ReelColumn({reel,displayGrid,baseGrid,bonusGrid,spinId,rolling,rollingC
 }
 
 function RubyReelStageView({displayGrid,targetBase,targetBonus,spinId,rollingReels,
- rollingCells,heldCells,winningLines,showWins,anticipation,nearMiss,speed,reducedMotion,onBaseStop,onBonusStop}:Props){
+ rollingCells,heldCells,winningLines,showWins,anticipation,nearMiss,speed,reducedMotion,onBaseStop,onBonusStop,herdForeground}:Props){
  const winners=useMemo(()=>{
   const cells=new Set<number>();
   if(showWins)for(const line of winningLines){
@@ -202,6 +204,7 @@ function RubyReelStageView({displayGrid,targetBase,targetBonus,spinId,rollingRee
     points={lineCells[line]?.map(cell=>((cell%5)*100+50)+','+(Math.floor(cell/5)*100+50)).join(' ')??''}
     style={{animationDelay:(i*.24)+'s'}}/>)}
   </svg>}
+  {herdForeground&&<div className="ruby-herd-foreground" ref={herdForeground} aria-hidden="true"/>}
   <div className="ruby-reel-glass" aria-hidden="true"/>
  </div>;
 }
