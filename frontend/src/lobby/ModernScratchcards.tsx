@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import type {PointerEvent as ReactPointerEvent} from 'react';
-import type {ScratchcardSnapshot,ScratchcardTicket} from './scratchcardsBridge';
+import type {ScratchcardGame,ScratchcardSnapshot,ScratchcardTicket} from './scratchcardsBridge';
 import {clearedFraction,SCRATCH_BRUSH_WIDTH,SCRATCH_REVEAL_COVERAGE,strokeOverlapsRect,winningCellIndexes} from './scratchcardsPresentation';
 import {playScratchcardWin,unlockScratchcardAudio} from './scratchcardsAudio';
 import './scratchcards.css';
@@ -8,10 +8,10 @@ import './scratchcards.css';
 type Props={
   data:ScratchcardSnapshot; loaded:boolean; embedded:boolean; language:'en'|'de';
   pending:'buy'|'collect'|null; notice:{success:boolean;message:string}|null; motionEnabled?:boolean;
-  onBack:()=>void;onBuy:()=>void;onCollect:(id:string)=>void;
+  onBack:()=>void;onBuy:(gameId:string)=>void;onCollect:(id:string)=>void;
 };
 const motifs=['♠','♦','♣','♥','7'];
-const prizes=[{amount:0,odds:'50%'},{amount:10,odds:'20%'},{amount:20,odds:'15%'},
+const basePrizes=[{amount:0,odds:'50%'},{amount:10,odds:'20%'},{amount:20,odds:'15%'},
   {amount:50,odds:'10%'},{amount:100,odds:'4%'},{amount:250,odds:'0.9%'},
   {amount:1000,odds:'0.1%'}];
 const money=(n:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
@@ -51,10 +51,9 @@ function ScratchCell({index,symbol,revealed,disabled,winning,onReveal,onStart}:{
   </button>;
 }
 const allFields=[0,1,2,3,4,5,6,7,8];
-/** Particles are transient DOM visuals, capped by time and cleaned up when the ticket changes. */
-/** Particles are transient DOM visuals, capped by time and cleaned up on ticket changes. */
-function TicketBoard({ticket,revealed,onReveal,ready,winning,motionEnabled,onStart}:{
- ticket:ScratchcardTicket|null;revealed:number[];ready:boolean;winning:number[];
+/** Pointer debris is temporary and cleaned up when the ticket changes. */
+function TicketBoard({game,ticket,revealed,onReveal,ready,winning,motionEnabled,onStart}:{
+ game:ScratchcardGame;ticket:ScratchcardTicket|null;revealed:number[];ready:boolean;winning:number[];
  motionEnabled:boolean;onStart:()=>void;onReveal:(index:number)=>void;
 }){
   const grid=useRef<HTMLDivElement>(null);
@@ -187,20 +186,24 @@ function TicketBoard({ticket,revealed,onReveal,ready,winning,motionEnabled,onSta
     scanCoverage(true);
     activePointers.current.delete(event.pointerId);
   };
-  return <div className={'scratch-ticket '+(ticket?.collected?'ticket-collected':'')+
+  return <div className={'scratch-ticket scratch-ticket-'+game.id+' '+
+    (ticket?.collected?'ticket-collected':'')+
     (winning.length?' is-winning':'')} data-testid="scratch-ticket">
     <div className="scratch-ticket-header">
-      <span className="scratch-ticket-edition">THE MIDNIGHT CLUB · SERIES 01</span>
-      <span className="scratch-ticket-stamp">✦ 07 ✦</span>
+      <span className="scratch-ticket-edition">THE MIDNIGHT CLUB · {game.id==='gold-rush'?'SERIES 02':'SERIES 01'}</span>
+      <span className="scratch-ticket-stamp">{game.id==='gold-rush'?'✦ AU ✦':'✦ 07 ✦'}</span>
     </div>
-    <div className="scratch-ticket-title"><span>LUCKY</span><strong>SEVENS</strong></div>
+    <div className="scratch-ticket-title">
+      <span>{game.id==='gold-rush'?'GOLD':'LUCKY'}</span>
+      <strong>{game.id==='gold-rush'?'RUSH':'SEVENS'}</strong>
+    </div>
     <p>THREE MATCHING SYMBOLS · ONE PRIZE</p>
     <div className="scratch-ticket-grid" ref={grid} data-testid="scratch-ticket-grid"
       onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp}
       onPointerCancel={pointerCancel} onLostPointerCapture={lostCapture}>
       {allFields.map(index=><ScratchCell key={(ticket?.ticketId||'empty')+'-'+index}
         index={index} symbol={ticket?.symbols[index]??index%5}
-        revealed={ticket===null||revealed.includes(index)}
+        revealed={!!ticket&&(ticket.collected||revealed.includes(index))}
         disabled={!ticket||!ready||ticket.collected} winning={winning.includes(index)}
         onReveal={onReveal} onStart={onStart}/>)}
     </div>
@@ -209,56 +212,93 @@ function TicketBoard({ticket,revealed,onReveal,ready,winning,motionEnabled,onSta
       <b>◆</b><span>PLAY MONEY ONLY</span></div>
   </div>;
 }
+type RevealSession={ticketId:string|null;indexes:number[]};
+
 export function ModernScratchcards({data,loaded,embedded,language,pending,notice,
   motionEnabled=true,onBack,onBuy,onCollect}:Props){
   const de=language==='de';
   const ticket=data.ticket;
-  const [revealed,setRevealed]=useState<number[]>([]);
-  const revealedRef=useRef<number[]>([]);
+  const games=data.games;
+  const [selectedId,setSelectedId]=useState<string>(ticket?.gameId??games[0]?.id??'lucky-sevens');
+  const [direction,setDirection]=useState<'next'|'previous'|null>(null);
+  const [revealSession,setRevealSession]=useState<RevealSession>({ticketId:null,indexes:[]});
+  const revealRef=useRef<RevealSession>({ticketId:null,indexes:[]});
   const [soundEnabled,setSoundEnabled]=useState(true);
   const soundPlayedFor=useRef<string|null>(null);
+
+  // Fresh snapshots must never render the previous ticket's nine revealed fields,
+  // even for the single render preceding this effect. That caused the odds flash.
   useEffect(()=>{
-    const initial=ticket?.collected?[...allFields]:[];
-    revealedRef.current=initial;
-    setRevealed(initial);
+    const next={ticketId:ticket?.ticketId??null,
+      indexes:ticket?.collected?[...allFields]:[]};
+    revealRef.current=next;
+    setRevealSession(next);
     soundPlayedFor.current=null;
+    if(ticket&&!ticket.collected&&games.some(game=>game.id===ticket.gameId))
+      setSelectedId(ticket.gameId);
   },[ticket?.ticketId,ticket?.collected]);
-  const allRevealed=!!ticket&&revealed.length===9;
-  const winning=allRevealed&&ticket?winningCellIndexes(ticket.symbols,ticket.prize):[];
+
+  const selectedIndex=Math.max(0,games.findIndex(game=>game.id===selectedId));
+  const selected=games[selectedIndex]??games[0];
+  const activeTicket=ticket?.gameId===selected.id?ticket:null;
+  const activeElsewhere=!!ticket&&!ticket.collected&&ticket.gameId!==selected.id;
+  const revealed=activeTicket?.collected?[...allFields]:
+    activeTicket&&revealSession.ticketId===activeTicket.ticketId?revealSession.indexes:[];
+  const allRevealed=!!activeTicket&&revealed.length===9;
+  const winning=allRevealed?winningCellIndexes(activeTicket!.symbols,activeTicket!.prize):[];
   const hasWin=winning.length===3;
+  const prizes=basePrizes.map(entry=>({
+    amount:entry.amount*selected.prizeMultiplier,odds:entry.odds,
+  }));
+
+  const navigate=(step:number)=>{
+    const next=selectedIndex+step;
+    if(next<0||next>=games.length)return;
+    setDirection(step>0?'next':'previous');
+    setSelectedId(games[next].id);
+  };
   const reveal=(index:number)=>{
-    if(!ticket||ticket.collected||revealedRef.current.includes(index))return;
-    const next=[...revealedRef.current,index];
-    revealedRef.current=next;
-    setRevealed(next);
-    if(next.length===9 && ticket.prize>0 && soundPlayedFor.current!==ticket.ticketId){
-      soundPlayedFor.current=ticket.ticketId;
+    if(!activeTicket||activeTicket.collected)return;
+    const current=revealRef.current.ticketId===activeTicket.ticketId?
+      revealRef.current.indexes:[];
+    if(current.includes(index))return;
+    const next=[...current,index];
+    const session={ticketId:activeTicket.ticketId,indexes:next};
+    revealRef.current=session;
+    setRevealSession(session);
+    if(next.length===9&&activeTicket.prize>0&&soundPlayedFor.current!==activeTicket.ticketId){
+      soundPlayedFor.current=activeTicket.ticketId;
       playScratchcardWin(soundEnabled);
     }
   };
   const revealAll=()=>{
-    if(!ticket||ticket.collected)return;
+    if(!activeTicket||activeTicket.collected)return;
     unlockScratchcardAudio(soundEnabled);
-    if(revealed.length<9 && ticket.prize>0 && soundPlayedFor.current!==ticket.ticketId){
-      soundPlayedFor.current=ticket.ticketId;
+    const current=revealRef.current.ticketId===activeTicket.ticketId?
+      revealRef.current.indexes:[];
+    if(current.length<9&&activeTicket.prize>0&&soundPlayedFor.current!==activeTicket.ticketId){
+      soundPlayedFor.current=activeTicket.ticketId;
       playScratchcardWin(soundEnabled);
     }
-    revealedRef.current=[...allFields];
-    setRevealed(revealedRef.current);
+    const session={ticketId:activeTicket.ticketId,indexes:[...allFields]};
+    revealRef.current=session;
+    setRevealSession(session);
   };
   const canPurchase=embedded&&loaded&&!pending&&!data.recoveryRequired&&
-    (!ticket||ticket.collected)&&data.bankroll>=data.price;
-  const canCollect=!!ticket&&!ticket.collected&&allRevealed&&!pending&&!data.recoveryRequired;
-  const status=ticket?.collected?(ticket.prize>0
-    ?de?'Gewinn gutgeschrieben':'Prize paid out'
-    :de?'Los abgeschlossen':'Ticket completed')
-    :ticket&&allRevealed?(ticket.prize>0
+    (!ticket||ticket.collected)&&data.bankroll>=selected.price;
+  const canCollect=!!activeTicket&&!activeTicket.collected&&allRevealed&&!pending&&!data.recoveryRequired;
+  const status=activeElsewhere?(de
+    ?'Schließe zuerst dein anderes aktives Los ab.':'Finish your other active ticket first.'):
+    activeTicket?.collected?(activeTicket.prize>0
+      ?de?'Gewinn gutgeschrieben':'Prize paid out'
+      :de?'Los abgeschlossen':'Ticket completed')
+    :activeTicket&&allRevealed?(activeTicket.prize>0
       ?de?'Gewonnen! Jetzt einlösen.':'Winner! Collect your prize.'
       :de?'Leider kein Gewinn. Los abschließen.':'No prize this time. Finish the ticket.')
-    :ticket?(de?'Rubbele alle neun Felder frei.':'Scratch all nine fields to reveal your result.')
-    :(de?'Kaufe ein Los und entdecke dein Glück.':'Purchase a ticket to begin.');
-  return <main className="scratch-page" data-motion={motionEnabled?'on':'off'}
-    aria-label={de?'Rubbellose':'Scratchcards'}>
+    :activeTicket?(de?'Rubbele alle neun Felder frei.':'Scratch all nine fields to reveal your result.')
+    :(de?'Wähle dieses Los und versuche dein Glück.':'Choose this ticket and try your luck.');
+  return <main className="scratch-page" data-game={selected.id}
+    data-motion={motionEnabled?'on':'off'} aria-label={de?'Rubbellose':'Scratchcards'}>
     <div className="scratch-scroll">
       <header className="scratch-hero">
         <div>
@@ -266,33 +306,65 @@ export function ModernScratchcards({data,loaded,embedded,language,pending,notice
             {de?'‹ Zur Lobby':'‹ Back to lobby'}</button>
           <span className="shop-eyebrow">THE MIDNIGHT CLUB / INSTANT WIN</span>
           <h1>{de?'Rubbellose':'Scratchcards'}</h1>
-          <p>{de?'Ein kleines Stück Casino-Magie. Ein Los, neun verdeckte Symbole und eine echte Chance auf Spielgeld.':
-            'A little casino magic. One ticket, nine concealed symbols and a chance to win play money.'}</p>
+          <p>{de?'Zwei Lose, neun Felder und die Chance auf Spielgeldgewinne.':
+            'Two ticket series, nine concealed fields and a chance to win play money.'}</p>
         </div>
         <div className="scratch-hero-wallet">
           <span>{de?'DEIN SPIELGELD':'YOUR BANKROLL'}</span>
-          <strong>{money(data.bankroll)}</strong><small>{de?'PREIS PRO LOS':'TICKET PRICE'} · {money(data.price)}</small>
+          <strong>{money(data.bankroll)}</strong>
+          <small>{de?'PREIS PRO LOS':'TICKET PRICE'} · {money(selected.price)}</small>
         </div>
       </header>
       <div className="scratch-layout">
         <section className={'scratch-stage '+(hasWin?'scratch-stage-win':'')}
           aria-label={de?'Rubbellos':'Scratch ticket'}>
-          <div className="scratch-stage-header"><span>01 / LUCKY SEVENS</span>
-            <strong>{ticket&&!ticket.collected?(de?'AKTIVES LOS':'ACTIVE TICKET'):'SERIES 01'}</strong></div>
-          <TicketBoard ticket={ticket} revealed={revealed} ready={loaded}
-            winning={winning} motionEnabled={motionEnabled} onReveal={reveal}
-            onStart={()=>unlockScratchcardAudio(soundEnabled)}/>
+          <div className="scratch-stage-header">
+            <span>{String(selectedIndex+1).padStart(2,'0')} / {selected.name.toUpperCase()}</span>
+            <strong>{activeTicket&&!activeTicket.collected?
+              (de?'AKTIVES LOS':'ACTIVE TICKET'):
+              (de?'LOS '+(selectedIndex+1)+' / '+games.length:
+                'TICKET '+(selectedIndex+1)+' / '+games.length)}</strong>
+          </div>
+          <div className="scratch-ticket-switcher">
+            <div className="scratch-switch-side scratch-switch-left">
+              {selectedIndex>0&&<button type="button" className="scratch-switch-arrow"
+                onClick={()=>navigate(-1)} disabled={pending!==null}
+                aria-label={(de?'Vorheriges Los: ':'Previous ticket: ')+games[selectedIndex-1].name}>
+                <span aria-hidden="true">‹</span>
+              </button>}
+            </div>
+            <div key={selected.id} className={'scratch-ticket-entrance '+
+              (motionEnabled?(direction==='next'?'slide-next':
+                direction==='previous'?'slide-previous':''):'')}>
+              <TicketBoard game={selected} ticket={activeTicket} revealed={revealed}
+                ready={loaded} winning={winning} motionEnabled={motionEnabled}
+                onReveal={reveal} onStart={()=>unlockScratchcardAudio(soundEnabled)}/>
+            </div>
+            <div className="scratch-switch-side scratch-switch-right">
+              {selectedIndex<games.length-1&&<button type="button" className="scratch-switch-arrow"
+                onClick={()=>navigate(1)} disabled={pending!==null}
+                aria-label={(de?'Nächstes Los: ':'Next ticket: ')+games[selectedIndex+1].name}>
+                <span aria-hidden="true">›</span>
+              </button>}
+            </div>
+          </div>
           {hasWin&&<div className="scratch-win-banner" role="status" aria-live="polite">
             <span aria-hidden="true">✦</span>
-            <strong>{ticket?.prize===1000?'JACKPOT':de?'GEWINN!':'WINNER!'}</strong>
-            <b>{money(ticket?.prize??0)}</b>
+            <strong>{activeTicket?.prize===selected.price*50?'JACKPOT':de?'GEWINN!':'WINNER!'}</strong>
+            <b>{money(activeTicket?.prize??0)}</b>
             <span aria-hidden="true">✦</span>
           </div>}
           <div className={'scratch-status '+(hasWin?'scratch-status-winning':'')} role="status">
-            <span className="scratch-status-symbol">{ticket&&allRevealed?(ticket.prize>0?'✦':'◆'):'✧'}</span>
-            <div><strong>{ticket&&allRevealed?money(ticket.prize):de?'Verdeckter Gewinn':'Hidden prize'}</strong>
+            <span className="scratch-status-symbol">{hasWin?'✦':activeTicket&&allRevealed?'◆':'✧'}</span>
+            <div><strong>{activeTicket&&allRevealed?money(activeTicket.prize):
+              de?'Verdeckter Gewinn':'Hidden prize'}</strong>
               <p>{status}</p></div>
           </div>
+          {activeElsewhere&&<button type="button" className="scratch-return-active"
+            onClick={()=>navigate(games.findIndex(game=>game.id===ticket!.gameId)-selectedIndex)}>
+            {de?'‹ Zurück zum aktiven Los: ':'‹ Back to active ticket: '}
+            {games.find(game=>game.id===ticket!.gameId)?.name??ticket!.gameId}
+          </button>}
           {notice&&!notice.success&&<p className="scratch-error" role="alert">{notice.message}</p>}
           {data.recoveryRequired&&<p className="scratch-error" role="alert">
             {de?'Speichervorgang unklar. Bitte das Casino neu starten, bevor du weiterspielst.':
@@ -301,10 +373,13 @@ export function ModernScratchcards({data,loaded,embedded,language,pending,notice
             {de?'Im Browser nur Vorschau. Kaufen und Gewinne funktionieren im Windows-Programm.':
               'Browser preview only. Purchases and payouts require the Windows app.'}</p>}
           <div className="scratch-actions">
-            <button type="button" className="scratch-primary" disabled={!canPurchase} onClick={onBuy}>
-              {pending==='buy'?'…':de?'LOS KAUFEN · '+money(data.price):'BUY TICKET · '+money(data.price)}
+            <button type="button" className="scratch-primary" disabled={!canPurchase}
+              onClick={()=>onBuy(selected.id)}>
+              {pending==='buy'?'…':de?'LOS KAUFEN · '+money(selected.price):
+                'BUY TICKET · '+money(selected.price)}
             </button>
-            <button type="button" className="scratch-secondary" disabled={!ticket||allRevealed||!loaded||ticket.collected}
+            <button type="button" className="scratch-secondary"
+              disabled={!activeTicket||allRevealed||!loaded||activeTicket.collected}
               onClick={revealAll}>
               {de?'Alles aufdecken':'Reveal all'}
             </button>
@@ -312,9 +387,9 @@ export function ModernScratchcards({data,loaded,embedded,language,pending,notice
               onClick={()=>setSoundEnabled(value=>!value)}>
               {soundEnabled?(de?'♪ Ton an':'♪ Sound on'):(de?'♪ Ton aus':'♪ Sound off')}
             </button>
-            {ticket&&!ticket.collected&&<button type="button" className="scratch-collect"
-              disabled={!canCollect} onClick={()=>onCollect(ticket.ticketId)}>
-              {pending==='collect'?'…':ticket.prize>0
+            {activeTicket&&!activeTicket.collected&&<button type="button" className="scratch-collect"
+              disabled={!canCollect} onClick={()=>onCollect(activeTicket.ticketId)}>
+              {pending==='collect'?'…':activeTicket.prize>0
                 ?(de?'GEWINN EINLÖSEN':'COLLECT PRIZE')
                 :(de?'LOS ABSCHLIESSEN':'FINISH TICKET')}</button>}
           </div>
@@ -323,19 +398,22 @@ export function ModernScratchcards({data,loaded,embedded,language,pending,notice
           <section className="scratch-info-card">
             <span className="shop-eyebrow">HOW TO PLAY</span>
             <h2>{de?'So funktioniert es':'How it works'}</h2>
-            <p>{de?'Kaufe ein Lucky-Sevens-Los für 20 $ Spielgeld und rubbele die neun Felder mit der Maus oder per Touch frei.':
-              'Buy a Lucky Sevens ticket for $20 of play money and scratch the nine fields with your mouse or touch.'}</p>
+            <p>{de?'Kaufe ein '+selected.name+'-Los für '+money(selected.price)+
+              ' Spielgeld und rubbele die neun Felder mit der Maus oder per Touch frei.':
+              'Buy a '+selected.name+' ticket for '+money(selected.price)+
+              ' of play money and scratch all nine fields with mouse or touch.'}</p>
             <p>{de?'Drei gleiche Symbole an beliebigen Stellen gewinnen den auf dem Los festgelegten Betrag. Bei einem Gewinn kannst du ihn anschließend einlösen.':
               'Three matching symbols anywhere win the predetermined ticket prize. Collect your payout after revealing every field.'}</p>
           </section>
           <section className="scratch-info-card">
-            <span className="shop-eyebrow">PAYOUT TABLE</span>
+            <span className="shop-eyebrow">PAYOUT TABLE · {selected.name.toUpperCase()}</span>
             <h2>{de?'Gewinne & Chancen':'Prizes & odds'}</h2>
             <div className="scratch-odds">
               <div className="scratch-odds-heading"><span>{de?'Gewinn':'Prize'}</span>
                 <span>{de?'Chance':'Chance'}</span></div>
-              {prizes.map(entry=><div key={entry.amount} className={(entry.amount===1000?'scratch-jackpot-row ':'')+
-                (hasWin&&ticket?.prize===entry.amount?'scratch-odds-winner':'')}>
+              {prizes.map(entry=><div key={entry.amount} className={
+                (entry.amount===selected.price*50?'scratch-jackpot-row ':'')+
+                (hasWin&&activeTicket?.prize===entry.amount?'scratch-odds-winner':'')}>
                 <strong>{entry.amount===0?(de?'Niete':'No win'):money(entry.amount)}</strong>
                 <span>{entry.odds}</span></div>)}
             </div>

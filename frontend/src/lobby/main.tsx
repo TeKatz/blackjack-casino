@@ -389,11 +389,11 @@ function LobbyApp() {
     setScratchcardsNotice(null);
     lobbyCommand('lobby.scratchcards.open');
   };
-  const buyScratchcard = () => {
+  const buyScratchcard = (gameId:string) => {
     if(scratchcardsPending || !embeddedLobby)return;
     setScratchcardsPending('buy');
     setScratchcardsNotice(null);
-    lobbyCommand('lobby.scratchcards.buy',crypto.randomUUID());
+    lobbyCommand('lobby.scratchcards.buy',crypto.randomUUID(),gameId);
   };
   const collectScratchcard = (id:string) => {
     if(scratchcardsPending || !embeddedLobby)return;

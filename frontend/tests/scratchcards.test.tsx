@@ -6,7 +6,7 @@ import {clearedFraction,SCRATCH_BRUSH_WIDTH,SCRATCH_REVEAL_COVERAGE,strokeOverla
 
 const validTicket={
   ticketId:'ddc29a2d-67af-4603-babf-d4f5d203fc50',
-  symbols:[0,0,1,1,2,2,3,3,4],prize:0,collected:false,bankrollAfter:980,
+  gameId:'lucky-sevens',symbols:[0,0,1,1,2,2,3,3,4],prize:0,collected:false,bankrollAfter:980,
 };
 
 describe('scratchcards lobby integration',()=>{
@@ -17,6 +17,10 @@ describe('scratchcards lobby integration',()=>{
     expect(isScratchcardMessage({type:'lobby.scratchcards.result',
       data:{action:'collect',success:true,message:'Collected.'}})).toBe(true);
     expect(isScratchcardSnapshot({...snapshot,price:0})).toBe(false);
+    expect(isScratchcardSnapshot({...snapshot,ticket:{...validTicket,
+      gameId:'not-a-real-game'}})).toBe(false);
+    expect(isScratchcardSnapshot({...snapshot,ticket:{...validTicket,
+      gameId:'gold-rush',prize:10}})).toBe(false);
     expect(isScratchcardSnapshot({...snapshot,ticket:{...validTicket,
       symbols:[0,1,2]}})).toBe(false);
     expect(isScratchcardSnapshot({...snapshot,ticket:{...validTicket,
@@ -103,5 +107,42 @@ describe('scratchcard visual-only reveal mechanics',()=>{
     expect(html).toContain('data-motion="off"');
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain('Ton an');
+  });
+});
+
+describe('multiple scratchcard presentations',()=>{
+  it('renders the current game with navigation and the server-backed price',()=>{
+    const html=renderToStaticMarkup(<ModernScratchcards data={previewScratchcards}
+      loaded={true} embedded={true} language="en" pending={null} notice={null}
+      onBack={()=>{}} onBuy={()=>{}} onCollect={()=>{}}/>);
+    expect(html).toContain('Next ticket: Gold Rush');
+    expect(html).toContain('BUY TICKET');
+    expect(html).toContain('$20.00');
+    expect(html).toContain('scratch-ticket-lucky-sevens');
+  });
+  it('restores a Gold Rush ticket and prevents simultaneous purchases',()=>{
+    const gold={...validTicket,gameId:'gold-rush',prize:50,collected:false};
+    const html=renderToStaticMarkup(<ModernScratchcards
+      data={{...previewScratchcards,ticket:gold}} loaded={true} embedded={true}
+      language="de" pending={null} notice={null} onBack={()=>{}}
+      onBuy={()=>{}} onCollect={()=>{}}/>);
+    expect(html).toContain('GOLD');
+    expect(html).toContain('RUSH');
+    expect(html).toContain('scratch-ticket-gold-rush');
+    expect(html).toContain('LOS KAUFEN');
+    expect(html).toContain('$100.00');
+    expect(html).toContain('disabled');
+  });
+  it('does not show an old win highlight against a newly selected ticket',()=>{
+    const oldWin={...validTicket,gameId:'lucky-sevens',prize:10,
+      symbols:[4,4,4,1,1,2,2,3,3],collected:true};
+    const html=renderToStaticMarkup(<ModernScratchcards
+      data={{...previewScratchcards,ticket:oldWin}}
+      loaded={true} embedded={true} language="en" pending={null} notice={null}
+      onBack={()=>{}} onBuy={()=>{}} onCollect={()=>{}}/>);
+    expect(html).not.toContain('scratch-odds-winner');
+    expect(html).not.toContain('scratch-win-banner');
+    expect(html).not.toContain('Previous ticket:');
+    expect(html).toContain('Next ticket: Gold Rush');
   });
 });

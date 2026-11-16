@@ -181,3 +181,101 @@
  .scratch-status-winning .scratch-status-symbol,.scratch-win-banner,
  .scratch-win-banner::after{animation:none!important}
 }
+
+
+/* A compact desktop composition keeps every action visible after a win at 1920x1080. */
+.scratch-scroll{padding:12px 18px 16px}
+.scratch-hero{min-height:118px;padding:12px 20px;margin-bottom:11px}
+.scratch-hero h1{font-size:clamp(29px,2.65vw,43px);margin:2px 0 5px}
+.scratch-hero p{font-size:12px;line-height:1.4}
+.scratch-hero-wallet{min-width:185px;padding:11px 15px}
+.scratch-hero-wallet strong{font-size:25px;margin:5px 0}
+.scratch-layout{gap:12px}
+.scratch-stage{padding:12px 15px 14px}
+.scratch-stage-header{margin-bottom:8px}
+.scratch-ticket{max-width:510px;padding:15px 23px 13px}
+.scratch-ticket-title{margin-top:2px}
+.scratch-ticket-title span{font-size:clamp(22px,2vw,29px)}
+.scratch-ticket-title strong{font-size:clamp(32px,2.9vw,42px)}
+.scratch-ticket>p{margin:5px 0 9px}
+.scratch-ticket-grid{max-width:370px;gap:6px;padding:8px}
+.scratch-cell{min-height:0}
+.scratch-ticket-footer{margin-top:9px}
+.scratch-win-banner{min-height:42px;max-width:510px;margin:8px auto 0;padding:5px 12px}
+.scratch-win-banner strong{font-size:19px}
+.scratch-win-banner b{font-size:23px}
+.scratch-status{min-height:58px;margin:9px 0;padding:8px 12px}
+.scratch-status-symbol{font-size:30px;min-width:32px}
+.scratch-status strong{font-size:20px}
+.scratch-status p{font-size:11px;margin-top:2px}
+.scratch-actions{gap:7px}
+.scratch-actions button{min-height:38px;padding:7px 13px}
+.scratch-info{gap:11px}
+.scratch-info-card{padding:14px 17px}
+.scratch-info-card h2{font-size:21px;margin:5px 0 9px}
+.scratch-info-card p{line-height:1.5}
+.scratch-odds>div{padding:6px 3px}
+
+/* The arrows sit in the open stage space on either side of the ticket.
+   The selected card alone slides in; the rest of the page stays stationary. */
+.scratch-ticket-switcher{display:grid;grid-template-columns:minmax(38px,1fr)
+  minmax(0,510px) minmax(38px,1fr);gap:8px;align-items:center;min-width:0}
+.scratch-ticket-entrance{min-width:0;will-change:transform,opacity}
+.scratch-ticket-entrance .scratch-ticket{width:100%;box-sizing:border-box}
+.scratch-switch-side{display:flex;align-items:center;justify-content:center;min-width:0}
+.scratch-switch-arrow{display:grid;place-items:center;width:49px;height:49px;
+  padding:0 0 6px;border:1px solid #edd28d;border-radius:999px;
+  color:#fce8b1;background:linear-gradient(147deg,#214b38,#0a261c);
+  box-shadow:0 0 0 4px #e2bc6b20,0 8px 21px #0008,inset 0 1px #fff8d255;
+  font:normal 43px/1 Georgia,serif;cursor:pointer;touch-action:manipulation;
+  transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
+.scratch-switch-arrow:not(:disabled):hover{transform:scale(1.1);border-color:#fff4b9;
+  box-shadow:0 0 0 5px #e2bc6b2f,0 0 28px #efc8797a}
+.scratch-switch-arrow:focus-visible{outline:2px solid #fff3b8;outline-offset:4px}
+.scratch-switch-arrow:disabled{opacity:.4;cursor:default}
+.scratch-ticket-entrance.slide-next{animation:scratch-ticket-next .34s cubic-bezier(.19,.75,.22,1) both}
+.scratch-ticket-entrance.slide-previous{animation:scratch-ticket-previous .34s cubic-bezier(.19,.75,.22,1) both}
+@keyframes scratch-ticket-next{from{opacity:.4;transform:translateX(35px) scale(.965)}
+  to{opacity:1;transform:translateX(0) scale(1)}}
+@keyframes scratch-ticket-previous{from{opacity:.4;transform:translateX(-35px) scale(.965)}
+  to{opacity:1;transform:translateX(0) scale(1)}}
+.scratch-return-active{display:block;margin:0 auto 9px;border:1px solid #ac8650;
+  border-radius:7px;background:#153b2e;color:#ffe3a4;padding:7px 15px;
+  font-size:11px;font-weight:700;cursor:pointer}
+
+/* A second premium look without changing the original Lucky Sevens artwork. */
+.scratch-ticket-gold-rush{color:#fff1cc;
+  border-color:#ffdd91;background:
+  radial-gradient(ellipse at 55% -19%,#b28a3b8c,transparent 56%),
+  linear-gradient(152deg,#68451d 0%,#473717 43%,#1f2b1f 100%);
+  box-shadow:0 13px 30px #0009,0 0 24px #c69b4e62,
+    inset 0 0 0 6px #f4cd722d,inset 0 0 0 8px #fff1ba22}
+.scratch-ticket-gold-rush .scratch-ticket-stamp{color:#ffefa8}
+.scratch-ticket-gold-rush .scratch-ticket-title{letter-spacing:.13em;text-shadow:0 4px 14px #17100a}
+.scratch-ticket-gold-rush .scratch-ticket-title strong{color:#fff0a7}
+.scratch-ticket-gold-rush .scratch-ticket-grid{border-color:#f4d4829c;background:#2d1e1299}
+.scratch-ticket-gold-rush .scratch-cell{border-color:#d4ae5ca6;
+  background:radial-gradient(circle at 50% 26%,#fff3bb,#dfbf72 65%,#b37d2e)}
+.scratch-ticket-gold-rush .scratch-symbol-4{color:#a56b0d}
+.scratch-page[data-game="gold-rush"] .scratch-stage{border-color:#9e7640;
+  background:linear-gradient(155deg,#332b1c,#101e19 75%)}
+.scratch-page[data-game="gold-rush"] .scratch-stage-header strong{color:#ffe2a2}
+.scratch-page[data-game="gold-rush"] .scratch-hero{border-color:#bd9151}
+.scratch-page[data-game="gold-rush"] .scratch-switch-arrow{background:linear-gradient(145deg,#724c1d,#261e12)}
+
+/* Smaller viewports remain scrollable and never squash text to meet desktop targets. */
+@media(max-width:1100px){
+ .scratch-ticket-switcher{grid-template-columns:minmax(36px,1fr)
+  minmax(0,510px) minmax(36px,1fr);gap:4px}
+ .scratch-switch-arrow{width:42px;height:42px;font-size:36px}
+}
+@media(max-width:720px){
+ .scratch-ticket{padding:13px 12px}
+ .scratch-ticket-switcher{grid-template-columns:34px minmax(0,1fr) 34px;gap:2px}
+ .scratch-switch-arrow{width:32px;height:38px;font-size:33px;padding-bottom:4px}
+}
+.scratch-page[data-motion="off"] .scratch-ticket-entrance{animation:none!important;will-change:auto}
+@media(prefers-reduced-motion:reduce){
+ .scratch-ticket-entrance{animation:none!important;will-change:auto}
+ .scratch-switch-arrow{transition:none}
+}

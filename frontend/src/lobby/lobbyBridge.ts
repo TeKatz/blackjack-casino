@@ -136,7 +136,7 @@ export function onLobbyEmpireCredits(onCredits: (credits:string)=>void):()=>void
   return ()=>host.removeEventListener('message',handler);
 }
 
-export function lobbyCommand(type: string, id?: string): void {
+export function lobbyCommand(type: string, id?: string, gameId?: string): void {
   const allowed = ['lobby.ready','lobby.ui-ready','lobby.open','lobby.open-secondary',
     'lobby.progression','lobby.profile','lobby.profile.native','lobby.profile.equip','lobby.profile.prestige','lobby.profile.export','lobby.profile.folder','lobby.vault','lobby.daily.claim','lobby.language.set','lobby.exit','lobby.exit.cancel','lobby.refresh',
     'lobby.shop.open','lobby.shop.close','lobby.shop.action','lobby.shop.pack',
@@ -147,7 +147,8 @@ export function lobbyCommand(type: string, id?: string): void {
     'lobby.updates.check','lobby.updates.install',
     'lobby.settings.music','lobby.settings.volume','lobby.settings.empire','lobby.settings.fullscreen'];
   if (!allowed.includes(type)) return;
-  window.chrome?.webview?.postMessage(id === undefined ? { type } : { type, id });
+  window.chrome?.webview?.postMessage(id === undefined ? { type } :
+    gameId!==undefined&&type==='lobby.scratchcards.buy' ? {type,id,gameId} : {type,id});
 }
 
 /** A profile name is user text, never a command id. The native host validates and saves it. */
