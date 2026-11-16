@@ -33,8 +33,14 @@ if (!(Test-Path (Join-Path $templates "windows_release_x86_64.exe"))) {
     Remove-Item $templateZip -Force
 }
 function Invoke-Godot([string[]]$GodotArgs) {
-    & $editor @GodotArgs
-    if ($LASTEXITCODE -ne 0) { throw "Godot failed: $GodotArgs ($LASTEXITCODE)" }
+    $lines = @(& $editor @GodotArgs 2>&1)
+    $status = $LASTEXITCODE
+    $lines | ForEach-Object { Write-Host $_ }
+    if ($status -ne 0) { throw "Godot failed: $GodotArgs ($status)" }
+    if (($lines -join "`n") -match '(?m)(SCRIPT ERROR:|Parse Error:|Failed to load script|^ERROR:)') {
+        throw "Godot reported script or scene runtime errors: $GodotArgs"
+    }
+    return $lines
 }
 Invoke-Godot @("--headless", "--path", $project, "--editor", "--import")
 $smoke = Invoke-Godot @("--headless", "--path", $project, "--script", "res://smoke_test.gd")
@@ -44,10 +50,11 @@ if (($smoke -join "`n") -notmatch "Midnight Industries factory simulation smoke 
 }
 $parse = Invoke-Godot @("--headless", "--path", $project, "--script", "res://main.gd", "--check-only")
 $parse | Write-Host
+Invoke-Godot @("--headless", "--path", $project, "--quit-after", "15", "res://main.tscn")
 Invoke-Godot @("--headless", "--path", $project, "--export-release", "Windows Desktop", (Join-Path $output "MidnightIndustries.exe"))
 foreach ($file in @("MidnightIndustries.exe", "MidnightIndustries.pck")) {
     if (!(Test-Path (Join-Path $output $file))) { throw "Missing Godot export: $file" }
 }
-Copy-Item (Join-Path $project "licenses/GODOT-LICENSE.txt") $output -Force
-Copy-Item (Join-Path $project "licenses/GODOT-COPYRIGHT.txt") $output -Force
+Copy-Item (Join-Path $root "games/midnight-descent/licenses/GODOT-LICENSE.txt") $output -Force
+Copy-Item (Join-Path $root "games/midnight-descent/licenses/GODOT-COPYRIGHT.txt") $output -Force
 Write-Host "Midnight Industries exported to $output"
