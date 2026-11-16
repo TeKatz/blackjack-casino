@@ -83,6 +83,23 @@ internal static class NativeShellWebSmoke
                 if (imported != "true")
                     throw new InvalidOperationException(
                         "The imported profile/wallet was not restored in the real React lobby.");
+                // News is a one-time startup dialog, not a preview-only mock.
+                // It must contain editorial copy from the installed offline feed.
+                string newsOpened = await form.BrowserCore.ExecuteScriptAsync(
+                    "(()=>{const dialog=document.querySelector('dialog.casino-news-editorial');"
+                    + "return !!dialog?.open&&dialog.querySelectorAll('.news-editorial-item').length>0"
+                    + "&&!!dialog.querySelector('.news-editorial-enter');})()");
+                if (newsOpened != "true")
+                    throw new InvalidOperationException(
+                        "NativeShell first launch did not open its editorial News dialog.");
+                await form.BrowserCore.ExecuteScriptAsync(
+                    "document.querySelector('dialog.casino-news-editorial .news-editorial-enter')?.click()");
+                await Task.Delay(100);
+                string newsClosed = await form.BrowserCore.ExecuteScriptAsync(
+                    "!document.querySelector('dialog.casino-news-editorial')");
+                if (newsClosed != "true")
+                    throw new InvalidOperationException("News could not be dismissed.");
+
                 // The history screen must be populated from the isolated
                 // imported hand-history file, not the live WPF user profile.
                 await form.BrowserCore!.ExecuteScriptAsync(
@@ -370,6 +387,25 @@ internal static class NativeShellWebSmoke
                     "Boolean(document.querySelector('.casino-lobby-shell'))");
                 if (lobbyDom != "true")
                     throw new InvalidOperationException("Native lobby did not render React.");
+                // The same process may recreate the lobby many times while
+                // switching games. None of those returns may reopen News.
+                string repeatedNews = await form.BrowserCore.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('dialog.casino-news-editorial'))");
+                if (repeatedNews != "false")
+                    throw new InvalidOperationException(
+                        "News reopened after returning from a casino game.");
+                // The sidebar still opens News on demand even after auto-open was consumed.
+                await form.BrowserCore.ExecuteScriptAsync(
+                    "([...document.querySelectorAll('.lobby-nav-item')]"
+                    + ".find(b=>b.textContent?.trim()==='News'))?.click()");
+                await Task.Delay(100);
+                string manualNews = await form.BrowserCore.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('dialog.casino-news-editorial')?.open)");
+                if (manualNews != "true")
+                    throw new InvalidOperationException("Manual sidebar News entry did not open.");
+                await form.BrowserCore.ExecuteScriptAsync(
+                    "document.querySelector('dialog.casino-news-editorial .news-editorial-enter')?.click()");
+                Console.WriteLine("PASS: one-time native startup News and manual reopen.");
                 Console.WriteLine("PASS: WPF-free native React casino lobby.");
                 result = 0;
             }

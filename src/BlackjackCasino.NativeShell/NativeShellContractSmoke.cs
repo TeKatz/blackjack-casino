@@ -134,7 +134,11 @@ internal static class NativeShellContractSmoke
                     if (!root.GetProperty("nativePreview").GetBoolean()
                         || root.GetProperty("modes").GetArrayLength() != 12
                         || root.GetProperty("bankrollValue").GetDecimal() != session.Bankroll
-                        || !root.GetProperty("dailyLogin").GetProperty("canClaim").GetBoolean())
+                        || !root.GetProperty("dailyLogin").GetProperty("canClaim").GetBoolean()
+                        || root.GetProperty("showStartupNews").GetBoolean()
+                        || root.GetProperty("news").GetArrayLength() == 0
+                        || string.IsNullOrWhiteSpace(root.GetProperty("news")[0].GetProperty("titleDe").GetString())
+                        || string.IsNullOrWhiteSpace(root.GetProperty("installedVersion").GetString()))
                         throw new InvalidOperationException("Native lobby emitted demo or invalid state.");
                 }
 
