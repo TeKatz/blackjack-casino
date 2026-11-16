@@ -159,7 +159,7 @@ public sealed class ScratchcardTests : IDisposable
     {
         var ticket = ScratchcardRules.Draw(Guid.NewGuid(), 80m, ceiling => 0);
         string json = System.Text.Json.JsonSerializer.Serialize(ticket);
-        const string idProperty = ",\\\"GameId\\\":\\\"lucky-sevens\\\"";
+        const string idProperty = ",\"GameId\":\"lucky-sevens\"";
         Assert.Contains(idProperty, json);
         string legacyJson = json.Replace(idProperty, string.Empty, StringComparison.Ordinal);
         ScratchcardTicket? restored =
