@@ -635,7 +635,7 @@ function LobbyApp() {
         onPack={rarity=>{setShopPending(rarity);lobbyCommand('lobby.shop.pack',rarity);}}
         onAlbum={()=>openProgression("Collector's Album")}/>:
       scratchcardsVisible?<ModernScratchcards data={scratchcards} loaded={scratchcardsLoaded}
-        embedded={embeddedLobby} language={data.language} pending={scratchcardsPending}
+        embedded={embeddedLobby} language={data.language} motionEnabled={!lowMotion&&data.animationsEnabled} pending={scratchcardsPending}
         notice={scratchcardsNotice}
         onBack={()=>{closeScratchcards();setFilter('all');}}
         onBuy={buyScratchcard} onCollect={collectScratchcard}/>:
