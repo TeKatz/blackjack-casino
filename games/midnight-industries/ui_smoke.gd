@@ -5,7 +5,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var packed: PackedScene = load("res://main.tscn")
-	var game: Node2D = packed.instantiate()
+	var game: Variant = packed.instantiate()
 	root.add_child(game)
 	await process_frame
 	await process_frame
