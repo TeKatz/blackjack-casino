@@ -156,6 +156,10 @@ jobs:
         shell: pwsh
         run: ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/app/MidnightDescent
 
+      - name: Export and smoke-test Godot Midnight Industries
+        shell: pwsh
+        run: ./tools/build_midnight_industries.ps1 -OutputDirectory artifacts/app/MidnightIndustries
+
       - name: Verify native package and frontend inventory
         shell: pwsh
         run: |
@@ -173,7 +177,9 @@ jobs:
           }
           foreach ($file in @("BlackjackCasino.NativeShell.exe", "BlackjackCasino.Desktop.exe",
               "tools/updater/BlackjackCasino.Updater.exe", "MidnightDescent/MidnightDescent.exe",
-              "MidnightDescent/MidnightDescent.pck")) {
+              "MidnightDescent/MidnightDescent.pck",
+              "MidnightIndustries/MidnightIndustries.exe",
+              "MidnightIndustries/MidnightIndustries.pck")) {
             if (!(Test-Path "artifacts/app/$file")) { throw "Native package lacks: $file" }
           }
           if (Test-Path artifacts/app/BlackjackCasino.MigrationDiagnostics.exe) {
