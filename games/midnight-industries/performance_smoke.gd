@@ -8,7 +8,7 @@ func _initialize() -> void:
 			var tile := Vector2i(x, y)
 			if sim.can_place(tile, "belt"):
 				sim.place(tile, "belt", 0)
-	var total := sim.buildings.size()
+	var total: int = int(sim.buildings.size())
 	if total < 3000:
 		push_error("Factory scale test did not create enough buildings: %d" % total)
 		quit(2)
@@ -18,7 +18,7 @@ func _initialize() -> void:
 	for i in range(120):
 		sim.advance(0.25)
 	var elapsed := float(Time.get_ticks_usec() - start) / 1000.0
-	if sim.steps != 120 or not sim.snapshot().machines.size() == total:
+	if sim.steps != 120 or int(sim.snapshot().machines.size()) != total:
 		push_error("Factory scale test lost simulation state")
 		quit(3)
 		return
