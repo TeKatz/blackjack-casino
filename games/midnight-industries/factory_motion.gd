@@ -64,7 +64,7 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2(inspected) * TILE + Vector2(1, 1), Vector2(46, 46)),
 			Color(AQUA, 0.8 + pulse), false, 2.5)
 		for corner in [Vector2(-21, -21), Vector2(21, -21), Vector2(-21, 21), Vector2(21, 21)]:
-			var q := center + corner
+			var q: Vector2 = center + Vector2(corner)
 			draw_circle(q, 2.4, GOLD)
 	if menu_open or not model.inside(hovered):
 		return
