@@ -48,6 +48,11 @@ $smoke | Write-Host
 if (($smoke -join "`n") -notmatch "Midnight Industries factory simulation smoke PASS") {
     throw "Midnight Industries simulation smoke did not complete."
 }
+$visual = Invoke-Godot @("--headless", "--path", $project, "--script", "res://visual_smoke.gd")
+$visual | Write-Host
+if (($visual -join "`n") -notmatch "Midnight Industries industrial visual asset smoke PASS") {
+    throw "Midnight Industries industrial art and menu assets failed smoke."
+}
 $parse = Invoke-Godot @("--headless", "--path", $project, "--script", "res://main.gd", "--check-only")
 $parse | Write-Host
 Invoke-Godot @("--headless", "--path", $project, "--quit-after", "15", "res://main.tscn")
