@@ -46,6 +46,7 @@ var icon_cache: Dictionary = {}
 var ui_layer: CanvasLayer
 var tool_buttons: Dictionary = {}
 var mode_buttons: Dictionary = {}
+var sidebar_panel: PanelContainer
 var inspector_panel: PanelContainer
 var inspector_title: Label
 var inspector_body: Label
@@ -224,21 +225,31 @@ func _create_interface() -> void:
 	# Production catalog deliberately replaces the previous debug-style tool list.
 	var sidebar := PanelContainer.new()
 	sidebar.name = "IndustrialBuildCatalog"
+	sidebar_panel = sidebar
 	sidebar.add_theme_stylebox_override("panel", _panel_style("panel"))
 	hud.add_child(sidebar)
 	sidebar.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	sidebar.offset_left = 11
-	sidebar.offset_top = 87
+	sidebar.offset_top = 160
 	sidebar.offset_right = 277
-	sidebar.offset_bottom = 568
+	sidebar.offset_bottom = 578
 	var side_col := VBoxContainer.new()
 	side_col.add_theme_constant_override("separation", 6)
 	sidebar.add_child(side_col)
 	side_col.add_child(_make_label(_tr("WERKZEUGZENTRALE", "FACTORY WORKSHOP"), 15, TEXT))
 	side_col.add_child(_make_label(_tr("PRODUKTION  /  LOGISTIK", "PRODUCTION  /  LOGISTICS"), 10, CYAN))
+	var mode_strip := PanelContainer.new()
+	mode_strip.name = "CompactBuildSelectSwitcher"
+	mode_strip.add_theme_stylebox_override("panel", _panel_style("header"))
+	hud.add_child(mode_strip)
+	mode_strip.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	mode_strip.offset_left = 11
+	mode_strip.offset_top = 87
+	mode_strip.offset_right = 277
+	mode_strip.offset_bottom = 153
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 7)
-	side_col.add_child(tabs)
+	mode_strip.add_child(tabs)
 	var inspect_btn := _button(_tr("V  AUSWAHL", "V  SELECT"), func() -> void: _set_mode("inspect"))
 	var build_btn := _button(_tr("B  BAUEN", "B  BUILD"), func() -> void: _set_mode("build"))
 	inspect_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -451,6 +462,7 @@ func _notice(message: String) -> void:
 
 func _set_mode(next_mode: String) -> void:
 	mode = next_mode
+	sidebar_panel.visible = mode == "build"
 	motion_view.cursor_mode = mode
 	if mode == "inspect":
 		notice_selection()
@@ -677,7 +689,7 @@ func _bound_camera() -> void:
 func _pointer_over_hud(point: Vector2) -> bool:
 	var screen := get_viewport_rect().size
 	return point.y < 84.0 or point.y > screen.y - 80.0 or (
-		point.x < 282.0 and point.y < 578.0) or (
+		point.x < 282.0 and (point.y < 157.0 or (sidebar_panel.visible and point.y < 583.0))) or (
 		point.x > screen.x - 329.0 and ((inspector_panel.visible and point.y < 418.0) or
 		(point.y > 420.0 and point.y < 525.0)))
 
