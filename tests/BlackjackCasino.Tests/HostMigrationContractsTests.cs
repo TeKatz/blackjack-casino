@@ -12,7 +12,7 @@ public sealed class HostMigrationContractsTests
         [
             "blackjack", "roulette", "midnight-reels", "indian-ruby", "neon-vault", "nine-lives",
             "midnight-manor", "casino-empire", "midnight-merge", "chill-lounge",
-            "kniffel", "midnight-descent",
+            "kniffel", "midnight-descent", "midnight-industries",
         ];
         Assert.Equal(expected, NativeRouteCatalog.CasinoRoutes.Select(route => route.DesktopModeId));
         Assert.Equal(expected.Length,
@@ -22,6 +22,8 @@ public sealed class HostMigrationContractsTests
             route.DesktopModeId == "casino-empire").HasSecondaryWindow);
         Assert.True(NativeRouteCatalog.CasinoRoutes.Single(route =>
             route.DesktopModeId == "midnight-descent").HasNativeProcess);
+        Assert.True(NativeRouteCatalog.CasinoRoutes.Single(route =>
+            route.DesktopModeId == "midnight-industries").HasNativeProcess);
     }
 
     [Theory]
@@ -61,7 +63,7 @@ public sealed class HostMigrationContractsTests
     [Fact]
     public void NativeRouteInventoryNeverOffersUnmappedOrDuplicateModes()
     {
-        Assert.Equal(12, NativeRouteCatalog.CasinoRoutes.Count);
+        Assert.Equal(13, NativeRouteCatalog.CasinoRoutes.Count);
         Assert.Equal(11, NativeRouteCatalog.WebRoutes.Count);
         Assert.All(NativeRouteCatalog.CasinoRoutes, route =>
         {
