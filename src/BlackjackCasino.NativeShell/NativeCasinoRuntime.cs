@@ -6,6 +6,7 @@ using BlackjackCasino.Core.Hosting;
 using BlackjackCasino.Core.MidnightMerge;
 using BlackjackCasino.Core.Kniffel;
 using BlackjackCasino.Core.Empire;
+using BlackjackCasino.Core.Scratchcards;
 using BlackjackCasino.NativeShell;
 
 namespace BlackjackCasino.HostShared;
@@ -24,6 +25,8 @@ internal sealed class NativeCasinoRuntime : IDisposable
     private readonly FileStream writerLease;
     private readonly PlayerProgressionController progression;
     private readonly NativeRouletteJournal rouletteJournal;
+    private readonly NativeScratchcardJournal scratchcardJournal;
+    private bool scratchcardRequiresRestart;
     private readonly EmpireService empire;
     private readonly NativePlayerAggregateJournal loungeJournal;
     private NativeLoungeRuntime? lounge;
@@ -109,6 +112,8 @@ internal sealed class NativeCasinoRuntime : IDisposable
         loungeJournal.Recover();
         rouletteJournal = new NativeRouletteJournal(directory);
         rouletteJournal.Recover();
+        scratchcardJournal = new NativeScratchcardJournal(directory);
+        scratchcardJournal.Recover();
         Preferences = PlayerStateStore.Load(directory);
         progression = new PlayerProgressionController(LoadProfileFromDisk(directory),
             initialHistory: PlayerProfileStore.LoadHistory(directory),
@@ -299,6 +304,72 @@ internal sealed class NativeCasinoRuntime : IDisposable
     }
 
     internal bool RouletteRequiresRestart => rouletteRequiresRestart;
+    internal bool ScratchcardRequiresRestart => scratchcardRequiresRestart;
+
+    internal object ScratchcardSnapshot() => new
+    {
+        Price = ScratchcardRules.TicketPrice,
+        Bankroll,
+        Ticket = scratchcardJournal.Latest,
+        RecoveryRequired = scratchcardRequiresRestart || rouletteRequiresRestart || ManorRequiresRestart,
+    };
+
+    internal (bool Success, string Message) BuyScratchcard(Guid id)
+    {
+        if (disposed || scratchcardRequiresRestart || rouletteRequiresRestart || ManorRequiresRestart)
+            return (false, "Casino recovery is required before buying another ticket.");
+        if (id == Guid.Empty) return (false, "Invalid ticket ID.");
+        if (scratchcardJournal.Contains(id)) return (true, "Existing ticket restored.");
+        if (HandInProgress) return (false, "Finish the current Blackjack hand first.");
+        if (scratchcardJournal.Latest is { Collected: false })
+            return (false, "Collect your previous ticket before buying another.");
+        if (Bankroll < ScratchcardRules.TicketPrice)
+            return (false, "Insufficient bankroll for a scratchcard.");
+        try
+        {
+            ScratchcardTicket ticket = scratchcardJournal.Purchase(
+                id, Preferences with { Bankroll = Bankroll });
+            table.Session.ResetBankroll(ticket.BankrollAfter);
+            table.NormalizeBet();
+            Preferences = Preferences with { Bankroll = ticket.BankrollAfter };
+            status = "Scratchcard purchased.";
+            return (true, status);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or JsonException or InvalidDataException or InvalidOperationException or OverflowException)
+        {
+            scratchcardRequiresRestart = true;
+            status = "Scratchcard transaction uncertain; restart the casino.";
+            return (false, status + " " + ex.Message);
+        }
+    }
+
+    internal (bool Success, string Message) CollectScratchcard(Guid id)
+    {
+        if (disposed || scratchcardRequiresRestart || rouletteRequiresRestart || ManorRequiresRestart)
+            return (false, "Casino recovery is required before collecting.");
+        if (id == Guid.Empty) return (false, "Invalid ticket ID.");
+        ScratchcardTicket? current = scratchcardJournal.Latest;
+        if (current?.TicketId != id) return (false, "Unknown or older scratchcard.");
+        if (current.Collected) return (true, "Ticket already collected.");
+        try
+        {
+            ScratchcardTicket ticket = scratchcardJournal.Collect(
+                id, Preferences with { Bankroll = Bankroll });
+            table.Session.ResetBankroll(ticket.BankrollAfter);
+            table.NormalizeBet();
+            Preferences = Preferences with { Bankroll = ticket.BankrollAfter };
+            status = ticket.Prize > 0m ? "Scratchcard payout collected." : "Scratchcard completed.";
+            return (true, status);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or JsonException or InvalidDataException or InvalidOperationException or OverflowException)
+        {
+            scratchcardRequiresRestart = true;
+            status = "Scratchcard payout uncertain; restart the casino.";
+            return (false, status + " " + ex.Message);
+        }
+    }
 
     internal object LobbySnapshot() => NativeLobbySnapshot.Create(this);
 
@@ -1272,7 +1343,7 @@ internal sealed class NativeCasinoRuntime : IDisposable
     {
         // A possibly committed Manor aggregate journal is authoritative. Do
         // not overwrite either mirror with stale in-memory state before restart.
-        if (disposed || ManorRequiresRestart || rouletteRequiresRestart || loungeRequiresRestart) return;
+        if (disposed || ManorRequiresRestart || rouletteRequiresRestart || loungeRequiresRestart || scratchcardRequiresRestart) return;
         table.NormalizeBet();
         Preferences = Preferences with
         {
@@ -1366,7 +1437,7 @@ internal sealed class NativeCasinoRuntime : IDisposable
             if (lounge is not null) CloseLounge();
             if (empire.Started && !ManorRequiresRestart && !rouletteRequiresRestart)
                 empire.Accrue(DateTimeOffset.UtcNow);
-            if (!ManorRequiresRestart && !rouletteRequiresRestart && !loungeRequiresRestart)
+            if (!ManorRequiresRestart && !rouletteRequiresRestart && !loungeRequiresRestart && !scratchcardRequiresRestart)
             {
                 AccountCompletedRound();
                 Persist();
