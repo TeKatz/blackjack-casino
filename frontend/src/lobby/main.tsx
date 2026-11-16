@@ -17,6 +17,9 @@ import {BankrollCounter,DailyClaimFlight,isConfirmedDailyClaim} from './DailyCla
 import type {PendingDailyClaim,DailyClaimReceipt} from './DailyClaimEffects';
 import {stableLobbyTiles} from './lobbyTiles';
 import { ModernShop } from './ModernShop';
+import { ModernScratchcards } from './ModernScratchcards';
+import {onScratchcardMessages,previewScratchcards} from './scratchcardsBridge';
+import type {ScratchcardSnapshot} from './scratchcardsBridge';
 import { ModernChallenges } from './ModernChallenges';
 import { ModernStatistics } from './ModernStatistics';
 import { ModernAccount,PrestigeMark } from './ModernAccount';
@@ -37,7 +40,7 @@ import { embeddedLobby, fallbackLobby, lobbyCommand, onLobbyEmpireCredits, onLob
 import type { LobbyMode, LobbySnapshot } from './lobbyBridge';
 import './lobby.css';
 
-type Filter = 'all'|'tables'|'slots'|'ruby'|'relax'|'empire'|'collections'|'shop'|'stats'|'season'|'challenges'|'vault'|'daily'|'profile';
+type Filter = 'all'|'tables'|'slots'|'ruby'|'relax'|'empire'|'collections'|'scratchcards'|'shop'|'stats'|'season'|'challenges'|'vault'|'daily'|'profile';
 const artOrder = ['blackjack','roulette','kniffel','chill-lounge','casino-empire','midnight-reels',
   'neon-vault','nine-lives','midnight-manor','midnight-merge',ARCADE_MODE_ID,'midnight-descent'];
 const categoryById: Record<string, string> = {
@@ -52,6 +55,7 @@ const navigation: {id: Filter; en: string; de: string}[] = [
   {id:'slots',en:'Slots',de:'Slots'}, {id:'ruby',en:'Sunset Ruby',de:'Sunset Ruby'},
   {id:'relax',en:'Relaxed',de:'Entspannt'},
   {id:'empire',en:'Empire',de:'Empire'}, {id:'collections',en:'Collections',de:'Sammlungen'},
+  {id:'scratchcards',en:'Scratchcards',de:'Rubbellose'},
   {id:'shop',en:'Shop',de:'Shop'}, {id:'stats',en:'Statistics',de:'Statistik'},
   // Remain accessible when the compact viewport hides the topbar and overview widgets.
   {id:'season',en:'Season Pass',de:'Saisonpass'},
@@ -177,6 +181,7 @@ function DailyLogin({data,onClaim,onClose,mobileOpen}:{data:LobbySnapshot;onClai
 function LobbyApp() {
   const [data,setData] = useState<LobbySnapshot>(fallbackLobby);
   const [shop,setShop] = useState<ShopSnapshot>(previewShop);
+  const [scratchcards,setScratchcards] = useState<ScratchcardSnapshot>(previewScratchcards);
   const [recordsVisible,setRecordsVisible] = useState<RecordsPage|null>(null);
   const [challenges,setChallenges] = useState<ChallengesSnapshot>(previewChallenges);
   const [statistics,setStatistics] = useState<StatisticsSnapshot>(previewStatistics);
@@ -198,6 +203,10 @@ function LobbyApp() {
   const [recordsPending,setRecordsPending] = useState<string|null>(null);
   const [profilePrestigeResult,setProfilePrestigeResult] = useState<PrestigeOutcome|null>(null);
   const [shopVisible,setShopVisible] = useState(false);
+  const [scratchcardsVisible,setScratchcardsVisible] = useState(false);
+  const [scratchcardsLoaded,setScratchcardsLoaded] = useState(!embeddedLobby);
+  const [scratchcardsPending,setScratchcardsPending] = useState<'buy'|'collect'|null>(null);
+  const [scratchcardsNotice,setScratchcardsNotice] = useState<{success:boolean;message:string}|null>(null);
   const [shopLoaded,setShopLoaded] = useState(!embeddedLobby);
   const [shopPending,setShopPending] = useState<string|null>(null);
   const [shopNotice,setShopNotice] = useState<{success:boolean;message:string}|null>(null);
@@ -236,7 +245,7 @@ function LobbyApp() {
     const resize=new ResizeObserver(sync);
     resize.observe(parent);
     return ()=>resize.disconnect();
-  },[filter,recordsVisible,shopVisible,arcadeOpen,nativeSnapshotReceived]);
+  },[filter,recordsVisible,shopVisible,scratchcardsVisible,arcadeOpen,nativeSnapshotReceived]);
   useEffect(()=>{
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     const listener = () => setLowMotion(media.matches);
@@ -286,6 +295,18 @@ function LobbyApp() {
       else if(message.type==='lobby.shop.hide'){setShopVisible(false);}
     });
     return stop;
+  },[]);
+  useEffect(()=>{
+    return onScratchcardMessages(message=>{
+      if(message.type==='lobby.scratchcards.snapshot'){
+        setScratchcards(message.data);
+        setScratchcardsLoaded(true);
+      }else{
+        setScratchcardsPending(null);
+        setScratchcardsNotice(message.data.success?null:
+          {success:false,message:message.data.message});
+      }
+    });
   },[]);
   useEffect(()=>onUpdateSnapshot(setUpdates),[]);
   // Native window-close actions reuse this already-mounted React surface.
@@ -338,6 +359,7 @@ function LobbyApp() {
   };
   const openRecords = (page:RecordsPage) => {
     setArcadeOpen(false);
+    if(scratchcardsVisible)closeScratchcards();
     if(shopVisible)closeShop();
     setRecordsVisible(page);setDailyOpen(false);setShopNotice(null);setRecordsPending(null);setProfilePrestigeResult(null);
     if(page==='vault'){setVaultReward(null);setVaultNotice(null);}
@@ -351,8 +373,36 @@ function LobbyApp() {
     else setSeasonsLoaded(!embeddedLobby);
     lobbyCommand('lobby.records.open',page);
   };
+  const closeScratchcards = () => {
+    setScratchcardsVisible(false);
+    setScratchcardsPending(null);
+    setScratchcardsNotice(null);
+    lobbyCommand('lobby.scratchcards.close');
+  };
+  const openScratchcards = () => {
+    if(shopVisible)closeShop();
+    if(recordsVisible)closeRecords();
+    setArcadeOpen(false);
+    setDailyOpen(false);
+    setScratchcardsVisible(true);
+    setScratchcardsLoaded(!embeddedLobby);
+    setScratchcardsNotice(null);
+    lobbyCommand('lobby.scratchcards.open');
+  };
+  const buyScratchcard = () => {
+    if(scratchcardsPending || !embeddedLobby)return;
+    setScratchcardsPending('buy');
+    setScratchcardsNotice(null);
+    lobbyCommand('lobby.scratchcards.buy',crypto.randomUUID());
+  };
+  const collectScratchcard = (id:string) => {
+    if(scratchcardsPending || !embeddedLobby)return;
+    setScratchcardsPending('collect');
+    lobbyCommand('lobby.scratchcards.collect',id);
+  };
   const openShop = () => {
     setArcadeOpen(false);
+    if(scratchcardsVisible)closeScratchcards();
     if(recordsVisible)closeRecords();
     setShopNotice(null);
     setShopVisible(true);setShopLoaded(!embeddedLobby);setDailyOpen(false);
@@ -364,6 +414,7 @@ function LobbyApp() {
   };
   const openMode = (id:string)=>{
     cancelFilterMotion();
+    if(scratchcardsVisible)closeScratchcards();
     if(nativePreview&&id!==ARCADE_MODE_ID&&!data.modes.some(mode=>mode.id===id&&mode.enabled)){
       previewUnavailable();return;
     }
@@ -382,6 +433,7 @@ function LobbyApp() {
     lobbyCommand('lobby.open-secondary',id);
   };
   const openProgression = (id:string)=>{
+    if(scratchcardsVisible)closeScratchcards();
     if(id==='Cosmetic Shop'){openShop();return;}
     if(id==="Collector's Album"||id==='Album'){openRecords('album');return;}
     if(id==='Challenges'||id==='Statistics'||id==='Season Pass'){
@@ -394,6 +446,8 @@ function LobbyApp() {
   const chooseNav = (id:Filter)=>{
     cancelFilterMotion();
     setArcadeOpen(false);
+    if(id==='scratchcards'){openScratchcards();return;}
+    if(scratchcardsVisible)closeScratchcards();
     if(id==='ruby') {openMode('indian-ruby');return;}
     if(id==='collections') {openProgression("Collector's Album");return;}
     if(id==='shop') {openShop();return;}
@@ -429,7 +483,7 @@ function LobbyApp() {
   // Arcade is a local selection screen; it does not issue an unknown native game route.
   // Preserve the artwork DOM and its Pixi scene objects while a subpage is
   // open. Hiding instead of unmounting prevents delayed icon reconstruction.
-  const lobbyContentVisible=recordsVisible===null&&!shopVisible&&!arcadeOpen;
+  const lobbyContentVisible=recordsVisible===null&&!shopVisible&&!scratchcardsVisible&&!arcadeOpen;
   useEffect(()=>{
     if(!lobbyContentVisible)cancelFilterMotion();
   },[lobbyContentVisible]);
@@ -467,7 +521,7 @@ function LobbyApp() {
     <header className="lobby-topbar">
       <button className="lobby-brand" type="button"
         onPointerDown={event=>{if(event.pointerType!=='touch')event.preventDefault();}}
-        onClick={event=>{cancelFilterMotion();if(event.detail>0)event.currentTarget.blur();if(shopVisible)closeShop();if(recordsVisible)closeRecords();setArcadeOpen(false);setFilter('all');}}>
+        onClick={event=>{cancelFilterMotion();if(event.detail>0)event.currentTarget.blur();if(shopVisible)closeShop();if(recordsVisible)closeRecords();if(scratchcardsVisible)closeScratchcards();setArcadeOpen(false);setFilter('all');}}>
         <span className="brand-spade" aria-hidden="true">♠</span>
         <span><b>BLACKJACK CASINO</b><i>THE MIDNIGHT CLUB</i></span>
       </button>
@@ -500,14 +554,14 @@ function LobbyApp() {
         ↪ <span>{de?'Beenden':'Exit'}</span>
       </button>
     </header>
-    <div className={'lobby-body '+(shopVisible?'shop-active':recordsVisible?'records-active':arcadeOpen?'arcade-active':'')}>
+    <div className={'lobby-body '+(scratchcardsVisible?'scratch-active':shopVisible?'shop-active':recordsVisible?'records-active':arcadeOpen?'arcade-active':'')}>
       <nav className="lobby-nav" aria-label={de?'Casino-Navigation':'Casino navigation'}>
         <div className="lobby-nav-scroll" ref={navScroll}>
         <div ref={navMarker} className="lobby-nav-selection-track" aria-hidden="true"/>
         <button className="lobby-nav-item" onClick={()=>setNewsOpen(true)}><NavIcon name="news"/><span>News</span></button>
         {navigation.map(n=><button type="button" key={n.id}
-          aria-current={(shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='history'?'profile':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'page':undefined}
-          className={'lobby-nav-item '+((shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')+(n.id==='ruby'?' ruby-submenu':'')+(n.id==='collections'?' nav-section-start':'')}
+          aria-current={(scratchcardsVisible?n.id==='scratchcards':shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='history'?'profile':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'page':undefined}
+          className={'lobby-nav-item '+((scratchcardsVisible?n.id==='scratchcards':shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')+(n.id==='ruby'?' ruby-submenu':'')+(n.id==='collections'?' nav-section-start':'')}
           onClick={()=>chooseNav(n.id)}>
           <NavIcon name={n.id==='ruby'?'slots':n.id}/>
           <span className="lobby-nav-label">{de?n.de:n.en}</span>
@@ -580,6 +634,11 @@ function LobbyApp() {
         onCosmetic={id=>{setShopPending(id);lobbyCommand('lobby.shop.action',id);}}
         onPack={rarity=>{setShopPending(rarity);lobbyCommand('lobby.shop.pack',rarity);}}
         onAlbum={()=>openProgression("Collector's Album")}/>:
+      scratchcardsVisible?<ModernScratchcards data={scratchcards} loaded={scratchcardsLoaded}
+        embedded={embeddedLobby} language={data.language} pending={scratchcardsPending}
+        notice={scratchcardsNotice}
+        onBack={()=>{closeScratchcards();setFilter('all');}}
+        onBuy={buyScratchcard} onCollect={collectScratchcard}/>:
       arcadeOpen?<ArcadeMenu language={data.language} onBack={()=>setArcadeOpen(false)}/>:null}
       <main className="lobby-main" style={{display:lobbyContentVisible?undefined:'none'}}>
         <LobbyHero de={de} motionEnabled={!lowMotion && data.animationsEnabled}/>
