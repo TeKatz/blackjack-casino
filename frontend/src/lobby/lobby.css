@@ -826,6 +826,11 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 
 
 /* Compact secondary slot entry: no new tile and no shrink of the animated grid. */
+.lobby-nav-item.industries-submenu{height:37px;min-height:37px;margin:-3px 4px 2px 23px;padding-left:7px;gap:8px;background:linear-gradient(90deg,#102e32b0,transparent);border-left:2px solid #70aaa6}
+.lobby-nav-item.industries-submenu .nav-icon{width:18px;height:18px;flex-basis:18px;color:#93cfc5}
+.lobby-nav-item.industries-submenu:hover{background:linear-gradient(90deg,#255552,#173129);transform:translateX(2px)}
+@media(max-width:1100px){.lobby-nav-item.industries-submenu{margin-left:8px;font-size:11px;padding:5px}}
+@media(max-height:800px){.lobby-nav-item.industries-submenu{height:30px;min-height:30px;margin-top:0;margin-bottom:0}}
 .lobby-nav-item.ruby-submenu{height:34px;min-height:34px;margin:-3px 4px 2px 23px;padding-left:7px;gap:8px;
  border:1px solid #b58b5659;border-left:2px solid #d5a65c;color:#f5d5a6;
  background:linear-gradient(90deg,#3c2919b3,#0c241b91);font-size:12px}
