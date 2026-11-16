@@ -14,9 +14,11 @@ static func machine(canvas: CanvasItem, at: Vector2, kind: String, direction: in
 	var index: int = int({"miner": 0, "belt": 1, "smelter": 2, "storage": 3}.get(kind, 0))
 	var opacity := 0.68 if ghost else 1.0
 	var center := at + Vector2(TILE * 0.5, TILE * 0.5)
-	if not ghost:
-		canvas.draw_circle(center + Vector2(0, 4), 24.0, Color(0.0, 0.0, 0.0, 0.30))
-		canvas.draw_rect(Rect2(at + Vector2(3, 5), Vector2(42, 40)), Color("#131719", 0.58))
+	# Conveyor art rests flush on the deck. Heavy circular drop shadows
+	# made every belt and ore node look like a floating dark disc.
+	if not ghost and kind != "belt":
+		canvas.draw_rect(Rect2(at + Vector2(12, 40), Vector2(24, 3)),
+			Color(0.0, 0.0, 0.0, 0.13))
 	if kind == "belt":
 		canvas.draw_set_transform(center, float(posmod(direction, 4)) * PI * 0.5, Vector2.ONE)
 		canvas.draw_texture_rect_region(texture, Rect2(Vector2(-24, -24), Vector2(48, 48)),
@@ -43,7 +45,7 @@ static func ore(canvas: CanvasItem, at: Vector2, material: String, seed: int) ->
 	var angle := float(posmod(seed, 4)) * (PI * 0.5)
 	var offset := Vector2(float(posmod(seed * 13, 7) - 3), float(posmod(seed * 19, 7) - 3))
 	var center := at + Vector2(24, 24) + offset
-	canvas.draw_circle(center + Vector2(0, 4), 21.0, Color(0.0, 0.0, 0.0, 0.18))
+	# Rocks cast no additional procedural shadow; the source art has its own occlusion.
 	canvas.draw_set_transform(center, angle, Vector2.ONE * (0.90 + float(posmod(seed, 5)) * 0.028))
 	canvas.draw_texture_rect_region(texture, Rect2(-23, -23, 46, 46), Atlas.region(i, 1))
 	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
@@ -59,7 +61,8 @@ static func cargo(canvas: CanvasItem, center: Vector2, item: String, shade: floa
 		"iron_ingot": index = 2
 		"copper_ingot": index = 3
 	var alpha := clampf(shade, 0.1, 1.0)
-	canvas.draw_circle(center + Vector2(0, 5), 10.0, Color(0, 0, 0, alpha * 0.34))
+	canvas.draw_rect(Rect2(center + Vector2(-4, 6), Vector2(8, 2)),
+		Color(0.0, 0.0, 0.0, alpha * 0.15))
 	canvas.draw_texture_rect_region(texture, Rect2(center - Vector2(12, 12), Vector2(24, 24)),
 		Atlas.region(index, 1), Color(1, 1, 1, alpha))
 
