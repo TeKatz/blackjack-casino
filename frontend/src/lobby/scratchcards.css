@@ -1,0 +1,115 @@
+/* Lucky Sevens — an in-lobby scratch-ticket counter, not another game tile. */
+.lobby-body.scratch-active{grid-template-columns:164px minmax(0,1fr);padding-right:15px}
+.scratch-page{position:relative;min-width:0;min-height:0;overflow:hidden;isolation:isolate;
+  border:1px solid #45684d;border-radius:17px;
+  background:radial-gradient(ellipse at 55% -18%,#235b43 0%,transparent 52%),#071b16;
+  box-shadow:inset 0 1px #f4d99a22}
+.scratch-scroll{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;
+  padding:20px 25px 34px;scrollbar-width:thin;scrollbar-color:#8c7b50 #09221a}
+.scratch-hero{display:flex;justify-content:space-between;align-items:center;gap:24px;
+  min-height:168px;padding:24px 30px;margin-bottom:18px;position:relative;overflow:hidden;
+  border:1px solid #76633b;border-radius:15px;
+  background:linear-gradient(116deg,#0c3025 3%,#123e30 52%,#132c25 100%);
+  box-shadow:inset 0 1px #e8d49c31,0 11px 30px #0005}
+.scratch-hero::after{content:"✦";position:absolute;right:22%;top:-60px;
+  color:#b59b5430;font:240px Georgia,serif;transform:rotate(-17deg);pointer-events:none}
+.scratch-hero>div:first-child{position:relative;z-index:1;max-width:650px}
+.scratch-hero h1{margin:5px 0 9px;font:normal clamp(31px,3vw,49px)/1.1 Georgia,serif;
+  color:#ffe6ad;letter-spacing:.02em;text-shadow:0 3px 12px #03140d}
+.scratch-hero p{margin:0;max-width:610px;font-size:13px;line-height:1.55;color:#c7d9cb}
+.scratch-hero-wallet{position:relative;z-index:1;flex:0 0 auto;min-width:210px;
+  padding:15px 20px;border:1px solid #a58a50;border-radius:12px;
+  background:linear-gradient(145deg,#071b18f0,#11352ad9);box-shadow:0 8px 22px #0006}
+.scratch-hero-wallet span,.scratch-hero-wallet small{display:block;font-size:10px;
+  letter-spacing:.12em;color:#c5c3a2}
+.scratch-hero-wallet strong{display:block;margin:6px 0;font:normal 29px Georgia,serif;
+  color:#ffe7a4;white-space:nowrap}
+.scratch-layout{display:grid;grid-template-columns:minmax(390px,1.42fr) minmax(240px,.78fr);
+  gap:18px;align-items:start}
+.scratch-stage{min-width:0;position:relative;padding:14px 18px 20px;border-radius:16px;
+  border:1px solid #416950;background:linear-gradient(155deg,#113429,#061a17 74%);
+  box-shadow:0 12px 30px #0005,inset 0 1px #ccecb722}
+.scratch-stage-header{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin-bottom:12px;font-size:10px;letter-spacing:.17em;color:#a6c4ad;font-weight:800}
+.scratch-stage-header strong{color:#f0d188;font-weight:700}
+.scratch-ticket{position:relative;margin:0 auto;max-width:565px;padding:23px 35px 20px;
+  border-radius:13px;overflow:hidden;color:#fbebc7;
+  background:radial-gradient(ellipse at 50% -20%,#43715e 0%,transparent 48%),
+    linear-gradient(148deg,#2c624c 0%,#133e30 54%,#0b2d28 100%);
+  border:1px solid #f5d387;box-shadow:0 13px 28px #0009,inset 0 0 0 6px #d7ad5225,inset 0 0 0 8px #fbe6b31b}
+.scratch-ticket::before,.scratch-ticket::after{content:"";position:absolute;top:48%;
+  width:24px;height:34px;border-radius:50%;background:#0a261e;border:1px solid #c9a661}
+.scratch-ticket::before{left:-15px}.scratch-ticket::after{right:-15px}
+.scratch-ticket-header,.scratch-ticket-footer{display:flex;align-items:center;
+  justify-content:space-between;gap:12px;color:#f2d99c;font-size:9px;
+  letter-spacing:.14em;font-weight:800}
+.scratch-ticket-stamp{font:20px Georgia,serif}
+.scratch-ticket-title{text-align:center;margin:5px auto 0;letter-spacing:.13em;
+  text-shadow:0 3px 8px #061913,0 0 25px #e5ba6d47}
+.scratch-ticket-title span{display:block;font:normal clamp(24px,2.5vw,37px)/1 Georgia,serif}
+.scratch-ticket-title strong{display:block;font:700 clamp(34px,3.5vw,54px)/1 Georgia,serif;
+  color:#fadd92}
+.scratch-ticket>p{text-align:center;font-size:9px;letter-spacing:.2em;color:#d9d5b2;
+  margin:8px 0 16px}
+.scratch-ticket-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;max-width:405px;margin:auto;padding:11px;border-radius:13px;
+  border:1px solid #ead29168;background:#051e1899;box-shadow:inset 0 4px 16px #0006}
+.scratch-cell{position:relative;isolation:isolate;display:grid;place-items:center;
+  aspect-ratio:1.62;min-height:63px;border-radius:9px;overflow:hidden;
+  border:1px solid #cfb06f8a;background:radial-gradient(circle at 50% 30%,#f7e8bc,#c9a66a 68%,#af854a);
+  color:#23523e;box-shadow:inset 0 0 15px #88662c44;touch-action:none;
+  user-select:none;-webkit-user-select:none;padding:0;transition:border-color .2s,box-shadow .2s}
+.scratch-cell.covered{cursor:crosshair}
+.scratch-cell.covered:hover{border-color:#fff0b4;box-shadow:0 0 12px #f3d18c55}
+.scratch-cell:disabled{opacity:1;cursor:default}
+.scratch-cell canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;
+  border-radius:8px;transition:opacity .35s ease}
+.scratch-symbol{font:normal clamp(28px,3vw,47px)/1 Georgia,serif;
+  color:#19543e;text-shadow:0 2px #ffe9bd}
+.scratch-symbol-1,.scratch-symbol-3{color:#a13938}
+.scratch-symbol-4{color:#a67a22;font-weight:bold}
+.scratch-ticket-footer{margin-top:15px;opacity:.85;font-size:8px}
+.scratch-ticket-footer b{font:22px Georgia,serif;color:#e7c46f}
+.scratch-ticket.ticket-collected{filter:saturate(.85)}
+.scratch-status{display:flex;align-items:center;gap:14px;min-height:74px;margin:14px 0 12px;
+  padding:12px 17px;border:1px solid #416951;border-radius:12px;
+  background:#081f1a;color:#dce4d1}
+.scratch-status-symbol{font:38px Georgia,serif;color:#eac879;min-width:35px;text-align:center}
+.scratch-status strong{display:block;font:normal 23px Georgia,serif;color:#f3dc9e}
+.scratch-status p{font-size:12px;color:#b7cdbd;margin:4px 0 0}
+.scratch-actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center;justify-content:center}
+.scratch-actions button{min-height:42px;padding:9px 15px;border-radius:9px;font-size:12px;
+  font-weight:800;letter-spacing:.02em;transition:transform .16s,filter .16s,border-color .16s}
+.scratch-actions button:not(:disabled):hover{transform:translateY(-2px);filter:brightness(1.09)}
+.scratch-actions button:disabled{cursor:not-allowed;opacity:.44}
+.scratch-primary{border:1px solid #ffebad;color:#173728;
+  background:linear-gradient(155deg,#ffeab0,#caa053);box-shadow:0 5px 15px #0007}
+.scratch-secondary{border:1px solid #618c73;color:#d8e4cf;background:#183c2f}
+.scratch-collect{border:1px solid #c2eba6;background:linear-gradient(140deg,#1f6748,#123b2e);
+  color:#c9f9d4}
+.scratch-error{margin:7px 0;padding:9px 12px;background:#4a2426;border:1px solid #a95b58;
+  border-radius:9px;color:#ffe3d7;font-size:12px}
+.scratch-hint{margin:7px 0;color:#a6c9b3;font-size:12px}
+.scratch-info{display:flex;flex-direction:column;gap:14px;min-width:0}
+.scratch-info-card{padding:19px 20px;border:1px solid #49634b;border-radius:15px;
+  background:linear-gradient(148deg,#13372b,#0a241d);box-shadow:inset 0 1px #e5d3971a}
+.scratch-info-card h2{margin:7px 0 12px;font:normal 23px Georgia,serif;color:#f2dba7}
+.scratch-info-card p{margin:0 0 10px;color:#c1d3c6;font-size:12px;line-height:1.6}
+.scratch-odds{border-top:1px solid #4d6f56}
+.scratch-odds>div{display:flex;justify-content:space-between;gap:8px;align-items:center;
+  padding:7px 3px;border-bottom:1px solid #2b5340;font-size:12px;color:#cad6bd}
+.scratch-odds strong{color:#f1dcaa;font-weight:650}
+.scratch-odds .scratch-odds-heading{color:#a7c8b6;letter-spacing:.1em;font-size:9px;font-weight:800}
+.scratch-odds .scratch-jackpot-row strong{color:#ffe389}
+.scratch-info-card .scratch-fineprint{font-size:10px;color:#9ebda8;margin:13px 0 0}
+@media(max-width:1360px){.lobby-body.scratch-active{grid-template-columns:145px minmax(0,1fr)}
+ .scratch-scroll{padding:15px}.scratch-ticket{padding:20px 26px 17px}
+ .scratch-layout{grid-template-columns:minmax(375px,1.3fr) minmax(220px,.7fr);gap:12px}
+ .scratch-hero{min-height:135px;padding:17px 20px}.scratch-hero-wallet{min-width:185px}}
+@media(max-width:1100px){.lobby-body.scratch-active{grid-template-columns:122px minmax(0,1fr)}
+ .scratch-layout{grid-template-columns:1fr}.scratch-info{display:grid;grid-template-columns:1fr 1fr}}
+@media(max-width:950px){.scratch-hero{flex-wrap:wrap}.scratch-hero-wallet{width:100%}
+ .scratch-info{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.scratch-actions button,.scratch-cell canvas{transition:none}}
+.casino-lobby-shell[data-reduced="true"] .scratch-actions button,
+.casino-lobby-shell[data-reduced="true"] .scratch-cell canvas{transition:none}
