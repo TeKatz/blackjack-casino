@@ -135,7 +135,9 @@ jobs:
       - name: Verify native casino and Midnight Manor frontend assets
         shell: pwsh
         run: |
-          foreach ($executable in @("BlackjackCasino.NativeShell.exe", "BlackjackCasino.Desktop.exe", "tools/updater/BlackjackCasino.Updater.exe")) {
+          foreach ($executable in @("BlackjackCasino.NativeShell.exe", "BlackjackCasino.Desktop.exe",
+            "tools/updater/BlackjackCasino.Updater.exe", "MidnightIndustries/MidnightIndustries.exe",
+            "MidnightIndustries/MidnightIndustries.pck")) {
             if (!(Test-Path "artifacts/app/$executable")) { throw "Native package lacks: $executable" }
           }
           if (Test-Path artifacts/app/BlackjackCasino.MigrationDiagnostics.exe) {
