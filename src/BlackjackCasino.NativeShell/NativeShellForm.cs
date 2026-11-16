@@ -42,7 +42,7 @@ internal sealed class NativeShellForm : Form
     private readonly NativeLobbyController lobbyController;
     private readonly NativeHostAudio hostAudio = new();
     private string? recordsPage;
-    private bool shopOpen, updatesOpen;
+    private bool shopOpen, scratchcardsOpen, updatesOpen;
     private UpdateChannel NativeInstallChannel
     {
         get
@@ -419,6 +419,7 @@ internal sealed class NativeShellForm : Form
         hostAudio.Update(null, runtime.Preferences);
         recordsPage = null;
         shopOpen = false;
+        scratchcardsOpen = false;
         updatesOpen = false;
         if (lobbyShown && !lobbyBrowserDisabled) _ = OpenLobbyAsync();
     }
@@ -867,8 +868,9 @@ internal sealed class NativeShellForm : Form
                     RefreshLobbySnapshot();
                     RefreshLobbyRecords();
                     RefreshLobbyShop();
+                    RefreshLobbyScratchcards();
                     break;
-                case "lobby.open" when activeMode is null && listening && ready:
+                case "lobby.open" when activeMode is null && listening && ready && !runtime.ScratchcardRequiresRestart:
                 {
                     if (!root.TryGetProperty("id", out JsonElement rawMode)
                         || rawMode.ValueKind != JsonValueKind.String) break;
@@ -1214,6 +1216,12 @@ internal sealed class NativeShellForm : Form
             Post("lobby.records.snapshot", new { Page = page, Snapshot = lobbyController.Snapshot(page) });
     }
 
+    private void RefreshLobbyScratchcards()
+    {
+        if (scratchcardsOpen && activeMode is null && listening)
+            Post("lobby.scratchcards.snapshot", runtime.ScratchcardSnapshot());
+    }
+
     private void RefreshLobbyShop()
     {
         if (shopOpen && activeMode is null && listening)
@@ -1268,6 +1276,8 @@ internal sealed class NativeShellForm : Form
     private void HandleLobbyAction(string action, JsonElement root)
     {
         string? id = ValidLobbyId(root);
+        if (runtime.ScratchcardRequiresRestart && action is not
+            ("lobby.scratchcards.open" or "lobby.scratchcards.close")) return;
         switch (action)
         {
             case "lobby.records.open"
@@ -1318,6 +1328,33 @@ internal sealed class NativeShellForm : Form
                 Post("lobby.records.show", new { Page = recordsPage });
                 RefreshLobbyRecords();
                 break;
+            case "lobby.scratchcards.open":
+                recordsPage = null;
+                shopOpen = false;
+                scratchcardsOpen = true;
+                RefreshLobbyScratchcards();
+                break;
+            case "lobby.scratchcards.close":
+                scratchcardsOpen = false;
+                break;
+            case "lobby.scratchcards.buy" when scratchcardsOpen &&
+                Guid.TryParse(id, out Guid purchaseId):
+            {
+                var result = runtime.BuyScratchcard(purchaseId);
+                Post("lobby.scratchcards.result", new { Action = "buy", result.Success, result.Message });
+                RefreshLobbyScratchcards();
+                RefreshLobbySnapshot();
+                break;
+            }
+            case "lobby.scratchcards.collect" when scratchcardsOpen &&
+                Guid.TryParse(id, out Guid collectId):
+            {
+                var result = runtime.CollectScratchcard(collectId);
+                Post("lobby.scratchcards.result", new { Action = "collect", result.Success, result.Message });
+                RefreshLobbyScratchcards();
+                RefreshLobbySnapshot();
+                break;
+            }
             case "lobby.shop.open":
                 recordsPage = null;
                 shopOpen = true;
