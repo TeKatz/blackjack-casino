@@ -1,0 +1,81 @@
+/* Readable, editorial update summaries. Only local content is rendered. */
+.casino-news.casino-news-editorial{position:relative;overflow:hidden;padding:0;
+  width:min(760px,94vw);max-height:calc(100dvh - 56px);
+  color:#f7ebd1;background:linear-gradient(155deg,#0b2721,#09211c 74%,#071811);
+  border:1px solid #ab8b54;border-radius:18px;
+  box-shadow:0 30px 90px #000c,0 0 0 1px #e7c58a20,inset 0 1px #f8dc9b45}
+.casino-news-editorial::backdrop{background:#010a08d6;backdrop-filter:blur(5px)}
+.casino-news .news-editorial-shell{position:relative;min-width:0;max-height:calc(100dvh - 56px);
+  display:flex;flex-direction:column;overflow:hidden}
+.casino-news .news-editorial-glow{position:absolute;inset:0 0 auto;height:210px;
+  pointer-events:none;background:
+  radial-gradient(ellipse at 80% 8%,#d6b66d30,transparent 55%),
+  radial-gradient(ellipse at 12% -30%,#45b3923c,transparent 67%);
+  opacity:1}
+.casino-news header.news-editorial-head{position:relative;z-index:1;padding:27px 33px 20px;
+  display:flex;gap:20px;justify-content:space-between;align-items:flex-start;
+  border-bottom:1px solid #a7a67c36}
+.casino-news .news-editorial-heading{min-width:0;max-width:600px}
+.casino-news .news-editorial-eyebrow{display:flex;align-items:center;flex-wrap:wrap;gap:9px;
+  color:#e7c48b;font:700 10px/1.4 'Segoe UI',sans-serif;letter-spacing:.16em}
+.casino-news .news-editorial-eyebrow span{color:#9ebda9;font-size:12px;letter-spacing:0}
+.casino-news h2{font:normal clamp(31px,3.15vw,44px)/1.13 Georgia,serif;
+  letter-spacing:-.015em;color:#ffe9b2;margin:12px 0 7px;text-shadow:0 3px 16px #090f0b}
+.casino-news .news-editorial-heading>p{color:#bcd2c5;font:normal 13px/1.5 'Segoe UI',sans-serif;
+  margin:0 0 10px}
+.casino-news .news-editorial-version{display:inline-block;color:#a6bcaa;
+  background:#071a1480;border:1px solid #79947d45;border-radius:99px;
+  padding:5px 11px;font:700 10px/1.2 'Segoe UI',sans-serif;letter-spacing:.07em}
+.casino-news header .news-editorial-close{width:37px;height:37px;flex:0 0 auto;display:grid;
+  place-items:center;padding:0;border:1px solid #9e8e6775;border-radius:9px;
+  color:#e8dfc5;background:#2b3b2e;font:normal 24px/1 'Segoe UI',sans-serif;
+  cursor:pointer;transition:border-color .18s,background .18s}
+.casino-news header .news-editorial-close:hover{background:#3a4b37;border-color:#e6cc91}
+.casino-news header .news-editorial-close:focus-visible,
+.casino-news .news-editorial-enter:focus-visible{outline:2px solid #ffe2a6;outline-offset:3px}
+.casino-news .news-editorial-body{position:relative;z-index:1;min-height:0;
+  overflow-y:auto;overscroll-behavior:contain;padding:10px 28px 16px;scrollbar-color:#8b7957 #0c2a21}
+.casino-news .news-editorial-list{display:flex;flex-direction:column;gap:9px}
+.casino-news article.news-editorial-item{display:flex;gap:15px;align-items:flex-start;
+  position:relative;overflow:hidden;margin:0;padding:14px 16px;min-width:0;
+  border:1px solid #77928445;border-left:3px solid var(--news-accent,#d8ba7a);
+  border-radius:10px;background:linear-gradient(105deg,#234133a8,#122f27b3);
+  transition:background .18s,border-color .18s}
+.casino-news article.news-editorial-item:hover{background:linear-gradient(105deg,#2d513fa8,#193a2eb3);
+  border-color:#b3be9e75;border-left-color:var(--news-accent,#d8ba7a)}
+.casino-news .news-editorial-num{flex:0 0 33px;text-align:center;
+  color:var(--news-accent,#d8ba7a);font:normal 24px/1.3 Georgia,serif;opacity:.9}
+.casino-news .news-editorial-copy{min-width:0;flex:1}
+.casino-news .news-editorial-kind{display:block;font:700 9px/1.4 'Segoe UI',sans-serif;
+  letter-spacing:.16em;color:var(--news-accent,#d8ba7a)}
+.casino-news h3{color:#f8eacf;font:600 17px/1.3 'Segoe UI',sans-serif;margin:3px 0 5px}
+.casino-news p.news-editorial-empty{color:#bdd1c1;padding:20px}
+.casino-news article.news-editorial-item p{font:normal 12.5px/1.52 'Segoe UI',sans-serif;
+  margin:0;color:#d0dfd2;overflow-wrap:break-word}
+.casino-news .news-editorial-twinkle{font:20px/1 Georgia,serif;
+  color:var(--news-accent,#d8ba7a);opacity:.65;margin-top:7px}
+.casino-news .news-editorial-footer{position:relative;z-index:1;padding:15px 30px 19px;
+  border-top:1px solid #a7a67c34;display:flex;align-items:center;gap:15px;
+  justify-content:space-between}
+.casino-news .news-editorial-footer>span{color:#a5b9a7;font:12px/1.4 'Segoe UI',sans-serif}
+.casino-news .news-editorial-enter{display:inline-flex;align-items:center;
+  justify-content:center;gap:13px;min-height:41px;padding:9px 20px;
+  background:linear-gradient(125deg,#dcc07e,#a8803d);border:1px solid #f1d394;
+  border-radius:9px;box-shadow:0 4px 17px #0007,inset 0 1px #fff6c280;
+  color:#152a1d;font:800 11px 'Segoe UI',sans-serif;letter-spacing:.065em;
+  cursor:pointer;transition:filter .18s,transform .18s}
+.casino-news .news-editorial-enter:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.casino-news .news-editorial-enter span{font:24px/1 Georgia,serif}
+@media(max-width:590px){
+  .casino-news header.news-editorial-head{padding:20px 18px 16px}
+  .casino-news .news-editorial-body{padding:9px 13px 15px}
+  .casino-news article.news-editorial-item{gap:10px;padding:12px 10px}
+  .casino-news .news-editorial-num{flex-basis:24px;font-size:18px}
+  .casino-news .news-editorial-twinkle{display:none}
+  .casino-news .news-editorial-footer{padding:13px 18px 17px;flex-wrap:wrap}
+}
+@media(prefers-reduced-motion:reduce){
+  .casino-news .news-editorial-enter,.casino-news header .news-editorial-close,
+  .casino-news article.news-editorial-item{transition:none!important}
+}
+.casino-news .news-editorial-shell[data-motion="off"] *{transition:none!important}
