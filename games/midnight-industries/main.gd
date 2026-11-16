@@ -3,7 +3,7 @@ extends Node2D
 const Model = preload("res://factory_model.gd")
 const StaticView = preload("res://factory_static.gd")
 const MotionView = preload("res://factory_motion.gd")
-const Skin = preload("res://factory_skin.gd")
+const UiSkin = preload("res://factory_skin.gd")
 const Atlas = preload("res://factory_atlas.gd")
 const TILE := 48.0
 const GOLD := Color("#F5C04A")
@@ -92,17 +92,17 @@ func _create_world() -> void:
 	add_child(motion_view)
 
 func _panel_style(tone: String = "panel") -> StyleBoxTexture:
-	return Skin.panel(tone)
+	return UiSkin.panel(tone)
 
 func _button_style(active: bool = false, destructive: bool = false) -> StyleBoxTexture:
 	if destructive:
-		return Skin.button("button_danger_hover" if active else "button_danger")
-	return Skin.button("button_active" if active else "button")
+		return UiSkin.button("button_danger_hover" if active else "button_danger")
+	return UiSkin.button("button_active" if active else "button")
 
 func _make_label(value: String, size: int = 14, color: Color = TEXT) -> Label:
 	var label := Label.new()
 	label.text = value
-	label.add_theme_font_override("font", Skin.font())
+	label.add_theme_font_override("font", UiSkin.font())
 	label.add_theme_font_size_override("font_size", size)
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.38))
@@ -129,7 +129,7 @@ func _button(value: String, handler: Callable, destructive: bool = false) -> But
 	b.text = value
 	b.focus_mode = Control.FOCUS_NONE
 	b.custom_minimum_size.y = 45
-	b.add_theme_font_override("font", Skin.font())
+	b.add_theme_font_override("font", UiSkin.font())
 	b.add_theme_color_override("font_color", TEXT)
 	b.add_theme_color_override("font_hover_color", GOLD if not destructive else DANGER)
 	b.add_theme_color_override("font_pressed_color", GOLD)
@@ -313,8 +313,8 @@ func _create_interface() -> void:
 	inspector_progress.show_percentage = false
 	inspector_progress.min_value = 0.0
 	inspector_progress.max_value = 100.0
-	inspector_progress.add_theme_stylebox_override("fill", Skin.progress_fill())
-	inspector_progress.add_theme_stylebox_override("background", Skin.progress_back())
+	inspector_progress.add_theme_stylebox_override("fill", UiSkin.progress_fill())
+	inspector_progress.add_theme_stylebox_override("background", UiSkin.progress_back())
 	inspect_col.add_child(inspector_progress)
 	inspector_controls = HBoxContainer.new()
 	inspector_controls.add_theme_constant_override("separation", 8)
