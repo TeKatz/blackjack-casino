@@ -79,8 +79,8 @@ static func _texture(tone: String) -> Texture2D:
 			if x + y < bevel or (width - x - 1) + y < bevel:
 				image.set_pixel(x, y, Color.TRANSPARENT)
 				continue
-			var noise := fract(sin(float(x) * 14.4 + float(y) * 49.71) * 4273.391)
-			var brushed := sin(float(y) * 0.70) * 0.007 + (noise - 0.5) * 0.018
+			var noise: float = fposmod(sin(float(x) * 14.4 + float(y) * 49.71) * 4273.391, 1.0)
+			var brushed: float = sin(float(y) * 0.70) * 0.007 + (noise - 0.5) * 0.018
 			var c := lower.lerp(upper, sweep * 0.52 + 0.22)
 			c = c.lightened(maxf(0.0, brushed)) if brushed > 0 else c.darkened(-brushed)
 			if y < 2 or y >= height - 2 or x < 2 or x >= width - 2:
