@@ -18,6 +18,7 @@ Play classic table games, original slot machines, puzzles, management games and 
 | **Midnight Dice** | A Kniffel-style dice game, casually or at paid tables against AI. |
 | **Midnight Merge** | Restore a casino room by room through matching, deliveries and unlockable renovations. |
 | **Casino Empire** | Grow a casino with a satisfying chip-stack clicker, twelve evolving buildings and prestige. |
+| **Midnight Industries (prototype)** | A standalone top-down factory with miners, conveyors, smelters and warehouses, launched from the left navigation under Empire. |
 | **Chill Lounge** | Eight activities: Sudoku, Solitaire, Word Search, Memory, Jigsaw Puzzle, Tales from the Backroom, **Midnight Bastion** tower defense and **Midnight Sweep** minesweeper. |
 | **Arcade** | 20 small skill-based games with independent high scores and challenges. |
 | **Midnight Descent** | A separate Godot action roguelite with dungeon exploration, combat, character builds, relics and bosses. |
