@@ -1,6 +1,7 @@
 extends RefCounted
 ## Industrial sprite-backed assets. No legacy primitive machine glyphs.
 const Atlas = preload("res://factory_atlas.gd")
+const OreVariants = preload("res://factory_ore_variants.gd")
 const TILE := 48.0
 const DIRS := [Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT, Vector2.UP]
 const GOLD := Color("#F4BD59")
@@ -27,7 +28,10 @@ static func machine(canvas: CanvasItem, at: Vector2, kind: String, direction: in
 			Atlas.region(index), Color(1.0, 1.0, 1.0, opacity))
 		canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	else:
-		canvas.draw_texture_rect_region(texture, Rect2(at, Vector2(48, 48)),
+		# Warehouse source silhouette is biased to the right in its atlas cell.
+		# Shift artwork only: gameplay coordinates and port stay unchanged.
+		var sprite_offset := Vector2(-3.5, 0.5) if kind == "storage" else Vector2.ZERO
+		canvas.draw_texture_rect_region(texture, Rect2(at + sprite_offset, Vector2(48, 48)),
 			Atlas.region(index), Color(1.0, 1.0, 1.0, opacity))
 	if ghost:
 		# Strong readable machine output port, even when the art itself is busy.
@@ -40,33 +44,52 @@ static func machine(canvas: CanvasItem, at: Vector2, kind: String, direction: in
 		canvas.draw_circle(center + normal * 20.0, 1.25, Color.WHITE)
 
 static func ore(canvas: CanvasItem, at: Vector2, material: String, seed: int) -> void:
-	var texture: Texture2D = Atlas.get_texture()
-	if texture == null:
+	var atlas: Texture2D = OreVariants.texture()
+	if atlas == null:
 		return
-	var i := 0 if material == "iron" else 1
-	var angle := float(posmod(seed, 4)) * (PI * 0.5)
-	var offset := Vector2(float(posmod(seed * 13, 7) - 3), float(posmod(seed * 19, 7) - 3))
-	var center := at + Vector2(24, 24) + offset
-	# Rocks cast no additional procedural shadow; the source art has its own occlusion.
-	canvas.draw_set_transform(center, angle, Vector2.ONE * (0.90 + float(posmod(seed, 5)) * 0.028))
-	canvas.draw_texture_rect_region(texture, Rect2(-23, -23, 46, 46), Atlas.region(i, 1))
-	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	# Distinct 96px silhouettes with independent crystal facets and colors.
+	# Light positional variation helps prevent an obvious wallpaper pattern.
+	var d := Vector2(float(posmod(seed * 13, 7) - 3), float(posmod(seed * 19, 7) - 3))
+	var size := 50.0 + float(posmod(seed, 4)) * 1.0
+	var center := at + Vector2(24, 24) + d
+	canvas.draw_texture_rect_region(atlas, Rect2(center - Vector2.ONE * size * 0.5,
+		Vector2.ONE * size), OreVariants.region(material, seed))
 
 static func cargo(canvas: CanvasItem, center: Vector2, item: String, shade: float = 1.0) -> void:
-	var texture: Texture2D = Atlas.get_texture()
-	if texture == null:
-		return
-	var index := 0
-	match item:
-		"iron_ore": index = 0
-		"copper_ore": index = 1
-		"iron_ingot": index = 2
-		"copper_ingot": index = 3
+	# Transported products have actual raised geometry, not decals pasted flat
+	# onto a conveyor texture. Geometry is fast and has a compact contact shade.
 	var alpha := clampf(shade, 0.1, 1.0)
-	canvas.draw_rect(Rect2(center + Vector2(-4, 6), Vector2(8, 2)),
-		Color(0.0, 0.0, 0.0, alpha * 0.15))
-	canvas.draw_texture_rect_region(texture, Rect2(center - Vector2(12, 12), Vector2(24, 24)),
-		Atlas.region(index, 1), Color(1, 1, 1, alpha))
+	var shadow := Color(0.02, 0.05, 0.055, 0.20 * alpha)
+	canvas.draw_colored_polygon(PackedVector2Array([
+		center + Vector2(-7, 6), center + Vector2(7, 6),
+		center + Vector2(9, 8), center + Vector2(-5, 8)]), shadow)
+	if item.ends_with("_ingot"):
+		var copper := item.begins_with("copper")
+		var top := Color("#F5B679") if copper else Color("#C9E0E5")
+		var face := Color("#B46C40") if copper else Color("#849DA9")
+		var side := Color("#764730") if copper else Color("#526A78")
+		var outline := Color("#342F2C") if copper else Color("#273842")
+		canvas.draw_colored_polygon(PackedVector2Array([
+			center + Vector2(-8, -6), center + Vector2(4, -8),
+			center + Vector2(9, -2), center + Vector2(-4, 0)]), Color(top, alpha))
+		canvas.draw_colored_polygon(PackedVector2Array([
+			center + Vector2(-4, 0), center + Vector2(9, -2),
+			center + Vector2(9, 5), center + Vector2(-4, 6)]), Color(face, alpha))
+		canvas.draw_colored_polygon(PackedVector2Array([
+			center + Vector2(-8, -6), center + Vector2(-4, 0),
+			center + Vector2(-4, 6), center + Vector2(-8, 1)]), Color(side, alpha))
+		canvas.draw_line(center + Vector2(-7, -6), center + Vector2(4, -8),
+			Color.WHITE if not copper else Color("#FFE0A2"), 1.1)
+		canvas.draw_line(center + Vector2(-4, 6), center + Vector2(9, 5), outline, 0.9)
+	else:
+		var material := "copper" if item.begins_with("copper") else "iron"
+		var atlas: Texture2D = OreVariants.texture()
+		var variant := 5 if material == "copper" else 2
+		canvas.draw_texture_rect_region(atlas, Rect2(center + Vector2(-11, -15),
+			Vector2(22, 22)), OreVariants.region(material, variant),
+			Color(1, 1, 1, alpha))
+		canvas.draw_line(center + Vector2(-6, -9), center + Vector2(-1, -12),
+			Color("#EFD6B9") if material == "copper" else Color("#DCF4F5"), 1.2)
 
 static func arrow(canvas: CanvasItem, center: Vector2, direction: int,
 	color: Color = GOLD, reach: float = 18.0) -> void:
