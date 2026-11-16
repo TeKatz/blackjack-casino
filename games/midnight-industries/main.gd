@@ -53,6 +53,8 @@ var effects_button: Button
 var confirming_new := false
 
 func _ready() -> void:
+	# Avoid unlimited rendering load when the window is idle or on high-refresh monitors.
+	Engine.max_fps = 60
 	german = not "--language=en" in OS.get_cmdline_user_args()
 	model = Model.new()
 	var previous: bool = model.load_game()
