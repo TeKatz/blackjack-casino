@@ -1,0 +1,39 @@
+name: Midnight Industries Godot smoke
+
+on:
+  pull_request:
+    paths:
+      - 'games/midnight-industries/**'
+      - 'tools/build_midnight_industries.ps1'
+      - '.github/workflows/midnight-industries.yml'
+  push:
+    branches: [dev, main]
+    paths:
+      - 'games/midnight-industries/**'
+      - 'tools/build_midnight_industries.ps1'
+      - '.github/workflows/midnight-industries.yml'
+
+jobs:
+  factory-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Godot editor
+        shell: bash
+        run: |
+          curl -fL --retry 3 -o /tmp/godot.zip https://github.com/godotengine/godot-builds/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip
+          unzip -q /tmp/godot.zip -d /tmp/industries-godot
+          chmod +x /tmp/industries-godot/Godot_v4.5.1-stable_linux.x86_64
+          echo "/tmp/industries-godot" >> "$GITHUB_PATH"
+      - name: Import, parse and simulate factory
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot=Godot_v4.5.1-stable_linux.x86_64
+          project=games/midnight-industries
+          "$godot" --headless --path "$project" --editor --import
+          "$godot" --headless --path "$project" --script res://main.gd --check-only
+          "$godot" --headless --path "$project" --script res://factory_model.gd --check-only
+          "$godot" --headless --path "$project" --script res://smoke_test.gd 2>&1 | tee /tmp/industries-smoke.log
+          grep -Fq "Midnight Industries factory simulation smoke PASS" /tmp/industries-smoke.log
