@@ -19,6 +19,8 @@ public static class ScratchcardRules
 {
     public const string LuckySevensId = "lucky-sevens";
     public const string GoldRushId = "gold-rush";
+    public const string PlatinumVaultId = "platinum-vault";
+    public const string DiamondRoyaleId = "diamond-royale";
     public const decimal TicketPrice = 20m; // Backward-compatible original ticket price.
     public const int SymbolCount = 5;
     public const int FieldCount = 9;
@@ -29,6 +31,8 @@ public static class ScratchcardRules
         {
             new ScratchcardGame(LuckySevensId, "Lucky Sevens", TicketPrice, 1),
             new ScratchcardGame(GoldRushId, "Gold Rush", 100m, 5),
+            new ScratchcardGame(PlatinumVaultId, "Platinum Vault", 500m, 25),
+            new ScratchcardGame(DiamondRoyaleId, "Diamond Royale", 2_500m, 125),
         });
 
     public static ScratchcardGame? FindGame(string? id) =>
@@ -37,8 +41,8 @@ public static class ScratchcardRules
     public static ScratchcardGame GetGame(string? id) =>
         FindGame(id) ?? throw new ArgumentException("Unknown scratchcard game.", nameof(id));
 
-    // Shared payout probability bands; Gold Rush scales each payout by five.
-    // Both tickets return 86.25% in the long run, with game-specific stakes.
+    // Shared probability bands; each tier scales stake and payouts by the same
+    // factor. All four series therefore retain an 86.25% theoretical return.
     public static decimal PrizeForRoll(int roll, string gameId = LuckySevensId)
     {
         if (roll is < 0 or >= DrawRange)

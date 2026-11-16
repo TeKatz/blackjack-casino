@@ -154,6 +154,81 @@ public sealed class ScratchcardTests : IDisposable
         Assert.Equal(100m + purchased.Prize, PlayerStateStore.Load(folder).Bankroll);
     }
 
+    [Theory]
+    [InlineData(ScratchcardRules.PlatinumVaultId, 500, 25, 25000)]
+    [InlineData(ScratchcardRules.DiamondRoyaleId, 2500, 125, 125000)]
+    public void PremiumTierPrizeTableAndSymbolPatternStayAuthoritative(
+        string gameId, int price, int multiplier, int jackpot)
+    {
+        ScratchcardGame game = ScratchcardRules.GetGame(gameId);
+        Assert.Equal(price, game.Price);
+        Assert.Equal(multiplier, game.PrizeMultiplier);
+        Assert.Equal(jackpot, ScratchcardRules.PrizeForRoll(999, gameId));
+        Assert.Equal(0m, ScratchcardRules.PrizeForRoll(499, gameId));
+        Assert.Equal(10m * multiplier, ScratchcardRules.PrizeForRoll(500, gameId));
+        Assert.Equal(250m * multiplier, ScratchcardRules.PrizeForRoll(990, gameId));
+        Assert.True(ScratchcardRules.IsPrize(jackpot, gameId));
+        Assert.False(ScratchcardRules.IsPrize(jackpot + 1, gameId));
+        for (int roll = 0; roll < ScratchcardRules.DrawRange; roll++)
+        {
+            var ticket = ScratchcardRules.Draw(Guid.NewGuid(), 10_000m,
+                ceiling => ceiling == ScratchcardRules.DrawRange ? roll : 0,
+                gameId: gameId);
+            Assert.Equal(gameId, ticket.GameId);
+            Assert.Equal(ScratchcardRules.PrizeForRoll(roll, gameId), ticket.Prize);
+            Assert.True(ScratchcardRules.Valid(ticket));
+            Assert.Equal(ticket.Prize > 0m ? 1 : 0,
+                ticket.Symbols.GroupBy(s => s).Count(group => group.Count() == 3));
+        }
+    }
+
+    [Theory]
+    [InlineData(ScratchcardRules.PlatinumVaultId, 500)]
+    [InlineData(ScratchcardRules.DiamondRoyaleId, 2500)]
+    public void PremiumTicketPurchaseRecoverAndClaimStayIdempotent(string gameId, int price)
+    {
+        string directory = Path.Combine(folder, gameId);
+        var ledger = new NativeScratchcardJournal(directory);
+        Guid receipt = Guid.NewGuid();
+        Assert.Throws<InvalidOperationException>(() =>
+            ledger.Purchase(receipt, new AppPreferences { Bankroll = price - 1 },
+                gameId: gameId));
+        Assert.Equal(0, ledger.Purchased);
+        var bought = ledger.Purchase(receipt,
+            new AppPreferences { Bankroll = price + 100m }, gameId: gameId);
+        Assert.Equal(gameId, bought.GameId);
+        Assert.Equal(100m, PlayerStateStore.Load(directory).Bankroll);
+        Assert.Equal(bought, ledger.Purchase(receipt,
+            new AppPreferences { Bankroll = 100m }, gameId: gameId));
+        Assert.Throws<InvalidOperationException>(() =>
+            ledger.Purchase(receipt, new AppPreferences { Bankroll = 100m },
+                gameId: ScratchcardRules.LuckySevensId));
+        var reloaded = new NativeScratchcardJournal(directory);
+        Assert.Equal(gameId, reloaded.Latest!.GameId);
+        var claimed = reloaded.Collect(receipt, new AppPreferences { Bankroll = 100m });
+        Assert.True(claimed.Collected);
+        Assert.Equal(100m + bought.Prize, PlayerStateStore.Load(directory).Bankroll);
+        reloaded.Collect(receipt, new AppPreferences { Bankroll = 100m + bought.Prize });
+        Assert.Equal(100m + bought.Prize, PlayerStateStore.Load(directory).Bankroll);
+    }
+
+    [Fact]
+    public void AllSeriesKeepOriginalTheoreticalReturn()
+    {
+        Assert.Equal(4, ScratchcardRules.Games.Count);
+        var ids = new HashSet<string>();
+        foreach (ScratchcardGame game in ScratchcardRules.Games)
+        {
+            Assert.True(ids.Add(game.Id));
+            decimal weightedPrize = Enumerable.Range(0, ScratchcardRules.DrawRange)
+                .Sum(roll => ScratchcardRules.PrizeForRoll(roll, game.Id));
+            Assert.Equal(0.8625m, weightedPrize / ScratchcardRules.DrawRange / game.Price);
+        }
+        Assert.Null(ScratchcardRules.FindGame("invalid-tier"));
+        Assert.Throws<ArgumentException>(() =>
+            ScratchcardRules.GetGame("invalid-tier"));
+    }
+
     [Fact]
     public void LegacyTicketWithoutGameIdRestoresAsLuckySevens()
     {

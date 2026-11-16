@@ -4,7 +4,7 @@ Scratchcards are a **sidebar destination in the casino lobby**, directly after C
 
 ## Current gameplay
 
-- Two play-money series: **Lucky Sevens** ($20) and **Gold Rush** ($100). A single arrow beside the first ticket advances to Gold Rush; later series add corresponding arrows in both directions.
+- Four play-money series with ascending stakes: **Lucky Sevens** ($20), **Gold Rush** ($100), **Platinum Vault** ($500), and **Diamond Royale** ($2,500). Left/right arrows navigate the native-defined series list, automatically accommodating future additions.
 - Each ticket has nine covered fields. Three matching symbols **anywhere** win its predetermined prize.
 - A single continuous pointer/touch gesture can scratch across **all nine fields** and their gaps. Keyboard controls still reveal individual fields; a **Reveal all** accessibility option is available.
 - Only one ticket across all series may be active at once. Navigation may preview another series, but purchasing remains disabled until the active ticket is collected. A ticket may be purchased only when the previous one has been collected. Purchasing debits the shared Bankroll immediately; collecting pays any prize exactly once.
@@ -19,17 +19,17 @@ Once all nine fields are visible, winning tickets highlight only their **three m
 
 ## Prize distribution
 
-| Lucky Sevens payout | Gold Rush payout | Probability |
-| ---: | ---: | ---: |
-| $0 | $0 | 50% |
-| $10 | $50 | 20% |
-| $20 | $100 | 15% |
-| $50 | $250 | 10% |
-| $100 | $500 | 4% |
-| $250 | $1,250 | 0.9% |
-| $1,000 | $5,000 | 0.1% |
+| Lucky Sevens | Gold Rush | Platinum Vault | Diamond Royale | Probability |
+| ---: | ---: | ---: | ---: | ---: |
+| $0 | $0 | $0 | $0 | 50% |
+| $10 | $50 | $250 | $1,250 | 20% |
+| $20 | $100 | $500 | $2,500 | 15% |
+| $50 | $250 | $1,250 | $6,250 | 10% |
+| $100 | $500 | $2,500 | $12,500 | 4% |
+| $250 | $1,250 | $6,250 | $31,250 | 0.9% |
+| $1,000 | $5,000 | $25,000 | $125,000 | 0.1% |
 
-Lucky Sevens has a $17.25 expected payout per $20 ticket; Gold Rush has an $86.25 expected payout per $100 ticket. Both series have an **86.25% theoretical return**. All currency is virtual offline play money. There are no real-money payments or prizes.
+All four series share the same payout probability bands and **86.25% theoretical return**. Their expected play-money payouts per ticket are $17.25, $86.25, $431.25, and $2,156.25 respectively. All currency is virtual offline play money. There are no real-money payments or prizes.
 
 ## Ownership and recovery
 
