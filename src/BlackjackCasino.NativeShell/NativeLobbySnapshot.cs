@@ -103,7 +103,9 @@ internal static class NativeLobbySnapshot
                 Title = mode.DisplayName,
                 Category = Category(mode.DesktopModeId),
                 Description = Description(mode.DesktopModeId),
-                Enabled = mode.HasWebPage || (mode.HasNativeProcess && NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory)),
+                Enabled = mode.HasWebPage
+                    || (mode.DesktopModeId == "midnight-descent" && NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory))
+                    || (mode.DesktopModeId == "midnight-industries" && NativeIndustriesLaunch.IsPackaged(AppContext.BaseDirectory)),
                 Secondary = mode.HasSecondaryWindow && mode.HasWebPage,
             }).ToArray(),
         };
@@ -123,6 +125,7 @@ internal static class NativeLobbySnapshot
         "neon-vault" or "nine-lives" or "midnight-manor" or "indian-ruby" => "Video slots",
         "casino-empire" => "Incremental clicker",
         "midnight-merge" => "Casino restoration",
+        "midnight-industries" => "Factory automation",
         "chill-lounge" => "Relaxed games",
         _ => "Action Roguelite",
     };
@@ -141,6 +144,7 @@ internal static class NativeLobbySnapshot
         "casino-empire" => "Stack chips and grow your casino, one upgrade at a time.",
         "chill-lounge" => "Eight relaxing games and a mystery to solve.",
         "midnight-descent" => "Descend into a dangerous roguelite adventure.",
+        "midnight-industries" => "Mine, transport and smelt resources in a growing factory.",
         _ => "Not yet available in the independent native host.",
     };
 }
