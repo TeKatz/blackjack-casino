@@ -2,6 +2,7 @@ extends Node2D
 ## Midnight Industries: isolated simulation, cached world, animated cargo and native UI.
 const Model = preload("res://factory_model.gd")
 const StaticView = preload("res://factory_static.gd")
+const TerrainView = preload("res://factory_terrain.gd")
 const MotionView = preload("res://factory_motion.gd")
 const UiSkin = preload("res://factory_skin.gd")
 const Atlas = preload("res://factory_atlas.gd")
@@ -26,6 +27,11 @@ var hovered := Vector2i(-1, -1)
 var inspected := Vector2i(-1, -1)
 var german := true
 var moving_camera := false
+const SELECT_DRAG_THRESHOLD := 7.0
+var selection_pending := false
+var selection_dragging := false
+var selection_press_screen := Vector2.ZERO
+var selection_press_cell := Vector2i(-1, -1)
 var simulation_paused := false
 var reduced_motion := false
 var menu_open := true
@@ -82,8 +88,11 @@ func _tr(de: String, en: String) -> String:
 	return de if german else en
 
 func _create_world() -> void:
-	# Metallic platform and machines are separately cached in cullable
-	# industrial 16x16 chunks. No full-map redraw per animation frame.
+	# Seamless meadow and stone blend beneath cullable factory chunks.
+	var terrain := TerrainView.new()
+	terrain.name = "MeadowAndOreBiome"
+	terrain.model = model
+	add_child(terrain)
 	static_view = StaticView.new()
 	static_view.name = "IndustrialDeckChunks"
 	static_view.model = model
@@ -461,6 +470,7 @@ func _notice(message: String) -> void:
 		tween.tween_property(status, "modulate", Color("#9fd2c9"), 0.55)
 
 func _set_mode(next_mode: String) -> void:
+	_cancel_select_drag()
 	mode = next_mode
 	sidebar_panel.visible = mode == "build"
 	motion_view.cursor_mode = mode
@@ -629,6 +639,7 @@ func _new_factory() -> void:
 	_show_menu(false)
 
 func _show_menu(show: bool) -> void:
+	_cancel_select_drag()
 	menu_open = show
 	motion_view.menu_open = show
 	menu_mask.visible = show
@@ -693,6 +704,36 @@ func _pointer_over_hud(point: Vector2) -> bool:
 		point.x > screen.x - 329.0 and ((inspector_panel.visible and point.y < 418.0) or
 		(point.y > 420.0 and point.y < 525.0)))
 
+func _cancel_select_drag() -> void:
+	selection_pending = false
+	selection_dragging = false
+	selection_press_cell = Vector2i(-1, -1)
+
+func _begin_select_drag(screen_position: Vector2) -> void:
+	selection_pending = true
+	selection_dragging = false
+	selection_press_screen = screen_position
+	var world: Vector2 = get_global_mouse_position()
+	selection_press_cell = Vector2i(floori(world.x / TILE), floori(world.y / TILE))
+
+func _input(event: InputEvent) -> void:
+	# This keeps panning when the cursor passes over a HUD panel. A short
+	# press/release still selects the original world cell.
+	if not selection_pending:
+		return
+	if event is InputEventMouseMotion:
+		if not selection_dragging and event.position.distance_to(selection_press_screen) >= SELECT_DRAG_THRESHOLD:
+			selection_dragging = true
+		if selection_dragging:
+			camera.position -= event.relative / camera.zoom
+			_bound_camera()
+			get_viewport().set_input_as_handled()
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+		if not selection_dragging and mode == "inspect" and not menu_open and not _pointer_over_hud(event.position):
+			_inspect(selection_press_cell)
+		_cancel_select_drag()
+		get_viewport().set_input_as_handled()
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
@@ -740,7 +781,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.pressed and not _pointer_over_hud(event.position):
 			if event.button_index == MOUSE_BUTTON_LEFT:
 				if mode == "inspect":
-					_inspect(hovered)
+					_begin_select_drag(event.position)
 				elif model.place(hovered, tool, facing):
 					static_view.refresh_cell(hovered)
 					_notice(_tr("Gebäude platziert", "Building placed"))
