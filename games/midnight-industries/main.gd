@@ -46,6 +46,7 @@ var icon_cache: Dictionary = {}
 var ui_layer: CanvasLayer
 var tool_buttons: Dictionary = {}
 var mode_buttons: Dictionary = {}
+var inspector_panel: PanelContainer
 var inspector_title: Label
 var inspector_body: Label
 var inspector_subtitle: Label
@@ -177,10 +178,10 @@ func _create_interface() -> void:
 	top.add_theme_stylebox_override("panel", _panel_style("header"))
 	hud.add_child(top)
 	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	top.offset_left = 12
-	top.offset_right = -12
-	top.offset_top = 10
-	top.offset_bottom = 104
+	top.offset_left = 11
+	top.offset_right = -11
+	top.offset_top = 9
+	top.offset_bottom = 81
 	var top_row := HBoxContainer.new()
 	top_row.add_theme_constant_override("separation", 19)
 	top.add_child(top_row)
@@ -190,21 +191,21 @@ func _create_interface() -> void:
 	top_row.add_child(brand)
 	var logo := TextureRect.new()
 	logo.texture = _machine_icon("miner")
-	logo.custom_minimum_size = Vector2(55, 55)
+	logo.custom_minimum_size = Vector2(42, 42)
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	brand.add_child(logo)
 	var identity := VBoxContainer.new()
 	identity.alignment = BoxContainer.ALIGNMENT_CENTER
 	brand.add_child(identity)
-	identity.add_child(_make_label("MIDNIGHT", 20, TEXT))
-	identity.add_child(_make_label("I N D U S T R I E S", 17, GOLD))
-	identity.add_child(_make_label(_tr("INDUSTRIELLE AUTOMATISIERUNG", "INDUSTRIAL AUTOMATION"), 10, MUTED))
+	identity.add_child(_make_label("MIDNIGHT", 17, TEXT))
+	identity.add_child(_make_label("I N D U S T R I E S", 14, GOLD))
+	identity.add_child(_make_label(_tr("INDUSTRIELLE AUTOMATISIERUNG", "INDUSTRIAL AUTOMATION"), 9, MUTED))
 	var resource_column := VBoxContainer.new()
 	resource_column.alignment = BoxContainer.ALIGNMENT_CENTER
 	resource_column.add_theme_constant_override("separation", 4)
 	top_row.add_child(resource_column)
-	production = _make_label("", 19, TEXT)
+	production = _make_label("", 15, TEXT)
 	production.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	resource_column.add_child(production)
 	var status_row := HBoxContainer.new()
@@ -216,8 +217,8 @@ func _create_interface() -> void:
 	status_row.add_child(header_status)
 	status_row.add_child(fps_label)
 	var menu_button := _button(_tr("  MENÜ  [ESC]  ", "  MENU  [ESC]  "), func() -> void: _show_menu(true))
-	menu_button.custom_minimum_size.x = 145
-	menu_button.custom_minimum_size.y = 53
+	menu_button.custom_minimum_size.x = 109
+	menu_button.custom_minimum_size.y = 39
 	top_row.add_child(menu_button)
 
 	# Production catalog deliberately replaces the previous debug-style tool list.
@@ -226,14 +227,14 @@ func _create_interface() -> void:
 	sidebar.add_theme_stylebox_override("panel", _panel_style("panel"))
 	hud.add_child(sidebar)
 	sidebar.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	sidebar.offset_left = 12
-	sidebar.offset_top = 111
-	sidebar.offset_right = 318
-	sidebar.offset_bottom = 678
+	sidebar.offset_left = 11
+	sidebar.offset_top = 87
+	sidebar.offset_right = 277
+	sidebar.offset_bottom = 568
 	var side_col := VBoxContainer.new()
-	side_col.add_theme_constant_override("separation", 7)
+	side_col.add_theme_constant_override("separation", 6)
 	sidebar.add_child(side_col)
-	side_col.add_child(_make_label(_tr("WERKZEUGZENTRALE", "FACTORY WORKSHOP"), 18, TEXT))
+	side_col.add_child(_make_label(_tr("WERKZEUGZENTRALE", "FACTORY WORKSHOP"), 15, TEXT))
 	side_col.add_child(_make_label(_tr("PRODUKTION  /  LOGISTIK", "PRODUCTION  /  LOGISTICS"), 10, CYAN))
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 7)
@@ -267,7 +268,7 @@ func _create_interface() -> void:
 		btn.expand_icon = true
 		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		btn.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
-		btn.custom_minimum_size.y = 68
+		btn.custom_minimum_size.y = 55
 		side_col.add_child(btn)
 		tool_buttons[key] = btn
 	side_col.add_child(HSeparator.new())
@@ -278,13 +279,14 @@ func _create_interface() -> void:
 	# Inspector uses actual selection data and an illustrated machine portrait.
 	var inspector := PanelContainer.new()
 	inspector.name = "IndustrialMachineConsole"
+	inspector_panel = inspector
 	inspector.add_theme_stylebox_override("panel", _panel_style("inspector"))
 	hud.add_child(inspector)
 	inspector.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	inspector.offset_left = -399
-	inspector.offset_right = -12
-	inspector.offset_top = 111
-	inspector.offset_bottom = 560
+	inspector.offset_left = -325
+	inspector.offset_right = -11
+	inspector.offset_top = 87
+	inspector.offset_bottom = 413
 	var inspect_col := VBoxContainer.new()
 	inspect_col.add_theme_constant_override("separation", 12)
 	inspector.add_child(inspect_col)
@@ -293,7 +295,7 @@ func _create_interface() -> void:
 	portrait_row.add_theme_constant_override("separation", 8)
 	inspect_col.add_child(portrait_row)
 	inspector_portrait = TextureRect.new()
-	inspector_portrait.custom_minimum_size = Vector2(70, 70)
+	inspector_portrait.custom_minimum_size = Vector2(54, 54)
 	inspector_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	inspector_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	portrait_row.add_child(inspector_portrait)
@@ -301,19 +303,19 @@ func _create_interface() -> void:
 	title_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	title_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	portrait_row.add_child(title_col)
-	inspector_title = _make_label("", 19, TEXT)
+	inspector_title = _make_label("", 16, TEXT)
 	title_col.add_child(inspector_title)
 	inspector_subtitle = _make_label("", 12, CYAN)
 	inspector_subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title_col.add_child(inspector_subtitle)
 	inspect_col.add_child(HSeparator.new())
 	inspect_col.add_child(_make_label(_tr("PROZESSDATEN / STATUS", "PROCESS DATA / STATUS"), 11, MUTED))
-	inspector_body = _make_label("", 15, TEXT)
-	inspector_body.custom_minimum_size.y = 119
+	inspector_body = _make_label("", 13, TEXT)
+	inspector_body.custom_minimum_size.y = 79
 	inspector_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	inspect_col.add_child(inspector_body)
 	inspector_progress = ProgressBar.new()
-	inspector_progress.custom_minimum_size.y = 13
+	inspector_progress.custom_minimum_size.y = 8
 	inspector_progress.show_percentage = false
 	inspector_progress.min_value = 0.0
 	inspector_progress.max_value = 100.0
@@ -323,8 +325,8 @@ func _create_interface() -> void:
 	inspector_controls = HBoxContainer.new()
 	inspector_controls.add_theme_constant_override("separation", 8)
 	inspect_col.add_child(inspector_controls)
-	rotate_button = _button(_tr("↻  DREHEN", "↻  ROTATE"), _rotate_selected)
-	demolish_button = _button(_tr("×  ABBREISSEN", "×  DEMOLISH"), _demolish_selected, true)
+	rotate_button = _button(_tr("↻ DREHEN", "↻ ROTATE"), _rotate_selected)
+	demolish_button = _button(_tr("× ABREISSEN", "× DEMOLISH"), _demolish_selected, true)
 	rotate_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	demolish_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inspector_controls.add_child(rotate_button)
@@ -335,10 +337,10 @@ func _create_interface() -> void:
 	overview.add_theme_stylebox_override("panel", _panel_style("panel"))
 	hud.add_child(overview)
 	overview.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	overview.offset_left = -399
-	overview.offset_right = -12
-	overview.offset_top = 574
-	overview.offset_bottom = 712
+	overview.offset_left = -325
+	overview.offset_right = -11
+	overview.offset_top = 425
+	overview.offset_bottom = 519
 	var summary_col := VBoxContainer.new()
 	summary_col.add_theme_constant_override("separation", 10)
 	overview.add_child(summary_col)
@@ -351,10 +353,10 @@ func _create_interface() -> void:
 	bottom.add_theme_stylebox_override("panel", _panel_style("header"))
 	hud.add_child(bottom)
 	bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom.offset_left = 12
-	bottom.offset_right = -12
-	bottom.offset_top = -103
-	bottom.offset_bottom = -12
+	bottom.offset_left = 11
+	bottom.offset_right = -11
+	bottom.offset_top = -76
+	bottom.offset_bottom = -10
 	var footer_row := HBoxContainer.new()
 	footer_row.add_theme_constant_override("separation", 12)
 	bottom.add_child(footer_row)
@@ -363,9 +365,9 @@ func _create_interface() -> void:
 	left_footer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left_footer.add_theme_constant_override("separation", 4)
 	footer_row.add_child(left_footer)
-	status = _make_label("", 13, CYAN)
+	status = _make_label("", 12, CYAN)
 	left_footer.add_child(status)
-	left_footer.add_child(_make_label(_tr("WASD BEWEGEN   •   MAUSRAD ZOOM   •   MITTELKLICK ZIEHEN", "WASD PAN   •   WHEEL ZOOM   •   MIDDLE DRAG"), 10, MUTED))
+	left_footer.add_child(_make_label(_tr("WASD BEWEGEN   •   MAUSRAD ZOOM   •   MITTELKLICK ZIEHEN", "WASD PAN   •   WHEEL ZOOM   •   MIDDLE DRAG"), 9, MUTED))
 	var slots := HBoxContainer.new()
 	slots.add_theme_constant_override("separation", 5)
 	footer_row.add_child(slots)
@@ -374,15 +376,15 @@ func _create_interface() -> void:
 		var shortcut := _button(str(i + 1), _select_tool.bind(name))
 		shortcut.icon = _machine_icon(name)
 		shortcut.expand_icon = true
-		shortcut.custom_minimum_size = Vector2(66, 63)
+		shortcut.custom_minimum_size = Vector2(49, 44)
 		shortcut.add_theme_font_size_override("font_size", 11)
 		slots.add_child(shortcut)
 		quick_buttons[name] = shortcut
 	pause_button = _button(_tr("Ⅱ  PAUSE", "Ⅱ  PAUSE"), _toggle_pause)
-	pause_button.custom_minimum_size.x = 117
+	pause_button.custom_minimum_size.x = 92
 	footer_row.add_child(pause_button)
 	var save_btn := _button(_tr("SPEICHERN", "SAVE"), _save_now)
-	save_btn.custom_minimum_size.x = 101
+	save_btn.custom_minimum_size.x = 84
 	footer_row.add_child(save_btn)
 
 	# Full-screen modal main menu. No hidden destructive Escape quit.
@@ -397,7 +399,7 @@ func _create_interface() -> void:
 	menu_mask.add_child(frame)
 	menu_card = PanelContainer.new()
 	menu_card.name = "MidnightIndustriesCommandMenu"
-	menu_card.custom_minimum_size = Vector2(575, 520)
+	menu_card.custom_minimum_size = Vector2(508, 473)
 	menu_card.add_theme_stylebox_override("panel", _panel_style("menu"))
 	frame.add_child(menu_card)
 	var menu_col := VBoxContainer.new()
@@ -408,21 +410,21 @@ func _create_interface() -> void:
 	menu_col.add_child(menu_logo)
 	var emblem := TextureRect.new()
 	emblem.texture = _machine_icon("smelter")
-	emblem.custom_minimum_size = Vector2(79, 79)
+	emblem.custom_minimum_size = Vector2(62, 62)
 	emblem.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	emblem.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	menu_logo.add_child(emblem)
 	var names_col := VBoxContainer.new()
 	names_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	menu_logo.add_child(names_col)
-	names_col.add_child(_make_label("MIDNIGHT", 29, TEXT))
-	names_col.add_child(_make_label("I N D U S T R I E S", 19, GOLD))
+	names_col.add_child(_make_label("MIDNIGHT", 25, TEXT))
+	names_col.add_child(_make_label("I N D U S T R I E S", 16, GOLD))
 	var subtitle := _make_label(_tr("AUTOMATION  ·  INDUSTRIELLE KONSTRUKTION", "AUTOMATION  ·  INDUSTRIAL ENGINEERING"), 12, MUTED)
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	menu_col.add_child(subtitle)
 	menu_col.add_child(HSeparator.new())
 	resume_button = _button(_tr("▶   FABRIK FORTSETZEN", "▶   RESUME FACTORY"), func() -> void: _show_menu(false))
-	resume_button.custom_minimum_size.y = 56
+	resume_button.custom_minimum_size.y = 47
 	menu_col.add_child(resume_button)
 	menu_col.add_child(_button(_tr("▣   SPIELSTAND SPEICHERN", "▣   SAVE PROGRESS"), _save_now))
 	effects_button = _button(_tr("✦   ANIMATIONEN: AN", "✦   ANIMATIONS: ON"), _toggle_effects)
@@ -431,7 +433,7 @@ func _create_interface() -> void:
 	menu_col.add_child(new_button)
 	menu_col.add_child(HSeparator.new())
 	var exit_btn := _button(_tr("↩   SPEICHERN & ZUM CASINO", "↩   SAVE & RETURN TO CASINO"), _exit_to_casino)
-	exit_btn.custom_minimum_size.y = 54
+	exit_btn.custom_minimum_size.y = 45
 	menu_col.add_child(exit_btn)
 	var menu_note := _make_label(_tr("ESC  MENÜ SCHLIESSEN     •     DEINE FABRIK WIRD AUTO-GESPEICHERT",
 		"ESC  CLOSE MENU     •     YOUR FACTORY AUTOSAVES"), 10, MUTED)
@@ -514,6 +516,7 @@ func _refresh_inspector() -> void:
 	if inspector_title == null:
 		return
 	if not model.buildings.has(inspected):
+		inspector_panel.visible = false
 		inspector_portrait.visible = false
 		inspector_title.text = _tr("Kein Gebäude gewählt", "No building selected")
 		inspector_subtitle.text = _tr("AUSWAHLMODUS  [V]", "INSPECT MODE  [V]")
@@ -524,6 +527,7 @@ func _refresh_inspector() -> void:
 		return
 	var machine: Dictionary = model.buildings[inspected]
 	var kind: String = machine.kind
+	inspector_panel.visible = true
 	inspector_portrait.visible = true
 	inspector_portrait.texture = _machine_icon(kind)
 	inspector_progress.visible = true
@@ -672,9 +676,10 @@ func _bound_camera() -> void:
 
 func _pointer_over_hud(point: Vector2) -> bool:
 	var screen := get_viewport_rect().size
-	return point.y < 108.0 or point.y > screen.y - 109.0 or (
-		point.x < 326.0 and point.y < 685.0) or (
-		point.x > screen.x - 408.0 and point.y < 725.0)
+	return point.y < 84.0 or point.y > screen.y - 80.0 or (
+		point.x < 282.0 and point.y < 578.0) or (
+		point.x > screen.x - 329.0 and ((inspector_panel.visible and point.y < 418.0) or
+		(point.y > 420.0 and point.y < 525.0)))
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
