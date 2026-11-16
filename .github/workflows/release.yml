@@ -128,6 +128,10 @@ jobs:
         shell: pwsh
         run: ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/app/MidnightDescent
 
+      - name: Export and smoke-test Godot Midnight Industries
+        shell: pwsh
+        run: ./tools/build_midnight_industries.ps1 -OutputDirectory artifacts/app/MidnightIndustries
+
       - name: Verify native casino and Midnight Manor frontend assets
         shell: pwsh
         run: |
