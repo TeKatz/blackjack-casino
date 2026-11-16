@@ -497,6 +497,7 @@ func _demolish_selected() -> void:
 
 func _toggle_pause() -> void:
 	simulation_paused = not simulation_paused
+	motion_view.simulation_paused = simulation_paused
 	_notice(_tr("Produktion angehalten", "Production paused") if simulation_paused else
 		_tr("Produktion läuft", "Production running"))
 	_refresh_ui()
@@ -525,6 +526,7 @@ func _new_factory() -> void:
 	motion_view.inspected = inspected
 	camera.position = Vector2(21, 18) * TILE
 	simulation_paused = false
+	motion_view.simulation_paused = false
 	save_accumulator = 0.0
 	last_totals = ""
 	if model.save_game():

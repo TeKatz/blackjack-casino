@@ -14,13 +14,14 @@ var cursor_mode := "inspect"
 var tool := "belt"
 var facing := 0
 var menu_open := false
+var simulation_paused := false
 var reduced_motion := false
 var tick := 0.0
 
 func _process(delta: float) -> void:
 	if model == null or camera == null:
 		return
-	if not menu_open:
+	if not menu_open and not simulation_paused:
 		tick += minf(delta, 0.10)
 		queue_redraw()
 
