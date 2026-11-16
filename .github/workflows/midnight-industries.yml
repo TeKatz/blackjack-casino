@@ -35,5 +35,10 @@ jobs:
           "$godot" --headless --path "$project" --editor --import
           "$godot" --headless --path "$project" --script res://main.gd --check-only
           "$godot" --headless --path "$project" --script res://factory_model.gd --check-only
+          "$godot" --headless --path "$project" --quit-after 15 res://main.tscn 2>&1 | tee /tmp/industries-scene.log
+          if grep -Eq 'SCRIPT ERROR:|Parse Error:|Failed to load script|^ERROR:' /tmp/industries-scene.log; then
+            echo "Godot scene startup emitted errors"
+            exit 1
+          fi
           "$godot" --headless --path "$project" --script res://smoke_test.gd 2>&1 | tee /tmp/industries-smoke.log
           grep -Fq "Midnight Industries factory simulation smoke PASS" /tmp/industries-smoke.log
