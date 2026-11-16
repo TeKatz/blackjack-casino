@@ -9,6 +9,10 @@ export type DailyLoginSnapshot = {
   activeReward: string; nextReward: string;
   rewards: {day:number;bankroll:string;coins:number;pack:string|null}[];
 };
+export type LobbyNewsItem = {
+  title:string;description:string;accent:string;
+  titleDe?:string;descriptionDe?:string;category?:'feature'|'improvement'|'fix';
+};
 export type LobbySnapshot = {
   /** Independent WinForms preview: unsupported tabs/transactions must not show mock data. */
   nativePreview?: boolean;
@@ -22,7 +26,9 @@ export type LobbySnapshot = {
   vaultAmount: string; vaultCapacity: string; vaultFraction: number;
   animationsEnabled: boolean; albumSoundEnabled: boolean;
   musicEnabled: boolean; musicVolume: number; showEmpireBalance: boolean;
-  news?:{title:string;description:string;accent:string}[];installedVersion?:string;
+  news?:LobbyNewsItem[];installedVersion?:string;
+  /** Native-only startup signal, cleared after the first ready lobby of a process. */
+  showStartupNews?:boolean;newsReleaseSpecific?:boolean;
   language: 'de' | 'en'; modes: LobbyMode[];
 };
 
@@ -39,8 +45,14 @@ export function isLobbySnapshot(x: unknown): x is LobbySnapshot {
   if (!['titleVariant','portraitVariant','frameVariant'].every(k=>x[k]===undefined||
     typeof x[k]==='string'&&/^[a-z0-9-]{1,100}$/.test(x[k] as string)))return false;
   if(x.installedVersion!==undefined&&(!string(x.installedVersion)||x.installedVersion.length>80))return false;
-  if(x.news!==undefined&&(!Array.isArray(x.news)||x.news.length>24||!x.news.every(n=>object(n)&&
-    string(n.title)&&n.title.length<=2000&&string(n.description)&&n.description.length<=12000&&
+  if(x.showStartupNews!==undefined&&typeof x.showStartupNews!=='boolean')return false;
+  if(x.newsReleaseSpecific!==undefined&&typeof x.newsReleaseSpecific!=='boolean')return false;
+  if(x.news!==undefined&&(!Array.isArray(x.news)||x.news.length>6||!x.news.every(n=>object(n)&&
+    string(n.title)&&n.title.length>0&&n.title.length<=90&&
+    string(n.description)&&n.description.length>0&&n.description.length<=280&&
+    (n.titleDe===undefined||string(n.titleDe)&&n.titleDe.length>0&&n.titleDe.length<=90)&&
+    (n.descriptionDe===undefined||string(n.descriptionDe)&&n.descriptionDe.length>0&&n.descriptionDe.length<=280)&&
+    (n.category===undefined||['feature','improvement','fix'].includes(n.category as string))&&
     string(n.accent)&&/^#[0-9a-f]{6}$/i.test(n.accent))))return false;
   const daily = x.dailyLogin;
   if (typeof daily.canClaim !== 'boolean' || typeof daily.claimedToday !== 'boolean'
@@ -89,6 +101,17 @@ export const fallbackLobby: LobbySnapshot = {
   vaultAmount: '$0.00', vaultCapacity: '$100,000.00', vaultFraction: 0,
   animationsEnabled: true, albumSoundEnabled:true,
   musicEnabled:true, musicVolume:0.10, showEmpireBalance:true,
+  showStartupNews:false,newsReleaseSpecific:false,installedVersion:'Preview',
+  news:[
+    {title:'Scratchcards in four editions',titleDe:'Vier Rubbellos-Editionen',
+      description:'Play Lucky Sevens, Gold Rush, Platinum Vault and Diamond Royale.',
+      descriptionDe:'Entdecke Lucky Sevens, Gold Rush, Platinum Vault und Diamond Royale.',
+      category:'feature',accent:'#e7c486'},
+    {title:'Midnight Manor',titleDe:'Midnight Manor',
+      description:'Explore the 3D haunted manor during the bonus game.',
+      descriptionDe:'Erkunde das 3D-Spukhaus im Bonusspiel.',
+      category:'improvement',accent:'#b5a1d9'},
+  ],
   language: 'en', modes: [
     {id:'roulette',title:'Roulette',category:'Table games',description:'European single-zero roulette. High-limit table.',enabled:true,secondary:false},
     {id:'blackjack',title:'Blackjack',category:'Table games',description:'A quiet seat, a fresh shoe and your next decision.',enabled:true,secondary:false},

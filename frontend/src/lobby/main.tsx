@@ -4,7 +4,7 @@ import type {PointerEvent as ReactPointerEvent} from 'react';
 import { createRoot } from 'react-dom/client';
 import {PlayerPortrait,CosmeticTitle,VaultIcon} from './Cosmetics';
 import {localizedSudokuTitleName} from './sudokuTitleLocalization';
-import {Modal} from './Modal';
+import {ModernNews} from './ModernNews';
 import {ExitPrompt} from './ExitPrompt';
 import {NavIcon} from './NavIcon';
 import './rouletteTile.css';
@@ -347,7 +347,14 @@ function LobbyApp() {
     document.documentElement.lang=data.language;
     document.title='Blackjack Casino · Lobby';
   },[data.language]);
-  useEffect(()=>{if(nativeSnapshotReceived&&!newsShown){if(!data.nativePreview)setNewsOpen(true);setNewsShown(true);}},[nativeSnapshotReceived,newsShown]);
+  useEffect(()=>{
+    // NativePreview describes capabilities, not whether the editorial News is
+    // shown. The native host requests it only for the first ready lobby.
+    if(nativeSnapshotReceived&&data.showStartupNews===true&&!newsShown){
+      setNewsShown(true);
+      setNewsOpen(true);
+    }
+  },[nativeSnapshotReceived,data.showStartupNews,newsShown]);
   const de = data.language==='de';
   const nativePreview = data.nativePreview===true;
   const previewUnavailable = () => setNativePreviewNotice(de
@@ -655,13 +662,11 @@ function LobbyApp() {
       {lobbyContentVisible&&<DailyLogin data={data} onClaim={claimDaily}
         onClose={()=>setDailyOpen(false)} mobileOpen={dailyOpen}/>}
     </div>
-    {newsOpen&&<Modal className="casino-news" label="News" onClose={()=>setNewsOpen(false)}>
-      <header><div><small>THE MIDNIGHT CLUB · {data.installedVersion??updates.installedVersion}</small><h2>{de?'Neuigkeiten':'News'}</h2></div>
-       <button onClick={()=>setNewsOpen(false)} aria-label={de?'Schließen':'Close'}>×</button></header>
-      <div className="casino-news-items">{(data.news??[]).map((note,i)=><article key={i} style={{borderColor:note.accent}}><h3>{note.title}</h3><p>{note.description}</p></article>)}
-       {!data.news?.length&&<p>{de?'Für diese Vorschau sind keine Versionshinweise geladen.':'Release notes are unavailable in this preview.'}</p>}</div>
-      <button className="lobby-gold-button" onClick={()=>setNewsOpen(false)}>{de?'ZUM CASINO':'ENTER CASINO'}</button>
-    </Modal>}
+    {newsOpen&&<ModernNews entries={data.news??[]}
+      installedVersion={data.installedVersion??updates.installedVersion}
+      releaseSpecific={data.newsReleaseSpecific??false}
+      language={data.language} motionEnabled={!lowMotion&&data.animationsEnabled}
+      onClose={()=>setNewsOpen(false)}/>} 
     {settingsOpen&&<div className="lobby-updates-backdrop">
       <section className="lobby-updates-panel lobby-settings-panel" role="dialog" aria-modal="true"
         aria-label={de?'Casino-Einstellungen':'Casino settings'}>

@@ -1,3 +1,4 @@
+import type {CSSProperties} from 'react';
 import {Modal} from './Modal';
 import type {LobbyNewsItem} from './lobbyBridge';
 import './news.css';
@@ -46,7 +47,7 @@ export function ModernNews({entries,installedVersion,releaseSpecific,language,
         {entries.length>0?
           <div className="news-editorial-list">
             {entries.map((note,index)=><article className="news-editorial-item"
-              key={index} style={{'--news-accent':note.accent} as React.CSSProperties}>
+              key={index} style={{'--news-accent':note.accent} as CSSProperties}>
               <div className="news-editorial-num" aria-hidden="true">
                 {String(index+1).padStart(2,'0')}
               </div>
