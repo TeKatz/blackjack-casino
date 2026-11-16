@@ -1,7 +1,19 @@
 /** Presentation-only parameters. No effect on the C# ticket or payout. */
-export const SCRATCH_BRUSH_WIDTH = 18;
-export const SCRATCH_REVEAL_COVERAGE = 0.63;
+export const SCRATCH_BRUSH_WIDTH = 25;
+export const SCRATCH_REVEAL_COVERAGE = 0.50;
 export const SCRATCH_SAMPLE_STEP = 4;
+
+export type ScratchPoint = {x:number;y:number};
+export type ScratchRect = {left:number;right:number;top:number;bottom:number};
+
+/** Broad-phase test for one continuous stroke across arbitrary adjacent cells.
+    The canvas itself clips the line, so a bounding-box false positive is harmless. */
+export function strokeOverlapsRect(from:ScratchPoint,to:ScratchPoint,rect:ScratchRect,margin=0):boolean {
+  return Number.isFinite(from.x)&&Number.isFinite(from.y)&&
+    Number.isFinite(to.x)&&Number.isFinite(to.y)&&
+    Math.max(from.x,to.x)>=rect.left-margin&&Math.min(from.x,to.x)<=rect.right+margin&&
+    Math.max(from.y,to.y)>=rect.top-margin&&Math.min(from.y,to.y)<=rect.bottom+margin;
+}
 
 /** Coverage, not pointer distance: repeatedly scrubbing one line cannot reveal the cell. */
 export function clearedFraction(

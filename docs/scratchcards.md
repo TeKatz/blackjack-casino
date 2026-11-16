@@ -6,14 +6,14 @@ Scratchcards are a **sidebar destination in the casino lobby**, directly after C
 
 - One $20 play-money ticket: **Lucky Sevens**.
 - Each ticket has nine covered fields. Three matching symbols **anywhere** win its predetermined prize.
-- Users scratch each field with pointer/touch input or reveal it using keyboard controls; a **Reveal all** accessibility option is available.
+- A single continuous pointer/touch gesture can scratch across **all nine fields** and their gaps. Keyboard controls still reveal individual fields; a **Reveal all** accessibility option is available.
 - A ticket may be purchased only when the previous one has been collected. Purchasing debits the shared Bankroll immediately; collecting pays any prize exactly once.
 - A purchased but not collected ticket is restored on reopen/restart. The symbol pattern and payout never reroll on a retry.
 - Browser preview has no native wallet and never enables real purchases. German and English lobby text are provided.
 
 ## Rubbel- und Gewinnpräsentation
 
-The silver coating is removed with a narrow **18-pixel brush** in the ticket's 170 × 105 source-coordinate cells. Completion uses measured transparent-area coverage (at least **63%**), not accumulated cursor travel; repeatedly scratching a small line cannot reveal the field. Pointer and touch movement shed lightweight silver particles that fall and fade around the scratching position. Particle emission is throttled, contained within the ticket and disabled by the lobby animation/reduced-motion preference.
+The silver coating is removed with a **25-pixel brush** in the ticket's 170 × 105 source-coordinate cells. Completion uses measured transparent-area coverage (at least **50%**), not accumulated cursor travel; repeatedly scratching a small line cannot reveal the field. The grid handles pointer capture and maps each stroke into every intersected field, including fast movements across the spaces between cells. Pointer and touch movement shed lightweight silver particles that fall and fade around the scratching position. Particle emission is throttled, contained within the ticket and disabled by the lobby animation/reduced-motion preference.
 
 Once all nine fields are visible, winning tickets highlight only their **three matching cells** with a gold pulse and animated shine. The result strip, win marquee and matching payout-table row are also emphasized. An original Web Audio victory bell phrase plays once on a user's winning reveal; it can be muted via the scratchcard page's own Sound button. Muting and reduced-motion preferences do not alter tickets, payouts or game state. Browser audio failures are non-fatal.
 

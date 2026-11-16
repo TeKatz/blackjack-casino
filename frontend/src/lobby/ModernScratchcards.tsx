@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import type {PointerEvent as ReactPointerEvent} from 'react';
 import type {ScratchcardSnapshot,ScratchcardTicket} from './scratchcardsBridge';
-import {clearedFraction,SCRATCH_BRUSH_WIDTH,SCRATCH_REVEAL_COVERAGE,winningCellIndexes} from './scratchcardsPresentation';
+import {clearedFraction,SCRATCH_BRUSH_WIDTH,SCRATCH_REVEAL_COVERAGE,strokeOverlapsRect,winningCellIndexes} from './scratchcardsPresentation';
 import {playScratchcardWin,unlockScratchcardAudio} from './scratchcardsAudio';
 import './scratchcards.css';
 
@@ -16,17 +16,14 @@ const prizes=[{amount:0,odds:'50%'},{amount:10,odds:'20%'},{amount:20,odds:'15%'
   {amount:1000,odds:'0.1%'}];
 const money=(n:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
 
-function ScratchCell({index,symbol,revealed,disabled,winning,onReveal,onScratch,onStart}:{
+function ScratchCell({index,symbol,revealed,disabled,winning,onReveal,onStart}:{
   index:number;symbol:number;revealed:boolean;disabled:boolean;winning:boolean;
-  onReveal:(index:number)=>void;onScratch:(clientX:number,clientY:number)=>void;onStart:()=>void;
+  onReveal:(index:number)=>void;onStart:()=>void;
 }){
   const canvas=useRef<HTMLCanvasElement>(null);
-  const dragging=useRef(false);
-  const last=useRef<{x:number;y:number}|null>(null);
-  const lastScan=useRef(0);
   useEffect(()=>{
     if(revealed)return;
-    const surface=canvas.current,context=surface?.getContext('2d');
+    const surface=canvas.current,context=surface?.getContext('2d',{willReadFrequently:true});
     if(!surface||!context)return;
     const w=surface.width,h=surface.height;
     const metal=context.createLinearGradient(0,0,w,h);
@@ -42,83 +39,38 @@ function ScratchCell({index,symbol,revealed,disabled,winning,onReveal,onScratch,
     context.fillStyle='#315047';context.font='bold 18px Segoe UI';
     context.textAlign='center';context.textBaseline='middle';
     context.fillText('✦',w/2,h/2);
-    last.current=null;lastScan.current=0;
   },[index,revealed]);
-  const checkCoverage=(force=false)=>{
-    const surface=canvas.current,context=surface?.getContext('2d',{willReadFrequently:true});
-    if(!surface||!context)return;
-    const now=performance.now();
-    if(!force&&now-lastScan.current<65)return;
-    lastScan.current=now;
-    const data=context.getImageData(0,0,surface.width,surface.height).data;
-    if(clearedFraction(data,surface.width,surface.height)>=SCRATCH_REVEAL_COVERAGE){
-      dragging.current=false;
-      last.current=null;
-      onReveal(index);
-    }
-  };
-  const erase=(event:ReactPointerEvent<HTMLButtonElement>)=>{
-    const surface=canvas.current,context=surface?.getContext('2d');
-    if(!surface||!context)return;
-    const rect=surface.getBoundingClientRect();
-    if(!rect.width||!rect.height)return;
-    const point={
-      x:Math.max(0,Math.min(surface.width,(event.clientX-rect.left)/rect.width*surface.width)),
-      y:Math.max(0,Math.min(surface.height,(event.clientY-rect.top)/rect.height*surface.height)),
-    };
-    context.globalCompositeOperation='destination-out';
-    if(last.current){
-      context.lineWidth=SCRATCH_BRUSH_WIDTH;context.lineCap='round';context.lineJoin='round';
-      context.beginPath();
-      context.moveTo(last.current.x,last.current.y);
-      context.lineTo(point.x,point.y);
-      context.stroke();
-    }else{
-      context.beginPath();context.arc(point.x,point.y,SCRATCH_BRUSH_WIDTH/2,0,Math.PI*2);
-      context.fill();
-    }
-    last.current=point;
-    onScratch(event.clientX,event.clientY);
-    checkCoverage();
-  };
-  const down=(event:ReactPointerEvent<HTMLButtonElement>)=>{
-    if(disabled||revealed)return;
-    onStart();
-    dragging.current=true;last.current=null;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    erase(event);
-  };
-  const move=(event:ReactPointerEvent<HTMLButtonElement>)=>{
-    if(dragging.current&&!disabled&&!revealed)erase(event);
-  };
-  const end=()=>{
-    if(dragging.current&&!disabled&&!revealed)checkCoverage(true);
-    dragging.current=false;last.current=null;
-  };
   return <button type="button"
     className={'scratch-cell '+(revealed?'revealed':'covered')+(winning?' winning':'')}
     disabled={disabled||revealed}
     aria-label={revealed?('Field '+(index+1)+': '+motifs[symbol]):('Scratch field '+(index+1))}
-    onPointerDown={down} onPointerMove={move} onPointerUp={end}
-    onPointerCancel={end} onLostPointerCapture={end}
     onClick={event=>{if(event.detail===0&&!disabled&&!revealed){onStart();onReveal(index);}}}>
     <span className={'scratch-symbol scratch-symbol-'+symbol} aria-hidden={!revealed}>
       {motifs[symbol]}</span>
-    <canvas ref={canvas} width={170} height={105} aria-hidden="true"/>
+    <canvas ref={canvas} data-scratch-index={index} width={170} height={105} aria-hidden="true"/>
   </button>;
 }
 const allFields=[0,1,2,3,4,5,6,7,8];
 /** Particles are transient DOM visuals, capped by time and cleaned up when the ticket changes. */
+/** Particles are transient DOM visuals, capped by time and cleaned up on ticket changes. */
 function TicketBoard({ticket,revealed,onReveal,ready,winning,motionEnabled,onStart}:{
  ticket:ScratchcardTicket|null;revealed:number[];ready:boolean;winning:number[];
  motionEnabled:boolean;onStart:()=>void;onReveal:(index:number)=>void;
 }){
+  const grid=useRef<HTMLDivElement>(null);
   const particles=useRef<HTMLDivElement>(null);
   const lastParticle=useRef(0);
+  const activePointers=useRef<Map<number,{x:number;y:number}>>(new Map());
+  const scratchedCells=useRef<Set<number>>(new Set());
+  const lastScan=useRef(0);
   useEffect(()=>{
     const layer=particles.current;
-    return ()=>{layer?.replaceChildren();};
-  },[ticket?.ticketId]);
+    activePointers.current.clear();
+    scratchedCells.current.clear();
+    lastScan.current=0;
+    return ()=>{layer?.replaceChildren();activePointers.current.clear();};
+  },[ticket?.ticketId,ticket?.collected]);
+
   const scratchParticles=(clientX:number,clientY:number)=>{
     const layer=particles.current;
     if(!motionEnabled||!layer||typeof Element.prototype.animate!=='function')return;
@@ -143,6 +95,98 @@ function TicketBoard({ticket,revealed,onReveal,ready,winning,motionEnabled,onSta
       animation.oncancel=()=>flake.remove();
     }
   };
+
+  const scanCoverage=(force:boolean)=>{
+    const surface=grid.current;
+    if(!surface||!scratchedCells.current.size)return;
+    const now=performance.now();
+    if(!force&&now-lastScan.current<65)return;
+    lastScan.current=now;
+    for(const index of [...scratchedCells.current]){
+      if(revealed.includes(index)){scratchedCells.current.delete(index);continue;}
+      const canvas=surface.querySelector<HTMLCanvasElement>('canvas[data-scratch-index="'+index+'"]');
+      const context=canvas?.getContext('2d',{willReadFrequently:true});
+      if(!canvas||!context)continue;
+      if(clearedFraction(context.getImageData(0,0,canvas.width,canvas.height).data,
+        canvas.width,canvas.height)>=SCRATCH_REVEAL_COVERAGE){
+        scratchedCells.current.delete(index);
+        onReveal(index);
+      }
+    }
+  };
+  /** Global stroke endpoints are mapped separately into each cell's canvas.
+      This also paints a cell crossed in a fast sweep, even if no pointer event lands in it. */
+  const scratchSegment=(from:{x:number;y:number},to:{x:number;y:number})=>{
+    const surface=grid.current;
+    if(!surface)return;
+    let painted=false;
+    surface.querySelectorAll<HTMLCanvasElement>('canvas[data-scratch-index]').forEach(canvas=>{
+      const index=Number(canvas.dataset.scratchIndex);
+      if(!Number.isInteger(index)||revealed.includes(index)||!ticket||ticket.collected)return;
+      const rect=canvas.getBoundingClientRect();
+      if(rect.width<=0||rect.height<=0)return;
+      const margin=Math.max(SCRATCH_BRUSH_WIDTH*rect.width/canvas.width,
+        SCRATCH_BRUSH_WIDTH*rect.height/canvas.height)/2;
+      if(!strokeOverlapsRect(from,to,rect,margin))return;
+      const context=canvas.getContext('2d',{willReadFrequently:true});
+      if(!context)return;
+      const x=(p:{x:number;y:number})=>(p.x-rect.left)/rect.width*canvas.width;
+      const y=(p:{x:number;y:number})=>(p.y-rect.top)/rect.height*canvas.height;
+      context.globalCompositeOperation='destination-out';
+      context.lineWidth=SCRATCH_BRUSH_WIDTH;
+      context.lineCap='round';
+      context.lineJoin='round';
+      if(from.x===to.x&&from.y===to.y){
+        context.beginPath();context.arc(x(to),y(to),SCRATCH_BRUSH_WIDTH/2,0,Math.PI*2);
+        context.fill();
+      }else{
+        context.beginPath();context.moveTo(x(from),y(from));context.lineTo(x(to),y(to));
+        context.stroke();
+      }
+      painted=true;
+      scratchedCells.current.add(index);
+    });
+    if(painted)scratchParticles(to.x,to.y);
+  };
+  const pointerDown=(event:ReactPointerEvent<HTMLDivElement>)=>{
+    if(!ready||!ticket||ticket.collected||event.pointerType==='mouse'&&event.button!==0)return;
+    onStart();
+    const current={x:event.clientX,y:event.clientY};
+    activePointers.current.set(event.pointerId,current);
+    event.currentTarget.setPointerCapture(event.pointerId);
+    event.preventDefault();
+    scratchSegment(current,current);
+    scanCoverage(false);
+  };
+  const pointerMove=(event:ReactPointerEvent<HTMLDivElement>)=>{
+    const previous=activePointers.current.get(event.pointerId);
+    if(!previous)return;
+    const current={x:event.clientX,y:event.clientY};
+    scratchSegment(previous,current);
+    activePointers.current.set(event.pointerId,current);
+    scanCoverage(false);
+  };
+  const pointerUp=(event:ReactPointerEvent<HTMLDivElement>)=>{
+    const previous=activePointers.current.get(event.pointerId);
+    if(!previous)return;
+    scratchSegment(previous,{x:event.clientX,y:event.clientY});
+    scanCoverage(true);
+    activePointers.current.delete(event.pointerId);
+    if(event.currentTarget.hasPointerCapture(event.pointerId))
+      event.currentTarget.releasePointerCapture(event.pointerId);
+  };
+  const pointerCancel=(event:ReactPointerEvent<HTMLDivElement>)=>{
+    if(!activePointers.current.has(event.pointerId))return;
+    scanCoverage(true);
+    activePointers.current.delete(event.pointerId);
+    if(event.currentTarget.hasPointerCapture(event.pointerId))
+      event.currentTarget.releasePointerCapture(event.pointerId);
+  };
+  const lostCapture=(event:ReactPointerEvent<HTMLDivElement>)=>{
+    if(!activePointers.current.has(event.pointerId))return;
+    scanCoverage(true);
+    activePointers.current.delete(event.pointerId);
+  };
   return <div className={'scratch-ticket '+(ticket?.collected?'ticket-collected':'')+
     (winning.length?' is-winning':'')} data-testid="scratch-ticket">
     <div className="scratch-ticket-header">
@@ -151,12 +195,14 @@ function TicketBoard({ticket,revealed,onReveal,ready,winning,motionEnabled,onSta
     </div>
     <div className="scratch-ticket-title"><span>LUCKY</span><strong>SEVENS</strong></div>
     <p>THREE MATCHING SYMBOLS · ONE PRIZE</p>
-    <div className="scratch-ticket-grid">
+    <div className="scratch-ticket-grid" ref={grid} data-testid="scratch-ticket-grid"
+      onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp}
+      onPointerCancel={pointerCancel} onLostPointerCapture={lostCapture}>
       {allFields.map(index=><ScratchCell key={(ticket?.ticketId||'empty')+'-'+index}
         index={index} symbol={ticket?.symbols[index]??index%5}
         revealed={ticket===null||revealed.includes(index)}
         disabled={!ticket||!ready||ticket.collected} winning={winning.includes(index)}
-        onReveal={onReveal} onScratch={scratchParticles} onStart={onStart}/>)}
+        onReveal={onReveal} onStart={onStart}/>)}
     </div>
     <div className="scratch-silver-layer" ref={particles} aria-hidden="true"/>
     <div className="scratch-ticket-footer"><span>NO. {ticket?ticket.ticketId.slice(0,8).toUpperCase():'— — — —'}</span>
@@ -168,18 +214,22 @@ export function ModernScratchcards({data,loaded,embedded,language,pending,notice
   const de=language==='de';
   const ticket=data.ticket;
   const [revealed,setRevealed]=useState<number[]>([]);
+  const revealedRef=useRef<number[]>([]);
   const [soundEnabled,setSoundEnabled]=useState(true);
   const soundPlayedFor=useRef<string|null>(null);
   useEffect(()=>{
-    setRevealed(ticket?.collected?[...allFields]:[]);
+    const initial=ticket?.collected?[...allFields]:[];
+    revealedRef.current=initial;
+    setRevealed(initial);
     soundPlayedFor.current=null;
   },[ticket?.ticketId,ticket?.collected]);
   const allRevealed=!!ticket&&revealed.length===9;
   const winning=allRevealed&&ticket?winningCellIndexes(ticket.symbols,ticket.prize):[];
   const hasWin=winning.length===3;
   const reveal=(index:number)=>{
-    if(!ticket||ticket.collected||revealed.includes(index))return;
-    const next=[...revealed,index];
+    if(!ticket||ticket.collected||revealedRef.current.includes(index))return;
+    const next=[...revealedRef.current,index];
+    revealedRef.current=next;
     setRevealed(next);
     if(next.length===9 && ticket.prize>0 && soundPlayedFor.current!==ticket.ticketId){
       soundPlayedFor.current=ticket.ticketId;
@@ -193,7 +243,8 @@ export function ModernScratchcards({data,loaded,embedded,language,pending,notice
       soundPlayedFor.current=ticket.ticketId;
       playScratchcardWin(soundEnabled);
     }
-    setRevealed([...allFields]);
+    revealedRef.current=[...allFields];
+    setRevealed(revealedRef.current);
   };
   const canPurchase=embedded&&loaded&&!pending&&!data.recoveryRequired&&
     (!ticket||ticket.collected)&&data.bankroll>=data.price;
