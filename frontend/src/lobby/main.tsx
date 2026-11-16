@@ -255,7 +255,7 @@ function LobbyApp() {
   useEffect(()=>{
     const stop = onRecordsMessage(message=>{
       if(message.type==='lobby.records.show'){
-        setRecordsVisible(message.data.page);setShopVisible(false);setDailyOpen(false);setArcadeOpen(false);
+        setRecordsVisible(message.data.page);setShopVisible(false);setScratchcardsVisible(false);lobbyCommand('lobby.scratchcards.close');setDailyOpen(false);setArcadeOpen(false);
       }else if(message.type==='lobby.records.snapshot'){
         if(message.data.page==='challenges'){setChallenges(message.data.snapshot);setChallengesLoaded(true);}
         else if(message.data.page==='statistics'){setStatistics(message.data.snapshot);setStatisticsLoaded(true);}
@@ -291,7 +291,7 @@ function LobbyApp() {
         setShopPending(null);
         setShopNotice({success:message.data.success,message:message.data.message});
       }
-      else if(message.type==='lobby.shop.show'){setShopVisible(true);setRecordsVisible(null);setDailyOpen(false);setArcadeOpen(false);}
+      else if(message.type==='lobby.shop.show'){setShopVisible(true);setRecordsVisible(null);setScratchcardsVisible(false);lobbyCommand('lobby.scratchcards.close');setDailyOpen(false);setArcadeOpen(false);}
       else if(message.type==='lobby.shop.hide'){setShopVisible(false);}
     });
     return stop;
