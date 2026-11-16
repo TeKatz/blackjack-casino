@@ -3,13 +3,15 @@ extends Node2D
 const Model = preload("res://factory_model.gd")
 const StaticView = preload("res://factory_static.gd")
 const MotionView = preload("res://factory_motion.gd")
+const Skin = preload("res://factory_skin.gd")
+const Atlas = preload("res://factory_atlas.gd")
 const TILE := 48.0
-const GOLD := Color("#efc67a")
-const CYAN := Color("#91dacc")
-const INK := Color("#0c1d24")
-const TEXT := Color("#dcebe9")
-const MUTED := Color("#92aeb4")
-const DANGER := Color("#e79a89")
+const GOLD := Color("#F5C04A")
+const CYAN := Color("#00D8F4")
+const INK := Color("#0C161D")
+const TEXT := Color("#F0F3F3")
+const MUTED := Color("#94ACB5")
+const DANGER := Color("#FF725F")
 const TOOLS := ["miner", "belt", "smelter", "storage"]
 const DIR_TEXT := ["→", "↓", "←", "↑"]
 
@@ -37,6 +39,10 @@ var production: Label
 var fps_label: Label
 var status: Label
 var tool_title: Label
+var overview_label: Label
+var inspector_portrait: TextureRect
+var quick_buttons: Dictionary = {}
+var ui_layer: CanvasLayer
 var tool_buttons: Dictionary = {}
 var mode_buttons: Dictionary = {}
 var inspector_title: Label
@@ -73,83 +79,66 @@ func _tr(de: String, en: String) -> String:
 	return de if german else en
 
 func _create_world() -> void:
-	var ground := ColorRect.new()
-	ground.name = "CachedTerrainGrid"
-	ground.position = Vector2.ZERO
-	ground.size = Vector2(Model.WIDTH, Model.HEIGHT) * TILE
-	ground.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ground.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	var shader := Shader.new()
-	shader.code = """
-shader_type canvas_item;
-void fragment() {
-	vec2 coords = UV * vec2(128.0, 96.0);
-	vec2 c = floor(coords);
-	float pattern = fract(sin(dot(c, vec2(13.73, 78.31))) * 43758.5453);
-	float subtle = (pattern - 0.5) * 0.012;
-	vec3 base = vec3(0.047, 0.112, 0.132) + vec3(subtle);
-	vec2 lines = fract(coords);
-	float wire = max(1.0 - step(0.022, lines.x), 1.0 - step(0.022, lines.y));
-	vec3 output_color = mix(base, vec3(0.098, 0.178, 0.195), wire * 0.42);
-	COLOR = vec4(output_color, 1.0);
-}
-"""
-	var mat := ShaderMaterial.new()
-	mat.shader = shader
-	ground.material = mat
-	add_child(ground)
-
+	# Metallic platform and machines are separately cached in cullable
+	# industrial 16x16 chunks. No full-map redraw per animation frame.
 	static_view = StaticView.new()
-	static_view.name = "CachedFactoryAndDeposits"
+	static_view.name = "IndustrialDeckChunks"
 	static_view.model = model
 	add_child(static_view)
 	motion_view = MotionView.new()
-	motion_view.name = "VisibleAnimatedMachinesAndCursor"
+	motion_view.name = "IndustrialActiveVFX"
 	motion_view.model = model
 	motion_view.camera = camera
 	add_child(motion_view)
 
-func _panel_style(tone: String = "panel") -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = Color("#10262e") if tone == "panel" else Color("#142f38")
-	s.border_color = Color("#355b65")
-	s.set_border_width_all(1)
-	s.set_corner_radius_all(14)
-	s.set_content_margin_all(15)
-	s.shadow_color = Color(0.0, 0.0, 0.0, 0.32)
-	s.shadow_size = 10
-	return s
+func _panel_style(tone: String = "panel") -> StyleBoxTexture:
+	return Skin.panel(tone)
 
-func _button_style(active: bool = false, destructive: bool = false) -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = Color("#355f5d") if active else Color("#1b3941")
+func _button_style(active: bool = false, destructive: bool = false) -> StyleBoxTexture:
 	if destructive:
-		s.bg_color = Color("#593b3a")
-	s.border_color = GOLD if active else (DANGER if destructive else Color("#41616a"))
-	s.set_border_width_all(1)
-	s.set_corner_radius_all(9)
-	s.set_content_margin_all(10)
-	return s
+		return Skin.button("button_danger_hover" if active else "button_danger")
+	return Skin.button("button_active" if active else "button")
 
 func _make_label(value: String, size: int = 14, color: Color = TEXT) -> Label:
 	var label := Label.new()
 	label.text = value
+	label.add_theme_font_override("font", Skin.font())
 	label.add_theme_font_size_override("font_size", size)
 	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.38))
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
+
+func _machine_icon(kind: String) -> Texture2D:
+	var atlas: Texture2D = Atlas.get_texture()
+	if atlas == null:
+		return null
+	var icon := AtlasTexture.new()
+	icon.atlas = atlas
+	icon.region = Atlas.region({"miner":0, "belt":1, "smelter":2, "storage":3}.get(kind, 0))
+	return icon
+
+func _material_icon(index: int) -> Texture2D:
+	var icon := AtlasTexture.new()
+	icon.atlas = Atlas.get_texture()
+	icon.region = Atlas.region(index, 1)
+	return icon
 
 func _button(value: String, handler: Callable, destructive: bool = false) -> Button:
 	var b := Button.new()
 	b.text = value
 	b.focus_mode = Control.FOCUS_NONE
-	b.custom_minimum_size.y = 43
+	b.custom_minimum_size.y = 45
+	b.add_theme_font_override("font", Skin.font())
 	b.add_theme_color_override("font_color", TEXT)
-	b.add_theme_color_override("font_hover_color", GOLD)
+	b.add_theme_color_override("font_hover_color", GOLD if not destructive else DANGER)
+	b.add_theme_color_override("font_pressed_color", GOLD)
+	b.add_theme_color_override("font_disabled_color", Color("#71858A"))
 	b.add_theme_font_size_override("font_size", 14)
 	b.add_theme_stylebox_override("normal", _button_style(false, destructive))
 	b.add_theme_stylebox_override("hover", _button_style(true, destructive))
 	b.add_theme_stylebox_override("pressed", _button_style(true, destructive))
+	b.add_theme_stylebox_override("disabled", _button_style(false, destructive))
 	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	b.pressed.connect(handler)
 	b.mouse_entered.connect(_button_hover.bind(b, true))
@@ -159,78 +148,94 @@ func _button(value: String, handler: Callable, destructive: bool = false) -> But
 func _button_hover(b: Button, entered: bool) -> void:
 	if reduced_motion:
 		return
-	var fade := create_tween()
-	fade.tween_property(b, "modulate", Color("#ffffff") if entered else Color("#d9e7e7"), 0.15)
+	var tween := create_tween()
+	tween.tween_property(b, "modulate", Color.WHITE if entered else Color("#DDE7EC"), 0.16)
 
 func _section_title(text_value: String) -> VBoxContainer:
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 4)
-	v.add_child(_make_label(text_value, 12, GOLD))
-	return v
+	var group := VBoxContainer.new()
+	group.add_theme_constant_override("separation", 6)
+	group.add_child(_make_label("▰  " + text_value, 12, GOLD))
+	return group
 
 func _create_interface() -> void:
-	var layer := CanvasLayer.new()
-	layer.name = "FactoryHUD"
-	layer.layer = 8
-	add_child(layer)
+	ui_layer = CanvasLayer.new()
+	ui_layer.name = "IndustrialControlUI"
+	ui_layer.layer = 8
+	add_child(ui_layer)
 	var hud := Control.new()
 	hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layer.add_child(hud)
+	ui_layer.add_child(hud)
 
+	# Top command rail: identity, real production receipts and system state.
 	var top := PanelContainer.new()
-	top.add_theme_stylebox_override("panel", _panel_style())
+	top.name = "BrushedSteelCommandRail"
+	top.add_theme_stylebox_override("panel", _panel_style("header"))
 	hud.add_child(top)
 	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	top.offset_left = 18
-	top.offset_right = -18
-	top.offset_top = 16
-	top.offset_bottom = 110
+	top.offset_left = 12
+	top.offset_right = -12
+	top.offset_top = 10
+	top.offset_bottom = 104
 	var top_row := HBoxContainer.new()
-	top_row.add_theme_constant_override("separation", 21)
+	top_row.add_theme_constant_override("separation", 19)
 	top.add_child(top_row)
-	var title := VBoxContainer.new()
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_constant_override("separation", 2)
-	top_row.add_child(title)
-	title.add_child(_make_label("MIDNIGHT INDUSTRIES", 27, GOLD))
-	title.add_child(_make_label(_tr("AUTOMATION  /  FABRIKSEKTOR 01", "AUTOMATION  /  FACTORY SECTOR 01"), 12, MUTED))
-	var readouts := VBoxContainer.new()
-	readouts.alignment = BoxContainer.ALIGNMENT_CENTER
-	readouts.add_theme_constant_override("separation", 4)
-	top_row.add_child(readouts)
-	production = _make_label("", 18, CYAN)
+	var brand := HBoxContainer.new()
+	brand.add_theme_constant_override("separation", 11)
+	brand.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_row.add_child(brand)
+	var logo := TextureRect.new()
+	logo.texture = _machine_icon("miner")
+	logo.custom_minimum_size = Vector2(55, 55)
+	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	brand.add_child(logo)
+	var identity := VBoxContainer.new()
+	identity.alignment = BoxContainer.ALIGNMENT_CENTER
+	brand.add_child(identity)
+	identity.add_child(_make_label("MIDNIGHT", 20, TEXT))
+	identity.add_child(_make_label("I N D U S T R I E S", 17, GOLD))
+	identity.add_child(_make_label(_tr("INDUSTRIELLE AUTOMATISIERUNG", "INDUSTRIAL AUTOMATION"), 10, MUTED))
+	var resource_column := VBoxContainer.new()
+	resource_column.alignment = BoxContainer.ALIGNMENT_CENTER
+	resource_column.add_theme_constant_override("separation", 4)
+	top_row.add_child(resource_column)
+	production = _make_label("", 19, TEXT)
 	production.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	readouts.add_child(production)
-	var small_row := HBoxContainer.new()
-	small_row.alignment = BoxContainer.ALIGNMENT_END
-	readouts.add_child(small_row)
-	header_status = _make_label("", 11, MUTED)
-	small_row.add_child(header_status)
+	resource_column.add_child(production)
+	var status_row := HBoxContainer.new()
+	status_row.alignment = BoxContainer.ALIGNMENT_END
+	status_row.add_theme_constant_override("separation", 16)
+	resource_column.add_child(status_row)
+	header_status = _make_label("", 11, CYAN)
 	fps_label = _make_label("", 11, MUTED)
-	small_row.add_child(fps_label)
-	var menu_button := _button(_tr("MENÜ  [ESC]", "MENU  [ESC]"), func() -> void: _show_menu(true))
-	menu_button.custom_minimum_size.x = 134
+	status_row.add_child(header_status)
+	status_row.add_child(fps_label)
+	var menu_button := _button(_tr("  MENÜ  [ESC]  ", "  MENU  [ESC]  "), func() -> void: _show_menu(true))
+	menu_button.custom_minimum_size.x = 145
+	menu_button.custom_minimum_size.y = 53
 	top_row.add_child(menu_button)
 
+	# Production catalog deliberately replaces the previous debug-style tool list.
 	var sidebar := PanelContainer.new()
-	sidebar.name = "WorkshopSidebar"
-	sidebar.add_theme_stylebox_override("panel", _panel_style())
+	sidebar.name = "IndustrialBuildCatalog"
+	sidebar.add_theme_stylebox_override("panel", _panel_style("panel"))
 	hud.add_child(sidebar)
 	sidebar.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	sidebar.offset_left = 18
-	sidebar.offset_top = 122
-	sidebar.offset_right = 289
-	sidebar.offset_bottom = 598
+	sidebar.offset_left = 12
+	sidebar.offset_top = 111
+	sidebar.offset_right = 318
+	sidebar.offset_bottom = 678
 	var side_col := VBoxContainer.new()
-	side_col.add_theme_constant_override("separation", 11)
+	side_col.add_theme_constant_override("separation", 7)
 	sidebar.add_child(side_col)
-	side_col.add_child(_make_label(_tr("WERKZEUGKASTEN", "FACTORY TOOLKIT"), 15, GOLD))
+	side_col.add_child(_make_label(_tr("WERKZEUGZENTRALE", "FACTORY WORKSHOP"), 18, TEXT))
+	side_col.add_child(_make_label(_tr("PRODUKTION  /  LOGISTIK", "PRODUCTION  /  LOGISTICS"), 10, CYAN))
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 7)
 	side_col.add_child(tabs)
-	var inspect_btn := _button(_tr("AUSWAHL [V]", "INSPECT [V]"), func() -> void: _set_mode("inspect"))
-	var build_btn := _button(_tr("BAUEN [B]", "BUILD [B]"), func() -> void: _set_mode("build"))
+	var inspect_btn := _button(_tr("V  AUSWAHL", "V  SELECT"), func() -> void: _set_mode("inspect"))
+	var build_btn := _button(_tr("B  BAUEN", "B  BUILD"), func() -> void: _set_mode("build"))
 	inspect_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	build_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inspect_btn.add_theme_font_size_override("font_size", 12)
@@ -238,138 +243,196 @@ func _create_interface() -> void:
 	tabs.add_child(inspect_btn)
 	tabs.add_child(build_btn)
 	mode_buttons = {"inspect": inspect_btn, "build": build_btn}
-	var split := HSeparator.new()
-	side_col.add_child(split)
-	tool_title = _make_label(_tr("MASCHINEN", "MACHINERY"), 12, MUTED)
+	var ruler := HSeparator.new()
+	side_col.add_child(ruler)
+	side_col.add_child(_make_label(_tr("MASCHINENKATALOG", "MACHINE CATALOG"), 11, GOLD))
+	tool_title = _make_label(_tr("VIER ANLAGEN VERFÜGBAR", "FOUR SYSTEMS AVAILABLE"), 10, MUTED)
 	side_col.add_child(tool_title)
-	var tool_names: Array[String] = [
+	var names: Array[String] = [
 		_tr("ABBAUMASCHINE", "MINING DRILL"),
 		_tr("FÖRDERBAND", "CONVEYOR BELT"),
 		_tr("SCHMELZOFEN", "SMELTING FURNACE"),
-		_tr("LAGER", "STORAGE UNIT")
+		_tr("INDUSTRIELAGER", "INDUSTRIAL STORAGE")
 	]
-	for index in range(TOOLS.size()):
-		var key: String = TOOLS[index]
-		var btn := _button("%d   %s" % [index + 1, tool_names[index]],
-			_select_tool.bind(key))
+	for i in range(TOOLS.size()):
+		var key: String = TOOLS[i]
+		if i == 2:
+			side_col.add_child(_make_label(_tr("VERARBEITUNG  /  LAGER", "PROCESSING  /  STORAGE"), 10, GOLD))
+		var btn := _button("%d   %s" % [i + 1, names[i]], _select_tool.bind(key))
+		btn.icon = _machine_icon(key)
+		btn.expand_icon = true
 		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		btn.custom_minimum_size.y = 46
+		btn.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		btn.custom_minimum_size.y = 68
 		side_col.add_child(btn)
 		tool_buttons[key] = btn
-	var hint := _make_label(_tr("R  Drehen  ·  Klick  Platzieren", "R  Rotate  ·  Click  Place"), 12, MUTED)
+	side_col.add_child(HSeparator.new())
+	var hint := _make_label(_tr("R   AUSGANG DREHEN\nRECHTSKLICK   BAU ABBRECHEN",
+		"R   ROTATE OUTPUT\nRIGHT CLICK   CANCEL BUILD"), 11, MUTED)
 	side_col.add_child(hint)
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
+	# Inspector uses actual selection data and an illustrated machine portrait.
 	var inspector := PanelContainer.new()
-	inspector.name = "MachineInspector"
-	inspector.add_theme_stylebox_override("panel", _panel_style())
+	inspector.name = "IndustrialMachineConsole"
+	inspector.add_theme_stylebox_override("panel", _panel_style("inspector"))
 	hud.add_child(inspector)
-	inspector.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	inspector.offset_left = -348
-	inspector.offset_right = -18
-	inspector.offset_top = 122
-	inspector.offset_bottom = 462
-	var insight_col := VBoxContainer.new()
-	insight_col.add_theme_constant_override("separation", 13)
-	inspector.add_child(insight_col)
-	insight_col.add_child(_make_label(_tr("MASCHINENINSPEKTOR", "MACHINE INSPECTOR"), 12, GOLD))
-	inspector_title = _make_label("", 21, TEXT)
-	insight_col.add_child(inspector_title)
-	inspector_subtitle = _make_label("", 12, MUTED)
-	insight_col.add_child(inspector_subtitle)
-	insight_col.add_child(HSeparator.new())
-	inspector_body = _make_label("", 14, TEXT)
+	inspector.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	inspector.offset_left = -399
+	inspector.offset_right = -12
+	inspector.offset_top = 111
+	inspector.offset_bottom = 560
+	var inspect_col := VBoxContainer.new()
+	inspect_col.add_theme_constant_override("separation", 12)
+	inspector.add_child(inspect_col)
+	inspect_col.add_child(_make_label(_tr("ANLAGENÜBERWACHUNG", "MACHINE TELEMETRY"), 12, GOLD))
+	var portrait_row := HBoxContainer.new()
+	portrait_row.add_theme_constant_override("separation", 8)
+	inspect_col.add_child(portrait_row)
+	inspector_portrait = TextureRect.new()
+	inspector_portrait.custom_minimum_size = Vector2(70, 70)
+	inspector_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	inspector_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	portrait_row.add_child(inspector_portrait)
+	var title_col := VBoxContainer.new()
+	title_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	title_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	portrait_row.add_child(title_col)
+	inspector_title = _make_label("", 19, TEXT)
+	title_col.add_child(inspector_title)
+	inspector_subtitle = _make_label("", 12, CYAN)
+	inspector_subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title_col.add_child(inspector_subtitle)
+	inspect_col.add_child(HSeparator.new())
+	inspect_col.add_child(_make_label(_tr("PROZESSDATEN / STATUS", "PROCESS DATA / STATUS"), 11, MUTED))
+	inspector_body = _make_label("", 15, TEXT)
+	inspector_body.custom_minimum_size.y = 119
 	inspector_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	insight_col.add_child(inspector_body)
+	inspect_col.add_child(inspector_body)
 	inspector_progress = ProgressBar.new()
-	inspector_progress.custom_minimum_size.y = 10
+	inspector_progress.custom_minimum_size.y = 13
 	inspector_progress.show_percentage = false
 	inspector_progress.min_value = 0.0
 	inspector_progress.max_value = 100.0
-	var progress_fill := StyleBoxFlat.new()
-	progress_fill.bg_color = CYAN
-	progress_fill.set_corner_radius_all(4)
-	inspector_progress.add_theme_stylebox_override("fill", progress_fill)
-	var progress_bg := StyleBoxFlat.new()
-	progress_bg.bg_color = Color("#23404b")
-	progress_bg.set_corner_radius_all(4)
-	inspector_progress.add_theme_stylebox_override("background", progress_bg)
-	insight_col.add_child(inspector_progress)
+	inspector_progress.add_theme_stylebox_override("fill", Skin.progress_fill())
+	inspector_progress.add_theme_stylebox_override("background", Skin.progress_back())
+	inspect_col.add_child(inspector_progress)
 	inspector_controls = HBoxContainer.new()
-	inspector_controls.add_theme_constant_override("separation", 7)
-	insight_col.add_child(inspector_controls)
-	rotate_button = _button(_tr("DREHEN", "ROTATE"), _rotate_selected)
-	demolish_button = _button(_tr("ABREISSEN", "DEMOLISH"), _demolish_selected, true)
+	inspector_controls.add_theme_constant_override("separation", 8)
+	inspect_col.add_child(inspector_controls)
+	rotate_button = _button(_tr("↻  DREHEN", "↻  ROTATE"), _rotate_selected)
+	demolish_button = _button(_tr("×  ABBREISSEN", "×  DEMOLISH"), _demolish_selected, true)
 	rotate_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	demolish_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inspector_controls.add_child(rotate_button)
 	inspector_controls.add_child(demolish_button)
 
+	var overview := PanelContainer.new()
+	overview.name = "SectorProductionReadout"
+	overview.add_theme_stylebox_override("panel", _panel_style("panel"))
+	hud.add_child(overview)
+	overview.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	overview.offset_left = -399
+	overview.offset_right = -12
+	overview.offset_top = 574
+	overview.offset_bottom = 712
+	var summary_col := VBoxContainer.new()
+	summary_col.add_theme_constant_override("separation", 10)
+	overview.add_child(summary_col)
+	summary_col.add_child(_make_label(_tr("SEKTOR-ÜBERSICHT", "SECTOR OVERVIEW"), 12, GOLD))
+	overview_label = _make_label("", 14, TEXT)
+	summary_col.add_child(overview_label)
+
 	var bottom := PanelContainer.new()
-	bottom.add_theme_stylebox_override("panel", _panel_style())
+	bottom.name = "IndustrialQuickAccessRail"
+	bottom.add_theme_stylebox_override("panel", _panel_style("header"))
 	hud.add_child(bottom)
 	bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom.offset_left = 18
-	bottom.offset_right = -18
-	bottom.offset_top = -92
-	bottom.offset_bottom = -18
+	bottom.offset_left = 12
+	bottom.offset_right = -12
+	bottom.offset_top = -103
+	bottom.offset_bottom = -12
 	var footer_row := HBoxContainer.new()
-	footer_row.add_theme_constant_override("separation", 14)
+	footer_row.add_theme_constant_override("separation", 12)
 	bottom.add_child(footer_row)
 	var left_footer := VBoxContainer.new()
+	left_footer.alignment = BoxContainer.ALIGNMENT_CENTER
 	left_footer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	left_footer.add_theme_constant_override("separation", 5)
+	left_footer.add_theme_constant_override("separation", 4)
 	footer_row.add_child(left_footer)
-	status = _make_label("", 14, CYAN)
+	status = _make_label("", 13, CYAN)
 	left_footer.add_child(status)
-	var controls_help := _make_label(_tr("WASD Kamera     Mausrad Zoom     Mittlere Maustaste Verschieben     Strg+S Speichern",
-		"WASD Camera     Mousewheel Zoom     Middle Drag Pan     Ctrl+S Save"), 12, MUTED)
-	left_footer.add_child(controls_help)
-	pause_button = _button(_tr("PAUSE  [SPACE]", "PAUSE  [SPACE]"), _toggle_pause)
-	pause_button.custom_minimum_size.x = 151
+	left_footer.add_child(_make_label(_tr("WASD BEWEGEN   •   MAUSRAD ZOOM   •   MITTELKLICK ZIEHEN", "WASD PAN   •   WHEEL ZOOM   •   MIDDLE DRAG"), 10, MUTED))
+	var slots := HBoxContainer.new()
+	slots.add_theme_constant_override("separation", 5)
+	footer_row.add_child(slots)
+	for i in range(TOOLS.size()):
+		var name: String = TOOLS[i]
+		var shortcut := _button(str(i + 1), _select_tool.bind(name))
+		shortcut.icon = _machine_icon(name)
+		shortcut.expand_icon = true
+		shortcut.custom_minimum_size = Vector2(66, 63)
+		shortcut.add_theme_font_size_override("font_size", 11)
+		slots.add_child(shortcut)
+		quick_buttons[name] = shortcut
+	pause_button = _button(_tr("Ⅱ  PAUSE", "Ⅱ  PAUSE"), _toggle_pause)
+	pause_button.custom_minimum_size.x = 117
 	footer_row.add_child(pause_button)
 	var save_btn := _button(_tr("SPEICHERN", "SAVE"), _save_now)
+	save_btn.custom_minimum_size.x = 101
 	footer_row.add_child(save_btn)
 
+	# Full-screen modal main menu. No hidden destructive Escape quit.
 	menu_mask = ColorRect.new()
-	menu_mask.name = "PauseAndMainMenu"
+	menu_mask.name = "IndustrialMainMenuBackdrop"
 	menu_mask.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	menu_mask.color = Color(0.025, 0.062, 0.077, 0.93)
+	menu_mask.color = Color("#071118", 0.94)
 	menu_mask.mouse_filter = Control.MOUSE_FILTER_STOP
-	layer.add_child(menu_mask)
+	ui_layer.add_child(menu_mask)
+	var frame := CenterContainer.new()
+	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	menu_mask.add_child(frame)
 	menu_card = PanelContainer.new()
+	menu_card.name = "MidnightIndustriesCommandMenu"
+	menu_card.custom_minimum_size = Vector2(575, 520)
 	menu_card.add_theme_stylebox_override("panel", _panel_style("menu"))
-	menu_mask.add_child(menu_card)
-	menu_card.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	menu_card.offset_left = -274
-	menu_card.offset_right = 274
-	menu_card.offset_top = -254
-	menu_card.offset_bottom = 254
-	var menu_content := VBoxContainer.new()
-	menu_content.add_theme_constant_override("separation", 14)
-	menu_card.add_child(menu_content)
-	var menu_title := _make_label("MIDNIGHT INDUSTRIES", 27, GOLD)
-	menu_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	menu_content.add_child(menu_title)
-	var subtitle := _make_label(_tr("DEINE FABRIK. DEIN TEMPO.", "YOUR FACTORY. YOUR PACE."), 13, MUTED)
+	frame.add_child(menu_card)
+	var menu_col := VBoxContainer.new()
+	menu_col.add_theme_constant_override("separation", 12)
+	menu_card.add_child(menu_col)
+	var menu_logo := HBoxContainer.new()
+	menu_logo.alignment = BoxContainer.ALIGNMENT_CENTER
+	menu_col.add_child(menu_logo)
+	var emblem := TextureRect.new()
+	emblem.texture = _machine_icon("smelter")
+	emblem.custom_minimum_size = Vector2(79, 79)
+	emblem.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	emblem.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	menu_logo.add_child(emblem)
+	var names_col := VBoxContainer.new()
+	names_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	menu_logo.add_child(names_col)
+	names_col.add_child(_make_label("MIDNIGHT", 29, TEXT))
+	names_col.add_child(_make_label("I N D U S T R I E S", 19, GOLD))
+	var subtitle := _make_label(_tr("AUTOMATION  ·  INDUSTRIELLE KONSTRUKTION", "AUTOMATION  ·  INDUSTRIAL ENGINEERING"), 12, MUTED)
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	menu_content.add_child(subtitle)
-	menu_content.add_child(HSeparator.new())
-	resume_button = _button(_tr("FABRIK FORTSETZEN", "RESUME FACTORY"), func() -> void: _show_menu(false))
-	resume_button.custom_minimum_size.y = 51
-	menu_content.add_child(resume_button)
-	var save_menu := _button(_tr("SPIELSTAND SPEICHERN", "SAVE PROGRESS"), _save_now)
-	menu_content.add_child(save_menu)
-	effects_button = _button(_tr("ANIMATIONEN: AN", "ANIMATIONS: ON"), _toggle_effects)
-	menu_content.add_child(effects_button)
-	new_button = _button(_tr("NEUE FABRIK STARTEN", "START NEW FACTORY"), _new_factory, true)
-	menu_content.add_child(new_button)
-	menu_content.add_child(HSeparator.new())
-	var exit_btn := _button(_tr("SPEICHERN & ZUM CASINO", "SAVE & RETURN TO CASINO"), _exit_to_casino)
-	exit_btn.custom_minimum_size.y = 49
-	menu_content.add_child(exit_btn)
-	menu_content.add_child(_make_label(_tr("Escape schließt dieses Menü. Dein Fortschritt wird automatisch gesichert.",
-		"Escape closes this menu. Your progress is saved automatically."), 12, MUTED))
+	menu_col.add_child(subtitle)
+	menu_col.add_child(HSeparator.new())
+	resume_button = _button(_tr("▶   FABRIK FORTSETZEN", "▶   RESUME FACTORY"), func() -> void: _show_menu(false))
+	resume_button.custom_minimum_size.y = 56
+	menu_col.add_child(resume_button)
+	menu_col.add_child(_button(_tr("▣   SPIELSTAND SPEICHERN", "▣   SAVE PROGRESS"), _save_now))
+	effects_button = _button(_tr("✦   ANIMATIONEN: AN", "✦   ANIMATIONS: ON"), _toggle_effects)
+	menu_col.add_child(effects_button)
+	new_button = _button(_tr("＋   NEUE FABRIK STARTEN", "＋   START NEW FACTORY"), _new_factory, true)
+	menu_col.add_child(new_button)
+	menu_col.add_child(HSeparator.new())
+	var exit_btn := _button(_tr("↩   SPEICHERN & ZUM CASINO", "↩   SAVE & RETURN TO CASINO"), _exit_to_casino)
+	exit_btn.custom_minimum_size.y = 54
+	menu_col.add_child(exit_btn)
+	var menu_note := _make_label(_tr("ESC  MENÜ SCHLIESSEN     •     DEINE FABRIK WIRD AUTO-GESPEICHERT",
+		"ESC  CLOSE MENU     •     YOUR FACTORY AUTOSAVES"), 10, MUTED)
+	menu_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	menu_col.add_child(menu_note)
 
 func _notice(message: String) -> void:
 	if status == null:
@@ -393,7 +456,9 @@ func _set_mode(next_mode: String) -> void:
 	for key in tool_buttons:
 		tool_buttons[key].disabled = mode == "inspect"
 		tool_buttons[key].add_theme_stylebox_override("normal", _button_style(key == tool and mode == "build"))
-	tool_title.text = _tr("BAUPALETTE", "BUILD PALETTE") if mode == "build" else _tr("BAUPALETTE · AUSWAHLMODUS", "BUILD PALETTE · INSPECT MODE")
+	for key in quick_buttons:
+		quick_buttons[key].add_theme_stylebox_override("normal", _button_style(key == tool and mode == "build"))
+	tool_title.text = _tr("WERKZEUGE BEREIT", "TOOLS READY") if mode == "build" else _tr("AUSWAHLMODUS AKTIV", "INSPECTION ACTIVE")
 	motion_view.queue_redraw()
 
 func _select_tool(name: String) -> void:
@@ -430,16 +495,22 @@ func _refresh_ui() -> void:
 			production.modulate = Color("#ffffff")
 			pulse.tween_property(production, "modulate", CYAN, 0.35)
 	var unit_count: int = model.buildings.size()
+	var counts: Dictionary = model.counts()
+	if overview_label != null:
+		overview_label.text = "%s  %d     %s  %d\n%s  %d     %s  %d" % [
+			_tr("MINER", "DRILLS"), counts.miner, _tr("BÄNDER", "BELTS"), counts.belt,
+			_tr("ÖFEN", "FURNACES"), counts.smelter, _tr("LAGER", "STORAGE"), counts.storage]
 	var pause_state := _tr("PAUSIERT", "PAUSED") if simulation_paused else _tr("PRODUKTION AKTIV", "PRODUCTION LIVE")
 	header_status.text = "●  %s   ·   %d %s    " % [pause_state, unit_count, _tr("Gebäude", "buildings")]
 	fps_label.text = "FPS  %d" % Engine.get_frames_per_second()
-	pause_button.text = _tr("WEITER  [SPACE]", "RESUME  [SPACE]") if simulation_paused else _tr("PAUSE  [SPACE]", "PAUSE  [SPACE]")
+	pause_button.text = _tr("▶  WEITER", "▶  RESUME") if simulation_paused else _tr("Ⅱ  PAUSE", "Ⅱ  PAUSE")
 	_refresh_inspector()
 
 func _refresh_inspector() -> void:
 	if inspector_title == null:
 		return
 	if not model.buildings.has(inspected):
+		inspector_portrait.visible = false
 		inspector_title.text = _tr("Kein Gebäude gewählt", "No building selected")
 		inspector_subtitle.text = _tr("AUSWAHLMODUS  [V]", "INSPECT MODE  [V]")
 		inspector_body.text = _tr("Klicke einen Miner, ein Förderband, einen Ofen oder ein Lager. Hier erscheinen Zustand, Inventar und Produktionswerte.",
@@ -449,6 +520,8 @@ func _refresh_inspector() -> void:
 		return
 	var machine: Dictionary = model.buildings[inspected]
 	var kind: String = machine.kind
+	inspector_portrait.visible = true
+	inspector_portrait.texture = _machine_icon(kind)
 	inspector_progress.visible = true
 	inspector_controls.visible = true
 	rotate_button.disabled = kind == "storage"
@@ -509,15 +582,15 @@ func _save_now() -> void:
 func _toggle_effects() -> void:
 	reduced_motion = not reduced_motion
 	motion_view.reduced_motion = reduced_motion
-	effects_button.text = _tr("ANIMATIONEN: AUS", "ANIMATIONS: OFF") if reduced_motion else _tr("ANIMATIONEN: AN", "ANIMATIONS: ON")
+	effects_button.text = _tr("✦   ANIMATIONEN: AUS", "✦   ANIMATIONS: OFF") if reduced_motion else _tr("✦   ANIMATIONEN: AN", "✦   ANIMATIONS: ON")
 
 func _new_factory() -> void:
 	if not confirming_new:
 		confirming_new = true
-		new_button.text = _tr("WIRKLICH NEU STARTEN?", "CONFIRM NEW FACTORY?")
+		new_button.text = _tr("!   WIRKLICH NEU STARTEN?", "!   CONFIRM NEW FACTORY?")
 		return
 	confirming_new = false
-	new_button.text = _tr("NEUE FABRIK STARTEN", "START NEW FACTORY")
+	new_button.text = _tr("＋   NEUE FABRIK STARTEN", "＋   START NEW FACTORY")
 	model = Model.new()
 	static_view.model = model
 	motion_view.model = model
@@ -595,9 +668,9 @@ func _bound_camera() -> void:
 
 func _pointer_over_hud(point: Vector2) -> bool:
 	var screen := get_viewport_rect().size
-	return point.y < 116.0 or point.y > screen.y - 100.0 or (
-		point.x < 300.0 and point.y < 615.0) or (
-		point.x > screen.x - 362.0 and point.y < 478.0)
+	return point.y < 108.0 or point.y > screen.y - 109.0 or (
+		point.x < 326.0 and point.y < 685.0) or (
+		point.x > screen.x - 408.0 and point.y < 725.0)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
