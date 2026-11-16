@@ -221,6 +221,18 @@ jobs:
         shell: pwsh
         run: ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/preview-app/MidnightDescent
 
+      - name: Export and smoke-test Godot Midnight Industries
+        shell: pwsh
+        run: ./tools/build_midnight_industries.ps1 -OutputDirectory artifacts/preview-app/MidnightIndustries
+
+      - name: Verify factory game package
+        shell: pwsh
+        run: |
+          foreach ($file in @("MidnightIndustries/MidnightIndustries.exe",
+              "MidnightIndustries/MidnightIndustries.pck")) {
+            if (!(Test-Path "artifacts/preview-app/$file")) { throw "Missing factory game $file" }
+          }
+
       - name: Verify native browser artwork and game asset packaging
         shell: pwsh
         run: ./tools/verify_published_artwork.ps1 -AppDirectory artifacts/preview-app -OutputDirectory artifacts/published-artwork-smoke
