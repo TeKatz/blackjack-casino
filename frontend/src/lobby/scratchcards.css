@@ -113,3 +113,70 @@
 @media(prefers-reduced-motion:reduce){.scratch-actions button,.scratch-cell canvas{transition:none}}
 .casino-lobby-shell[data-reduced="true"] .scratch-actions button,
 .casino-lobby-shell[data-reduced="true"] .scratch-cell canvas{transition:none}
+
+
+/* Presentation polish: fine, measured abrasion and silver dust at the pointer. */
+.scratch-cell.revealed canvas{opacity:0;filter:brightness(1.4)}
+.scratch-silver-layer{position:absolute;inset:0;z-index:8;pointer-events:none;
+  overflow:hidden;border-radius:inherit;contain:paint}
+.scratch-silver-flake{position:absolute;width:4px;height:5px;pointer-events:none;
+  background:linear-gradient(140deg,#fffef4 2%,#f5f7f5 29%,#becbc8 75%,#7b918e);
+  border:1px solid #fafcfac9;border-radius:1px 3px 2px 2px;
+  box-shadow:0 0 5px #e9f7f7c4;will-change:transform,opacity}
+.scratch-cell.winning{z-index:1;border-color:#fff7c7;border-width:2px;
+  box-shadow:0 0 0 2px #dca63d8c,0 0 25px #f4d67b93,inset 0 0 16px #fff5c5b4;
+  animation:scratch-match-cell 1.35s cubic-bezier(.28,.73,.25,1) infinite alternate}
+.scratch-cell.winning::after{content:"";position:absolute;inset:-35% -70%;z-index:2;
+  pointer-events:none;background:linear-gradient(108deg,transparent 32%,#fffceaa8 47%,transparent 61%);
+  transform:translateX(-105%) rotate(7deg);animation:scratch-match-shine 2.3s ease-in-out infinite}
+.scratch-cell.winning .scratch-symbol{color:#92621b;text-shadow:0 0 13px #fff4c9,0 2px #fff9cd;
+  animation:scratch-match-symbol .7s cubic-bezier(.18,.85,.24,1) both}
+.scratch-cell.winning .scratch-symbol-1,.scratch-cell.winning .scratch-symbol-3{color:#aa4931}
+.scratch-ticket.is-winning{border-color:#fff1ad;
+  box-shadow:0 0 0 2px #e4b55d5c,0 0 35px #edcb6380,0 15px 34px #0009,
+    inset 0 0 0 6px #d7ad5225,inset 0 0 0 8px #fbe6b31b}
+.scratch-status.scratch-status-winning{border-color:#ebce7c;
+  background:linear-gradient(100deg,#4a3c19,#102f25 68%);
+  box-shadow:0 0 0 1px #f3d88823,0 0 24px #efc96b35,inset 0 1px #ffe4a33f}
+.scratch-status-winning .scratch-status-symbol{color:#fff1b9;
+  animation:scratch-result-spark 1.4s ease-in-out infinite}
+.scratch-status-winning strong{color:#ffefaf;font-weight:700}
+.scratch-win-banner{position:relative;isolation:isolate;overflow:hidden;display:flex;
+  align-items:center;justify-content:center;gap:16px;margin:13px auto -1px;
+  max-width:565px;min-height:56px;padding:7px 18px;border:1px solid #f5da93;
+  border-radius:10px;background:linear-gradient(105deg,#3c2f15,#a0782c 49%,#473318);
+  color:#fff2c9;box-shadow:0 4px 23px #d7b45452,inset 0 1px #fff5c76e;
+  animation:scratch-banner-enter .45s cubic-bezier(.13,.79,.22,1) both}
+.scratch-win-banner::after{content:"";position:absolute;inset:-60% -35%;z-index:-1;
+  background:linear-gradient(106deg,transparent 35%,#fff7d279 49%,transparent 63%);
+  transform:translateX(-100%);animation:scratch-match-shine 2.8s ease-in-out infinite}
+.scratch-win-banner strong{font:700 clamp(17px,1.7vw,23px) Georgia,serif;letter-spacing:.1em}
+.scratch-win-banner b{font:700 clamp(19px,2vw,29px) Georgia,serif;color:#fffbd3}
+.scratch-win-banner>span{font:22px Georgia,serif;color:#ffeac0}
+.scratch-actions .scratch-sound{border:1px solid #5b7866;background:#0c2a21;
+  color:#b9d3c7;min-height:36px;font-weight:650;font-size:11px}
+.scratch-actions .scratch-sound[aria-pressed="true"]{color:#edd89f;border-color:#9a8651}
+.scratch-odds .scratch-odds-winner{padding-inline:9px;
+  border:1px solid #f2d487;background:linear-gradient(100deg,#57421d,#245437);
+  border-radius:7px;box-shadow:0 0 17px #f3cd7261}
+.scratch-odds .scratch-odds-winner strong,.scratch-odds .scratch-odds-winner span{color:#ffe9a9;font-weight:800}
+@keyframes scratch-match-cell{0%{transform:scale(1);filter:brightness(1)}
+  100%{transform:scale(1.045);filter:brightness(1.2)}}
+@keyframes scratch-match-shine{0%,26%{transform:translateX(-100%) rotate(7deg)}
+  55%,100%{transform:translateX(100%) rotate(7deg)}}
+@keyframes scratch-match-symbol{from{transform:scale(.78);opacity:.45}
+  65%{transform:scale(1.17);opacity:1}to{transform:scale(1);opacity:1}}
+@keyframes scratch-result-spark{50%{filter:brightness(1.55);transform:scale(1.17)}}
+@keyframes scratch-banner-enter{from{opacity:0;transform:translateY(10px) scale(.95)}
+  to{opacity:1;transform:translateY(0) scale(1)}}
+.scratch-page[data-motion="off"] .scratch-cell.winning,
+.scratch-page[data-motion="off"] .scratch-cell.winning::after,
+.scratch-page[data-motion="off"] .scratch-cell.winning .scratch-symbol,
+.scratch-page[data-motion="off"] .scratch-status-winning .scratch-status-symbol,
+.scratch-page[data-motion="off"] .scratch-win-banner,
+.scratch-page[data-motion="off"] .scratch-win-banner::after{animation:none!important}
+@media(prefers-reduced-motion:reduce){
+ .scratch-cell.winning,.scratch-cell.winning::after,.scratch-cell.winning .scratch-symbol,
+ .scratch-status-winning .scratch-status-symbol,.scratch-win-banner,
+ .scratch-win-banner::after{animation:none!important}
+}
