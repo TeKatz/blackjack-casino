@@ -1,5 +1,5 @@
 extends Node2D
-## Keeps the entire map in screen-cullable 16x16 cached CanvasItems.
+## Chunk-sliced industrial terrain/ore/machines. Only edited chunks redraw.
 const Chunk = preload("res://factory_chunk.gd")
 const Model = preload("res://factory_model.gd")
 const TILE := 48.0
@@ -15,13 +15,24 @@ func _ready() -> void:
 			part.position = Vector2(cx * SPAN, cy * SPAN) * TILE
 			part.chunk_origin = Vector2i(cx * SPAN, cy * SPAN)
 			part.model = model
-			part.show_behind_parent = false
 			add_child(part)
 			chunks.append(part)
 
-func _draw() -> void:
-	# Legacy callers call queue_redraw() when a building is changed.
-	# Only the draw command cache is invalidated; simulation is untouched.
+func refresh_cell(cell: Vector2i) -> void:
+	if not model.inside(cell):
+		return
+	var cols: int = ceili(float(Model.WIDTH) / SPAN)
+	var cx: int = cell.x / SPAN
+	var cy: int = cell.y / SPAN
+	var index: int = cy * cols + cx
+	if index >= 0 and index < chunks.size():
+		chunks[index].queue_redraw()
+
+func refresh_all() -> void:
 	for chunk in chunks:
 		chunk.model = model
 		chunk.queue_redraw()
+
+func _draw() -> void:
+	# Existing third-party/rehearsal callers that queue_redraw() remain valid.
+	refresh_all()

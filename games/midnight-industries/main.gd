@@ -42,6 +42,7 @@ var tool_title: Label
 var overview_label: Label
 var inspector_portrait: TextureRect
 var quick_buttons: Dictionary = {}
+var icon_cache: Dictionary = {}
 var ui_layer: CanvasLayer
 var tool_buttons: Dictionary = {}
 var mode_buttons: Dictionary = {}
@@ -110,12 +111,15 @@ func _make_label(value: String, size: int = 14, color: Color = TEXT) -> Label:
 	return label
 
 func _machine_icon(kind: String) -> Texture2D:
+	if icon_cache.has(kind):
+		return icon_cache[kind]
 	var atlas: Texture2D = Atlas.get_texture()
 	if atlas == null:
 		return null
 	var icon := AtlasTexture.new()
 	icon.atlas = atlas
-	icon.region = Atlas.region({"miner":0, "belt":1, "smelter":2, "storage":3}.get(kind, 0))
+	icon.region = Atlas.region(int({"miner":0, "belt":1, "smelter":2, "storage":3}.get(kind, 0)))
+	icon_cache[kind] = icon
 	return icon
 
 func _material_icon(index: int) -> Texture2D:
@@ -558,13 +562,13 @@ func _refresh_inspector() -> void:
 
 func _rotate_selected() -> void:
 	if model.rotate(inspected):
-		static_view.queue_redraw()
+		static_view.refresh_cell(inspected)
 		_refresh_inspector()
 		_notice(_tr("Ausgang gedreht", "Output rotated"))
 
 func _demolish_selected() -> void:
 	if model.erase(inspected):
-		static_view.queue_redraw()
+		static_view.refresh_cell(inspected)
 		_inspect(Vector2i(-1, -1))
 		_notice(_tr("Gebäude demontiert · Inhalt verworfen", "Building demolished · items discarded"))
 
@@ -594,7 +598,7 @@ func _new_factory() -> void:
 	model = Model.new()
 	static_view.model = model
 	motion_view.model = model
-	static_view.queue_redraw()
+	static_view.refresh_all()
 	inspected = Vector2i(-1, -1)
 	motion_view.inspected = inspected
 	camera.position = Vector2(21, 18) * TILE
@@ -721,7 +725,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				if mode == "inspect":
 					_inspect(hovered)
 				elif model.place(hovered, tool, facing):
-					static_view.queue_redraw()
+					static_view.refresh_cell(hovered)
 					_notice(_tr("Gebäude platziert", "Building placed"))
 				else:
 					_notice(_tr("Bauplatz blockiert", "Building site blocked"))
