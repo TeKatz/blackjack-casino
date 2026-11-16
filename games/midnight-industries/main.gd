@@ -13,7 +13,7 @@ const RED := Color("#f19885")
 const TOOL_NAMES := ["miner", "belt", "smelter", "storage"]
 
 @onready var camera: Camera2D = $Camera
-var model: RefCounted
+var model
 var tool := "belt"
 var facing := 0
 var clock := 0.0
@@ -21,6 +21,7 @@ var draw_accumulator := 0.0
 var ui_accumulator := 0.0
 var save_accumulator := 0.0
 var moving_camera := false
+var simulation_paused := false
 var hovering := Vector2i(-1, -1)
 var german := true
 var tool_buttons: Dictionary = {}
@@ -204,7 +205,7 @@ func _refresh_ui() -> void:
 		tool_buttons[id].add_theme_stylebox_override("normal", _button_style(id == tool))
 
 func _physics_process(dt: float) -> void:
-	if not get_tree().paused:
+	if not simulation_paused:
 		model.advance(dt)
 		save_accumulator += dt
 		if save_accumulator >= 30.0:
@@ -277,8 +278,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			facing = (facing + 1) % 4
 			_refresh_ui()
 		elif event.keycode == KEY_SPACE:
-			get_tree().paused = not get_tree().paused
-			_status(_tr("Pausiert", "Paused") if get_tree().paused else _tr("Produktion läuft", "Production running"))
+			simulation_paused = not simulation_paused
+			_status(_tr("Pausiert", "Paused") if simulation_paused else _tr("Produktion läuft", "Production running"))
 		elif event.keycode == KEY_ESCAPE:
 			model.save_game()
 			get_tree().quit()
