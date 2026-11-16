@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import type {PointerEvent as ReactPointerEvent} from 'react';
 import type {ScratchcardGame,ScratchcardSnapshot,ScratchcardTicket} from './scratchcardsBridge';
-import {clearedFraction,SCRATCH_BRUSH_WIDTH,SCRATCH_REVEAL_COVERAGE,strokeOverlapsRect,winningCellIndexes} from './scratchcardsPresentation';
+import {clearedFraction,revealedIndexesForTicket,SCRATCH_BRUSH_WIDTH,SCRATCH_REVEAL_COVERAGE,strokeOverlapsRect,winningCellIndexes} from './scratchcardsPresentation';
 import {playScratchcardWin,unlockScratchcardAudio} from './scratchcardsAudio';
 import './scratchcards.css';
 
@@ -242,8 +242,8 @@ export function ModernScratchcards({data,loaded,embedded,language,pending,notice
   const selected=games[selectedIndex]??games[0];
   const activeTicket=ticket?.gameId===selected.id?ticket:null;
   const activeElsewhere=!!ticket&&!ticket.collected&&ticket.gameId!==selected.id;
-  const revealed=activeTicket?.collected?[...allFields]:
-    activeTicket&&revealSession.ticketId===activeTicket.ticketId?revealSession.indexes:[];
+  const revealed=revealedIndexesForTicket(activeTicket?.ticketId??null,
+    activeTicket?.collected===true,revealSession);
   const allRevealed=!!activeTicket&&revealed.length===9;
   const winning=allRevealed?winningCellIndexes(activeTicket!.symbols,activeTicket!.prize):[];
   const hasWin=winning.length===3;

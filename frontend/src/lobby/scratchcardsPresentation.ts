@@ -41,3 +41,14 @@ export function winningCellIndexes(symbols: readonly number[], prize: number): n
   }
   return [];
 }
+
+// The scratch mask and winning highlight must belong to the displayed receipt.
+// A new purchase can arrive before the React effect resets its local reveal state.
+export function revealedIndexesForTicket(
+  ticketId:string|null, collected:boolean,
+  session:{ticketId:string|null;indexes:number[]},
+): number[] {
+  if(!ticketId)return [];
+  if(collected)return [0,1,2,3,4,5,6,7,8];
+  return session.ticketId===ticketId?session.indexes:[];
+}

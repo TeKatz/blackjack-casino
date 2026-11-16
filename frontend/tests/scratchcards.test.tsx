@@ -2,7 +2,7 @@ import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {ModernScratchcards} from '../src/lobby/ModernScratchcards';
 import {isScratchcardMessage,isScratchcardSnapshot,previewScratchcards} from '../src/lobby/scratchcardsBridge';
-import {clearedFraction,SCRATCH_BRUSH_WIDTH,SCRATCH_REVEAL_COVERAGE,strokeOverlapsRect,winningCellIndexes} from '../src/lobby/scratchcardsPresentation';
+import {clearedFraction,revealedIndexesForTicket,SCRATCH_BRUSH_WIDTH,SCRATCH_REVEAL_COVERAGE,strokeOverlapsRect,winningCellIndexes} from '../src/lobby/scratchcardsPresentation';
 
 const validTicket={
   ticketId:'ddc29a2d-67af-4603-babf-d4f5d203fc50',
@@ -133,16 +133,21 @@ describe('multiple scratchcard presentations',()=>{
     expect(html).toContain('$100.00');
     expect(html).toContain('disabled');
   });
-  it('does not show an old win highlight against a newly selected ticket',()=>{
-    const oldWin={...validTicket,gameId:'lucky-sevens',prize:10,
-      symbols:[4,4,4,1,1,2,2,3,3],collected:true};
+  it('never reuses the previous receipt reveal state for a fresh ticket',()=>{
+    const oldReceipt='d9c28b66-bfa7-47b8-9a80-d0c429deeffe';
+    const newReceipt='ab13702a-2a5b-473c-8e48-bbe58fa068b0';
+    const former={ticketId:oldReceipt,indexes:[0,1,2,3,4,5,6,7,8]};
+    expect(revealedIndexesForTicket(oldReceipt,false,former)).toHaveLength(9);
+    expect(revealedIndexesForTicket(newReceipt,false,former)).toEqual([]);
+    expect(revealedIndexesForTicket(newReceipt,true,former)).toHaveLength(9);
+    const nextTicket={...validTicket,ticketId:newReceipt,gameId:'gold-rush',prize:0};
     const html=renderToStaticMarkup(<ModernScratchcards
-      data={{...previewScratchcards,ticket:oldWin}}
+      data={{...previewScratchcards,ticket:nextTicket}}
       loaded={true} embedded={true} language="en" pending={null} notice={null}
       onBack={()=>{}} onBuy={()=>{}} onCollect={()=>{}}/>);
+    expect(html).toContain('scratch-ticket-gold-rush');
     expect(html).not.toContain('scratch-odds-winner');
     expect(html).not.toContain('scratch-win-banner');
-    expect(html).not.toContain('Previous ticket:');
-    expect(html).toContain('Next ticket: Gold Rush');
+    expect(html).toContain('Previous ticket: Lucky Sevens');
   });
 });
