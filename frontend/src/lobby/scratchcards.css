@@ -279,3 +279,147 @@
  .scratch-ticket-entrance{animation:none!important;will-change:auto}
  .scratch-switch-arrow{transition:none}
 }
+
+/* Individual series art: ingots/nuggets/mining, vault metalwork, cut jewels. */
+.scratch-symbol{display:inline-flex;align-items:center;justify-content:center}
+.scratch-motif-classic{line-height:1}
+.scratch-motif-svg{display:block;width:clamp(36px,3.05vw,53px);height:clamp(36px,3.05vw,53px);
+  overflow:visible;filter:drop-shadow(0 2px 1px #29180736);
+  transition:transform .25s ease,filter .25s ease}
+.scratch-cell:not(:disabled):hover .scratch-motif-svg{transform:scale(1.075)}
+.scratch-ticket-gold-rush .scratch-motif-svg{color:#7a4e15;filter:drop-shadow(0 1px 1px #fff7cd)}
+.scratch-ticket-platinum-vault .scratch-motif-svg{color:#456778;
+  filter:drop-shadow(0 1px 2px #effbff)}
+.scratch-ticket-diamond-royale .scratch-motif-svg{color:#42558d;
+  filter:drop-shadow(0 0 4px #b9eaff) drop-shadow(0 1px 2px #fff)}
+.scratch-symbol-preview{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:6px;margin-top:10px}
+.scratch-symbol-preview-item{display:grid;place-items:center;min-height:43px;padding:4px;
+  border-radius:9px;border:1px solid #ffffff2b;background:linear-gradient(145deg,#ffffff15,#0417104d);
+  color:#d9d5ac}
+.scratch-symbol-preview-item .scratch-motif-svg{width:34px;height:34px}
+.scratch-symbol-preview-item .scratch-motif-classic{font:normal 28px Georgia,serif}
+.scratch-page[data-game="gold-rush"] .scratch-symbol-preview-item{color:#e9b765;border-color:#a57c458c}
+.scratch-page[data-game="platinum-vault"] .scratch-symbol-preview-item{
+  background:linear-gradient(135deg,#daecf03a,#415c6a33);border-color:#9fcbd578;color:#e4f5ff}
+.scratch-page[data-game="diamond-royale"] .scratch-symbol-preview-item{
+  background:linear-gradient(130deg,#dbf8ff40,#324e854a,#b4a9f12a);
+  border-color:#abdbf1b8;color:#e9f9ff;
+  box-shadow:inset 0 1px #ffffff3f,0 0 12px #76c2ef17}
+.scratch-symbol-preview-item .scratch-motif-svg{color:inherit;filter:drop-shadow(0 0 3px #ffffff4d)}
+.scratch-ticket-header,.scratch-ticket-title,.scratch-ticket>p,.scratch-ticket-grid,
+.scratch-ticket-footer{position:relative;z-index:1}
+.scratch-tier-sheen{position:absolute;z-index:1;pointer-events:none;inset:0;opacity:.28;
+  background:linear-gradient(110deg,transparent 30%,#ffffffa1 49%,transparent 64%);
+  transform:translateX(-155%);animation:scratch-tier-gleam 7.5s ease-in-out infinite}
+@keyframes scratch-tier-gleam{
+  0%,46%{transform:translateX(-155%);opacity:0}
+  57%{opacity:.27}70%,100%{transform:translateX(155%);opacity:0}
+}
+.scratch-ticket-crest{position:absolute;z-index:0;right:15px;top:47px;
+  width:83px;height:83px;opacity:.23;pointer-events:none;transform:rotate(-12deg)}
+.scratch-ticket-crest .scratch-motif-svg{width:100%;height:100%;color:inherit;filter:none}
+.scratch-ticket-gold-rush .scratch-tier-sheen{opacity:.16}
+.scratch-ticket-platinum-vault{color:#ecfbff;border-color:#b2e3e9;
+  background:
+    radial-gradient(ellipse at 53% -15%,#b5dce766,transparent 60%),
+    linear-gradient(135deg,#102a34 0%,#466675 35%,#243847 55%,#101f2c 100%);
+  box-shadow:0 12px 28px #000b,0 0 25px #b8e4ec6b,
+    inset 0 0 0 2px #e5f9ff52,inset 0 0 0 6px #0e202aab,
+    inset 0 0 0 8px #c5e5f44f}
+.scratch-ticket-platinum-vault .scratch-ticket-title{
+  color:#ffffff;text-shadow:0 3px 9px #091a25,0 0 20px #c8f6ff99}
+.scratch-ticket-platinum-vault .scratch-ticket-title strong{color:#e5faff;
+  text-shadow:0 2px 2px #173043,0 0 18px #bceffac2}
+.scratch-ticket-platinum-vault .scratch-ticket-edition,
+.scratch-ticket-platinum-vault .scratch-ticket-stamp,
+.scratch-ticket-platinum-vault .scratch-ticket-footer{color:#d2f4fc}
+.scratch-ticket-platinum-vault>p{color:#c3e5e9}
+.scratch-ticket-platinum-vault .scratch-ticket-grid{
+  background:linear-gradient(145deg,#0b1923e8,#162f41e6);
+  border:1px solid #b9e1ee9c;box-shadow:inset 0 4px 16px #0008,0 0 0 1px #e1fcff1c}
+.scratch-ticket-platinum-vault .scratch-cell{border:1px solid #d9eff4;
+  background:radial-gradient(circle at 31% 18%,#fff 0%,#d4ecf2 37%,#99b6c1 100%);
+  box-shadow:inset 0 2px 8px #fff9,inset 0 -3px 9px #34536144}
+.scratch-ticket-platinum-vault .scratch-silver-flake{
+  background:linear-gradient(125deg,#fff,#eafcff 33%,#78bacc 80%);border-color:#ddf8ff}
+.scratch-ticket-platinum-vault .scratch-cell.winning{box-shadow:
+  0 0 0 2px #d7fbffb5,0 0 20px #9deeffc0,inset 0 0 12px #fff}
+.scratch-ticket-platinum-vault .scratch-symbol.winning,.scratch-ticket-platinum-vault .scratch-cell.winning .scratch-motif-svg{
+  color:#1c7e9d;filter:drop-shadow(0 0 5px #afffff)}
+.scratch-page[data-game="platinum-vault"] .scratch-stage{
+  background:linear-gradient(145deg,#183443,#0b1e27 74%);border-color:#7aa1ad}
+.scratch-page[data-game="platinum-vault"] .scratch-hero{
+  background:linear-gradient(118deg,#183a46,#16313d 61%,#12272d);border-color:#8db7c2}
+.scratch-page[data-game="platinum-vault"] .scratch-switch-arrow{
+  color:#e9faff;border-color:#b0dce9;background:linear-gradient(145deg,#3b6978,#102a38);
+  box-shadow:0 0 0 4px #bceeff20,0 7px 19px #0008}
+.scratch-page[data-game="platinum-vault"] .scratch-win-banner{
+  border-color:#b8eff5;background:linear-gradient(105deg,#214e5b,#57818e 50%,#1a414d);
+  box-shadow:0 5px 21px #a5f1ff55}
+.scratch-page[data-game="platinum-vault"] .scratch-win-banner b,
+.scratch-page[data-game="platinum-vault"] .scratch-win-banner strong{color:#ecffff}
+.scratch-page[data-game="platinum-vault"] .scratch-odds-winner{
+  background:linear-gradient(100deg,#325a66,#1e3b4e);border-color:#a6deea}
+
+/* Diamond Royale: dark onyx with prism-blue violet faceting and luminous metal. */
+.scratch-ticket-diamond-royale{color:#f4fbff;border-color:#ceefff;
+  background:
+    radial-gradient(ellipse at 23% -27%,#73d8ff7d,transparent 53%),
+    radial-gradient(ellipse at 96% 78%,#ac7eff65,transparent 49%),
+    linear-gradient(146deg,#122541 0%,#19254f 38%,#0b152f 68%,#1d1936 100%);
+  box-shadow:0 12px 31px #000d,0 0 0 1px #c3eaff9a,0 0 33px #84baff95,
+    0 0 52px #9b79ff4d,inset 0 0 0 2px #d8f9ff78,
+    inset 0 0 0 6px #0a1b37d9,inset 0 0 0 8px #96c6ef7a}
+.scratch-ticket-diamond-royale .scratch-ticket-title span{
+  color:#e0f8ff;letter-spacing:.23em;text-shadow:0 0 15px #aff1ff}
+.scratch-ticket-diamond-royale .scratch-ticket-title strong{
+  color:#fff;text-shadow:0 0 12px #77d9ff,0 0 23px #b1a1ff,0 3px 9px #070c25}
+.scratch-ticket-diamond-royale .scratch-ticket-edition,
+.scratch-ticket-diamond-royale .scratch-ticket-stamp,
+.scratch-ticket-diamond-royale .scratch-ticket-footer{color:#ddf5ff}
+.scratch-ticket-diamond-royale>p{color:#d3d5ff}
+.scratch-ticket-diamond-royale .scratch-ticket-grid{
+  background:linear-gradient(140deg,#0a1432e8,#28254de8);
+  border:1px solid #c4ecffcd;
+  box-shadow:inset 0 4px 16px #000a,0 0 0 1px #d8f8ff29,0 0 22px #94bdf73a}
+.scratch-ticket-diamond-royale .scratch-cell{
+  border:1px solid #cdeafc;background:
+  radial-gradient(circle at 35% 15%,#fff,#c5e9fc 41%,#a9abd4 95%);
+  box-shadow:inset 0 2px 11px #fff9,inset 0 -3px 11px #4c559c3b}
+.scratch-ticket-diamond-royale .scratch-silver-flake{
+  background:linear-gradient(130deg,#fff,#c8fcff 40%,#a7adff);
+  border-color:#fff;box-shadow:0 0 8px #a7e2ff}
+.scratch-ticket-diamond-royale .scratch-tier-sheen{
+  background:linear-gradient(105deg,transparent 30%,#95f4ffb0 43%,#d6b8ff96 49%,transparent 65%);
+  animation-duration:6s}
+.scratch-ticket-diamond-royale .scratch-ticket-crest{width:100px;height:100px;opacity:.28;
+  color:#d9f8ff;right:9px;top:41px}
+.scratch-ticket-diamond-royale .scratch-cell.winning{
+  border-color:#fff;box-shadow:0 0 0 2px #d3f9ff,0 0 20px #98dfff,
+    0 0 35px #c6a9ff99,inset 0 0 18px #fff}
+.scratch-ticket-diamond-royale .scratch-cell.winning .scratch-motif-svg{
+  color:#3866a9;filter:drop-shadow(0 0 4px #d5ffff) drop-shadow(0 0 9px #b6b7ff)}
+.scratch-page[data-game="diamond-royale"] .scratch-stage{
+  background:radial-gradient(ellipse at 43% 2%,#304f8461,transparent 60%),
+    linear-gradient(150deg,#10243c,#0a1428 80%);border-color:#8eb5e5}
+.scratch-page[data-game="diamond-royale"] .scratch-hero{
+  background:radial-gradient(ellipse at 24% -70%,#6688c25a,transparent 72%),
+    linear-gradient(118deg,#132d4c,#161c3b 80%);border-color:#8ab8eb}
+.scratch-page[data-game="diamond-royale"] .scratch-switch-arrow{
+  color:#f0faff;border-color:#c6efff;background:linear-gradient(145deg,#315c9a,#242751);
+  box-shadow:0 0 0 4px #c6dfff30,0 0 18px #a6baff69}
+.scratch-page[data-game="diamond-royale"] .scratch-win-banner{
+  border-color:#dbf7ff;background:linear-gradient(105deg,#273d7e,#608ab5 46%,#47388c);
+  box-shadow:0 0 26px #87dfff8c,0 0 40px #9b8afb57}
+.scratch-page[data-game="diamond-royale"] .scratch-odds-winner{
+  background:linear-gradient(100deg,#465a92,#2e426f);
+  border-color:#d3edff;box-shadow:0 0 17px #b3b6ff8c}
+.scratch-page[data-game="diamond-royale"] .scratch-status-winning{
+  background:linear-gradient(100deg,#2d3c72,#1a3150);
+  border-color:#c3eaff}
+.scratch-page[data-motion="off"] .scratch-tier-sheen{animation:none!important;opacity:0}
+@media(prefers-reduced-motion:reduce){
+ .scratch-tier-sheen{animation:none!important;opacity:0}
+ .scratch-motif-svg{transition:none!important}
+}

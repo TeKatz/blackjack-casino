@@ -64,6 +64,8 @@ export const previewScratchcards:ScratchcardSnapshot={
   games:[
     {id:'lucky-sevens',name:'Lucky Sevens',price:20,prizeMultiplier:1},
     {id:'gold-rush',name:'Gold Rush',price:100,prizeMultiplier:5},
+    {id:'platinum-vault',name:'Platinum Vault',price:500,prizeMultiplier:25},
+    {id:'diamond-royale',name:'Diamond Royale',price:2500,prizeMultiplier:125},
   ],
   bankroll:1000,ticket:null,recoveryRequired:false,
 };

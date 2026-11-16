@@ -1,6 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {ModernScratchcards} from '../src/lobby/ModernScratchcards';
+import {ScratchcardMotif,scratchSymbolLabel} from '../src/lobby/ScratchcardMotifs';
 import {isScratchcardMessage,isScratchcardSnapshot,previewScratchcards} from '../src/lobby/scratchcardsBridge';
 import {clearedFraction,revealedIndexesForTicket,SCRATCH_BRUSH_WIDTH,SCRATCH_REVEAL_COVERAGE,strokeOverlapsRect,winningCellIndexes} from '../src/lobby/scratchcardsPresentation';
 
@@ -149,5 +150,70 @@ describe('multiple scratchcard presentations',()=>{
     expect(html).not.toContain('scratch-odds-winner');
     expect(html).not.toContain('scratch-win-banner');
     expect(html).toContain('Previous ticket: Lucky Sevens');
+  });
+});
+
+describe('premium ticket series and custom art',()=>{
+  it('contains four valid server-priced tier definitions in sequence',()=>{
+    const games=previewScratchcards.games;
+    expect(games.map(game=>game.id)).toEqual([
+      'lucky-sevens','gold-rush','platinum-vault','diamond-royale',
+    ]);
+    expect(games.map(game=>game.price)).toEqual([20,100,500,2500]);
+    expect(games.map(game=>game.prizeMultiplier)).toEqual([1,5,25,125]);
+    expect(isScratchcardSnapshot(previewScratchcards)).toBe(true);
+    expect(isScratchcardSnapshot({...previewScratchcards,ticket:{
+      ...validTicket,gameId:'diamond-royale',prize:125000,
+    }})).toBe(true);
+    expect(isScratchcardSnapshot({...previewScratchcards,ticket:{
+      ...validTicket,gameId:'platinum-vault',prize:25000,
+    }})).toBe(true);
+  });
+  it('has five distinct recognisable vector symbols for each premium tier',()=>{
+    for(const gameId of ['gold-rush','platinum-vault','diamond-royale']){
+      const labels=Array.from({length:5},(_,index)=>scratchSymbolLabel(gameId,index));
+      expect(new Set(labels).size).toBe(5);
+      for(let index=0;index<5;index++){
+        const html=renderToStaticMarkup(<ScratchcardMotif gameId={gameId} symbol={index}/>);
+        expect(html).toContain('<svg');
+        expect(html).toContain('data-motif="'+labels[index]+'"');
+        expect(html).toContain('<path');
+      }
+    }
+    expect(renderToStaticMarkup(<ScratchcardMotif gameId="lucky-sevens" symbol={4}/>))
+      .toContain('>7</span>');
+  });
+  it.each([
+    ['platinum-vault','PLATINUM','VAULT','$500.00','$25,000.00',
+      'Previous ticket: Gold Rush','Next ticket: Diamond Royale'],
+    ['diamond-royale','DIAMOND','ROYALE','$2,500.00','$125,000.00',
+      'Previous ticket: Platinum Vault',null],
+  ])('shows %s premium artwork, payout table and navigational arrows',
+    (id,top,bottom,price,jackpot,previous,next)=>{
+      const ticket={...validTicket,gameId:id,prize:0};
+      const html=renderToStaticMarkup(<ModernScratchcards
+        data={{...previewScratchcards,ticket}} loaded={true} embedded={true}
+        language="en" pending={null} notice={null}
+        onBack={()=>{}} onBuy={()=>{}} onCollect={()=>{}}/>);
+      expect(html).toContain('scratch-ticket-'+id);
+      expect(html).toContain(top);
+      expect(html).toContain(bottom);
+      expect(html).toContain(price);
+      expect(html).toContain(jackpot);
+      expect(html).toContain(previous);
+      if(next)expect(html).toContain(next);
+      else expect(html).not.toContain('Next ticket:');
+      expect(html).toContain('scratch-symbol-preview');
+    });
+  it('keeps the base Lucky Sevens symbols and allows four themes in messages',()=>{
+    expect(scratchSymbolLabel('lucky-sevens',0)).toBe('spade');
+    expect(scratchSymbolLabel('gold-rush',0)).toBe('gold-ingot');
+    expect(scratchSymbolLabel('platinum-vault',0)).toBe('platinum-ingot');
+    expect(scratchSymbolLabel('diamond-royale',0)).toBe('cut-diamond');
+    const first=renderToStaticMarkup(<ModernScratchcards data={previewScratchcards}
+      loaded={true} embedded={true} language="en" pending={null} notice={null}
+      onBack={()=>{}} onBuy={()=>{}} onCollect={()=>{}}/>);
+    expect(first).toContain('Next ticket: Gold Rush');
+    expect(first).toContain('scratch-ticket-lucky-sevens');
   });
 });

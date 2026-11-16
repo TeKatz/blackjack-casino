@@ -3,6 +3,7 @@ import type {PointerEvent as ReactPointerEvent} from 'react';
 import type {ScratchcardGame,ScratchcardSnapshot,ScratchcardTicket} from './scratchcardsBridge';
 import {clearedFraction,revealedIndexesForTicket,SCRATCH_BRUSH_WIDTH,SCRATCH_REVEAL_COVERAGE,strokeOverlapsRect,winningCellIndexes} from './scratchcardsPresentation';
 import {playScratchcardWin,unlockScratchcardAudio} from './scratchcardsAudio';
+import {ScratchcardMotif,scratchSymbolLabel} from './ScratchcardMotifs';
 import './scratchcards.css';
 
 type Props={
@@ -10,14 +11,25 @@ type Props={
   pending:'buy'|'collect'|null; notice:{success:boolean;message:string}|null; motionEnabled?:boolean;
   onBack:()=>void;onBuy:(gameId:string)=>void;onCollect:(id:string)=>void;
 };
-const motifs=['♠','♦','♣','♥','7'];
+const tiers:Record<string,{series:string;stamp:string;rarity:string}>={
+  'lucky-sevens':{series:'01',stamp:'✦ 07 ✦',rarity:'SERIES ONE'},
+  'gold-rush':{series:'02',stamp:'✦ AU ✦',rarity:'GOLD EDITION'},
+  'platinum-vault':{series:'03',stamp:'✧ PT ✧',rarity:'PLATINUM EDITION'},
+  'diamond-royale':{series:'04',stamp:'✧ DR ✧',rarity:'ROYAL DIAMOND EDITION'},
+};
+const foilFinishes:Record<string,readonly string[]>={
+  'lucky-sevens':['#f9e6b9','#a4b4ac','#d7dfd4','#91a9a1','#f0d6a4','#315047'],
+  'gold-rush':['#fff2b5','#b89044','#ebcb7a','#9c7132','#fff0ad','#6d4b18'],
+  'platinum-vault':['#fcffff','#8babb9','#e9f5f4','#94a9bf','#f6fcff','#44606f'],
+  'diamond-royale':['#ffffff','#98bbd9','#dfedf9','#b3b1e0','#e8ffff','#4b5d94'],
+};
 const basePrizes=[{amount:0,odds:'50%'},{amount:10,odds:'20%'},{amount:20,odds:'15%'},
   {amount:50,odds:'10%'},{amount:100,odds:'4%'},{amount:250,odds:'0.9%'},
   {amount:1000,odds:'0.1%'}];
 const money=(n:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
 
-function ScratchCell({index,symbol,revealed,disabled,winning,onReveal,onStart}:{
-  index:number;symbol:number;revealed:boolean;disabled:boolean;winning:boolean;
+function ScratchCell({gameId,index,symbol,revealed,disabled,winning,onReveal,onStart}:{
+  gameId:string;index:number;symbol:number;revealed:boolean;disabled:boolean;winning:boolean;
   onReveal:(index:number)=>void;onStart:()=>void;
 }){
   const canvas=useRef<HTMLCanvasElement>(null);
@@ -27,26 +39,28 @@ function ScratchCell({index,symbol,revealed,disabled,winning,onReveal,onStart}:{
     if(!surface||!context)return;
     const w=surface.width,h=surface.height;
     const metal=context.createLinearGradient(0,0,w,h);
-    metal.addColorStop(0,'#f9e6b9');metal.addColorStop(.28,'#a4b4ac');
-    metal.addColorStop(.55,'#d7dfd4');metal.addColorStop(.76,'#91a9a1');
-    metal.addColorStop(1,'#f0d6a4');
+    const finish=foilFinishes[gameId]??foilFinishes['lucky-sevens'];
+    metal.addColorStop(0,finish[0]);metal.addColorStop(.28,finish[1]);
+    metal.addColorStop(.55,finish[2]);metal.addColorStop(.76,finish[3]);
+    metal.addColorStop(1,finish[4]);
     context.globalCompositeOperation='source-over';
     context.fillStyle=metal;context.fillRect(0,0,w,h);
     context.strokeStyle='#ffffff44';context.lineWidth=3;
     for(let x=-h;x<w+h;x+=22){
       context.beginPath();context.moveTo(x,0);context.lineTo(x+h,h);context.stroke();
     }
-    context.fillStyle='#315047';context.font='bold 18px Segoe UI';
+    context.fillStyle=finish[5];context.font='bold 18px Segoe UI';
     context.textAlign='center';context.textBaseline='middle';
     context.fillText('✦',w/2,h/2);
-  },[index,revealed]);
+  },[gameId,index,revealed]);
   return <button type="button"
     className={'scratch-cell '+(revealed?'revealed':'covered')+(winning?' winning':'')}
     disabled={disabled||revealed}
-    aria-label={revealed?('Field '+(index+1)+': '+motifs[symbol]):('Scratch field '+(index+1))}
+    aria-label={revealed?('Field '+(index+1)+': '+scratchSymbolLabel(gameId,symbol)):('Scratch field '+(index+1))}
     onClick={event=>{if(event.detail===0&&!disabled&&!revealed){onStart();onReveal(index);}}}>
-    <span className={'scratch-symbol scratch-symbol-'+symbol} aria-hidden={!revealed}>
-      {motifs[symbol]}</span>
+    <span className={'scratch-symbol scratch-symbol-'+symbol} aria-hidden="true">
+      <ScratchcardMotif gameId={gameId} symbol={symbol}/>
+    </span>
     <canvas ref={canvas} data-scratch-index={index} width={170} height={105} aria-hidden="true"/>
   </button>;
 }
@@ -186,30 +200,38 @@ function TicketBoard({game,ticket,revealed,onReveal,ready,winning,motionEnabled,
     scanCoverage(true);
     activePointers.current.delete(event.pointerId);
   };
+  const [titleTop,...titleRest]=game.name.toUpperCase().split(' ');
+  const theme=tiers[game.id]??{series:'00',stamp:'✦',rarity:'COLLECTOR SERIES'};
   return <div className={'scratch-ticket scratch-ticket-'+game.id+' '+
     (ticket?.collected?'ticket-collected':'')+
     (winning.length?' is-winning':'')} data-testid="scratch-ticket">
+    {game.id!=='lucky-sevens'&&<div className="scratch-tier-sheen" aria-hidden="true"/>}
+    {(game.id==='platinum-vault'||game.id==='diamond-royale')&&
+      <div className="scratch-ticket-crest" aria-hidden="true">
+        <ScratchcardMotif gameId={game.id} symbol={0}/>
+      </div>}
     <div className="scratch-ticket-header">
-      <span className="scratch-ticket-edition">THE MIDNIGHT CLUB · {game.id==='gold-rush'?'SERIES 02':'SERIES 01'}</span>
-      <span className="scratch-ticket-stamp">{game.id==='gold-rush'?'✦ AU ✦':'✦ 07 ✦'}</span>
+      <span className="scratch-ticket-edition">THE MIDNIGHT CLUB · SERIES {theme.series}</span>
+      <span className="scratch-ticket-stamp">{theme.stamp}</span>
     </div>
     <div className="scratch-ticket-title">
-      <span>{game.id==='gold-rush'?'GOLD':'LUCKY'}</span>
-      <strong>{game.id==='gold-rush'?'RUSH':'SEVENS'}</strong>
+      <span>{titleTop}</span><strong>{titleRest.join(' ')}</strong>
     </div>
-    <p>THREE MATCHING SYMBOLS · ONE PRIZE</p>
+    <p>{game.id==='lucky-sevens'?'THREE MATCHING SYMBOLS · ONE PRIZE':
+      theme.rarity+' · MATCH THREE SYMBOLS'}</p>
     <div className="scratch-ticket-grid" ref={grid} data-testid="scratch-ticket-grid"
       onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp}
       onPointerCancel={pointerCancel} onLostPointerCapture={lostCapture}>
       {allFields.map(index=><ScratchCell key={(ticket?.ticketId||'empty')+'-'+index}
-        index={index} symbol={ticket?.symbols[index]??index%5}
+        gameId={game.id} index={index} symbol={ticket?.symbols[index]??index%5}
         revealed={!!ticket&&(ticket.collected||revealed.includes(index))}
         disabled={!ticket||!ready||ticket.collected} winning={winning.includes(index)}
         onReveal={onReveal} onStart={onStart}/>)}
     </div>
     <div className="scratch-silver-layer" ref={particles} aria-hidden="true"/>
     <div className="scratch-ticket-footer"><span>NO. {ticket?ticket.ticketId.slice(0,8).toUpperCase():'— — — —'}</span>
-      <b>◆</b><span>PLAY MONEY ONLY</span></div>
+      <b>◆</b><span>{game.id==='diamond-royale'?'DIAMOND EXCLUSIVE':
+        game.id==='platinum-vault'?'PLATINUM COLLECTION':'PLAY MONEY ONLY'}</span></div>
   </div>;
 }
 type RevealSession={ticketId:string|null;indexes:number[]};
@@ -306,8 +328,8 @@ export function ModernScratchcards({data,loaded,embedded,language,pending,notice
             {de?'‹ Zur Lobby':'‹ Back to lobby'}</button>
           <span className="shop-eyebrow">THE MIDNIGHT CLUB / INSTANT WIN</span>
           <h1>{de?'Rubbellose':'Scratchcards'}</h1>
-          <p>{de?'Zwei Lose, neun Felder und die Chance auf Spielgeldgewinne.':
-            'Two ticket series, nine concealed fields and a chance to win play money.'}</p>
+          <p>{de?'Vier exklusive Losserien, neun Rubbel-Felder und große Spielgeldgewinne.':
+            'Four exclusive ticket series, nine scratch fields and high-roller play-money prizes.'}</p>
         </div>
         <div className="scratch-hero-wallet">
           <span>{de?'DEIN SPIELGELD':'YOUR BANKROLL'}</span>
@@ -404,6 +426,12 @@ export function ModernScratchcards({data,loaded,embedded,language,pending,notice
               ' of play money and scratch all nine fields with mouse or touch.'}</p>
             <p>{de?'Drei gleiche Symbole an beliebigen Stellen gewinnen den auf dem Los festgelegten Betrag. Bei einem Gewinn kannst du ihn anschließend einlösen.':
               'Three matching symbols anywhere win the predetermined ticket prize. Collect your payout after revealing every field.'}</p>
+            <div className="scratch-symbol-preview" aria-label={de?'Symbole dieser Serie':'Symbols in this series'}>
+              {[0,1,2,3,4].map(symbol=><span className="scratch-symbol-preview-item"
+                key={symbol} title={scratchSymbolLabel(selected.id,symbol)}>
+                <ScratchcardMotif gameId={selected.id} symbol={symbol}/>
+              </span>)}
+            </div>
           </section>
           <section className="scratch-info-card">
             <span className="shop-eyebrow">PAYOUT TABLE · {selected.name.toUpperCase()}</span>
