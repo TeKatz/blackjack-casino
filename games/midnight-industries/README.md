@@ -1,37 +1,39 @@
-# Midnight Industries — interactive factory prototype
+# Midnight Industries — premium-industrial factory prototype
 
-Independent Godot 4.5.1 desktop mode, started from The Midnight Club's left navigation **beneath Empire**, without an extra lobby tile. The factory economy and save data remain separate from casino credits.
+Standalone Godot 4.5.1 Windows mode integrated into The Midnight Club via the **Empire → Midnight Industries** left navigation link, without adding a lobby tile. The mode is offline, keeps its own versioned save file and never changes casino credits.
 
-## Play loop and controls
+## Industrial art direction
 
-The main menu is shown when the game opens. **Escape** opens or closes the menu; it does not exit immediately. The menu supports resuming, saving, starting a new factory (with confirmation), toggling decorative animation and **Save & Return to Casino**. Autosave runs every 30 seconds of active simulation and when quitting.
+The visual identity is **Modern Industrial / Premium Automation**. Previous green-teal debug grids, flat rounded button boxes, primitive geometric machine drawings, placeholder ore icons and old selection rectangles are removed from the rendering path.
 
-| Control | Effect |
+- **World:** a modular charcoal steel platform with offset plates, bolted corners, recessed maintenance hatches, safety-striped panels and warm utility lighting. Each 16×16 tile section is independently cached/cullable.
+- **Machines:** dedicated authored metallic art for drill, conveyor, furnace and storage, with dense silhouettes, warm/cool emission and visible functional outputs. Ore and cargo use matching illustrated assets.
+- **Production animation:** belts show directional cyan pulses, goods interpolate at the display framerate, drills indicate mechanical motion, active furnaces emit warm glow, sparks and smoke, storage displays a subtle status light.
+- **Interaction:** selection uses amber industrial scan brackets; build previews show the final machine graphic and a strong outgoing arrow; invalid placement uses red hazard feedback.
+- **UI:** brushed-metal/graphite nine-slice art, amber functional highlights, cyan information channels, a German/English machine catalog with genuine sprite icons, selected-machine telemetry, resource readouts, quick slots, an animated menu and usable typography (Bahnschrift/Segoe UI with fallbacks).
+
+The image atlas is embedded as Godot script resources in `assets/atlas_part_*.gd` and loaded once by `factory_atlas.gd`. No runtime download is necessary. `factory_skin.gd` generates cached high-contrast nine-slice panel and button texture assets once on load. `factory_chunk.gd` and `factory_static.gd` own static world drawing, while `factory_motion.gd` contains visual feedback only.
+
+Colors: graphite `#111A21`, steel `#273743`, illuminated amber `#F5C04A`, neon cyan `#00D8F4`, furnace orange `#FF982D`, critical red `#FF5B50`. Avoid the old green pixel-fantasy casino panel language.
+
+## Gameplay and controls (unchanged)
+
+| Control | Action |
 | --- | --- |
-| WASD / arrow keys | Move the camera |
-| Middle-mouse drag / mouse wheel | Pan / zoom |
-| V | Inspect/select mode; left click a building to inspect it |
-| B | Construction mode; left click to build |
-| 1–4 | Pick Miner, Conveyor, Smelter, Storage; enter construction mode |
-| R | Rotate the construction preview in build mode; rotate selected machine in inspect mode |
-| Right click | Cancel construction / clear selection (never silently demolish) |
-| Space | Pause/resume factory simulation |
-| Ctrl+S | Save immediately |
-| Escape | Main and pause menu |
+| WASD / arrows | Move camera |
+| Middle-drag / mouse wheel | Pan / zoom |
+| V | Inspect/select mode; click to inspect a building |
+| B | Construction mode; click to place the active machine |
+| 1–4 | Choose mining drill, belt, furnace, warehouse |
+| R | Rotate build preview or selected machine |
+| Right click | Cancel build / clear selection (never destructive) |
+| Space | Pause production |
+| Ctrl+S | Save |
+| Escape | Open/close the main menu |
 
-In inspect mode, a machine's inspector shows its type, coordinates, output direction, resource/inventory, progress and rate. Inspector buttons rotate or deliberately demolish selected buildings. The construction ghost contains the correct output arrow before placement, including for conveyors.
+The main menu supports continue, save, confirmed new factory, motion setting and **Save & Return to Casino**. A built-in starter iron chain mines, transports, smelts and collects ingots. Copper deposits and additional patches allow building other chains.
 
-The start map has iron and copper ore patches, two fixed demonstration lines and starter resource warehouses. A successful iron chain mines, transports, smelts and deposits ingots. Build a copper line to test exploration and routing. The save format remains **version 1**, compatible with original first-prototype progress.
-
-## Rendering and architecture
-
-- `factory_model.gd` runs the authoritative quarter-second tick independent of the graphical framerate. Sorted machine coordinates are cached until construction changes. A transient movement trace supports visual interpolation but is never saved as authoritative state.
-- `main.gd` hosts the native Godot HUD, camera, menu and selection/build input. `factory_art.gd` supplies shared machine art and preview arrows.
-- `factory_static.gd` draws resource and machine art only when the factory topology changes. A single terrain shader replaces reissuing thousands of background rectangles on every frame.
-- `factory_motion.gd` redraws only visible animated machines and goods. Goods interpolate across the complete simulation step to achieve smooth 60 Hz motion at normal display framerates.
-- Existing saves, casino wallet and the lobby's tile artwork are unaffected.
-
-A factory of thousands of buildings is a future goal rather than a proven FPS guarantee. A headless benchmark records simulation time on a large grid, but GPU and live machine performance still require testing on Windows hardware.
+**No changes to `factory_model.gd`** are required by this visual package. The machine recipes, ticks, throughput, inventory values, version-1 save shape, old-save compatibility and independent casino profile are unchanged.
 
 ## Validation
 
@@ -39,7 +41,8 @@ A factory of thousands of buildings is a future goal rather than a proven FPS gu
 godot --headless --path games/midnight-industries --editor --import
 godot --headless --path games/midnight-industries --script res://smoke_test.gd
 godot --headless --path games/midnight-industries --script res://ui_smoke.gd
+godot --headless --path games/midnight-industries --script res://visual_smoke.gd
 godot --headless --path games/midnight-industries --script res://performance_smoke.gd
 ```
 
-CI checks a real headless scene startup, simulation behavior, menu and selection operations, and a 3,000+ building stress sample. Windows packaging independently exports and verifies the shipped Godot executable.
+The CI workflow validates actual atlas decoding, nine-slice art, machine icons, terrain chunks, building/inspection UI and production/model behavior. The Windows export script additionally validates the premium visual package before packaging. A headless factory benchmark is not a GPU framerate guarantee; device-specific 1080p/1440p quality and performance still require visual testing on a Windows client.
