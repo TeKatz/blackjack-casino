@@ -23,6 +23,23 @@ func _run() -> void:
 	if game.static_view.chunks.size() != 48:
 		_fail("Industrial deck must be split into 48 visible chunks")
 		return
+	var deck: Texture2D = preload("res://factory_deck.gd").texture()
+	if deck == null or deck.get_width() != 384 or deck.get_height() != 48:
+		_fail("Pre-baked industrial floor tiles missing")
+		return
+	var side_panel: Control = game.find_child("IndustrialBuildCatalog", true, false)
+	var inspect_panel: Control = game.find_child("IndustrialMachineConsole", true, false)
+	var footer: Control = game.find_child("IndustrialQuickAccessRail", true, false)
+	var header: Control = game.find_child("BrushedSteelCommandRail", true, false)
+	if side_panel == null or inspect_panel == null or footer == null or header == null:
+		_fail("Modern industrial HUD panels missing")
+		return
+	if side_panel.size.x > 280 or inspect_panel.size.x > 345 or footer.size.y > 80 or header.size.y > 85:
+		_fail("HUD panels obstruct too much of the factory")
+		return
+	if inspect_panel.visible:
+		_fail("Inspector should collapse without a selection")
+		return
 	if game.tool_buttons.size() != 4 or game.quick_buttons.size() != 4:
 		_fail("Visual machine catalog or quick access deck is incomplete")
 		return
@@ -36,6 +53,9 @@ func _run() -> void:
 		return
 	game._show_menu(false)
 	game._inspect(Vector2i(16, 17))
+	if not inspect_panel.visible:
+		_fail("Selecting a machine must open its inspector")
+		return
 	if game.inspector_portrait.texture == null:
 		_fail("Selected machine has no high-detail inspector art")
 		return

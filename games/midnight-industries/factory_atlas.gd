@@ -1,7 +1,7 @@
 extends RefCounted
 ## Native 144-pixel industrial artwork, prepared from the original high-detail
 ## source sheet. Godot imports this compressed WebP into a GPU texture and
-## keeps mip levels for zoomed-out views; the former 48px embedded atlas is gone.
+## retains detail at close zoom; the former 48px embedded atlas is gone.
 const CELL := 144
 const TEXTURE = preload("res://assets/industrial_hd_atlas.webp")
 

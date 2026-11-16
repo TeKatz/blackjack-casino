@@ -6,13 +6,13 @@ Standalone Godot 4.5.1 Windows mode integrated into The Midnight Club via the **
 
 The visual identity is **Modern Industrial / Premium Automation**. Previous green-teal debug grids, flat rounded button boxes, primitive geometric machine drawings, placeholder ore icons and old selection rectangles are removed from the rendering path.
 
-- **World:** a modular charcoal steel platform with offset plates, bolted corners, recessed maintenance hatches, safety-striped panels and warm utility lighting. Each 16×16 tile section is independently cached/cullable.
-- **Machines:** dedicated authored metallic art for drill, conveyor, furnace and storage, with dense silhouettes, warm/cool emission and visible functional outputs. Ore and cargo use matching illustrated assets.
+- **World:** a modular charcoal steel platform with offset plates, bolted corners, recessed maintenance hatches, safety-striped panels and warm utility lighting. A pre-baked eight-variant floor atlas replaces thousands of primitive draw calls, with independently cached 16×16-cell chunks.
+- **Machines:** dedicated 144-pixel source-derived metallic art (previously 48-pixel) for drill, conveyor, furnace and storage, with dense silhouettes, warm/cool emission and visible functional outputs. Ore and cargo use matching illustrated assets.
 - **Production animation:** belts show directional cyan pulses, goods interpolate at the display framerate, drills indicate mechanical motion, active furnaces emit warm glow, sparks and smoke, storage displays a subtle status light.
 - **Interaction:** selection uses amber industrial scan brackets; build previews show the final machine graphic and a strong outgoing arrow; invalid placement uses red hazard feedback.
-- **UI:** brushed-metal/graphite nine-slice art, amber functional highlights, cyan information channels, a German/English machine catalog with genuine sprite icons, selected-machine telemetry, resource readouts, quick slots, an animated menu and usable typography (Bahnschrift/Segoe UI with fallbacks).
+- **UI:** distinct embossed graphite and steel panel families, amber active controls, restrained cyan information channels, a compact HUD and a collapsible idle inspector, a German/English machine catalog with genuine sprite icons, selected-machine telemetry, resource readouts, quick slots, an animated menu and usable typography (Bahnschrift/Segoe UI with fallbacks).
 
-The image atlas is embedded as Godot script resources in `assets/atlas_part_*.gd` and loaded once by `factory_atlas.gd`. No runtime download is necessary. `factory_skin.gd` generates cached high-contrast nine-slice panel and button texture assets once on load. `factory_chunk.gd` and `factory_static.gd` own static world drawing, while `factory_motion.gd` contains visual feedback only.
+The actual 144-pixel source artwork is shipped as `assets/industrial_hd_atlas.webp` and imported by Godot; the old embedded 48-pixel scripts are removed. No runtime download is necessary. `factory_skin.gd` generates cached high-contrast nine-slice panel and button texture assets once on load. `factory_chunk.gd` and `factory_static.gd` own static world drawing, while `factory_motion.gd` contains visual feedback only.
 
 Colors: graphite `#111A21`, steel `#273743`, illuminated amber `#F5C04A`, neon cyan `#00D8F4`, furnace orange `#FF982D`, critical red `#FF5B50`. Avoid the old green pixel-fantasy casino panel language.
 
@@ -46,3 +46,10 @@ godot --headless --path games/midnight-industries --script res://performance_smo
 ```
 
 The CI workflow validates actual atlas decoding, nine-slice art, machine icons, terrain chunks, building/inspection UI and production/model behavior. The Windows export script additionally validates the premium visual package before packaging. A headless factory benchmark is not a GPU framerate guarantee; device-specific 1080p/1440p quality and performance still require visual testing on a Windows client.
+
+### Current quality/performance pass
+
+- One atlas texture per floor tile replaces repeated plate, bolt and hazard-strip strokes.
+- The machine inspector collapses when no building is selected; header, catalog and quickbar are substantially narrower.
+- Belts and ore have no artificial round drop shadow, while other machines retain only a small contact shade.
+- Actual Windows FPS remains a device-side acceptance check; headless simulation speed is not a GPU benchmark.
