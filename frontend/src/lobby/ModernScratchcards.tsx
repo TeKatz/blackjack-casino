@@ -231,6 +231,12 @@ export function ModernScratchcards({data,loaded,embedded,language,pending,notice
           <TicketBoard ticket={ticket} revealed={revealed} ready={loaded}
             winning={winning} motionEnabled={motionEnabled} onReveal={reveal}
             onStart={()=>unlockScratchcardAudio(soundEnabled)}/>
+          {hasWin&&<div className="scratch-win-banner" role="status" aria-live="polite">
+            <span aria-hidden="true">✦</span>
+            <strong>{ticket?.prize===1000?'JACKPOT':de?'GEWINN!':'WINNER!'}</strong>
+            <b>{money(ticket?.prize??0)}</b>
+            <span aria-hidden="true">✦</span>
+          </div>}
           <div className={'scratch-status '+(hasWin?'scratch-status-winning':'')} role="status">
             <span className="scratch-status-symbol">{ticket&&allRevealed?(ticket.prize>0?'✦':'◆'):'✧'}</span>
             <div><strong>{ticket&&allRevealed?money(ticket.prize):de?'Verdeckter Gewinn':'Hidden prize'}</strong>
