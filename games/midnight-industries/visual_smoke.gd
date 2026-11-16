@@ -58,11 +58,11 @@ func _run() -> void:
 		return
 	# Belts facing north and south must have separate, correctly lit artwork.
 	var down: Texture2D = BeltArt.texture(1)
-	var up: Texture2D = BeltArt.texture(3)
-	if down == null or up == null or down.get_width() != 144 or up.get_height() != 144:
+	var north_belt: Texture2D = BeltArt.texture(3)
+	if down == null or north_belt == null or down.get_width() != 144 or north_belt.get_height() != 144:
 		_fail("Dedicated high-resolution vertical conveyor assets are missing")
 		return
-	if down.get_image().get_data() == up.get_image().get_data():
+	if down.get_image().get_data() == north_belt.get_image().get_data():
 		_fail("North/south belts use the same directional sprite")
 		return
 	var warehouse_rect: Rect2 = Art.machine_destination("storage", Vector2.ZERO)
