@@ -3,6 +3,7 @@ extends Node2D
 const Model = preload("res://factory_model.gd")
 const StaticView = preload("res://factory_static.gd")
 const TerrainView = preload("res://factory_terrain.gd")
+const GridView = preload("res://factory_grid.gd")
 const MotionView = preload("res://factory_motion.gd")
 const UiSkin = preload("res://factory_skin.gd")
 const Atlas = preload("res://factory_atlas.gd")
@@ -20,6 +21,9 @@ const DIR_TEXT := ["→", "↓", "←", "↑"]
 var model
 var static_view: Node2D
 var motion_view: Node2D
+var grid_view: Node2D
+var show_grid := false
+const VISUAL_SETTINGS_FILE := "user://industries-visual-settings.cfg"
 var mode := "inspect"
 var tool := "belt"
 var facing := 0
@@ -45,7 +49,7 @@ var production: Label
 var fps_label: Label
 var status: Label
 var tool_title: Label
-var overview_label: Label
+var grid_button: Button
 var inspector_portrait: TextureRect
 var quick_buttons: Dictionary = {}
 var icon_cache: Dictionary = {}
@@ -73,6 +77,7 @@ func _ready() -> void:
 	german = not "--language=en" in OS.get_cmdline_user_args()
 	model = Model.new()
 	var previous: bool = model.load_game()
+	_load_visual_settings()
 	camera.position = Vector2(21, 18) * TILE
 	camera.zoom = Vector2.ONE
 	_create_world()
@@ -93,6 +98,11 @@ func _create_world() -> void:
 	terrain.name = "MeadowAndOreBiome"
 	terrain.model = model
 	add_child(terrain)
+	grid_view = GridView.new()
+	grid_view.name = "OptionalPlacementGrid"
+	grid_view.camera = camera
+	add_child(grid_view)
+	grid_view.set_grid_visible(show_grid)
 	static_view = StaticView.new()
 	static_view.name = "IndustrialDeckChunks"
 	static_view.model = model
@@ -352,22 +362,6 @@ func _create_interface() -> void:
 	inspector_controls.add_child(rotate_button)
 	inspector_controls.add_child(demolish_button)
 
-	var overview := PanelContainer.new()
-	overview.name = "SectorProductionReadout"
-	overview.add_theme_stylebox_override("panel", _panel_style("panel"))
-	hud.add_child(overview)
-	overview.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	overview.offset_left = -325
-	overview.offset_right = -11
-	overview.offset_top = 425
-	overview.offset_bottom = 519
-	var summary_col := VBoxContainer.new()
-	summary_col.add_theme_constant_override("separation", 10)
-	overview.add_child(summary_col)
-	summary_col.add_child(_make_label(_tr("SEKTOR-ÜBERSICHT", "SECTOR OVERVIEW"), 12, GOLD))
-	overview_label = _make_label("", 14, TEXT)
-	summary_col.add_child(overview_label)
-
 	var bottom := PanelContainer.new()
 	bottom.name = "IndustrialQuickAccessRail"
 	bottom.add_theme_stylebox_override("panel", _panel_style("header"))
@@ -419,7 +413,7 @@ func _create_interface() -> void:
 	menu_mask.add_child(frame)
 	menu_card = PanelContainer.new()
 	menu_card.name = "MidnightIndustriesCommandMenu"
-	menu_card.custom_minimum_size = Vector2(508, 473)
+	menu_card.custom_minimum_size = Vector2(508, 507)
 	menu_card.add_theme_stylebox_override("panel", _panel_style("menu"))
 	frame.add_child(menu_card)
 	var menu_col := VBoxContainer.new()
@@ -449,6 +443,9 @@ func _create_interface() -> void:
 	menu_col.add_child(_button(_tr("▣   SPIELSTAND SPEICHERN", "▣   SAVE PROGRESS"), _save_now))
 	effects_button = _button(_tr("✦   ANIMATIONEN: AN", "✦   ANIMATIONS: ON"), _toggle_effects)
 	menu_col.add_child(effects_button)
+	grid_button = _button("", _toggle_grid)
+	menu_col.add_child(grid_button)
+	_refresh_grid_button()
 	new_button = _button(_tr("＋   NEUE FABRIK STARTEN", "＋   START NEW FACTORY"), _new_factory, true)
 	menu_col.add_child(new_button)
 	menu_col.add_child(HSeparator.new())
@@ -523,11 +520,6 @@ func _refresh_ui() -> void:
 			production.modulate = Color("#ffffff")
 			pulse.tween_property(production, "modulate", CYAN, 0.35)
 	var unit_count: int = model.buildings.size()
-	var counts: Dictionary = model.counts()
-	if overview_label != null:
-		overview_label.text = "%s  %d     %s  %d\n%s  %d     %s  %d" % [
-			_tr("MINER", "DRILLS"), counts.miner, _tr("BÄNDER", "BELTS"), counts.belt,
-			_tr("ÖFEN", "FURNACES"), counts.smelter, _tr("LAGER", "STORAGE"), counts.storage]
 	var pause_state := _tr("PAUSIERT", "PAUSED") if simulation_paused else _tr("PRODUKTION AKTIV", "PRODUCTION LIVE")
 	header_status.text = "●  %s   ·   %d %s    " % [pause_state, unit_count, _tr("Gebäude", "buildings")]
 	fps_label.text = "FPS  %d" % Engine.get_frames_per_second()
@@ -613,6 +605,29 @@ func _toggle_effects() -> void:
 	reduced_motion = not reduced_motion
 	motion_view.reduced_motion = reduced_motion
 	effects_button.text = _tr("✦   ANIMATIONEN: AUS", "✦   ANIMATIONS: OFF") if reduced_motion else _tr("✦   ANIMATIONEN: AN", "✦   ANIMATIONS: ON")
+
+func _load_visual_settings() -> void:
+	var settings := ConfigFile.new()
+	if settings.load(VISUAL_SETTINGS_FILE) == OK:
+		show_grid = bool(settings.get_value("display", "show_grid", false))
+
+func _save_visual_settings() -> void:
+	var settings := ConfigFile.new()
+	settings.set_value("display", "show_grid", show_grid)
+	settings.save(VISUAL_SETTINGS_FILE)
+
+func _refresh_grid_button() -> void:
+	if grid_button != null:
+		grid_button.text = _tr("▦   RASTER: AN  [G]", "▦   GRID: ON  [G]") if show_grid else _tr(
+			"▦   RASTER: AUS  [G]", "▦   GRID: OFF  [G]")
+
+func _toggle_grid() -> void:
+	show_grid = not show_grid
+	grid_view.set_grid_visible(show_grid)
+	_refresh_grid_button()
+	_save_visual_settings()
+	_notice(_tr("Bauraster eingeblendet", "Placement grid visible") if show_grid else
+		_tr("Bauraster ausgeblendet", "Placement grid hidden"))
 
 func _new_factory() -> void:
 	if not confirming_new:
@@ -701,8 +716,7 @@ func _pointer_over_hud(point: Vector2) -> bool:
 	var screen := get_viewport_rect().size
 	return point.y < 84.0 or point.y > screen.y - 80.0 or (
 		point.x < 282.0 and (point.y < 157.0 or (sidebar_panel.visible and point.y < 583.0))) or (
-		point.x > screen.x - 329.0 and ((inspector_panel.visible and point.y < 418.0) or
-		(point.y > 420.0 and point.y < 525.0)))
+		point.x > screen.x - 329.0 and inspector_panel.visible and point.y < 418.0)
 
 func _cancel_select_drag() -> void:
 	selection_pending = false
@@ -759,6 +773,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_rotate_selected()
 		elif event.keycode == KEY_SPACE:
 			_toggle_pause()
+		elif event.keycode == KEY_G:
+			_toggle_grid()
 		return
 	if menu_open:
 		return
