@@ -4,7 +4,7 @@ import {NavIcon} from './NavIcon';
 import type {NavIconName} from './NavIcon';
 
 const destinations:NavIconName[]=[
- 'news','all','tables','slots','relax','empire','collections','scratchcards','shop','stats',
+ 'news','all','tables','slots','relax','empire','industries','collections','scratchcards','shop','stats',
  'season','challenges','vault','daily','profile','settings','updates',
 ];
 
