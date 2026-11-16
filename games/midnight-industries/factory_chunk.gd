@@ -1,7 +1,7 @@
 extends Node2D
-## Render-cached 16×16 factory chunk. Floor is now a single atlas draw per tile.
+## Draw only ore and placed machines. The meadow/stone biome is a single
+## shader quad beneath these cached 16x16 factory chunks.
 const Art = preload("res://factory_art.gd")
-const Deck = preload("res://factory_deck.gd")
 const Model = preload("res://factory_model.gd")
 const TILE := 48.0
 const SPAN := 16
@@ -14,13 +14,10 @@ func _ready() -> void:
 func _draw() -> void:
 	if model == null:
 		return
-	var floor: Texture2D = Deck.texture()
 	for gy in range(chunk_origin.y, mini(chunk_origin.y + SPAN, Model.HEIGHT)):
 		for gx in range(chunk_origin.x, mini(chunk_origin.x + SPAN, Model.WIDTH)):
 			var cell := Vector2i(gx, gy)
 			var p := Vector2(gx - chunk_origin.x, gy - chunk_origin.y) * TILE
-			draw_texture_rect_region(floor, Rect2(p, Vector2(TILE, TILE)),
-				Deck.region(Deck.variant(cell)))
 			if model.resources.has(cell):
 				Art.ore(self, p, str(model.resources[cell]), gx * 77 + gy * 19)
 			if model.buildings.has(cell):
