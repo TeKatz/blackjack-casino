@@ -387,7 +387,7 @@ func _create_interface() -> void:
 	footer_row.add_child(left_footer)
 	status = _make_label("", 12, CYAN)
 	left_footer.add_child(status)
-	left_footer.add_child(_make_label(_tr("WASD BEWEGEN   •   MAUSRAD ZOOM   •   MITTELKLICK ZIEHEN", "WASD PAN   •   WHEEL ZOOM   •   MIDDLE DRAG"), 9, MUTED))
+	left_footer.add_child(_make_label(_tr("WASD  ·  RAD ZOOM  ·  LINKSKLICK-ZIEHEN (AUSWAHL)", "WASD  ·  WHEEL ZOOM  ·  LEFT-DRAG PAN (SELECT)"), 9, MUTED))
 	var slots := HBoxContainer.new()
 	slots.add_theme_constant_override("separation", 5)
 	footer_row.add_child(slots)
@@ -776,6 +776,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_bound_camera()
 			get_viewport().set_input_as_handled()
 		elif event.button_index == MOUSE_BUTTON_MIDDLE:
+			if event.pressed:
+				_cancel_select_drag()
 			moving_camera = event.pressed
 			get_viewport().set_input_as_handled()
 		elif event.pressed and not _pointer_over_hud(event.position):
