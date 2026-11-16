@@ -14,6 +14,10 @@ var buildings: Dictionary = {}
 var delivered: Dictionary = {"iron_ingot": 0, "copper_ingot": 0, "iron_ore": 0, "copper_ore": 0}
 var steps := 0
 var accumulator := 0.0
+## Renderer-only movement trace, not part of the save or authority model.
+var transit: Dictionary = {}
+var cached_cells: Array = []
+var cells_dirty := true
 
 func _init(with_starter: bool = true) -> void:
 	_seed_resources()
@@ -67,12 +71,15 @@ func place(cell: Vector2i, kind: String, direction: int) -> bool:
 		"buffer": 0, "ore": 0, "output": 0,
 		"recipe": "", "progress": 0.0,
 	}
+	cells_dirty = true
 	return true
 
 func erase(cell: Vector2i) -> bool:
 	if not buildings.has(cell):
 		return false
 	buildings.erase(cell)
+	transit.erase(cell)
+	cells_dirty = true
 	return true
 
 func rotate(cell: Vector2i) -> bool:
@@ -88,9 +95,11 @@ func advance(delta: float) -> void:
 		_step()
 
 func _sorted_cells() -> Array:
-	var cells: Array = buildings.keys()
-	cells.sort_custom(_less_cell)
-	return cells
+	if cells_dirty:
+		cached_cells = buildings.keys()
+		cached_cells.sort_custom(_less_cell)
+		cells_dirty = false
+	return cached_cells
 
 func _less_cell(a: Vector2i, b: Vector2i) -> bool:
 	if a.y == b.y:
@@ -142,6 +151,7 @@ func _receive(machine: Dictionary, item: String) -> void:
 
 func _step() -> void:
 	steps += 1
+	transit.clear()
 	var cells := _sorted_cells()
 	# Production is independent of visual framerate and camera visibility.
 	for cell in cells:
@@ -185,6 +195,8 @@ func _step() -> void:
 		_remove_output(buildings[move["from"]])
 	for move in moves:
 		_receive(buildings[move["to"]], move["item"])
+		if buildings[move["to"]].kind == "belt":
+			transit[move["to"]] = {"from": move["from"], "item": move["item"]}
 
 func snapshot() -> Dictionary:
 	var machines: Array = []
@@ -243,6 +255,8 @@ func restore(data: Variant) -> bool:
 			return false
 		new_totals[key] = amount
 	buildings = loaded
+	cells_dirty = true
+	transit.clear()
 	delivered = new_totals
 	steps = maxi(0, int(data.get("steps", 0)))
 	accumulator = 0.0
