@@ -50,6 +50,7 @@ public static class NativeRouteCatalog
             new("chill-lounge", "Chill Lounge", "chill-lounge", "lounge.html"),
             new("kniffel", "Midnight Dice", "midnight-dice", "midnight-dice.html"),
             new("midnight-descent", "Midnight Descent", null, null, HasNativeProcess: true),
+            new("midnight-industries", "Midnight Industries", null, null, HasNativeProcess: true),
         });
 
     public static IReadOnlyList<string> LoungeGameIds { get; } = Array.AsReadOnly(new[]
