@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "topics": [
+    {
+      "id": "news",
+      "keywords": [
+        "news",
+        "changelog",
+        "release notes",
+        "release-notes",
+        "patchnotes"
+      ],
+      "category": "feature",
+      "accent": "#e7c486",
+      "title": "What's new at the Midnight Club",
+      "titleDe": "Neuigkeiten im Midnight Club",
+      "description": "The casino now welcomes you with a short, easy-to-read overview of the latest changes when you launch it.",
+      "descriptionDe": "Beim Start begrüßt dich das Casino wieder mit einer kurzen, verständlichen Übersicht der aktuellen Änderungen."
+    },
+    {
+      "id": "scratchcards",
+      "keywords": [
+        "scratchcard",
+        "scratchcards",
+        "rubbellos",
+        "gold rush",
+        "platinum vault",
+        "diamond royale"
+      ],
+      "category": "feature",
+      "accent": "#e0be6a",
+      "title": "Scratchcards: four ticket editions",
+      "titleDe": "Rubbellose: vier Editionen",
+      "description": "Try Lucky Sevens, Gold Rush, Platinum Vault or Diamond Royale, each with its own design and matching symbols.",
+      "descriptionDe": "Entdecke Lucky Sevens, Gold Rush, Platinum Vault und Diamond Royale – jede Edition mit eigenem Design und passenden Symbolen."
+    },
+    {
+      "id": "sunset-ruby",
+      "keywords": [
+        "sunset ruby",
+        "indian ruby",
+        "elephant bonus"
+      ],
+      "category": "feature",
+      "accent": "#e9a36e",
+      "title": "Sunset Ruby",
+      "titleDe": "Sunset Ruby",
+      "description": "The slot machine and its elephant bonus have received visual and gameplay polish.",
+      "descriptionDe": "Der Slot und sein Elefantenbonus wurden bei Darstellung und Spielgefühl weiter verbessert."
+    },
+    {
+      "id": "casino-empire",
+      "keywords": [
+        "casino empire"
+      ],
+      "category": "improvement",
+      "accent": "#cfb58a",
+      "title": "Casino Empire",
+      "titleDe": "Casino Empire",
+      "description": "Updates to your casino-building experience, including its interface and progression.",
+      "descriptionDe": "Verbesserungen beim Aufbau deines Casinos, seiner Oberfläche und des Fortschritts."
+    },
+    {
+      "id": "midnight-manor",
+      "keywords": [
+        "midnight manor",
+        "manor bonus"
+      ],
+      "category": "improvement",
+      "accent": "#bea4dd",
+      "title": "Midnight Manor",
+      "titleDe": "Midnight Manor",
+      "description": "Improvements to the haunted slot and its exploration bonus.",
+      "descriptionDe": "Verbesserungen am Spuk-Slot und seinem Erkundungsbonus."
+    },
+    {
+      "id": "midnight-descent",
+      "keywords": [
+        "midnight descent"
+      ],
+      "category": "improvement",
+      "accent": "#afc5d5",
+      "title": "Midnight Descent",
+      "titleDe": "Midnight Descent",
+      "description": "New refinements to the roguelite adventure beneath the Midnight Club.",
+      "descriptionDe": "Weitere Verbesserungen am Roguelite-Abenteuer unter dem Midnight Club."
+    },
+    {
+      "id": "lobby",
+      "keywords": [
+        "casino lobby",
+        "lobby",
+        "sidebar navigation"
+      ],
+      "category": "improvement",
+      "accent": "#9cc9b0",
+      "title": "A more comfortable casino lobby",
+      "titleDe": "Mehr Komfort in der Casino-Lobby",
+      "description": "The casino overview, navigation or presentation has been improved.",
+      "descriptionDe": "Die Casino-Übersicht, Navigation oder Darstellung wurde überarbeitet."
+    },
+    {
+      "id": "collections",
+      "keywords": [
+        "collector album",
+        "collector's album",
+        "collections",
+        "collection album"
+      ],
+      "category": "improvement",
+      "accent": "#d9b98a",
+      "title": "Your collections",
+      "titleDe": "Deine Sammlung",
+      "description": "Updates to the album, collectible cards or their presentation.",
+      "descriptionDe": "Neuer Feinschliff für das Album, Sammelkarten oder ihre Darstellung."
+    },
+    {
+      "id": "audio",
+      "keywords": [
+        "soundtrack",
+        "music",
+        "sound cue",
+        "audio",
+        "sound effects"
+      ],
+      "category": "improvement",
+      "accent": "#aabedb",
+      "title": "Music and sound",
+      "titleDe": "Musik und Klänge",
+      "description": "Improvements to the casino's soundtrack or sound effects.",
+      "descriptionDe": "Verbesserungen an der Musik oder den Soundeffekten des Casinos."
+    },
+    {
+      "id": "arcade",
+      "keywords": [
+        "arcade",
+        "circuit rush"
+      ],
+      "category": "improvement",
+      "accent": "#b8cfe2",
+      "title": "Arcade games",
+      "titleDe": "Arcade-Spiele",
+      "description": "Updates to the arcade selection or its games.",
+      "descriptionDe": "Verbesserungen an den Arcade-Spielen oder ihrer Auswahl."
+    },
+    {
+      "id": "gameplay",
+      "keywords": [
+        "blackjack",
+        "roulette",
+        "midnight dice",
+        "midnight reels",
+        "neon vault",
+        "nine lives",
+        "midnight merge"
+      ],
+      "category": "improvement",
+      "accent": "#b9cda9",
+      "title": "More game polish",
+      "titleDe": "Mehr Feinschliff für deine Spiele",
+      "description": "Some casino games have received new refinements.",
+      "descriptionDe": "Einige Casino-Spiele wurden weiter überarbeitet."
+    }
+  ],
+  "fallback": {
+    "category": "improvement",
+    "accent": "#b1c8bb",
+    "title": "Small improvements",
+    "titleDe": "Kleine Verbesserungen",
+    "description": "This update includes refinements that are not listed separately here.",
+    "descriptionDe": "Dieses Update enthält weitere Anpassungen, die hier nicht einzeln aufgeführt sind."
+  }
+}
