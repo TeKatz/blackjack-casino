@@ -56,7 +56,8 @@ func can_place(cell: Vector2i, kind: String) -> bool:
 		return false
 	if kind == "miner":
 		return resources.has(cell)
-	return kind in ["belt", "smelter", "storage"] and not resources.has(cell)
+	# Logistics can be built across a deposit; only miners extract it.
+	return kind in ["belt", "smelter", "storage"]
 
 func place(cell: Vector2i, kind: String, direction: int) -> bool:
 	if not can_place(cell, kind):
@@ -213,7 +214,7 @@ func restore(data: Variant) -> bool:
 			return false
 		if kind == "miner" and not resources.has(cell):
 			return false
-		if kind != "miner" and (not kind in ["belt", "smelter", "storage"] or resources.has(cell)):
+		if kind != "miner" and not kind in ["belt", "smelter", "storage"]:
 			return false
 		var direction := int(raw.get("direction", -1))
 		if direction < 0 or direction >= 4:
