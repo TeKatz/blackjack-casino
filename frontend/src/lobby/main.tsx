@@ -40,7 +40,7 @@ import { embeddedLobby, fallbackLobby, lobbyCommand, onLobbyEmpireCredits, onLob
 import type { LobbyMode, LobbySnapshot } from './lobbyBridge';
 import './lobby.css';
 
-type Filter = 'all'|'tables'|'slots'|'ruby'|'relax'|'empire'|'collections'|'scratchcards'|'shop'|'stats'|'season'|'challenges'|'vault'|'daily'|'profile';
+type Filter = 'all'|'tables'|'slots'|'ruby'|'relax'|'empire'|'industries'|'collections'|'scratchcards'|'shop'|'stats'|'season'|'challenges'|'vault'|'daily'|'profile';
 const artOrder = ['blackjack','roulette','kniffel','chill-lounge','casino-empire','midnight-reels',
   'neon-vault','nine-lives','midnight-manor','midnight-merge',ARCADE_MODE_ID,'midnight-descent'];
 const categoryById: Record<string, string> = {
@@ -54,7 +54,9 @@ const navigation: {id: Filter; en: string; de: string}[] = [
   {id:'all',en:'Lobby',de:'Lobby'}, {id:'tables',en:'Table Games',de:'Tischspiele'},
   {id:'slots',en:'Slots',de:'Slots'}, {id:'ruby',en:'Sunset Ruby',de:'Sunset Ruby'},
   {id:'relax',en:'Relaxed',de:'Entspannt'},
-  {id:'empire',en:'Empire',de:'Empire'}, {id:'collections',en:'Collections',de:'Sammlungen'},
+  {id:'empire',en:'Empire',de:'Empire'},
+  {id:'industries',en:'Midnight Industries',de:'Midnight Industries'},
+  {id:'collections',en:'Collections',de:'Sammlungen'},
   {id:'scratchcards',en:'Scratchcards',de:'Rubbellose'},
   {id:'shop',en:'Shop',de:'Shop'}, {id:'stats',en:'Statistics',de:'Statistik'},
   // Remain accessible when the compact viewport hides the topbar and overview widgets.
@@ -456,6 +458,7 @@ function LobbyApp() {
     if(id==='scratchcards'){openScratchcards();return;}
     if(scratchcardsVisible)closeScratchcards();
     if(id==='ruby') {openMode('indian-ruby');return;}
+    if(id==='industries') {openMode('midnight-industries');return;}
     if(id==='collections') {openProgression("Collector's Album");return;}
     if(id==='shop') {openShop();return;}
     if(shopVisible)closeShop();
@@ -508,7 +511,7 @@ function LobbyApp() {
   // Keep the same keyed tile elements across category changes; their PixiJS
   // sprites and first-frame readiness must not reset when returning to Lobby.
   const modes = stableLobbyTiles(
-    [...data.modes.filter(x=>x.id!==ARCADE_MODE_ID&&x.id!=='indian-ruby'),arcadeLobbyMode(data.language)],
+    [...data.modes.filter(x=>x.id!==ARCADE_MODE_ID&&x.id!=='indian-ruby'&&x.id!=='midnight-industries'),arcadeLobbyMode(data.language)],
     filter,artOrder);
   const hasVisibleModes=modes.some(({visible})=>visible);
   if(embeddedLobby&&!nativeSnapshotReceived){
@@ -568,7 +571,7 @@ function LobbyApp() {
         <button className="lobby-nav-item" onClick={()=>setNewsOpen(true)}><NavIcon name="news"/><span>News</span></button>
         {navigation.map(n=><button type="button" key={n.id}
           aria-current={(scratchcardsVisible?n.id==='scratchcards':shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='history'?'profile':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'page':undefined}
-          className={'lobby-nav-item '+((scratchcardsVisible?n.id==='scratchcards':shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')+(n.id==='ruby'?' ruby-submenu':'')+(n.id==='collections'?' nav-section-start':'')}
+          className={'lobby-nav-item '+((scratchcardsVisible?n.id==='scratchcards':shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')+(n.id==='ruby'?' ruby-submenu':'')+(n.id==='industries'?' industries-submenu':'')+(n.id==='collections'?' nav-section-start':'')}
           onClick={()=>chooseNav(n.id)}>
           <NavIcon name={n.id==='ruby'?'slots':n.id}/>
           <span className="lobby-nav-label">{de?n.de:n.en}</span>
