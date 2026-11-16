@@ -96,6 +96,37 @@ def german_editorial(category: str, title: str) -> tuple[str, str]:
         "Improvements": ("Allgemeine Verbesserung", "Bestehende Funktionen oder Ansichten wurden überarbeitet."),
     }.get(category, ("Wartung", "Technische Wartungsarbeiten wurden durchgeführt."))
 
+def player_news(subjects: list[str]) -> list[dict[str, str]]:
+    """Editorially authored summaries. Never surface raw commit titles in the game.
+
+    The source commit range determines which subjects are in this release;
+    the shipped copy is deliberately curated and translated in both languages.
+    """
+    catalog = json.loads(Path(__file__).with_name("player_news_catalog.json").read_text(encoding="utf-8"))
+    if catalog.get("schemaVersion") != 1:
+        raise ValueError("Unsupported player news catalog.")
+    subject_text = " ".join(subjects).casefold()
+    result: list[dict[str, str]] = []
+    for topic in catalog["topics"]:
+        if any(keyword.casefold() in subject_text for keyword in topic["keywords"]):
+            result.append({field: topic[field] for field in
+                           ("category", "accent", "title", "titleDe", "description", "descriptionDe")})
+        if len(result) == 6:
+            break
+    if not result:
+        fallback = catalog["fallback"]
+        result = [{field: fallback[field] for field in
+                   ("category", "accent", "title", "titleDe", "description", "descriptionDe")}]
+    for entry in result:
+        if (entry["category"] not in ("feature", "improvement", "fix")
+            or not re.fullmatch(r"#[0-9a-fA-F]{6}", entry["accent"])
+            or any(not entry[key].strip() or len(entry[key]) > limit for key, limit in (
+                ("title", 90), ("titleDe", 90),
+                ("description", 280), ("descriptionDe", 280)))):
+            raise ValueError("Invalid editorial player news entry.")
+    return result
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", required=True)
@@ -104,9 +135,10 @@ def main() -> None:
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--output-markdown", type=Path, required=True)
     args = parser.parse_args()
+    release_messages = messages(args.previous_ref, args.channel)
     changes = []
     seen: set[str] = set()
-    for subject, description in messages(args.previous_ref, args.channel):
+    for subject, description in release_messages:
         category, title = classify(subject)
         if category == "Maintenance" or title.casefold() in seen:
             continue
@@ -125,7 +157,8 @@ def main() -> None:
 
     document = {"schemaVersion": 1, "version": args.version, "channel": args.channel,
                 "publishedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
-                "sourceCommit": git("rev-parse", "HEAD"), "changes": changes}
+                "sourceCommit": git("rev-parse", "HEAD"), "changes": changes,
+                "playerNews": player_news([subject for subject, _ in release_messages])}
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     args.output_markdown.parent.mkdir(parents=True, exist_ok=True)
     args.output_json.write_text(json.dumps(document, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
