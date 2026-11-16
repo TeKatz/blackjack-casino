@@ -309,26 +309,33 @@ internal sealed class NativeCasinoRuntime : IDisposable
     internal object ScratchcardSnapshot() => new
     {
         Price = ScratchcardRules.TicketPrice,
+        Games = ScratchcardRules.Games,
         Bankroll,
         Ticket = scratchcardJournal.Latest,
         RecoveryRequired = scratchcardRequiresRestart || rouletteRequiresRestart || ManorRequiresRestart,
     };
 
-    internal (bool Success, string Message) BuyScratchcard(Guid id)
+    internal (bool Success, string Message) BuyScratchcard(
+        Guid id, string gameId = ScratchcardRules.LuckySevensId)
     {
         if (disposed || scratchcardRequiresRestart || rouletteRequiresRestart || ManorRequiresRestart)
             return (false, "Casino recovery is required before buying another ticket.");
         if (id == Guid.Empty) return (false, "Invalid ticket ID.");
-        if (scratchcardJournal.Contains(id)) return (true, "Existing ticket restored.");
+        ScratchcardGame? game = ScratchcardRules.FindGame(gameId);
+        if (game is null) return (false, "Unknown scratchcard game.");
+        if (scratchcardJournal.Find(id) is { } previous)
+            return previous.GameId == game.Id
+                ? (true, "Existing ticket restored.")
+                : (false, "Ticket ID belongs to another scratchcard game.");
         if (HandInProgress) return (false, "Finish the current Blackjack hand first.");
         if (scratchcardJournal.Latest is { Collected: false })
             return (false, "Collect your previous ticket before buying another.");
-        if (Bankroll < ScratchcardRules.TicketPrice)
-            return (false, "Insufficient bankroll for a scratchcard.");
+        if (Bankroll < game.Price)
+            return (false, "Insufficient bankroll for this scratchcard.");
         try
         {
             ScratchcardTicket ticket = scratchcardJournal.Purchase(
-                id, Preferences with { Bankroll = Bankroll });
+                id, Preferences with { Bankroll = Bankroll }, gameId: game.Id);
             table.Session.ResetBankroll(ticket.BankrollAfter);
             table.NormalizeBet();
             Preferences = Preferences with { Bankroll = ticket.BankrollAfter };

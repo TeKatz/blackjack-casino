@@ -3,41 +3,75 @@ using System.Security.Cryptography;
 namespace BlackjackCasino.Core.Scratchcards;
 
 /// <summary>
-/// A play-money scratch ticket. Outcomes are fixed before any visual scratching.
-/// Three identical symbols anywhere among the nine fields win the fixed prize.
+/// Immutable, pre-drawn play-money ticket. Older receipts without GameId
+/// deserialize as Lucky Sevens, keeping the original on-disk schema readable.
 /// </summary>
 public sealed record ScratchcardTicket(
-    Guid TicketId, int[] Symbols, decimal Prize, bool Collected, decimal BankrollAfter);
+    Guid TicketId, int[] Symbols, decimal Prize, bool Collected, decimal BankrollAfter)
+{
+    public string GameId { get; init; } = ScratchcardRules.LuckySevensId;
+}
+
+/// <summary>A single source of truth for ticket prices and prize multipliers.</summary>
+public sealed record ScratchcardGame(string Id, string Name, decimal Price, int PrizeMultiplier);
 
 public static class ScratchcardRules
 {
-    public const decimal TicketPrice = 20m;
+    public const string LuckySevensId = "lucky-sevens";
+    public const string GoldRushId = "gold-rush";
+    public const decimal TicketPrice = 20m; // Backward-compatible original ticket price.
     public const int SymbolCount = 5;
     public const int FieldCount = 9;
     public const int DrawRange = 1_000;
 
-    // 50% blank, 20% $10, 15% $20, 10% $50, 4% $100,
-    // 0.9% $250, 0.1% $1,000. Expected return: $17.25 / $20 (86.25%).
-    public static decimal PrizeForRoll(int roll) => roll switch
-    {
-        < 0 or >= DrawRange => throw new ArgumentOutOfRangeException(nameof(roll)),
-        < 500 => 0m,
-        < 700 => 10m,
-        < 850 => 20m,
-        < 950 => 50m,
-        < 990 => 100m,
-        < 999 => 250m,
-        _ => 1_000m,
-    };
+    public static IReadOnlyList<ScratchcardGame> Games { get; } =
+        Array.AsReadOnly(new[]
+        {
+            new ScratchcardGame(LuckySevensId, "Lucky Sevens", TicketPrice, 1),
+            new ScratchcardGame(GoldRushId, "Gold Rush", 100m, 5),
+        });
 
-    public static bool IsPrize(decimal value) =>
-        value is 0m or 10m or 20m or 50m or 100m or 250m or 1_000m;
+    public static ScratchcardGame? FindGame(string? id) =>
+        Games.FirstOrDefault(game => string.Equals(game.Id, id, StringComparison.Ordinal));
+
+    public static ScratchcardGame GetGame(string? id) =>
+        FindGame(id) ?? throw new ArgumentException("Unknown scratchcard game.", nameof(id));
+
+    // Shared payout probability bands; Gold Rush scales each payout by five.
+    // Both tickets return 86.25% in the long run, with game-specific stakes.
+    public static decimal PrizeForRoll(int roll, string gameId = LuckySevensId)
+    {
+        if (roll is < 0 or >= DrawRange)
+            throw new ArgumentOutOfRangeException(nameof(roll));
+        int multiplier = GetGame(gameId).PrizeMultiplier;
+        decimal basePrize = roll switch
+        {
+            < 500 => 0m,
+            < 700 => 10m,
+            < 850 => 20m,
+            < 950 => 50m,
+            < 990 => 100m,
+            < 999 => 250m,
+            _ => 1_000m,
+        };
+        return basePrize * multiplier;
+    }
+
+    public static bool IsPrize(decimal value, string gameId = LuckySevensId) =>
+        FindGame(gameId) is { } game &&
+        (value == 0m || value == 10m * game.PrizeMultiplier ||
+         value == 20m * game.PrizeMultiplier ||
+         value == 50m * game.PrizeMultiplier ||
+         value == 100m * game.PrizeMultiplier ||
+         value == 250m * game.PrizeMultiplier ||
+         value == 1_000m * game.PrizeMultiplier);
 
     public static ScratchcardTicket Draw(Guid id, decimal bankrollAfter,
-        Func<int, int>? random = null)
+        Func<int, int>? random = null, string gameId = LuckySevensId)
     {
         if (id == Guid.Empty) throw new ArgumentException("Ticket ID is required.", nameof(id));
         if (bankrollAfter < 0m) throw new ArgumentOutOfRangeException(nameof(bankrollAfter));
+        ScratchcardGame game = GetGame(gameId);
         random ??= RandomNumberGenerator.GetInt32;
         int Next(int ceiling)
         {
@@ -47,7 +81,7 @@ public static class ScratchcardRules
             return result;
         }
 
-        decimal prize = PrizeForRoll(Next(DrawRange));
+        decimal prize = PrizeForRoll(Next(DrawRange), game.Id);
         var symbols = new List<int>(FieldCount);
         if (prize == 0m)
         {
@@ -80,13 +114,17 @@ public static class ScratchcardRules
             int j = Next(i + 1);
             (symbols[i], symbols[j]) = (symbols[j], symbols[i]);
         }
-        return new ScratchcardTicket(id, symbols.ToArray(), prize, false, bankrollAfter);
+        return new ScratchcardTicket(id, symbols.ToArray(), prize, false, bankrollAfter)
+        {
+            GameId = game.Id,
+        };
     }
 
     public static bool Valid(ScratchcardTicket ticket)
     {
         if (ticket.TicketId == Guid.Empty || ticket.BankrollAfter < 0m ||
-            !IsPrize(ticket.Prize) || ticket.Symbols is not { Length: FieldCount } ||
+            !IsPrize(ticket.Prize, ticket.GameId) ||
+            ticket.Symbols is not { Length: FieldCount } ||
             ticket.Symbols.Any(s => s < 0 || s >= SymbolCount))
             return false;
         int matches = Enumerable.Range(0, SymbolCount)

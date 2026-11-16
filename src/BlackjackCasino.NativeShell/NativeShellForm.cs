@@ -1340,7 +1340,11 @@ internal sealed class NativeShellForm : Form
             case "lobby.scratchcards.buy" when scratchcardsOpen &&
                 Guid.TryParse(id, out Guid purchaseId):
             {
-                var result = runtime.BuyScratchcard(purchaseId);
+                string gameId = root.TryGetProperty("gameId", out JsonElement requestedGame)
+                    ? requestedGame.ValueKind == JsonValueKind.String
+                        ? requestedGame.GetString() ?? string.Empty : string.Empty
+                    : "lucky-sevens"; // Legacy clients still buy the original ticket.
+                var result = runtime.BuyScratchcard(purchaseId, gameId);
                 Post("lobby.scratchcards.result", new { Action = "buy", result.Success, result.Message });
                 RefreshLobbyScratchcards();
                 RefreshLobbySnapshot();

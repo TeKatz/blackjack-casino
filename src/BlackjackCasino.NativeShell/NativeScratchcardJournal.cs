@@ -28,6 +28,7 @@ internal sealed class NativeScratchcardJournal
     internal ScratchcardTicket? Latest => state?.Tickets.LastOrDefault();
     internal int Purchased => state?.Tickets.Length ?? 0;
     internal bool Contains(Guid id) => state?.Tickets.Any(ticket => ticket.TicketId == id) == true;
+    internal ScratchcardTicket? Find(Guid id) => state?.Tickets.FirstOrDefault(ticket => ticket.TicketId == id);
 
     internal void Recover()
     {
@@ -39,20 +40,26 @@ internal sealed class NativeScratchcardJournal
     }
 
     internal ScratchcardTicket Purchase(Guid id, AppPreferences preferences,
-        Action<AppPreferences>? mirrorWriter = null)
+        Action<AppPreferences>? mirrorWriter = null, string gameId = ScratchcardRules.LuckySevensId)
     {
         if (id == Guid.Empty) throw new ArgumentException("Ticket ID is required.", nameof(id));
-        ScratchcardTicket? replay = state?.Tickets.FirstOrDefault(ticket => ticket.TicketId == id);
-        if (replay is not null) return replay;
+        ScratchcardGame game = ScratchcardRules.GetGame(gameId);
+        ScratchcardTicket? replay = Find(id);
+        if (replay is not null)
+        {
+            if (replay.GameId != game.Id)
+                throw new InvalidOperationException("Ticket ID already belongs to another scratchcard game.");
+            return replay;
+        }
         if (state is { Pending: true })
             throw new InvalidOperationException("Scratchcard recovery is required.");
         if (Latest is { Collected: false })
             throw new InvalidOperationException("Collect the previous scratchcard before buying another.");
-        if (preferences.Bankroll < ScratchcardRules.TicketPrice)
+        if (preferences.Bankroll < game.Price)
             throw new InvalidOperationException("Insufficient bankroll for a scratchcard.");
 
-        decimal newBalance = preferences.Bankroll - ScratchcardRules.TicketPrice;
-        ScratchcardTicket ticket = ScratchcardRules.Draw(id, newBalance);
+        decimal newBalance = preferences.Bankroll - game.Price;
+        ScratchcardTicket ticket = ScratchcardRules.Draw(id, newBalance, gameId: game.Id);
         AppPreferences candidate = preferences with { Bankroll = newBalance };
         var tickets = (state?.Tickets ?? []).Append(ticket).ToArray();
         Commit(candidate, tickets, mirrorWriter);
