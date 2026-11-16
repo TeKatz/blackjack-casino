@@ -2,7 +2,7 @@ import type {ReactNode} from 'react';
 
 /** Gold-etched pictograms are tied to destination IDs, never menu position. */
 export type NavIconName='news'|'all'|'tables'|'slots'|'relax'|'empire'|'collections'|
-  'scratchcards'|'shop'|'stats'|'season'|'challenges'|'vault'|'daily'|'profile'|'settings'|'updates';
+  'scratchcards'|'shop'|'stats'|'season'|'challenges'|'vault'|'daily'|'profile'|'settings'|'updates'|'industries';
 
 const shapes:Record<NavIconName,ReactNode>={
  news:<><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h5v5H8zM15 9h2M15 12h2M8 16h9"/></>,
@@ -11,6 +11,7 @@ const shapes:Record<NavIconName,ReactNode>={
  slots:<><rect x="3" y="6" width="17" height="14" rx="2"/><path d="M6 9h11v7H6zM10 9v7M14 9v7M7.8 12.5h.1M11.8 12.5h.1M15.8 12.5h.1M20 10h2V7M9 20v2M17 20v2"/></>,
  relax:<><path d="M4 9h13v5a6 6 0 0 1-12 0V9zM17 10h2a2 2 0 0 1 0 4h-2M4 20h15M8 3c-2 2 2 3 0 5M13 3c-2 2 2 3 0 5"/></>,
  empire:<><path d="M3 21h18M5 21V9l4 2V5l4-2 3 3v15M16 10h3v11M9 15h2M9 18h2M13 9v2M13 15v2M19 13h2v8"/></>,
+ industries:<><path d="M3 21h18M5 21V11l5 3V9l5 3V5h4v16M8 17h2M13 17h2M17 10h2"/><path d="M6 5h5M8.5 3v4"/></>,
  collections:<><rect x="6" y="4" width="14" height="16" rx="2"/><path d="M4 7H3v14h14v-1M13 8l1.2 2.5 2.8.5-2 2 0.5 2.7L13 14.3l-2.5 1.4.5-2.7-2-2 2.8-.5z"/></>,
  scratchcards:<><rect x="4.5" y="3.5" width="15" height="18" rx="2.5"/><path d="M8 7.5h8M8.5 11.5l3.5 3.5 3.5-3.5M9 18h6M16.7 5.8l2.7-2.7"/></>,
  shop:<><path d="M5 9h14l-1 12H6L5 9zM9 10V7a3 3 0 0 1 6 0v3M9 14h.1M15 14h.1"/></>,
