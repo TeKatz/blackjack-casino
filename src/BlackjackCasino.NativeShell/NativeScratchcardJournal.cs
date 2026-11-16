@@ -27,6 +27,7 @@ internal sealed class NativeScratchcardJournal
 
     internal ScratchcardTicket? Latest => state?.Tickets.LastOrDefault();
     internal int Purchased => state?.Tickets.Length ?? 0;
+    internal bool Contains(Guid id) => state?.Tickets.Any(ticket => ticket.TicketId == id) == true;
 
     internal void Recover()
     {
