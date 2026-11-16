@@ -24,7 +24,7 @@ public sealed class ScratchcardTests : IDisposable
     [InlineData(998, 250)]
     [InlineData(999, 1000)]
     public void PrizeBandsAreExplicit(int roll, int expected) =>
-        Assert.Equal(expected, ScratchcardRules.PrizeForRoll(roll));
+        Assert.Equal((decimal)expected, ScratchcardRules.PrizeForRoll(roll));
 
     [Fact]
     public void GeneratedTicketsShowExactlyOneTripleOnlyWhenWinning()
@@ -63,7 +63,9 @@ public sealed class ScratchcardTests : IDisposable
         var reopenedAgain = new NativeScratchcardJournal(folder);
         var once = reopenedAgain.Collect(ticketId,
             new AppPreferences { Bankroll = 80m + bought.Prize });
-        Assert.Equal(claimed, once);
+        Assert.Equal(claimed.TicketId, once.TicketId);
+        Assert.True(once.Collected);
+        Assert.Equal(claimed.Prize, once.Prize);
         Assert.Equal(80m + bought.Prize, PlayerStateStore.Load(folder).Bankroll);
         Assert.True(reopenedAgain.Contains(ticketId));
         Assert.NotNull(reopenedAgain.Purchase(Guid.NewGuid(),
