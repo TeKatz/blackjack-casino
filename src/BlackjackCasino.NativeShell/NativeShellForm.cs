@@ -102,6 +102,9 @@ internal sealed class NativeShellForm : Form
     private string? activeMode;
     private bool listening, ready, browserFailed, closing;
     private bool lobbyShown, lobbyBrowserDisabled;
+    // Process lifetime only: a newly-created lobby WebView must not reopen News
+    // after visiting a game. Never persist this flag in the player's profile.
+    private bool startupNewsAcknowledged;
     private Process? descentProcess;
     private EmpireModernSession? empireEpoch;
     private NativeLoungeCaseBoardForm? loungeBoard;
@@ -643,7 +646,8 @@ internal sealed class NativeShellForm : Form
     {
         if (!closing && !browserFailed && activeMode is null
             && listening && browser?.CoreWebView2 is not null)
-            Post("lobby.snapshot", runtime.LobbySnapshot());
+            Post("lobby.snapshot", runtime.LobbySnapshot(
+                showStartupNews: !startupNewsAcknowledged));
     }
 
     private async Task OpenModeAsync(string mode)
@@ -856,6 +860,9 @@ internal sealed class NativeShellForm : Form
                     break;
                 case "lobby.ui-ready" when activeMode is null && listening:
                     ready = true;
+                    // The first successful React mount has consumed the initial
+                    // snapshot. Later lobby visits stay silent until News is clicked.
+                    startupNewsAcknowledged = true;
                     lastLobbyEmpireCredits = null;
                     lobbyEmpireRefresh.Start();
                     browserStartupPhase = "ready: lobby";

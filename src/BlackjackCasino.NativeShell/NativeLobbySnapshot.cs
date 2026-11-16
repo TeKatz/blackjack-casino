@@ -13,8 +13,9 @@ namespace BlackjackCasino.NativeShell;
 /// </summary>
 internal static class NativeLobbySnapshot
 {
-    internal static object Create(NativeCasinoRuntime session)
+    internal static object Create(NativeCasinoRuntime session, bool showStartupNews = false)
     {
+        NativePlayerNewsFeed playerNews = NativePlayerNews.Current;
         PlayerProfileState player = session.Profile;
         AppPreferences preferences = session.Preferences;
         LobbyProgressSnapshot progress = LobbyProgressSnapshot.From(player);
@@ -43,6 +44,10 @@ internal static class NativeLobbySnapshot
         return new
         {
             NativePreview = true,
+            ShowStartupNews = showStartupNews,
+            News = playerNews.Entries,
+            NewsReleaseSpecific = playerNews.ReleaseSpecific,
+            InstalledVersion = playerNews.InstalledVersion,
             DailyLogin = new
             {
                 // The daily claim now commits coins, packs and cash atomically.

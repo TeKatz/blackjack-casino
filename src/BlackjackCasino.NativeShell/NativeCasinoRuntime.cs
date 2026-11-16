@@ -378,7 +378,8 @@ internal sealed class NativeCasinoRuntime : IDisposable
         }
     }
 
-    internal object LobbySnapshot() => NativeLobbySnapshot.Create(this);
+    internal object LobbySnapshot(bool showStartupNews = false) =>
+        NativeLobbySnapshot.Create(this, showStartupNews);
 
     internal void SetLobbyLanguage(UiLanguagePreference language)
     {
