@@ -40,6 +40,17 @@ func _run() -> void:
 	if inspect_panel.visible:
 		_fail("Inspector should collapse without a selection")
 		return
+	if side_panel.visible:
+		_fail("Full build catalog must be hidden in selection mode")
+		return
+	game._set_mode("build")
+	if not side_panel.visible:
+		_fail("Build catalog must be visible when constructing")
+		return
+	game._set_mode("inspect")
+	if side_panel.visible:
+		_fail("Build catalog must retract when returning to selection")
+		return
 	if game.tool_buttons.size() != 4 or game.quick_buttons.size() != 4:
 		_fail("Visual machine catalog or quick access deck is incomplete")
 		return
