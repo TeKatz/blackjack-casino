@@ -36,18 +36,8 @@ static func machine(canvas: CanvasItem, at: Vector2, kind: String, direction: in
 				Atlas.region(index), Color(1.0, 1.0, 1.0, opacity))
 			canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	else:
-		var source: Rect2 = Atlas.region(index)
-		var destination := Rect2(at, Vector2(48, 48))
-		if kind == "storage":
-			# Never draw with negative offsets into the belt at our left.
-			# Inset the source to avoid filtering bleed from the adjacent
-			# furnace atlas cell; keep the resulting sprite inside its tile.
-			source.position += Vector2(4.0, 1.0)
-			source.size -= Vector2(8.0, 2.0)
-			destination = Rect2(at + Vector2(1, 0), Vector2(46, 48))
-		elif kind == "smelter":
-			# Align the furnace's belt-height outlet with neighboring lanes.
-			destination = Rect2(at + Vector2(0, -2), Vector2(48, 48))
+		var source: Rect2 = machine_source(kind)
+		var destination: Rect2 = machine_destination(kind, at)
 		canvas.draw_texture_rect_region(texture, destination, source,
 			Color(1.0, 1.0, 1.0, opacity))
 	if ghost:
@@ -59,6 +49,29 @@ static func machine(canvas: CanvasItem, at: Vector2, kind: String, direction: in
 		var normal: Vector2 = DIRS[posmod(direction, 4)]
 		canvas.draw_circle(center + normal * 20.0, 3.0, GOLD)
 		canvas.draw_circle(center + normal * 20.0, 1.25, Color.WHITE)
+
+static func machine_source(kind: String) -> Rect2:
+	var index: int = int({"miner": 0, "belt": 1, "smelter": 2, "storage": 3}.get(kind, 0))
+	var region: Rect2 = Atlas.region(index)
+	if kind == "storage":
+		# Inset source prevents bleeding in from the adjacent furnace cell.
+		region.position += Vector2(4.0, 1.0)
+		region.size -= Vector2(8.0, 2.0)
+	return region
+
+static func machine_destination(kind: String, at: Vector2) -> Rect2:
+	if kind == "storage":
+		# The previous negative X offset caused overlapping neighbors.
+		return Rect2(at + Vector2(1, 0), Vector2(46, 48))
+	if kind == "smelter":
+		# Optical adjustment only, no impact on logical machine position.
+		return Rect2(at + Vector2(0, -2), Vector2(48, 48))
+	return Rect2(at, Vector2(48, 48))
+
+static func cargo_source(item: String) -> Rect2:
+	var index: int = int({"iron_ore": 0, "copper_ore": 1,
+		"iron_ingot": 2, "copper_ingot": 3}.get(item, 0))
+	return Atlas.region(index, 1)
 
 static func ore_layout(seed: int) -> Array:
 	# Keep the existing metal textures, and alter only how pieces are
@@ -100,12 +113,7 @@ static func cargo(canvas: CanvasItem, center: Vector2, item: String, shade: floa
 	var texture: Texture2D = Atlas.get_texture()
 	if texture == null:
 		return
-	var index := 0
-	match item:
-		"iron_ore": index = 0
-		"copper_ore": index = 1
-		"iron_ingot": index = 2
-		"copper_ingot": index = 3
+
 	var alpha := clampf(shade, 0.1, 1.0)
 	# Restore the previously approved source artwork for all four cargo
 	# types instead of drawing different procedural ingots and rocks.
@@ -113,7 +121,7 @@ static func cargo(canvas: CanvasItem, center: Vector2, item: String, shade: floa
 		Color(0.0, 0.0, 0.0, alpha * 0.17))
 	canvas.draw_texture_rect_region(texture,
 		Rect2(center - Vector2(12, 13), Vector2(24, 24)),
-		Atlas.region(index, 1), Color(1.0, 1.0, 1.0, alpha))
+		cargo_source(item), Color(1.0, 1.0, 1.0, alpha))
 
 static func arrow(canvas: CanvasItem, center: Vector2, direction: int,
 	color: Color = GOLD, reach: float = 18.0) -> void:
