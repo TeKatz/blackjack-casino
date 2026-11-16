@@ -11,6 +11,12 @@ Scratchcards are a **sidebar destination in the casino lobby**, directly after C
 - A purchased but not collected ticket is restored on reopen/restart. The symbol pattern and payout never reroll on a retry.
 - Browser preview has no native wallet and never enables real purchases. German and English lobby text are provided.
 
+## Rubbel- und Gewinnpräsentation
+
+The silver coating is removed with a narrow **18-pixel brush** in the ticket's 170 × 105 source-coordinate cells. Completion uses measured transparent-area coverage (at least **63%**), not accumulated cursor travel; repeatedly scratching a small line cannot reveal the field. Pointer and touch movement shed lightweight silver particles that fall and fade around the scratching position. Particle emission is throttled, contained within the ticket and disabled by the lobby animation/reduced-motion preference.
+
+Once all nine fields are visible, winning tickets highlight only their **three matching cells** with a gold pulse and animated shine. The result strip, win marquee and matching payout-table row are also emphasized. An original Web Audio victory bell phrase plays once on a user's winning reveal; it can be muted via the scratchcard page's own Sound button. Muting and reduced-motion preferences do not alter tickets, payouts or game state. Browser audio failures are non-fatal.
+
 ## Prize distribution
 
 | Payout | Probability |
