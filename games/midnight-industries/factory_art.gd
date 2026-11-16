@@ -6,6 +6,8 @@ const DIRS := [Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT, Vector2.UP]
 const GOLD := Color("#F4BD59")
 const CYAN := Color("#00D8F4")
 const RED := Color("#FF725F")
+## Up to 2.4x camera zoom: sample the 144px originals with filtering instead
+## of magnifying the retired 48px thumbnails.
 
 static func machine(canvas: CanvasItem, at: Vector2, kind: String, direction: int, ghost: bool = false) -> void:
 	var texture: Texture2D = Atlas.get_texture()

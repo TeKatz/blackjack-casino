@@ -8,7 +8,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var texture: Texture2D = Atlas.get_texture()
-	if texture == null or texture.get_width() != 192 or texture.get_height() != 96:
+	if texture == null or texture.get_width() != 576 or texture.get_height() != 288:
 		_fail("Illustrated atlas is missing or incorrectly sized")
 		return
 	var panel: StyleBoxTexture = UiSkin.panel("header")
@@ -28,7 +28,7 @@ func _run() -> void:
 		return
 	for kind in ["miner", "belt", "smelter", "storage"]:
 		var icon: Texture2D = game.tool_buttons[kind].icon
-		if icon == null or icon.get_width() != 48:
+		if icon == null or icon.get_width() != 144:
 			_fail("Illustrated machine is missing from the build catalog: " + kind)
 			return
 	if game.menu_card.get_theme_stylebox("panel") is not StyleBoxTexture:
