@@ -84,12 +84,24 @@ jobs:
       - name: Versioned release-notes smoke
         shell: pwsh
         run: |
+          python tools/test_player_news.py
           python tools/generate_release_notes.py --version 0.10.1-dev.0 --channel development --output-json artifacts/release-notes-ci.json --output-markdown artifacts/release-notes-ci.md
           $notes = Get-Content artifacts/release-notes-ci.json -Raw | ConvertFrom-Json
           if ($notes.version -ne "0.10.1-dev.0" -or $notes.channel -ne "development" -or $notes.changes.Count -lt 1) {
             throw "Generated changelog has incorrect version, channel, or missing entries."
           }
           if (!(Test-Path artifacts/release-notes-ci.md)) { throw "Missing Markdown changelog." }
+          if (@($notes.playerNews).Count -lt 1 -or @($notes.playerNews).Count -gt 6) {
+            throw "Packaged player News is missing or too long."
+          }
+          foreach ($item in $notes.playerNews) {
+            if ([string]::IsNullOrWhiteSpace($item.title) -or
+                [string]::IsNullOrWhiteSpace($item.titleDe) -or
+                [string]::IsNullOrWhiteSpace($item.description) -or
+                [string]::IsNullOrWhiteSpace($item.descriptionDe)) {
+              throw "Player News contains missing or untranslated editorial content."
+            }
+          }
           foreach ($change in $notes.changes) {
             if ([string]::IsNullOrWhiteSpace($change.titleDe) -or [string]::IsNullOrWhiteSpace($change.descriptionDe)) {
               throw "Generated changelog entry is missing German editorial text."

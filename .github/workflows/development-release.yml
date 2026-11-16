@@ -206,7 +206,10 @@ jobs:
           if ($LASTEXITCODE -eq 0 -and $raw) {
             $previous = [string](($raw | ConvertFrom-Json).targetCommitish)
           }
+          python tools/test_player_news.py
           python tools/generate_release_notes.py --version $env:VERSION --channel development --previous-ref "$previous" --output-json artifacts/release-notes.json --output-markdown artifacts/release-notes.md
+          $localNews = Get-Content artifacts/release-notes.json -Raw | ConvertFrom-Json
+          if (@($localNews.playerNews).Count -lt 1) { throw "No editorial player News included in the installed build." }
           Copy-Item artifacts/release-notes.json artifacts/app/release-notes.json
 
       - name: Package development build
@@ -282,6 +285,7 @@ jobs:
           if ($manifest.notesUrl -ne "https://github.com/${{ github.repository }}/releases/tag/development") { throw "Published manifest points to another release." }
           $publishedNotes = Get-Content "$verifyDir/release-notes.json" -Raw | ConvertFrom-Json
           if ($publishedNotes.version -ne $env:VERSION -or $publishedNotes.channel -ne "development") { throw "Published notes version/channel mismatch." }
+          if (@($publishedNotes.playerNews).Count -lt 1) { throw "Published release lacks localized player News." }
           if ($manifest.version -ne $env:VERSION -or $manifest.channel -ne "development") { throw "Published manifest version/channel mismatch." }
           $expectedPackageUrl = "https://github.com/${{ github.repository }}/releases/download/development/blackjack-casino-win-x64.zip?revision=$env:VERSION"
           if ($manifest.package.url -ne $expectedPackageUrl) { throw "Published manifest URL does not pin this Development build's cache key." }

@@ -22,7 +22,7 @@ This is the documentation entry point for **The Midnight Club**. The [README](..
 - [Architecture](architecture.md) — native host, C# rules and receipt journals, WebView2 and native data profiles.
 - [Contributing](../CONTRIBUTING.md) — Windows build, test and pull-request guidance.
 - [Branch and release policy](branching-and-release-policy.md) — current `dev`, `main` and tagged releases.
-- [Development updates](development-update-delivery.md) — publishing and updater contract.
+- [Development updates and News](development-update-delivery.md) — publishing, player-facing patchnotes, and updater contract.
 - [Presentation regression](presentation-regression.md) — present-day visual/UI checks.
 - [Localization](localization-overhaul.md) — current English/German coverage and historical rollout details.
 - [Performance notes](performance-phase-7.md) — historical measurements and acceptance context, not a current universal FPS guarantee.

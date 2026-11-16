@@ -25,6 +25,14 @@ The full historical migration between `feature/*`, `develop` and `dev`, along wi
 
 `BlackjackCasino.MigrationDiagnostics.exe` is **not** published. It is a developer-only offline rehearsal program.
 
+## Player-facing News and technical release notes
+
+The NativeShell displays **News once per new process start**, after the genuine React lobby receives the first native snapshot. Returning from a game to the lobby does not reopen the dialog; the sidebar **News** entry can always reopen it manually. This is a session-only flag and is not written to the player's profile.
+
+Release publishing continues to generate the technical changelog from Git commits for contributors. Separately, `tools/generate_release_notes.py` uses the bilingual, editorial `tools/player_news_catalog.json` to generate a maximum of six short, nontechnical `playerNews` entries in the same versioned `release-notes.json` file. The native app loads the installed local copy from its application directory; it **does not query GitHub on launch** or display raw commit subjects. Only curated copy is accepted. If an older or damaged package has no editorial entries, the lobby falls back to a small, offline list of real casino highlights rather than a blank News dialog. The dialog indicates whether it displays version-specific notes or general highlights.
+
+Maintainers update the editorial text and recognized topic keywords alongside meaningful user-visible changes. A recognized topic only appears when the compared release commit messages mention it; unknown technical changes are never translated verbatim into player-facing text. Both German and English entries are reviewed together. The existing version pinning, package checksum, changelog `changes` array and updater behavior remain unchanged.
+
 ## In-app updates and safety
 
 The update service reads the selected Stable or Development manifest and checks semantic-version ordering, channel compatibility and minimum updater version. Downloads are staged outside the running application directory, validated before activation, and installed by the separate updater process. Transient file locks are retried; an activation failure attempts to restore the previous installation, and diagnostics are written to the local updater log.
