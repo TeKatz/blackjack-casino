@@ -2,6 +2,8 @@ extends SceneTree
 ## Visual asset + UI contract; verifies illustrated graphics really ship and render.
 const Atlas = preload("res://factory_atlas.gd")
 const UiSkin = preload("res://factory_skin.gd")
+const Art = preload("res://factory_art.gd")
+const BeltArt = preload("res://factory_belt_art.gd")
 
 func _initialize() -> void:
 	call_deferred("_run")
@@ -37,16 +39,41 @@ func _run() -> void:
 	if influence.get_pixel(32, 34).r < 0.82 or influence.get_pixel(2, 2).r > 0.12:
 		_fail("The biome does not distinguish mineral ground from open meadow")
 		return
-	var rocks: Texture2D = preload("res://factory_ore_variants.gd").texture()
-	if rocks == null or rocks.get_width() != 768 or rocks.get_height() != 192:
-		_fail("The 8+8 high-detail ore cluster variants were not generated")
+	var stone_detail: Texture2D = material.get_shader_parameter("stone_detail")
+	if grass_detail.get_width() < 1024 or grass_detail.get_height() < 1024 or stone_detail == null:
+		_fail("Meadow detail was not upgraded to 1024px")
 		return
-	var sprite_sheet: Image = rocks.get_image()
-	if sprite_sheet.get_region(Rect2i(0, 0, 96, 96)).get_data() == sprite_sheet.get_region(Rect2i(96, 0, 96, 96)).get_data():
-		_fail("Iron ore variants are only duplicate sprites")
+	if stone_detail.get_width() < 1024 or stone_detail.get_height() < 1024:
+		_fail("Rock detail was not upgraded to 1024px")
 		return
-	if sprite_sheet.get_region(Rect2i(0, 96, 96, 96)).get_data() == sprite_sheet.get_region(Rect2i(96, 96, 96, 96)).get_data():
-		_fail("Copper ore variants are only duplicate sprites")
+	# Keep the ORIGINAL ore and ingot atlas source art. Only ground
+	# placement/cluster silhouette varies.
+	for item in ["iron_ore", "copper_ore", "iron_ingot", "copper_ingot"]:
+		var item_index: int = ["iron_ore", "copper_ore", "iron_ingot", "copper_ingot"].find(item)
+		if Art.cargo_source(item) != Atlas.region(item_index, 1):
+			_fail("Cargo was changed away from the approved resource atlas: " + item)
+			return
+	if Art.ore_layout(0) == Art.ore_layout(1) or Art.ore_layout(3) == Art.ore_layout(7):
+		_fail("Ground ore clusters lack distinct arrangements")
+		return
+	# Belts facing north and south must have separate, correctly lit artwork.
+	var down: Texture2D = BeltArt.texture(1)
+	var up: Texture2D = BeltArt.texture(3)
+	if down == null or up == null or down.get_width() != 144 or up.get_height() != 144:
+		_fail("Dedicated high-resolution vertical conveyor assets are missing")
+		return
+	if down.get_image().get_data() == up.get_image().get_data():
+		_fail("North/south belts use the same directional sprite")
+		return
+	var warehouse_rect: Rect2 = Art.machine_destination("storage", Vector2.ZERO)
+	if warehouse_rect.position.x < 0.0 or warehouse_rect.end.x > 48.0:
+		_fail("Warehouse sprite draws over its left or right neighbor")
+		return
+	if Art.machine_source("storage").position.x <= Atlas.region(3).position.x:
+		_fail("Warehouse source still samples the adjacent atlas cell")
+		return
+	if Art.machine_destination("smelter", Vector2.ZERO).position.y >= 0.0:
+		_fail("Furnace outlet was not moved up to belt height")
 		return
 	var side_panel: Control = game.find_child("IndustrialBuildCatalog", true, false)
 	var inspect_panel: Control = game.find_child("IndustrialMachineConsole", true, false)
@@ -90,6 +117,22 @@ func _run() -> void:
 		return
 	if game.inspector_portrait.texture == null:
 		_fail("Selected machine has no high-detail inspector art")
+		return
+	if game.find_child("SectorProductionReadout", true, false) != null:
+		_fail("Obsolete sector overview panel is still taking screen space")
+		return
+	var optional_grid: Node = game.get_node_or_null("OptionalPlacementGrid")
+	if optional_grid == null:
+		_fail("Optional placement grid was not created")
+		return
+	var initial_grid: bool = game.show_grid
+	game._toggle_grid()
+	if game.show_grid == initial_grid or optional_grid.visible != game.show_grid:
+		_fail("Grid option failed to change the overlay")
+		return
+	game._toggle_grid()
+	if game.show_grid != initial_grid or optional_grid.visible != initial_grid:
+		_fail("Grid option failed to restore its original setting")
 		return
 	# A drag must move the camera without selecting a new machine. A short
 	# press/release still selects a machine at the original pressed world tile.
