@@ -85,6 +85,18 @@ internal static class NativeShellContractSmoke
                     Path.GetDirectoryName(descentPath), StringComparison.Ordinal))
                 throw new InvalidOperationException("Godot launch flags/lifecycle are incorrect.");
 
+            string industriesFixture = Path.Combine(directory, "industries-fixture");
+            string industriesPath = NativeIndustriesLaunch.Executable(industriesFixture);
+            Directory.CreateDirectory(Path.GetDirectoryName(industriesPath)!);
+            if (NativeIndustriesLaunch.IsPackaged(industriesFixture))
+                throw new InvalidOperationException("Missing Industries Godot pack was accepted.");
+            File.WriteAllText(industriesPath, "fixture");
+            File.WriteAllText(Path.ChangeExtension(industriesPath, ".pck"), "fixture");
+            var industriesStart = NativeIndustriesLaunch.CreateStartInfo(industriesFixture, german: true);
+            if (!industriesStart.ArgumentList.SequenceEqual(["--fullscreen", "--", "--language=de"])
+                || industriesStart.UseShellExecute)
+                throw new InvalidOperationException("Industries Godot launcher is inconsistent.");
+
             // Rehearse an actual existing wallet/profile import without touching
             // user AppData. Exercise atomic staging, hash integrity, isolation,
             // replay protection, corruption rejection and the native runtime.
@@ -132,7 +144,7 @@ internal static class NativeShellContractSmoke
                 {
                     var root = lobby.RootElement;
                     if (!root.GetProperty("nativePreview").GetBoolean()
-                        || root.GetProperty("modes").GetArrayLength() != 12
+                        || root.GetProperty("modes").GetArrayLength() != 13
                         || root.GetProperty("bankrollValue").GetDecimal() != session.Bankroll
                         || !root.GetProperty("dailyLogin").GetProperty("canClaim").GetBoolean()
                         || root.GetProperty("showStartupNews").GetBoolean()
