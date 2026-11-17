@@ -14,10 +14,20 @@ func _run() -> void:
 	game.frontend.open_settings()
 	game.frontend._change_setting("high_contrast", true)
 	assert(game.settings.values.high_contrast)
+	assert(game.header_status.get_theme_color("font_color") == Color.WHITE)
 	game.frontend._change_setting("high_contrast", false)
 	game.frontend._change_setting("water_motion", false)
 	assert(not game.terrain_view.water_motion)
 	game.frontend._change_setting("water_motion", true)
+	game.frontend._change_setting("ui_scale", 1.1)
+	assert(is_equal_approx(game.get_viewport().content_scale_factor, 1.1))
+	game.frontend._change_setting("ui_scale", 1.0)
+	game.frontend._change_setting("language", "en")
+	await process_frame
+	assert(not game.german and game.frontend.start_screen.visible)
+	game.frontend._change_setting("language", "de")
+	await process_frame
+	assert(game.german and game.frontend.start_screen.visible)
 	game.frontend.close_settings()
 	game.frontend.name_edit.text = "First"
 	game.frontend._create_world()
@@ -48,6 +58,11 @@ func _run() -> void:
 	assert(game.minimap.markers[0].x == 100 and game.minimap.markers[0].y == 110)
 	game.minimap.layers.ore = false
 	game._toggle_minimap()
+	game.frontend._change_setting("language", "en")
+	await process_frame
+	assert(game.frontend.pins[2] == "gold_ore" and game.minimap.markers[0].name == "South")
+	game.frontend._change_setting("language", "de")
+	await process_frame
 	game.camera.position = Vector2(2120, 1430)
 	game.model.economy.credit("iron_ingot", 23)
 	assert(game._save_world())

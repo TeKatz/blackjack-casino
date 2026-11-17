@@ -11,6 +11,7 @@ const ORE_COLOR := {"iron":Color("#96ADB6"), "copper":Color("#E0935B"),
 	"gold":Color("#F5CB68")}
 var model
 var camera: Camera2D
+var german := true
 var markers: Array = []
 var layers: Dictionary = DEFAULT_LAYERS.duplicate()
 var _ground: Texture2D
@@ -38,6 +39,9 @@ var ore_centers: Array = []
 var marker_list: VBoxContainer
 var layer_row: VBoxContainer
 var coordinates: Label
+
+func _word(de: String, en: String) -> String:
+	return de if german else en
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -202,9 +206,10 @@ func _draw() -> void:
 	draw_rect(frame_rect, Color("#6BE7FA", 0.07))
 	draw_rect(frame_rect, Color("#6BE7FA"), false, 2.0)
 	var font: Font = UiSkin.font()
-	draw_string(font, Vector2(26, 45), "MIDNIGHT INDUSTRIES / WELTKARTE", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("#E8F1EF"))
+	draw_string(font, Vector2(26, 45), _word("MIDNIGHT INDUSTRIES / WELTKARTE", "MIDNIGHT INDUSTRIES / WORLD MAP"), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("#E8F1EF"))
 	draw_string(font, Vector2(27, viewport.y - 22),
-		"M / ESC  SCHLIESSEN  ·  RAD  ZOOM  ·  ZIEHEN  PAN  ·  DOPPELKLICK  REISEN  ·  RECHTSKLICK  MARKIEREN",
+		_word("M / ESC  SCHLIESSEN  ·  RAD  ZOOM  ·  ZIEHEN  PAN  ·  DOPPELKLICK  REISEN  ·  RECHTSKLICK  MARKIEREN",
+			"M / ESC  CLOSE  ·  WHEEL  ZOOM  ·  DRAG  PAN  ·  DOUBLE CLICK  TRAVEL  ·  RIGHT CLICK  MARK"),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("#A3B9C1"))
 
 func _build_controls() -> void:
@@ -221,33 +226,33 @@ func _build_controls() -> void:
 	var column := VBoxContainer.new()
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(column)
-	_label(column, "ATLAS / EBENEN", 17)
+	_label(column, _word("ATLAS / EBENEN", "ATLAS / LAYERS"), 17)
 	coordinates = _label(column, "224 × 176", 12)
 	var zoom_row := HBoxContainer.new()
 	column.add_child(zoom_row)
 	_button(zoom_row, "−", func() -> void: _change_zoom(1.0 / 1.25, size * 0.5))
 	_button(zoom_row, "+", func() -> void: _change_zoom(1.25, size * 0.5))
-	_button(column, "Kamera zentrieren", func() -> void:
+	_button(column, _word("Kamera zentrieren", "Center on camera"), func() -> void:
 		pan = (Vector2(Model.WIDTH, Model.HEIGHT) * 0.5 - camera.position / TILE) * _base_scale * zoom
 		queue_redraw())
 	layer_row = VBoxContainer.new()
 	column.add_child(layer_row)
 	var all_row := HBoxContainer.new()
 	column.add_child(all_row)
-	_button(all_row, "Alle an", func() -> void: _set_layers(true))
-	_button(all_row, "Alle aus", func() -> void: _set_layers(false))
-	_label(column, "EISEN Fe  ·  KUPFER Cu  ·  GOLD Au", 12)
-	_label(column, "WASSER  ·  FABRIK  ·  CASINO", 12)
-	_label(column, "MARKIERUNGEN", 15)
+	_button(all_row, _word("Alle an", "Show all"), func() -> void: _set_layers(true))
+	_button(all_row, _word("Alle aus", "Hide all"), func() -> void: _set_layers(false))
+	_label(column, _word("EISEN Fe  ·  KUPFER Cu  ·  GOLD Au", "IRON Fe  ·  COPPER Cu  ·  GOLD Au"), 12)
+	_label(column, _word("WASSER  ·  FABRIK  ·  CASINO", "WATER  ·  FACTORY  ·  CASINO"), 12)
+	_label(column, _word("MARKIERUNGEN", "MARKERS"), 15)
 	marker_list = VBoxContainer.new()
 	column.add_child(marker_list)
-	_button(column, "Schließen [M]", hide_map)
+	_button(column, _word("Schließen [M]", "Close [M]"), hide_map)
 	marker_popup = PopupPanel.new()
 	add_child(marker_popup)
 	var editor := VBoxContainer.new()
 	marker_popup.add_child(editor)
 	marker_name = LineEdit.new()
-	marker_name.placeholder_text = "Titel der Markierung"
+	marker_name.placeholder_text = _word("Titel der Markierung", "Marker title")
 	editor.add_child(marker_name)
 	marker_icon = OptionButton.new()
 	for icon in ["◆", "⚑", "●"]:
@@ -257,12 +262,12 @@ func _build_controls() -> void:
 	for color in ["Amber", "Cyan", "Rot"]:
 		marker_color.add_item(color)
 	editor.add_child(marker_color)
-	_button(editor, "Speichern", _save_marker)
-	_button(editor, "Versetzen: Ziel rechtsklicken", func() -> void:
+	_button(editor, _word("Speichern", "Save"), _save_marker)
+	_button(editor, _word("Versetzen: Ziel rechtsklicken", "Move: right-click destination"), func() -> void:
 		if selected >= 0:
 			moving_marker = true
 			marker_popup.hide())
-	_button(editor, "Entfernen", _remove_marker)
+	_button(editor, _word("Entfernen", "Remove"), _remove_marker)
 
 func _label(parent: Node, text_value: String, font_size: int) -> Label:
 	var l := Label.new()
@@ -287,8 +292,10 @@ func _refresh_controls() -> void:
 		child.queue_free()
 	for key in DEFAULT_LAYERS:
 		var toggle := CheckBox.new()
-		toggle.text = {"ore":"Erze / Ore", "water":"Gewässer / Water", "buildings":"Anlagen / Factory",
-			"casino":"Casino", "markers":"Markierungen / Markers"}[key]
+		toggle.text = {
+			"ore":_word("Erze", "Ores"), "water":_word("Gewässer", "Water"),
+			"buildings":_word("Anlagen", "Factory"), "casino":"Casino",
+			"markers":_word("Markierungen", "Markers")}[key]
 		toggle.button_pressed = bool(layers.get(key, true))
 		toggle.toggled.connect(func(on: bool) -> void:
 			layers[key] = on
@@ -347,7 +354,7 @@ func _save_marker() -> void:
 		"icon":marker_icon.get_item_text(marker_icon.selected),
 		"color":colors[marker_color.selected]}
 	if data.name.is_empty():
-		data.name = "Markierung"
+		data.name = _word("Markierung", "Marker")
 	if selected >= 0:
 		markers[selected] = data
 	else:

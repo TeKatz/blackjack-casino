@@ -12,6 +12,9 @@ var details: Label
 var _last_stock := ""
 var _selected := ""
 
+func _word(de: String, en: String) -> String:
+	return de if german else en
+
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -30,8 +33,9 @@ func _ready() -> void:
 	center.add_child(frame)
 	var col := VBoxContainer.new()
 	frame.add_child(col)
-	_label(col, "MIDNIGHT INDUSTRIES / GLOBALES BAULAGER", 22)
-	_label(col, "Lieferungen an Depots finanzieren Anlagen. Zwischenlager zählen nicht zum globalen Bestand.", 12)
+	_label(col, _word("MIDNIGHT INDUSTRIES / GLOBALES BAULAGER", "MIDNIGHT INDUSTRIES / GLOBAL BUILD STOCK"), 22)
+	_label(col, _word("Lieferungen an Depots finanzieren Anlagen. Zwischenlager zählen nicht zum globalen Bestand.",
+		"Deliveries to depots fund construction. Warehouse contents are separate."), 12)
 	var controls := HBoxContainer.new()
 	col.add_child(controls)
 	search = LineEdit.new()
@@ -44,7 +48,7 @@ func _ready() -> void:
 		category.add_item(entry)
 	category.item_selected.connect(func(_index: int) -> void: _refresh())
 	controls.add_child(category)
-	_button(controls, "Schließen [I]", close_inventory)
+	_button(controls, _word("Schließen [I]", "Close [I]"), close_inventory)
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size.y = 295
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL

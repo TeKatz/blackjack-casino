@@ -15,6 +15,7 @@ const StorageView = preload("res://factory_storage_view.gd")
 const WorldManager = preload("res://world_manager.gd")
 const Settings = preload("res://industries_settings.gd")
 const Frontend = preload("res://factory_frontend.gd")
+const Catalog = preload("res://item_catalog.gd")
 const TILE := 48.0
 const GOLD := Color("#F5C04A")
 const CYAN := Color("#00D8F4")
@@ -513,6 +514,7 @@ func _create_interface() -> void:
 	minimap.name = "WorldOverviewMap"
 	minimap.model = model
 	minimap.camera = camera
+	minimap.german = german
 	ui_layer.add_child(minimap)
 	storage_view = StorageView.new()
 	storage_view.name = "GlobalConstructionInventory"
@@ -678,17 +680,18 @@ func _refresh_inspector() -> void:
 	match kind:
 		"miner":
 			var ore_type: String = model.resources.get(inspected, "iron")
-			inspector_body.text = _tr("Rohstoff: ", "Resource: ") + ore_type.to_upper() + "\n" + (
+			inspector_body.text = _tr("Rohstoff: ", "Resource: ") + Catalog.name_for(ore_type + "_ore", german) + "\n" + (
 				_tr("Puffer: %d/%d Erz", "Buffer: %d/%d ore") % [machine.buffer, Model.MAX_BUFFER]) + "\n" + (
 				_tr("Tempo: 1 Erz / Sekunde", "Rate: 1 ore / second"))
 			inspector_progress.value = 100.0 * float(machine.progress) / 1.0
 		"belt":
 			var item: String = machine.item
-			inspector_body.text = _tr("Transportiert: ", "Carrying: ") + (item.to_upper() if item != "" else
+			inspector_body.text = _tr("Transportiert: ", "Carrying: ") + (Catalog.name_for(item, german) if item != "" else
 				_tr("Leer", "Empty")) + "\n" + _tr("Transport: 4 Felder / Sekunde", "Transport: 4 tiles / second") + "\n" + _tr("Kapazität: 1 Gegenstand", "Capacity: 1 item")
 			inspector_progress.value = 100.0 if item != "" else 0.0
 		"smelter":
-			inspector_body.text = (_tr("Rezept: ", "Recipe: ") + str(machine.recipe).to_upper() + "\n" +
+			var recipe_name := Catalog.name_for(str(machine.recipe) + "_ingot", german) if str(machine.recipe) != "" else "—"
+			inspector_body.text = (_tr("Rezept: ", "Recipe: ") + recipe_name + "\n" +
 				_tr("Erz: %d/8    Produkt: %d/8", "Ore: %d/8    Output: %d/8") % [machine.ore, machine.output] + "\n" +
 				_tr("Tempo: 1 Barren / 2 Sekunden", "Rate: 1 ingot / 2 seconds"))
 			inspector_progress.value = clampf(100.0 * float(machine.progress) / 2.0, 0.0, 100.0)
@@ -700,7 +703,7 @@ func _refresh_inspector() -> void:
 			var listing := []
 			for material in inventory:
 				if int(inventory[material]) > 0:
-					listing.append("%s %d" % [str(material), int(inventory[material])])
+					listing.append("%s %d" % [Catalog.name_for(str(material), german), int(inventory[material])])
 			inspector_body.text = _tr("Lokales Zwischenlager", "Local warehouse buffer") + \
 				"\n%d/%d   ·   %s" % [used, Model.WAREHOUSE_CAPACITY, (
 				", ".join(listing) if not listing.is_empty() else _tr("Leer", "Empty"))] + \
@@ -1097,13 +1100,53 @@ func apply_settings() -> void:
 	motion_view.reduced_motion = reduced_motion
 	minimap.reduced_motion = reduced_motion
 	minimap.water_motion = bool(settings.values.water_motion)
-	german = str(settings.values.language) == "de"
+	var next_language := str(settings.values.language) == "de"
+	if german != next_language:
+		german = next_language
+		call_deferred("_rebuild_interface_language")
 	storage_view.german = german
 	terrain_view.set_water_motion(bool(settings.values.water_motion))
 	_refresh_grid_button()
 	frontend._refresh_pins()
 	get_viewport().content_scale_factor = clampf(float(settings.values.ui_scale), 0.8, 1.3)
 	_apply_contrast(ui_layer)
+
+func _rebuild_interface_language() -> void:
+	var old_pins: Array = frontend.pins.duplicate()
+	var old_markers: Array = minimap.markers.duplicate(true)
+	var old_layers: Dictionary = minimap.layers.duplicate(true)
+	var old_map_zoom: float = minimap.zoom
+	var old_map_pan: Vector2 = minimap.pan
+	var old_map_open: bool = minimap.visible
+	var old_storage_open: bool = storage_view.visible
+	var old_settings_open: bool = frontend.settings_screen.visible
+	var old_menu_open: bool = menu_open
+	ui_layer.free()
+	tool_buttons.clear()
+	quick_buttons.clear()
+	mode_buttons.clear()
+	_create_interface()
+	frontend.pins = old_pins
+	frontend._refresh_pins()
+	minimap.markers = old_markers
+	minimap.layers = old_layers
+	minimap.zoom = old_map_zoom
+	minimap.pan = old_map_pan
+	if current_world.is_empty():
+		_show_menu(false)
+		menu_open = true
+		motion_view.menu_open = true
+	else:
+		frontend.start_screen.hide()
+		_show_menu(old_menu_open)
+		_set_mode(mode)
+		if old_map_open:
+			minimap.show_map()
+		if old_storage_open:
+			storage_view.open_inventory()
+	if old_settings_open:
+		frontend.open_settings()
+	_refresh_ui()
 
 func _apply_contrast(node: Node) -> void:
 	if node is Label:

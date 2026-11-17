@@ -114,13 +114,43 @@ func create_world(name: String) -> String:
 func _envelope(model, view: Dictionary) -> Dictionary:
 	return {"version": VERSION, "factory": model.snapshot(), "view": view.duplicate(true)}
 
+func _valid_view(view: Variant) -> bool:
+	if typeof(view) != TYPE_DICTIONARY:
+		return false
+	var pins: Variant = view.get("pins", [])
+	var markers: Variant = view.get("markers", [])
+	var layers: Variant = view.get("layers", {})
+	if typeof(pins) != TYPE_ARRAY or pins.size() > 64 \
+		or typeof(markers) != TYPE_ARRAY or markers.size() > 10000 \
+		or typeof(layers) != TYPE_DICTIONARY:
+		return false
+	for pin in pins:
+		if typeof(pin) != TYPE_STRING or pin.length() > 64:
+			return false
+	for marker in markers:
+		if typeof(marker) != TYPE_DICTIONARY or typeof(marker.get("name")) != TYPE_STRING \
+			or str(marker.name).length() > 80 or not marker.has("x") or not marker.has("y"):
+			return false
+		var x := float(marker.x)
+		var y := float(marker.y)
+		if not is_finite(x) or not is_finite(y) or x < 0.0 or y < 0.0 \
+			or x >= Model.WIDTH or y >= Model.HEIGHT:
+			return false
+	for key in layers:
+		if typeof(layers[key]) != TYPE_BOOL:
+			return false
+	for key in ["camera_x", "camera_y", "zoom"]:
+		if view.has(key) and (not is_finite(float(view[key])) or float(view[key]) < 0.0):
+			return false
+	return true
+
 func load_world(id: String) -> Dictionary:
 	if not _valid_id(id) or _meta(id).is_empty():
 		return {}
 	for suffix in ["", ".bak1", ".bak2", ".bak3"]:
 		var data: Variant = _read_json(_path(id) + suffix)
 		if typeof(data) != TYPE_DICTIONARY or data.get("version") != VERSION \
-			or typeof(data.get("view")) != TYPE_DICTIONARY:
+			or not _valid_view(data.get("view")):
 			continue
 		var model = Model.new(false)
 		if model.restore(data.get("factory")):
@@ -132,7 +162,7 @@ func load_backup(id: String, number: int) -> Dictionary:
 		return {}
 	var data: Variant = _read_json(_path(id) + ".bak%d" % number)
 	if typeof(data) != TYPE_DICTIONARY or data.get("version") != VERSION \
-		or typeof(data.get("view")) != TYPE_DICTIONARY:
+		or not _valid_view(data.get("view")):
 		return {}
 	var model = Model.new(false)
 	if not model.restore(data.get("factory")):
@@ -149,7 +179,7 @@ func save_world(id: String, model, view: Dictionary, elapsed: float = 0.0) -> bo
 	var healthy := false
 	if typeof(current) == TYPE_DICTIONARY and current.get("version") == VERSION:
 		var probe = Model.new(false)
-		healthy = probe.restore(current.get("factory"))
+		healthy = _valid_view(current.get("view")) and probe.restore(current.get("factory"))
 	if not _atomic(path, _envelope(model, view), healthy):
 		return false
 	meta.updated = Time.get_unix_time_from_system()

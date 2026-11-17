@@ -59,6 +59,13 @@ func _run() -> void:
 	# An incomplete current save may never displace a valid rotated backup.
 	assert(manager.save_world(a, recovered.model, view))
 	assert(manager.load_world(a).model.economy.available("iron_ingot") == 31)
+	var malformed: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
+	malformed.view.pins = {"broken":"slot"}
+	var damaged := FileAccess.open(path, FileAccess.WRITE)
+	damaged.store_string(JSON.stringify(malformed))
+	damaged.close()
+	assert(manager.load_world(a).recovered)
+	assert(manager.save_world(a, recovered.model, view))
 	assert(manager.rename_world(b, "Renamed") and manager._meta(b).name == "Renamed")
 	assert(Catalog.name_for("copper_ore", true) == "Kupfererz")
 	var options = Settings.new()
