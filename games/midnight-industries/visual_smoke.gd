@@ -4,6 +4,7 @@ const Atlas = preload("res://factory_atlas.gd")
 const UiSkin = preload("res://factory_skin.gd")
 const Art = preload("res://factory_art.gd")
 const BeltArt = preload("res://factory_belt_art.gd")
+const OreVariants = preload("res://factory_ore_variants.gd")
 
 func _initialize() -> void:
 	call_deferred("_run")
@@ -62,14 +63,42 @@ func _run() -> void:
 		if isolated.get_pixel(72, 72) != approved.get_pixel(index * 144 + 72, 144 + 72):
 			_fail("Source mineral or ingot artwork was altered")
 			return
-	# Belts facing north and south must have separate, correctly lit artwork.
-	var down: Texture2D = BeltArt.texture(1)
-	var north_belt: Texture2D = BeltArt.texture(3)
-	if down == null or north_belt == null or down.get_width() != 144 or north_belt.get_height() != 144:
-		_fail("Dedicated high-resolution vertical conveyor assets are missing")
+	# These are actual different rock silhouettes, not a transformed source pile.
+	var deposits: Texture2D = OreVariants.texture()
+	if deposits == null or deposits.get_width() != 12 * 112 or deposits.get_height() != 2 * 112:
+		_fail("Twelve iron and copper ore formations must be available")
 		return
+	var deposit_image: Image = deposits.get_image()
+	for mineral in ["iron", "copper"]:
+		var first: Image = deposit_image.get_region(Rect2i(
+			OreVariants.region(mineral, 0).position, Vector2i(112, 112)))
+		var different := 0
+		for variant in range(1, OreVariants.VARIANTS):
+			var picture: Image = deposit_image.get_region(Rect2i(
+				OreVariants.region(mineral, variant).position, Vector2i(112, 112)))
+			if first.get_data() != picture.get_data():
+				different += 1
+		if different != 11:
+			_fail("Ore field art still reuses repeated deposit bitmaps: " + mineral)
+			return
+		if OreVariants.cargo_texture(mineral) == null:
+			_fail("Physical belt cargo rock art is missing: " + mineral)
+			return
+	# All four orientations must resolve independently; left must not be a
+	# full sprite rotation, preserving the original steel mounting geometry.
+	var right_belt: Texture2D = BeltArt.texture(0)
+	var down: Texture2D = BeltArt.texture(1)
+	var left_belt: Texture2D = BeltArt.texture(2)
+	var north_belt: Texture2D = BeltArt.texture(3)
+	for belt in [right_belt, down, left_belt, north_belt]:
+		if belt == null or belt.get_width() != 144 or belt.get_height() != 144:
+			_fail("A directional conveyor is missing or undersized")
+			return
 	if down.get_image().get_data() == north_belt.get_image().get_data():
 		_fail("North/south belts use the same directional sprite")
+		return
+	if left_belt.get_image().get_data() == right_belt.get_image().get_data():
+		_fail("Left conveyor did not receive a dedicated reversed deck")
 		return
 	var warehouse_rect: Rect2 = Art.machine_destination("storage", Vector2.ZERO)
 	if warehouse_rect.position.x < 0.0 or warehouse_rect.end.x > 48.0:
@@ -83,9 +112,16 @@ func _run() -> void:
 	if warehouse.get_width() != 144 or isolated_belt.get_width() != 144:
 		_fail("Isolated machine sprites lost their 144px source detail")
 		return
+	var original_storage: Image = Atlas.get_texture().get_image()
+	var repaired_storage: Image = warehouse.get_image()
 	for y in [25, 72, 120]:
-		if warehouse.get_image().get_pixel(0, y).a > 0.02:
+		if repaired_storage.get_pixel(0, y).a > 0.02:
 			_fail("Warehouse has a left-edge sprite bleed fringe")
+			return
+		# The damaged original left silhouette must be rebuilt from its
+		# intact opposite side, not just cropped by three source pixels.
+		if repaired_storage.get_pixel(26, y) != original_storage.get_pixel(3 * 144 + 143 - 26, y):
+			_fail("Warehouse left-side geometry was not actually repaired")
 			return
 	if Art.machine_destination("smelter", Vector2.ZERO).position.y >= 0.0:
 		_fail("Furnace outlet was not moved up to belt height")

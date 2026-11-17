@@ -56,7 +56,7 @@ func _draw() -> void:
 								var blend := transition * transition * (3.0 - 2.0 * transition)
 								center = (Vector2(source) + Vector2(0.5, 0.5)).lerp(
 									Vector2(cell) + Vector2(0.5, 0.5), blend) * TILE
-						Art.cargo(self, center, str(machine.item))
+						Art.cargo(self, center, str(machine.item), 1.0, int(machine.direction))
 				"miner":
 					_miner_vfx(at, machine, cell)
 				"smelter":
