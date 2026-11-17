@@ -7,6 +7,7 @@ const BeltArt = preload("res://factory_belt_art.gd")
 const OreVariants = preload("res://factory_ore_variants.gd")
 const GoldArt = preload("res://factory_gold_art.gd")
 const DepotArt = preload("res://factory_depot_art.gd")
+const PowerArt = preload("res://factory_power_art.gd")
 const TILE := 48.0
 const DIRS := [Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT, Vector2.UP]
 const GOLD := Color("#F4BD59")
@@ -25,7 +26,8 @@ static func machine(canvas: CanvasItem, at: Vector2, kind: String, direction: in
 			canvas.draw_texture_rect(belt, Rect2(at, Vector2(48, 48)),
 				false, Color(1.0, 1.0, 1.0, opacity))
 	else:
-		var texture: Texture2D = DepotArt.texture() if kind == "depot" else Atlas.sprite(index)
+		var texture: Texture2D = PowerArt.texture(kind) if kind in ["water_wheel", "power_pole"] else (
+			DepotArt.texture() if kind == "depot" else Atlas.sprite(index))
 		if texture != null:
 			canvas.draw_texture_rect(texture, machine_destination(kind, at),
 				false, Color(1.0, 1.0, 1.0, opacity))
@@ -43,7 +45,7 @@ static func machine(canvas: CanvasItem, at: Vector2, kind: String, direction: in
 
 static func machine_source(kind: String) -> Rect2:
 	var index: int = int({"miner": 0, "belt": 1, "smelter": 2, "storage": 3}.get(kind, 0))
-	return Atlas.region(index)
+	return Rect2(Vector2.ZERO, Vector2(144, 144)) if kind in ["water_wheel", "power_pole"] 		else Atlas.region(index)
 
 static func machine_destination(kind: String, at: Vector2) -> Rect2:
 	if kind == "smelter":

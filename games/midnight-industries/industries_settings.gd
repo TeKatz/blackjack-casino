@@ -2,12 +2,13 @@ extends RefCounted
 const PATH := "user://industries-settings.cfg"
 const ACTIONS := {
 	"menu": KEY_ESCAPE, "pause": KEY_SPACE, "save": KEY_S, "map": KEY_M,
-	"inventory": KEY_I, "grid": KEY_G, "casino": KEY_C,
+	"inventory": KEY_I, "grid": KEY_G, "casino": KEY_C, "jobs": KEY_J,
 	"inspect": KEY_V, "build": KEY_B, "rotate": KEY_R,
 	"zoom_in": KEY_EQUAL, "zoom_out": KEY_MINUS,
 	"up": KEY_W, "down": KEY_S, "left": KEY_A, "right": KEY_D,
 	"tool_1": KEY_1, "tool_2": KEY_2, "tool_3": KEY_3,
-	"tool_4": KEY_4, "tool_5": KEY_5
+	"tool_4": KEY_4, "tool_5": KEY_5,
+	"tool_6": KEY_6, "tool_7": KEY_7
 }
 var values := {"language":"en", "language_explicit":false, "grid":false, "reduced_motion":false,
 	"high_contrast":false, "ui_scale":1.0, "autosave":60, "tooltip_density":1,

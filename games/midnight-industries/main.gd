@@ -20,6 +20,8 @@ const WindowChrome = preload("res://factory_window_chrome.gd")
 const BuildDock = preload("res://factory_build_dock.gd")
 const Objectives = preload("res://factory_objectives_drawer.gd")
 const CommandIcons = preload("res://factory_ui_icons.gd")
+const PowerArt = preload("res://factory_power_art.gd")
+const JobsView = preload("res://factory_jobs_view.gd")
 const TILE := 48.0
 const GOLD := Color("#F5C04A")
 const CYAN := Color("#00D8F4")
@@ -27,7 +29,7 @@ const INK := Color("#0C161D")
 const TEXT := Color("#F0F3F3")
 const MUTED := Color("#94ACB5")
 const DANGER := Color("#FF725F")
-const TOOLS := ["miner", "belt", "smelter", "storage", "depot"]
+const TOOLS := ["miner", "belt", "smelter", "storage", "depot", "power_pole", "water_wheel"]
 const DIR_TEXT := ["→", "↓", "←", "↑"]
 
 @onready var camera: Camera2D = $Camera
@@ -38,6 +40,7 @@ var motion_view: Node2D
 var grid_view: Node2D
 var minimap: Control
 var storage_view: Control
+var jobs_view: Control
 var construction_view: Node2D
 var show_grid := false
 const VISUAL_SETTINGS_FILE := "user://industries-visual-settings.cfg"
@@ -119,6 +122,7 @@ func _ready() -> void:
 	# Continue, Load or New World in the recovered main menu.
 	model = Model.new(false)
 	model.construction.phase_completed.connect(_on_construction_phase)
+	model.progression.job_completed.connect(_on_job_completed)
 	show_grid = bool(settings.values.grid)
 	camera.position = Vector2(21, 18) * TILE
 	camera.zoom = Vector2.ONE
@@ -185,7 +189,8 @@ func _machine_icon(kind: String) -> Texture2D:
 	if icon_cache.has(kind):
 		return icon_cache[kind]
 	var index: int = int({"miner":0, "belt":1, "smelter":2, "storage":3}.get(kind, 0))
-	var icon: Texture2D = DepotArt.texture() if kind == "depot" else Atlas.sprite(index)
+	var icon: Texture2D = PowerArt.texture(kind) if kind in ["power_pole", "water_wheel"] else (
+		DepotArt.texture() if kind == "depot" else Atlas.sprite(index))
 	icon_cache[kind] = icon
 	return icon
 
@@ -280,6 +285,9 @@ func _header_indicator(parent: HBoxContainer, accent: Color) -> Label:
 	return label
 
 func _show_future_panel(id: String) -> void:
+	if id == "jobs":
+		_toggle_jobs()
+		return
 	var names: Dictionary = {
 		"achievements": _tr("Erfolge", "Achievements"),
 		"jobs": "Jobs", "upgrades": "Upgrades"}
@@ -360,8 +368,7 @@ func _create_interface() -> void:
 	top_row.add_child(action_row)
 	_header_action(action_row, "achievements", _tr("ERFOLGE", "ACHIEVEMENTS"),
 		func() -> void: _show_future_panel("achievements"))
-	_header_action(action_row, "jobs", "JOBS",
-		func() -> void: _show_future_panel("jobs"))
+	_header_action(action_row, "jobs", "JOBS", _toggle_jobs)
 	_header_action(action_row, "upgrades", "UPGRADES",
 		func() -> void: _show_future_panel("upgrades"))
 	_header_action(action_row, "storage", _tr("LAGER", "STORAGE"), _toggle_storage)
@@ -568,6 +575,10 @@ func _create_interface() -> void:
 	storage_view.model = model
 	storage_view.german = german
 	ui_layer.add_child(storage_view)
+	jobs_view = JobsView.new()
+	jobs_view.model = model
+	jobs_view.german = german
+	ui_layer.add_child(jobs_view)
 	navigation = Navigation.new()
 	navigation.name = "WorldSaveSettingsNavigation"
 	navigation.game = self
@@ -596,25 +607,35 @@ func _notice(message: String) -> void:
 		if is_instance_valid(status):
 			status.visible = false)
 
-func _cost_text(kind: String) -> String:
-	if model.economy.has_free_kit(kind):
-		return _tr("UMZUGS-KIT GRATIS", "RELOCATION KIT FREE")
-	if kind == "depot" and model.economy.free_depot_available:
-		return _tr("1x GRATIS", "1x FREE")
-	var pieces: Array[String] = []
-	var costs: Dictionary = model.building_cost(kind)
-	for item in costs:
-		var short := "Fe" if item == "iron_ingot" else (
-			"Cu" if item == "copper_ingot" else "Au")
-		pieces.append("%s %d" % [short, int(costs[item])])
-	return " · ".join(pieces)
+func _cost_text(_kind: String) -> String:
+	return _tr("KOSTENLOS", "FREE")
 
-func _missing_text(kind: String) -> String:
-	var missing: Dictionary = model.missing_materials(kind)
-	var pieces: Array[String] = []
-	for item in missing:
-		pieces.append("%s %d" % [str(item).to_upper(), int(missing[item])])
-	return ", ".join(pieces)
+func _missing_text(_kind: String) -> String:
+	return ""
+
+func _toggle_jobs() -> void:
+	if current_world.is_empty() or menu_open:
+		return
+	if jobs_view.visible:
+		jobs_view.hide_jobs()
+		return
+	storage_view.close_inventory()
+	minimap.hide_map()
+	_cancel_select_drag()
+	moving_camera = false
+	jobs_view.show_jobs()
+
+func _on_job_completed(id: String) -> void:
+	if build_dock != null:
+		build_dock._build_machines()
+		build_dock.refresh()
+	if jobs_view != null:
+		jobs_view.refresh()
+	if id == "first_iron_delivery":
+		_notice(_tr("Job 001 abgeschlossen: Wasserrad, Strommast und Schmelzofen freigeschaltet! +1 Stromslot",
+			"Job 001 complete: Water wheel, power pole and furnace unlocked! +1 power slot"))
+	_refresh_ui()
+
 
 func _set_mode(next_mode: String) -> void:
 	_cancel_select_drag()
@@ -634,7 +655,7 @@ func _set_mode(next_mode: String) -> void:
 	_refresh_ui()
 
 func _select_tool(name: String) -> void:
-	if not model.construction.is_machine_unlocked(name) or not model.economy.registered(name):
+	if not model.is_unlocked(name):
 		return
 	tool = name
 	if build_dock != null:
@@ -664,6 +685,7 @@ func _inspect(cell: Vector2i) -> void:
 func _refresh_ui() -> void:
 	if model == null or header_status == null:
 		return
+	model._update_power()
 	var unit_count: int = model.buildings.size()
 	var pause_state := _tr("STOPP", "PAUSED") if simulation_paused else _tr("AKTIV", "LIVE")
 	header_status.text = "● %s  ·  %d" % [pause_state, unit_count]
@@ -679,6 +701,7 @@ func _refresh_ui() -> void:
 		build_dock.refresh()
 	if objectives_drawer != null:
 		objectives_drawer.set_phase(active_phase)
+		objectives_drawer.set_progression(model)
 	if tool_cost_label != null and mode == "build":
 		tool_cost_label.text = _tr("BAUKOSTEN: ", "BUILD COST: ") + _cost_text(tool)
 		tool_cost_label.add_theme_color_override("font_color",
@@ -734,13 +757,15 @@ func _refresh_inspector() -> void:
 	inspector_portrait.texture = _machine_icon(kind)
 	inspector_progress.visible = true
 	inspector_controls.visible = true
-	rotate_button.disabled = kind == "depot"
+	rotate_button.disabled = kind in ["depot", "power_pole", "water_wheel"]
 	var label_name := {"miner": _tr("Abbaumaschine", "Mining drill"),
 		"belt": _tr("Förderband", "Conveyor belt"),
 		"smelter": _tr("Schmelzofen", "Smelting furnace"),
 		"storage": _tr("Zwischenlager", "Warehouse"),
-		"depot": _tr("Globales Depot", "Global depot")}
-	inspector_title.text = label_name[kind]
+		"depot": _tr("Globales Depot", "Global depot"),
+		"power_pole": _tr("Strommast", "Power pole"),
+		"water_wheel": _tr("Wasserrad", "Water wheel")}
+	inspector_title.text = str(label_name.get(kind, kind.capitalize()))
 	inspector_subtitle.text = "%s  %d, %d     ·     %s  %s" % [
 		_tr("POSITION", "POSITION"), inspected.x, inspected.y,
 		_tr("AUSGANG", "OUTPUT"), DIR_TEXT[int(machine.direction)]]
@@ -757,7 +782,10 @@ func _refresh_inspector() -> void:
 				_tr("Leer", "Empty")) + "\n" + _tr("Transport: 4 Felder / Sekunde", "Transport: 4 tiles / second") + "\n" + _tr("Kapazität: 1 Gegenstand", "Capacity: 1 item")
 			inspector_progress.value = 100.0 if item != "" else 0.0
 		"smelter":
-			inspector_body.text = (_tr("Rezept: ", "Recipe: ") + str(machine.recipe).to_upper() + "\n" +
+			inspector_body.text = (_tr("Strom: ", "Power: ") + (
+				"10 kW · " + (_tr("AKTIV", "ON") if model.power.is_powered(inspected) else
+				_tr("KEINE VERSORGUNG", "NO SUPPLY"))) + "\n" +
+				_tr("Rezept: ", "Recipe: ") + str(machine.recipe).to_upper() + "\n" +
 				_tr("Erz: %d/8    Produkt: %d/8", "Ore: %d/8    Output: %d/8") % [machine.ore, machine.output] + "\n" +
 				_tr("Tempo: 1 Barren / 2 Sekunden", "Rate: 1 ingot / 2 seconds"))
 			inspector_progress.value = clampf(100.0 * float(machine.progress) / 2.0, 0.0, 100.0)
@@ -783,6 +811,21 @@ func _refresh_inspector() -> void:
 					model.economy.available("copper_ingot"),
 					model.economy.available("gold_ingot")]
 			inspector_progress.value = 100.0
+		"power_pole":
+			var attached: bool = model.power.network_for.has(inspected)
+			inspector_body.text = _tr("Stromverteilung · Reichweite 5 Felder",
+				"Power distribution · range 5 tiles") + "\n" + _tr(
+				"Verbindet Generatoren und Verbraucher in Reichweite.",
+				"Connects generators and machines in range.") + "\n" + (
+				_tr("Netzknoten aktiv", "Node online") if attached else
+				_tr("Nicht angeschlossen", "Not connected"))
+			inspector_progress.visible = false
+		"water_wheel":
+			inspector_body.text = _tr("Wasserkraft · 30 kW", "Hydropower · 30 kW") + "\n" + (
+				_tr("Stromslots: ", "Power slots: ") + "1") + "\n" + _tr(
+				"Nur an Flussufern · Stromnetz mit Masten erweitern.",
+				"River banks only · extend the grid with power poles.")
+			inspector_progress.visible = false
 
 func _rotate_selected() -> void:
 	if model.rotate(inspected):
@@ -791,17 +834,11 @@ func _rotate_selected() -> void:
 		_notice(_tr("Ausgang gedreht", "Output rotated"))
 
 func _demolish_selected() -> void:
-	var is_kit: bool = bool(model.buildings[inspected].get("kit", false)) \
-		if model.buildings.has(inspected) else false
 	if model.erase(inspected):
 		static_view.refresh_cell(inspected)
 		_inspect(Vector2i(-1, -1))
-		if is_kit:
-			_notice(_tr("Starter-Kit zum kostenlosen Wiederaufbau erhalten",
-				"Starter relocation kit returned for free rebuild"))
-		else:
-			_notice(_tr("Gebäude entfernt · 100 % bezahlte Baukosten erstattet",
-				"Machine removed · 100% of paid build materials refunded"))
+		_notice(_tr("Gebäude entfernt · kostenloser Neubau jederzeit möglich",
+			"Building removed · rebuild for free anytime"))
 		_refresh_ui()
 
 func _toggle_pause() -> void:
@@ -853,6 +890,8 @@ func _on_construction_phase(number: int) -> void:
 	_refresh_ui()
 
 func _toggle_storage() -> void:
+	if jobs_view != null:
+		jobs_view.hide_jobs()
 	if storage_view.visible:
 		storage_view.close_inventory()
 		return
@@ -862,6 +901,8 @@ func _toggle_storage() -> void:
 	storage_view.open_inventory()
 
 func _toggle_minimap() -> void:
+	if jobs_view != null:
+		jobs_view.hide_jobs()
 	if storage_view.visible:
 		storage_view.close_inventory()
 	if minimap.visible:
@@ -886,6 +927,8 @@ func _new_factory() -> void:
 
 func _show_menu(show: bool) -> void:
 	_cancel_select_drag()
+	if jobs_view != null:
+		jobs_view.hide_jobs()
 	storage_view.close_inventory()
 	minimap.hide_map()
 	if current_world.is_empty():
@@ -930,7 +973,7 @@ func _physics_process(delta: float) -> void:
 		_refresh_ui()
 
 func _process(delta: float) -> void:
-	if menu_open or minimap.visible or storage_view.visible or navigation.settings_screen.visible:
+	if menu_open or minimap.visible or storage_view.visible or jobs_view.visible or navigation.settings_screen.visible:
 		return
 	var movement := Vector2.ZERO
 	if Input.is_action_pressed("industries_up") or Input.is_key_pressed(KEY_UP):
@@ -1031,6 +1074,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		if navigation.start_screen.visible:
 			get_viewport().set_input_as_handled()
 			return
+		if jobs_view.visible:
+			if event.is_action_pressed("industries_jobs") or event.is_action_pressed("industries_menu"):
+				jobs_view.hide_jobs()
+			get_viewport().set_input_as_handled()
+			return
 		if storage_view.visible:
 			if event.is_action_pressed("industries_inventory") or event.is_action_pressed("industries_menu"):
 				storage_view.close_inventory()
@@ -1039,6 +1087,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if minimap.visible:
 			if event.is_action_pressed("industries_map") or event.is_action_pressed("industries_menu"):
 				minimap.hide_map()
+			get_viewport().set_input_as_handled()
+			return
+		if not menu_open and event.is_action_pressed("industries_jobs"):
+			_toggle_jobs()
 			get_viewport().set_input_as_handled()
 			return
 		if not menu_open and event.is_action_pressed("industries_inventory"):
@@ -1081,7 +1133,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.is_action_pressed("industries_zoom_out"):
 			camera.zoom = (camera.zoom / 1.12).clamp(Vector2(0.55, 0.55), Vector2(2.4, 2.4))
 		return
-	if menu_open or minimap.visible or storage_view.visible or navigation.settings_screen.visible:
+	if menu_open or minimap.visible or storage_view.visible or jobs_view.visible or navigation.settings_screen.visible:
 		return
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
@@ -1110,11 +1162,20 @@ func _unhandled_input(event: InputEvent) -> void:
 					_notice(_tr("Gebäude platziert", "Building placed") +
 						" · " + _cost_text(tool))
 					_refresh_ui()
-				elif model.can_place_site(hovered, tool):
-					_notice(_tr("Fehlende Baumaterialien: ", "Missing build materials: ") +
-						_missing_text(tool))
 				else:
-					_notice(_tr("Bauplatz blockiert", "Building site blocked"))
+					var issue: String = model.placement_issue(hovered, tool)
+					match issue:
+						"slots":
+							_notice(_tr("Keine Stromslots frei · Generator entfernen oder Nebenauftrag abschließen",
+								"No power slots free · remove a generator or complete a side job"))
+						"river":
+							_notice(_tr("Wasserräder benötigen ein Flussufer",
+								"Water wheels must be placed beside a river"))
+						"locked":
+							_notice(_tr("Maschine noch gesperrt · Jobs prüfen",
+								"Machine locked · check Jobs"))
+						_:
+							_notice(_tr("Bauplatz blockiert", "Building site blocked"))
 				get_viewport().set_input_as_handled()
 			elif event.button_index == MOUSE_BUTTON_RIGHT:
 				if mode == "build":
@@ -1169,6 +1230,7 @@ func open_world(id: String, record: Dictionary) -> void:
 	current_world = id
 	saved_view = record.view.duplicate(true)
 	model.construction.phase_completed.connect(_on_construction_phase)
+	model.progression.job_completed.connect(_on_job_completed)
 	terrain_view.model = model
 	terrain_view.refresh_from_model()
 	static_view.model = model
@@ -1182,6 +1244,7 @@ func open_world(id: String, record: Dictionary) -> void:
 	minimap.refresh_map()
 	storage_view.model = model
 	storage_view.german = german
+	jobs_view.model = model
 	build_dock.model = model
 	build_dock._build_machines()
 	build_dock.set_inspecting()
@@ -1212,6 +1275,7 @@ func return_to_main() -> void:
 	motion_view.menu_open = true
 	storage_view.close_inventory()
 	minimap.hide_map()
+	jobs_view.hide_jobs()
 	navigation.show_start()
 
 func apply_settings(changed: String = "") -> void:
@@ -1269,6 +1333,7 @@ func _rebuild_interface_language() -> void:
 	var previous_pan: Vector2 = minimap.pan
 	var map_was_open: bool = minimap.visible
 	var storage_was_open: bool = storage_view.visible
+	var jobs_were_open: bool = jobs_view.visible
 	var drawer_was_expanded: bool = objectives_drawer.expanded
 	var previous_category: String = build_dock.selected_category
 	var previous_tool: String = tool
@@ -1306,6 +1371,8 @@ func _rebuild_interface_language() -> void:
 			minimap.show_map()
 		if storage_was_open:
 			storage_view.open_inventory()
+		if jobs_were_open:
+			jobs_view.show_jobs()
 	if settings_was_open:
 		navigation.open_settings()
 		navigation._select_tab(active_tab)

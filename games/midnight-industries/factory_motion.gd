@@ -66,6 +66,11 @@ func _draw() -> void:
 					_storage_vfx(at, cell)
 				"depot":
 					_depot_vfx(at, cell)
+				"water_wheel":
+					_wheel_vfx(at, cell)
+				"power_pole":
+					_pole_vfx(at, cell)
+	_power_network_vfx()
 	_selection_vfx()
 	if menu_open or not model.inside(hovered):
 		return
@@ -109,6 +114,12 @@ func _miner_vfx(at: Vector2, machine: Dictionary, cell: Vector2i) -> void:
 	draw_rect(Rect2(at + Vector2(7, 44), Vector2(34 * ratio, 2)), CYAN)
 
 func _smelter_vfx(at: Vector2, machine: Dictionary, cell: Vector2i) -> void:
+	if not model.power.is_powered(cell):
+		draw_rect(Rect2(at + Vector2(11, 9), Vector2(27, 28)),
+			Color("#10212B", 0.16))
+		draw_line(at + Vector2(17, 15), at + Vector2(32, 30),
+			Color("#EF6969", 0.64), 2.5)
+		return
 	if machine.ore <= 0 and machine.output <= 0:
 		return
 	var center := at + Vector2(24, 29)
@@ -144,6 +155,39 @@ func _depot_vfx(at: Vector2, cell: Vector2i) -> void:
 	if not reduced_motion:
 		draw_line(at + Vector2(16, 40), at + Vector2(32, 40),
 			Color("#19D3EC", 0.26 + 0.28 * pulse), 1.7)
+
+func _wheel_vfx(at: Vector2, cell: Vector2i) -> void:
+	var glow := 0.70 if reduced_motion else 0.62 + 0.24 * sin(tick * 3.1 + float(cell.x))
+	draw_circle(at + Vector2(29, 24), 7.5, Color("#7CF2FF", 0.13 * glow))
+	draw_circle(at + Vector2(29, 24), 3.0, Color("#C6FDFF", 0.58 * glow))
+	var middle := at + Vector2(21, 23)
+	var radius := 10.0
+	var angle := 0.3 if reduced_motion else tick * 1.8
+	for index in range(4):
+		var direction := Vector2.RIGHT.rotated(angle + float(index) * PI / 2.0)
+		draw_line(middle, middle + direction * radius,
+			Color("#E6B471", 0.50), 1.6)
+
+func _pole_vfx(at: Vector2, cell: Vector2i) -> void:
+	var pulse := 0.78 if reduced_motion else 0.65 + 0.23 * sin(tick * 4.0 + float(cell.y))
+	draw_circle(at + Vector2(25, 10), 5.3, Color("#47DDF1", pulse * 0.19))
+	draw_circle(at + Vector2(25, 10), 2.5, Color("#A4F8FC", pulse))
+
+func _power_network_vfx() -> void:
+	# Show virtual power links only while designing power distribution or
+	# inspecting a power structure. They are not physical conveyor routes.
+	var design := cursor_mode == "build" and tool in ["power_pole", "water_wheel"]
+	var selected_power := model.buildings.has(inspected) \
+		and str(model.buildings[inspected].kind) in ["power_pole", "water_wheel"]
+	if not design and not selected_power:
+		return
+	for link in model.power.edges:
+		var from: Vector2 = (Vector2(link[0]) + Vector2.ONE * 0.5) * TILE
+		var to: Vector2 = (Vector2(link[1]) + Vector2.ONE * 0.5) * TILE
+		draw_line(from, to, Color("#092C3E", 0.57), 4.0)
+		draw_line(from, to, Color("#72DDED", 0.66), 1.8)
+		var travel := 0.42 if reduced_motion else fposmod(tick * 0.65, 1.0)
+		draw_circle(from.lerp(to, travel), 2.4, Color("#B3FAFF", 0.86))
 
 func _selection_vfx() -> void:
 	if not model.inside(inspected) or not model.buildings.has(inspected):

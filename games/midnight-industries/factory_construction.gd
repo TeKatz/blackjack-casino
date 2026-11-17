@@ -23,7 +23,8 @@ const PHASE_REQUIREMENTS := {}
 # A positive phase number unlocks the entry AFTER completing that phase.
 # Future example: "metal_press": 1, "iron_plate": 1
 const MACHINE_UNLOCK_PHASES := {
-	"miner": 0, "belt": 0, "smelter": 0, "storage": 0, "depot": 0
+	"miner": 0, "belt": 0, "depot": 0, "smelter": 0,
+	"storage": 0, "power_pole": 0, "water_wheel": 0
 }
 const RECIPE_UNLOCK_PHASES := {
 	"iron_ingot": 0, "copper_ingot": 0, "gold_ingot": 0

@@ -44,6 +44,9 @@ func _run() -> void:
 	if game.minimap.visible:
 		_fail("M map did not close", game)
 		return
+	if not game.model.place(Vector2i(16, 17), "miner", 0):
+		_fail("New-world miner cannot be placed for free", game)
+		return
 	game._inspect(Vector2i(16, 17))
 	if game.inspector_title.text == "" or not game.inspector_controls.visible:
 		_fail("selected miner has no inspector", game)
@@ -55,10 +58,9 @@ func _run() -> void:
 	game.facing = 1
 	game.motion_view.facing = 1
 	var target := Vector2i(26, 17)
-	if game.model.can_place(target, "belt"):
-		_fail("Starter factory must not get free unlimited build materials", game)
+	if not game.model.can_place(target, "belt"):
+		_fail("Conveyors must be free in a fresh factory", game)
 		return
-	game.model.economy.credit("iron_ingot", 3)
 	if not game.model.place(target, "belt", game.facing):
 		_fail("belt placement rejected", game)
 		return
@@ -88,8 +90,8 @@ func _run() -> void:
 	if game.model.buildings.has(target):
 		_fail("inspector demolish failed", game)
 		return
-	if game.model.economy.available("iron_ingot") != 3:
-		_fail("Demolition did not refund the full paid belt price", game)
+	if game.model.economy.available("iron_ingot") != 0:
+		_fail("Free building placement/demolition generated free materials", game)
 		return
 	if game.storage_view == null or game.storage_view.visible:
 		_fail("Global stock overlay must start hidden", game)
@@ -139,12 +141,28 @@ func _run() -> void:
 		_fail("Switching categories kept an unrelated build tool selected", game)
 		return
 	game.build_dock._activate_category("production")
+	if game.mode != "inspect" or not game.build_dock._open:
+		_fail("Locked production category enabled an unearned smelter", game)
+		return
+	game._toggle_jobs()
+	if not game.jobs_view.visible or not "100" in game.jobs_view.description.text:
+		_fail("Jobs screen did not show the first delivery objective", game)
+		return
+	game._toggle_jobs()
+	assert(not game.jobs_view.visible)
+	# The core smoke verifies real depot delivery; the UI test directly
+	# exercises the unlock signal so it also validates live dock refreshing.
+	game.model.progression.record_delivery("iron_ore", 100)
+	if not game.model.is_unlocked("smelter") or game.model.progression.power_slots != 1:
+		_fail("First job did not unlock power and the furnace", game)
+		return
+	game.build_dock._activate_category("production")
 	if game.tool != "smelter" or game.mode != "build":
-		_fail("Production category did not select its own unlocked machine", game)
+		_fail("Production category did not unlock after first job", game)
 		return
 	game.build_dock._activate_category("energy")
-	if game.mode != "inspect" or not game.build_dock._open:
-		_fail("Empty future category allowed unrelated machine placement", game)
+	if game.tool != "power_pole" or game.mode != "build":
+		_fail("Energy category did not expose new electricity buildings", game)
 		return
 	game._set_mode("inspect")
 	game.return_to_main()

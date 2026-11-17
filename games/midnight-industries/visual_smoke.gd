@@ -6,6 +6,7 @@ const Art = preload("res://factory_art.gd")
 const BeltArt = preload("res://factory_belt_art.gd")
 const OreVariants = preload("res://factory_ore_variants.gd")
 const DepotArt = preload("res://factory_depot_art.gd")
+const PowerArt = preload("res://factory_power_art.gd")
 
 func _initialize() -> void:
 	call_deferred("_run")
@@ -32,6 +33,9 @@ func _run() -> void:
 	var world_id: String = game.current_world
 	if world_id.is_empty():
 		_fail("World selection did not create a playable factory")
+		return
+	if not game.model.place(Vector2i(16, 17), "miner", 0):
+		_fail("Initial free miner could not be placed")
 		return
 	if game.static_view.chunks.size() != 154:
 		_fail("Expanded 224x176 factory must have 154 cached 16x16 chunks")
@@ -146,6 +150,11 @@ func _run() -> void:
 	if depot_art == null or depot_art.get_width() != 144:
 		_fail("Dedicated illustrated depot machine texture is unavailable")
 		return
+	for name in ["water_wheel", "power_pole"]:
+		var illustration: Texture2D = PowerArt.texture(name)
+		if illustration == null or illustration.get_width() != 144 			or illustration.get_image().get_used_rect().size.x < 75:
+			_fail("Dedicated high-detail generator/mast art missing: " + name)
+			return
 	if Art.machine_destination("smelter", Vector2.ZERO).position.y >= 0.0:
 		_fail("Furnace outlet was not moved up to belt height")
 		return
@@ -178,8 +187,7 @@ func _run() -> void:
 	if dock._open:
 		_fail("Machine shelf must retract in inspect mode")
 		return
-	for kind in ["miner", "belt", "smelter", "storage", "depot"]:
-		game._select_tool(kind)
+	for kind in ["miner", "belt", "smelter", "storage", "depot", "power_pole", "water_wheel"]:
 		if game._machine_icon(kind) == null \
 			or game._machine_icon(kind).get_width() < 64:
 			_fail("Machine illustration missing for " + kind)

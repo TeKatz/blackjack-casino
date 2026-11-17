@@ -95,6 +95,26 @@ func set_expanded(value: bool, animated: bool = false) -> void:
 	expanded = value
 	_update_slide(animated)
 
+func set_progression(factory) -> void:
+	if factory == null:
+		return
+	var job := factory.progression.current_job()
+	if job.is_empty():
+		heading.text = _word("HAUPTAUFTRAG ERLEDIGT", "MAIN JOB COMPLETED")
+		body.text = _word("Die erste Lieferung ist abgeschlossen. Weitere Aufträge folgen.",
+			"The first delivery is complete. More jobs are coming.")
+	else:
+		heading.text = _word("AKTUELLER HAUPTAUFTRAG", "CURRENT MAIN JOB")
+		var delivered: int = factory.progression.delivered_count(
+			str(job.id), "iron_ore")
+		body.text = _word("100 Eisenerz ans Depot liefern: ",
+			"Deliver 100 iron ore to depot: ") + "%d / 100" % delivered
+	factory._update_power()
+	body.text += "\n" + _word("Stromslots: ", "Power slots: ") + \
+		"%d/%d" % [factory.power.slot_used, factory.power.slot_limit]
+	body.text += "\n" + _word("Stromleistung: ", "Power supply: ") + \
+		"%d/%d kW" % [factory.power.total_powered, factory.power.total_supply]
+
 func set_phase(phase: int) -> void:
 	phase_line.text = _word("CASINO · PHASE ", "CASINO · PHASE ") + "%02d/12" % phase
 

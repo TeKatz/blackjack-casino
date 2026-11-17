@@ -343,6 +343,9 @@ func _rebuild_costs() -> void:
 		var state := _label(row, "", 11, MenuTheme.CYAN)
 		availability[kind] = state
 		var costs: Dictionary = model.building_cost(kind)
+		if costs.is_empty():
+			_label(col, _word("Kostenlos platzierbar", "Free to build"),
+				12, MenuTheme.CYAN)
 		for material in costs:
 			var requirement := HBoxContainer.new()
 			requirement.add_theme_constant_override("separation", 9)
@@ -374,13 +377,7 @@ func _refresh_live() -> void:
 		state.add_theme_color_override("font_color",
 			MenuTheme.CYAN if ready else MenuTheme.RED)
 		var status: Label = availability[kind + "_status"]
-		if model.economy.has_free_kit(kind):
-			status.text = _word("Kostenloses Umzugs-Kit verfügbar",
-				"Free relocation kit available")
-		elif kind == "depot" and model.economy.free_depot_available:
-			status.text = _word("Ein kostenloses Depot verfügbar",
-				"One free depot available")
-		else:
+		if true:
 			var details: Array[String] = []
 			var costs: Dictionary = model.building_cost(kind)
 			for material in costs:
@@ -388,16 +385,14 @@ func _refresh_live() -> void:
 				var have: int = model.economy.available(str(material))
 				details.append("%s %d / %d" % [
 					_material_name(str(material)), mini(have, need), need])
-			status.text = "  ·  ".join(details)
+			status.text = _word("Keine Materialkosten", "No material costs") if details.is_empty() else "  ·  ".join(details)
 	depot_label.text = _word("DEPOTS VERBUNDEN: %d", "CONNECTED DEPOTS: %d") % \
 		int(model.counts().get("depot", 0))
-	var kit_count: int = 0
-	for amount in model.economy.relocation_kits.values():
-		kit_count += int(amount)
-	voucher_label.text = _word("Wiederaufbau-Kits: %d", "Relocation kits: %d") % kit_count
-	if model.economy.free_depot_available:
-		voucher_label.text += _word("  ·  1 kostenloses Depot",
-			"  ·  1 complimentary depot")
+	model._update_power()
+	voucher_label.text = _word("Stromslots: %d/%d · Strom: %d/%d kW",
+		"Power slots: %d/%d · Power: %d/%d kW") % [
+		model.power.slot_used, model.power.slot_limit,
+		model.power.total_powered, model.power.total_supply]
 
 func _process(delta: float) -> void:
 	if not visible or model == null:

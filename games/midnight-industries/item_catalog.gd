@@ -14,7 +14,7 @@ const MACHINES := [
 	{"id":"belt", "de":"Förderband", "en":"Conveyor belt", "category":"logistics", "key":2},
 	{"id":"storage", "de":"Zwischenlager", "en":"Warehouse", "category":"logistics", "key":4},
 	{"id":"depot", "de":"Globales Depot", "en":"Global depot", "category":"logistics", "key":5},
-	{"id":"smelter", "de":"Schmelzofen", "en":"Smelting furnace", "category":"production", "key":3}
+	{"id":"smelter", "de":"Schmelzofen", "en":"Smelting furnace", "category":"production", "key":3, "unlock_job":"first_iron_delivery"}
 ]
 
 static func item(id: String) -> Dictionary:

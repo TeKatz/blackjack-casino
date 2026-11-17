@@ -63,6 +63,12 @@ func _run() -> void:
 	var first: String = game.current_world
 	assert(first != "" and not game.navigation.start_screen.visible)
 	assert(not game.menu_open)
+	assert(game.jobs_view != null and not game.jobs_view.visible)
+	game._toggle_jobs()
+	assert(game.jobs_view.visible)
+	assert(game.jobs_view.progress_text.text.contains("0 / 100"))
+	game._toggle_jobs()
+	assert(not game.jobs_view.visible)
 	game._show_menu(true)
 	assert(game.menu_card.get_theme_stylebox("panel") is StyleBoxFlat)
 	assert(game.effects_button == null and game.grid_button == null)

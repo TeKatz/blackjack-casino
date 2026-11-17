@@ -48,7 +48,6 @@ static func phase_required(machine: Dictionary) -> int:
 
 static func unlocked(machine: Dictionary, model) -> bool:
 	var kind: String = str(machine.get("id", ""))
-	return model != null and model.construction.is_machine_unlocked(kind) \
-		and model.economy.registered(kind) \
+	return model != null and model.is_unlocked(kind) \
 		and phase_required(machine) >= 0 \
 		and model.construction.completed_phases >= phase_required(machine)

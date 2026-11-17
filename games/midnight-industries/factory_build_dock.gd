@@ -267,7 +267,13 @@ func _tooltip(entry: Dictionary, unlocked: bool) -> String:
 	for material in cost:
 		parts.append("%s × %d" % [
 			ItemCatalog.name_for(str(material), german), int(cost[material])])
-	return title + "\n" + ", ".join(parts)
+	if str(entry.id) == "water_wheel":
+		return title + "\n" + _word("30 kW · 1 Stromslot · nur am Flussufer",
+			"30 kW · 1 power slot · river bank only")
+	if str(entry.id) == "power_pole":
+		return title + "\n" + _word("0 kW · Reichweite 5 Felder",
+			"0 kW · 5-tile connection range")
+	return title + "\n" + (_word("Kostenlos", "Free") if parts.is_empty() else ", ".join(parts))
 
 func _refresh_materials() -> void:
 	if model == null:
