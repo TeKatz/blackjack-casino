@@ -54,7 +54,7 @@ static func _wheel() -> String:
 	svg += '<path d="M31 112Q43 106 56 111T82 114" fill="none" stroke="#17BDD5" stroke-width="3" opacity=".85"/>'
 	svg += '<path d="M22 120Q35 114 48 118M53 120Q65 114 76 120" fill="none" stroke="#B2F9FC" stroke-width="1.8" opacity=".7"/>'
 	for pt in ["25,98","43,111","88,105","118,99"]:
-		var xy := pt.split(",")
+		var xy: PackedStringArray = pt.split(",")
 		svg += '<circle cx="' + xy[0] + '" cy="' + xy[1] + '" r="2.4" fill="#E1B575" stroke="#192A2F" stroke-width="1"/>'
 	return svg
 
@@ -77,6 +77,6 @@ static func _pole() -> String:
 	svg += '<path d="M60 83L88 80M54 94L90 95" stroke="#A6C9D1" stroke-width="2" opacity=".76"/>'
 	svg += '<path d="M67 106L82 105L86 114L66 117Z" fill="#233D4A" stroke="#0D2630" stroke-width="3"/>'
 	for pt in ["42,111","72,119","104,111"]:
-		var xy := pt.split(",")
+		var xy: PackedStringArray = pt.split(",")
 		svg += '<circle cx="' + xy[0] + '" cy="' + xy[1] + '" r="2.3" fill="#DDA662" stroke="#233846" stroke-width="1"/>'
 	return svg

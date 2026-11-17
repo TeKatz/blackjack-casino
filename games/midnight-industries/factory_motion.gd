@@ -177,7 +177,7 @@ func _power_network_vfx() -> void:
 	# Show virtual power links only while designing power distribution or
 	# inspecting a power structure. They are not physical conveyor routes.
 	var design := cursor_mode == "build" and tool in ["power_pole", "water_wheel"]
-	var selected_power := model.buildings.has(inspected) \
+	var selected_power: bool = model.buildings.has(inspected) \
 		and str(model.buildings[inspected].kind) in ["power_pole", "water_wheel"]
 	if not design and not selected_power:
 		return

@@ -98,7 +98,7 @@ func set_expanded(value: bool, animated: bool = false) -> void:
 func set_progression(factory) -> void:
 	if factory == null:
 		return
-	var job := factory.progression.current_job()
+	var job: Dictionary = factory.progression.current_job()
 	if job.is_empty():
 		heading.text = _word("HAUPTAUFTRAG ERLEDIGT", "MAIN JOB COMPLETED")
 		body.text = _word("Die erste Lieferung ist abgeschlossen. Weitere Aufträge folgen.",
