@@ -105,6 +105,33 @@ The CI workflow validates 1024px grass/stone details, unchanged raw material art
 - Approved original ore and cargo sprites were restored; only ground-cluster arrangements vary. Vertical conveyors have dedicated lighting-correct artwork, belts and ore have no oversized drop shadows, and warehouses no longer overlap left neighbors.
 - Actual Windows FPS remains a device-side acceptance check; headless simulation speed is not a GPU benchmark.
 
+## Menu, world selection and settings refinement
+
+Menus, pause controls and settings were redesigned as a **separate native Godot
+menu layer**. The project now uses modern recessed panels with rounded edges,
+soft shadows, consistent typography, clear selected states, and deliberately
+avoids the old stretched gold-corner menu art. No changes were made to the
+existing factory HUD or physical machine sprites.
+
+- **English is the default language.** Prior implicit German defaults migrate
+  to English, while an explicit language selection in the new dropdown is
+  persisted and reflected immediately across menus.
+- **Settings** uses Audio / Video / Game & UI / Controls tabs, a language
+  dropdown and actively highlighted effect/display/tooltip options; all
+  control labels are localized. No settings are applied repeatedly on slider
+  hover, and UI scaling is committed only when leaving the settings overlay.
+- **Pause menu** contains only Resume, Save, Settings, Worlds & Saves, and
+  Save & Return to Casino. Grid, Animations and Find Casino Site are not
+  duplicated in this menu.
+- **World selection** is substantially wider, with spacious individual
+  entries, phase and playtime metadata, and distinct red Delete controls.
+- **Window mode** offers a native Godot custom borderless titlebar in Windowed
+  mode, supporting OS-integrated drag, resize, minimize and maximize. A
+  borderless-maximized desktop view is the default to avoid the unwanted
+  classic white Windows decoration. Window size respects usable monitor area.
+- The preexisting Shapez experiment and oversized depot quick-pins are still
+  **excluded**, pending proper separate art direction.
+
 ## Restored: world selection, settings and interactive map
 
 The tested Phase-1 HUD overhaul was rolled back. The subsequent selective

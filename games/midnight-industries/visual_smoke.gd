@@ -181,7 +181,7 @@ func _run() -> void:
 		if icon == null or icon.get_width() != 144:
 			_fail("Illustrated machine is missing from the build catalog: " + kind)
 			return
-	if game.menu_card.get_theme_stylebox("panel") is not StyleBoxTexture:
+	if game.menu_card.get_theme_stylebox("panel") is not StyleBoxFlat:
 		_fail("The native old menu surface has not been fully replaced")
 		return
 	game._show_menu(false)

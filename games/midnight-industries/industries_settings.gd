@@ -9,9 +9,9 @@ const ACTIONS := {
 	"tool_1": KEY_1, "tool_2": KEY_2, "tool_3": KEY_3,
 	"tool_4": KEY_4, "tool_5": KEY_5
 }
-var values := {"language":"de", "grid":false, "reduced_motion":false,
+var values := {"language":"en", "language_explicit":false, "grid":false, "reduced_motion":false,
 	"high_contrast":false, "ui_scale":1.0, "autosave":60, "tooltip_density":1,
-	"window_mode":0, "vsync":true, "fps":60, "water_motion":true,
+	"window_mode":1, "vsync":true, "fps":60, "water_motion":true,
 	"effect_quality":2,
 	"resolution":"1600x900", "window_configured":false, "master":1.0, "music":1.0, "effects":1.0, "ui":1.0,
 	"master_mute":false, "music_mute":false, "effects_mute":false, "ui_mute":false}
@@ -23,6 +23,10 @@ func _init() -> void:
 	if cfg.load(PATH) == OK:
 		for name in values:
 			values[name] = cfg.get_value("game", name, values[name])
+		# An old default German value is not a deliberate language choice.
+		# Explicit selections made in the new dropdown always persist.
+		if not bool(values.language_explicit):
+			values.language = "en"
 		for name in keys:
 			var key := int(cfg.get_value("keys", name, keys[name]))
 			if key > 0:
@@ -70,23 +74,38 @@ func apply(changed: String = "") -> void:
 	if changed in ["resolution", "window_mode"] or (
 		changed == "" and bool(values.get("window_configured", false))
 	):
-		# Apply size only for windowed mode. In borderless/maximized/fullscreen
-		# the desktop monitor's native resolution is authoritative.
+		if DisplayServer.get_name() == "headless":
+			return
 		var window_mode: int = clampi(int(values.window_mode), 0, 2)
-		if changed in ["window_mode", ""] or changed == "resolution":
-			DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, window_mode == 1)
-			match window_mode:
-				1: DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
-				2: DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-				_: DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		if window_mode == 0:
-			var dimensions: PackedStringArray = str(values.resolution).split("x")
-			if dimensions.size() == 2:
-				var requested := Vector2i(
-					clampi(int(dimensions[0]), 1024, 3840),
-					clampi(int(dimensions[1]), 720, 2160))
+		# Windowed mode uses custom, draggable in-game chrome. This removes
+		# the white Windows OS title bar without sacrificing resizing.
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, window_mode != 2)
+		match window_mode:
+			1:
+				DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
+			2:
+				DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+			_:
+				DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+				# Do not silently create a window larger than the monitor's
+				# usable work area (taskbar and desktop panels included).
+				var available: Rect2i = DisplayServer.screen_get_usable_rect(
+					DisplayServer.window_get_current_screen())
+				var dimensions: PackedStringArray = str(values.resolution).split("x")
+				var requested := Vector2i(1440, 810)
+				if dimensions.size() == 2:
+					requested = Vector2i(
+						clampi(int(dimensions[0]), 1000, 3840),
+						clampi(int(dimensions[1]), 650, 2160))
+				if available.size.x > 0 and available.size.y > 0:
+					requested = Vector2i(
+						mini(requested.x, maxi(900, available.size.x - 40)),
+						mini(requested.y, maxi(620, available.size.y - 40)))
 				if DisplayServer.window_get_size() != requested:
 					DisplayServer.window_set_size(requested)
+				if available.size.x > 0 and available.size.y > 0:
+					DisplayServer.window_set_position(
+						available.position + (available.size - requested) / 2)
 
 func _apply_keys() -> void:
 	for name in keys:

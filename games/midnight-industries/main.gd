@@ -15,6 +15,8 @@ const StorageView = preload("res://factory_storage_view.gd")
 const WorldManager = preload("res://world_manager.gd")
 const Settings = preload("res://industries_settings.gd")
 const Navigation = preload("res://factory_navigation.gd")
+const MenuSkin = preload("res://factory_menu_theme.gd")
+const WindowChrome = preload("res://factory_window_chrome.gd")
 const TILE := 48.0
 const GOLD := Color("#F5C04A")
 const CYAN := Color("#00D8F4")
@@ -87,6 +89,11 @@ var confirming_new := false
 var worlds
 var settings
 var navigation: Control
+var window_chrome: Control
+var header_rail: Control
+var mode_rail: Control
+var pause_world_label: Label
+var pause_phase_label: Label
 var current_world := ""
 var played_since_save := 0.0
 var saved_view: Dictionary = {}
@@ -206,6 +213,15 @@ func _button_hover(b: Button, entered: bool) -> void:
 	tween.tween_property(b, "modulate",
 		Color.WHITE if entered else Color("#DDE7EC"), 0.13)
 
+func _menu_button(value: String, handler: Callable, danger: bool = false,
+	primary: bool = false) -> Button:
+	var b := Button.new()
+	b.text = value
+	b.custom_minimum_size.y = 50
+	MenuSkin.style_button(b, danger, primary)
+	b.pressed.connect(handler)
+	return b
+
 func _section_title(text_value: String) -> VBoxContainer:
 	var group := VBoxContainer.new()
 	group.add_theme_constant_override("separation", 6)
@@ -224,6 +240,7 @@ func _create_interface() -> void:
 
 	# Top command rail: identity, real production receipts and system state.
 	var top := PanelContainer.new()
+	header_rail = top
 	top.name = "BrushedSteelCommandRail"
 	top.add_theme_stylebox_override("panel", _panel_style("header"))
 	hud.add_child(top)
@@ -294,6 +311,7 @@ func _create_interface() -> void:
 	side_col.add_child(_make_label(_tr("WERKZEUGZENTRALE", "FACTORY WORKSHOP"), 15, TEXT))
 	side_col.add_child(_make_label(_tr("PRODUKTION  /  LOGISTIK", "PRODUCTION  /  LOGISTICS"), 10, CYAN))
 	var mode_strip := PanelContainer.new()
+	mode_rail = mode_strip
 	mode_strip.name = "CompactBuildSelectSwitcher"
 	mode_strip.add_theme_stylebox_override("panel", _panel_style("header"))
 	hud.add_child(mode_strip)
@@ -442,11 +460,12 @@ func _create_interface() -> void:
 	save_btn.custom_minimum_size.x = 84
 	footer_row.add_child(save_btn)
 
-	# Full-screen modal main menu. No hidden destructive Escape quit.
+	# Dedicated pause screen, unlike the rejected Phase-1 HUD. A compact,
+	# legible control station with actual hierarchy and no random gold corner.
 	menu_mask = ColorRect.new()
 	menu_mask.name = "IndustrialMainMenuBackdrop"
 	menu_mask.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	menu_mask.color = Color("#071118", 0.94)
+	menu_mask.color = Color("#041019", 0.91)
 	menu_mask.mouse_filter = Control.MOUSE_FILTER_STOP
 	ui_layer.add_child(menu_mask)
 	var frame := CenterContainer.new()
@@ -454,56 +473,74 @@ func _create_interface() -> void:
 	menu_mask.add_child(frame)
 	menu_card = PanelContainer.new()
 	menu_card.name = "MidnightIndustriesCommandMenu"
-	menu_card.custom_minimum_size = Vector2(508, 507)
-	menu_card.add_theme_stylebox_override("panel", _panel_style("menu"))
+	menu_card.custom_minimum_size = Vector2(735, 545)
+	menu_card.add_theme_stylebox_override("panel", MenuSkin.panel("main"))
 	frame.add_child(menu_card)
 	var menu_col := VBoxContainer.new()
-	menu_col.add_theme_constant_override("separation", 12)
+	menu_col.add_theme_constant_override("separation", 15)
 	menu_card.add_child(menu_col)
-	var menu_logo := HBoxContainer.new()
-	menu_logo.alignment = BoxContainer.ALIGNMENT_CENTER
-	menu_col.add_child(menu_logo)
-	var emblem := TextureRect.new()
-	emblem.texture = _machine_icon("smelter")
-	emblem.custom_minimum_size = Vector2(62, 62)
-	emblem.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	emblem.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	menu_logo.add_child(emblem)
-	var names_col := VBoxContainer.new()
-	names_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	menu_logo.add_child(names_col)
-	names_col.add_child(_make_label("MIDNIGHT", 25, TEXT))
-	names_col.add_child(_make_label("I N D U S T R I E S", 16, GOLD))
-	var subtitle := _make_label(_tr("AUTOMATION  ·  INDUSTRIELLE KONSTRUKTION", "AUTOMATION  ·  INDUSTRIAL ENGINEERING"), 12, MUTED)
-	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	menu_col.add_child(subtitle)
-	menu_col.add_child(HSeparator.new())
-	resume_button = _button(_tr("▶   FABRIK FORTSETZEN", "▶   RESUME FACTORY"), func() -> void: _show_menu(false))
-	resume_button.custom_minimum_size.y = 47
-	menu_col.add_child(resume_button)
-	menu_col.add_child(_button(_tr("⌖   ZUM CASINO-BAUPLATZ [C]", "⌖   FIND CASINO SITE [C]"),
-		_focus_construction))
-	menu_col.add_child(_button(_tr("▣   SPIELSTAND SPEICHERN", "▣   SAVE PROGRESS"), _save_now))
-	menu_col.add_child(_button(_tr("⚙   EINSTELLUNGEN", "⚙   SETTINGS"),
+	var accent := ColorRect.new()
+	accent.color = MenuSkin.CYAN
+	accent.custom_minimum_size.y = 3
+	accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu_col.add_child(accent)
+	menu_col.add_child(_make_label("MIDNIGHT  /  INDUSTRIES", 13, MenuSkin.AMBER))
+	menu_col.add_child(_make_label(_tr("PAUSIERT", "PAUSED"), 31, MenuSkin.TEXT))
+	menu_col.add_child(_make_label(_tr(
+		"Fabriksteuerung · Produktion während des Menüs angehalten",
+		"Factory control · Production is suspended while this menu is open"),
+		13, MenuSkin.MUTED))
+	var divider := ColorRect.new()
+	divider.color = Color("#507181", 0.70)
+	divider.custom_minimum_size.y = 1
+	menu_col.add_child(divider)
+	var body := HBoxContainer.new()
+	body.add_theme_constant_override("separation", 18)
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	menu_col.add_child(body)
+	var display := PanelContainer.new()
+	display.add_theme_stylebox_override("panel", MenuSkin.panel("section"))
+	display.custom_minimum_size.x = 218
+	body.add_child(display)
+	var display_stack := VBoxContainer.new()
+	display_stack.alignment = BoxContainer.ALIGNMENT_CENTER
+	display_stack.add_theme_constant_override("separation", 9)
+	display.add_child(display_stack)
+	var image := TextureRect.new()
+	image.texture = _machine_icon("smelter")
+	image.custom_minimum_size = Vector2(124, 124)
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	display_stack.add_child(image)
+	pause_world_label = _make_label("", 14, MenuSkin.TEXT)
+	pause_world_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	pause_world_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	display_stack.add_child(pause_world_label)
+	pause_phase_label = _make_label("", 12, MenuSkin.AMBER)
+	pause_phase_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	display_stack.add_child(pause_phase_label)
+	var buttons := VBoxContainer.new()
+	buttons.add_theme_constant_override("separation", 10)
+	buttons.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_child(buttons)
+	resume_button = _menu_button(_tr("▶  FABRIK FORTSETZEN", "▶  RESUME FACTORY"),
+		func() -> void: _show_menu(false), false, true)
+	buttons.add_child(resume_button)
+	buttons.add_child(_menu_button(_tr("▣  SPIELSTAND SPEICHERN", "▣  SAVE WORLD"), _save_now))
+	buttons.add_child(_menu_button(_tr("⚙  EINSTELLUNGEN", "⚙  SETTINGS"),
 		func() -> void: navigation.open_settings()))
-	menu_col.add_child(_button(_tr("↩   WELTEN UND SPIELSTÄNDE", "↩   WORLDS & SAVES"),
+	buttons.add_child(_menu_button(_tr("▤  WELTEN & SPIELSTÄNDE", "▤  WORLDS & SAVES"),
 		return_to_main))
-	effects_button = _button(_tr("✦   ANIMATIONEN: AN", "✦   ANIMATIONS: ON"), _toggle_effects)
-	menu_col.add_child(effects_button)
-	grid_button = _button("", _toggle_grid)
-	menu_col.add_child(grid_button)
-	_refresh_grid_button()
-	new_button = _button(_tr("＋   NEUE FABRIK STARTEN", "＋   START NEW FACTORY"), _new_factory, true)
-	menu_col.add_child(new_button)
-	new_button.hide()
-	menu_col.add_child(HSeparator.new())
-	var exit_btn := _button(_tr("↩   SPEICHERN & ZUM CASINO", "↩   SAVE & RETURN TO CASINO"), _exit_to_casino)
-	exit_btn.custom_minimum_size.y = 45
-	menu_col.add_child(exit_btn)
-	var menu_note := _make_label(_tr("ESC  MENÜ SCHLIESSEN     •     DEINE FABRIK WIRD AUTO-GESPEICHERT",
-		"ESC  CLOSE MENU     •     YOUR FACTORY AUTOSAVES"), 10, MUTED)
-	menu_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	menu_col.add_child(menu_note)
+	buttons.add_child(_menu_button(_tr("↩  SPEICHERN & ZUM CASINO",
+		"↩  SAVE & RETURN TO CASINO"), _exit_to_casino))
+	var bottom_line := ColorRect.new()
+	bottom_line.color = Color("#507181", 0.45)
+	bottom_line.custom_minimum_size.y = 1
+	menu_col.add_child(bottom_line)
+	var hint := _make_label(_tr("ESC  FORTSETZEN  ·  AUTOSAVE AKTIV",
+		"ESC  RESUME  ·  AUTOSAVE ENABLED"), 12, MenuSkin.MUTED)
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	menu_col.add_child(hint)
 
 	# Full-screen cartographic map is placed above the main menu and world.
 	# It remains hidden until M is pressed during gameplay.
@@ -524,6 +561,9 @@ func _create_interface() -> void:
 	navigation.manager = worlds
 	navigation.settings = settings
 	ui_layer.add_child(navigation)
+	window_chrome = WindowChrome.new()
+	window_chrome.game = self
+	ui_layer.add_child(window_chrome)
 
 func _notice(message: String) -> void:
 	if status == null:
@@ -814,8 +854,12 @@ func _show_menu(show: bool) -> void:
 	motion_view.menu_open = show
 	menu_mask.visible = show
 	if show:
-		confirming_new = false
-		new_button.text = _tr("NEUE FABRIK STARTEN", "START NEW FACTORY")
+		var meta: Dictionary = worlds._meta(current_world)
+		if pause_world_label != null:
+			pause_world_label.text = str(meta.get("name", _tr("Fabrik", "Factory")))
+		if pause_phase_label != null:
+			pause_phase_label.text = _tr("CASINO · PHASE ", "CASINO · PHASE ") + \
+				"%02d/12" % model.construction.phase_number()
 		menu_card.modulate.a = 1.0
 	else:
 		motion_view.queue_redraw()
@@ -868,7 +912,7 @@ func _bound_camera() -> void:
 
 func _pointer_over_hud(point: Vector2) -> bool:
 	var screen := get_viewport_rect().size
-	return point.y < 84.0 or point.y > screen.y - 80.0 or (
+	return point.y < (114.0 if settings != null and int(settings.values.window_mode) == 0 else 84.0) or point.y > screen.y - 80.0 or (
 		point.x < 282.0 and (point.y < 157.0 or (sidebar_panel.visible and point.y < 583.0))) or (
 		point.x > screen.x - 329.0 and inspector_panel.visible and point.y < 418.0)
 
@@ -1110,12 +1154,25 @@ func apply_settings(changed: String = "") -> void:
 		terrain_view.set_water_motion(bool(settings.values.water_motion))
 	if changed in ["", "high_contrast"]:
 		_apply_contrast(ui_layer)
+	if changed in ["", "window_mode"]:
+		_sync_window_chrome()
 	if changed in ["", "ui_scale_commit"]:
 		var scale := clampf(float(settings.values.ui_scale), 0.8, 1.3)
 		if not is_equal_approx(get_viewport().content_scale_factor, scale):
 			get_viewport().content_scale_factor = scale
 	# Language is rebuilt ONCE when Settings closes, not on every
 	# _change_setting value_changed signal during panel interaction.
+
+func _sync_window_chrome() -> void:
+	var windowed: bool = int(settings.values.window_mode) == 0
+	if window_chrome != null:
+		window_chrome.set_windowed(windowed)
+	if header_rail != null:
+		header_rail.offset_top = 39.0 if windowed else 9.0
+		header_rail.offset_bottom = 111.0 if windowed else 81.0
+	if mode_rail != null:
+		mode_rail.offset_top = 119.0 if windowed else 87.0
+		mode_rail.offset_bottom = 185.0 if windowed else 153.0
 
 func _rebuild_interface_language() -> void:
 	var next_language := str(settings.values.language) == "de"
@@ -1129,6 +1186,8 @@ func _rebuild_interface_language() -> void:
 	var previous_pan: Vector2 = minimap.pan
 	var map_was_open: bool = minimap.visible
 	var storage_was_open: bool = storage_view.visible
+	var settings_was_open: bool = navigation.settings_screen.visible
+	var active_tab: String = navigation.active_tab
 	german = next_language
 	ui_layer.free()
 	hover_tweens.clear()
@@ -1155,6 +1214,10 @@ func _rebuild_interface_language() -> void:
 			minimap.show_map()
 		if storage_was_open:
 			storage_view.open_inventory()
+	if settings_was_open:
+		navigation.open_settings()
+		navigation._select_tab(active_tab)
+	apply_settings("window_mode")
 	_refresh_ui()
 
 func _apply_contrast(node: Node) -> void:

@@ -9,6 +9,15 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	assert(game.navigation != null and game.navigation.start_screen.visible)
+	assert(not game.german) # English is the default; old implicit German ignored.
+	assert(game.navigation.start_panel.custom_minimum_size.x >= 1000.0)
+	assert(game.navigation.settings_screen.find_child("Option_language", true, false) != null)
+	assert(game.navigation.settings_screen.find_child("Option_resolution", true, false) != null)
+	assert(game.navigation.choice_buttons.has("effect_quality"))
+	for choice in game.navigation.choice_buttons["effect_quality"]:
+		if choice.value == 2:
+			assert(choice.button.button_pressed)
+			assert(choice.button.get_theme_stylebox("normal") is StyleBoxFlat)
 	assert(game.find_child("IndustrialBuildCatalog", true, false) != null)
 	assert(game.find_child("IndustrialQuickAccessRail", true, false) != null)
 	# These oversized rejected UI surfaces must NOT be restored.
@@ -17,6 +26,19 @@ func _run() -> void:
 	assert(game.find_child("WorldAndFactoryInterface", true, false) == null)
 	game.navigation.open_settings()
 	assert(game.navigation.settings_screen.visible)
+	game.navigation._select_tab("video")
+	assert(game.navigation.tab_buttons["video"].button_pressed)
+	assert(not game.navigation.tab_buttons["audio"].button_pressed)
+	game.navigation._choose("effect_quality", 1)
+	assert(game.navigation.choice_buttons["effect_quality"][1].button.button_pressed)
+	assert(not game.navigation.choice_buttons["effect_quality"][2].button.button_pressed)
+	game.navigation._choose("effect_quality", 2)
+	assert(game.navigation.choice_buttons["effect_quality"][2].button.button_pressed)
+	game.navigation._change_setting("window_mode", 0)
+	assert(game.window_chrome.visible)
+	assert(game.header_rail.offset_top > 30.0)
+	game.navigation._change_setting("window_mode", 1)
+	assert(not game.window_chrome.visible)
 	game.navigation._change_setting("high_contrast", true)
 	assert(game.settings.values.high_contrast)
 	game.navigation._change_setting("high_contrast", false)
@@ -38,6 +60,12 @@ func _run() -> void:
 	var first: String = game.current_world
 	assert(first != "" and not game.navigation.start_screen.visible)
 	assert(not game.menu_open)
+	game._show_menu(true)
+	assert(game.menu_card.get_theme_stylebox("panel") is StyleBoxFlat)
+	assert(game.effects_button == null and game.grid_button == null)
+	assert(game.pause_world_label.text != "")
+	assert(game.menu_card.custom_minimum_size.x >= 700.0)
+	game._show_menu(false)
 	assert(game.sidebar_panel.visible == false)
 	game._toggle_storage()
 	assert(game.storage_view.visible)
