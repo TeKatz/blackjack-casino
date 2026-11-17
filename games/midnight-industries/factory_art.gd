@@ -5,6 +5,7 @@ extends RefCounted
 const Atlas = preload("res://factory_atlas.gd")
 const BeltArt = preload("res://factory_belt_art.gd")
 const OreVariants = preload("res://factory_ore_variants.gd")
+const GoldArt = preload("res://factory_gold_art.gd")
 const TILE := 48.0
 const DIRS := [Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT, Vector2.UP]
 const GOLD := Color("#F4BD59")
@@ -68,10 +69,13 @@ static func cargo(canvas: CanvasItem, center: Vector2, item: String,
 	var opacity := clampf(shade, 0.1, 1.0)
 	var d := posmod(direction, 4)
 	var ore_item := item.ends_with("_ore")
-	var mineral := "copper" if item.begins_with("copper") else "iron"
+	var mineral := "gold" if item.begins_with("gold") else (
+		"copper" if item.begins_with("copper") else "iron")
 	var cargo_texture: Texture2D
 	if ore_item:
 		cargo_texture = OreVariants.cargo_texture(mineral)
+	elif mineral == "gold":
+		cargo_texture = GoldArt.ingot_texture()
 	else:
 		cargo_texture = Atlas.sprite(3 if mineral == "copper" else 2, 1)
 	if cargo_texture == null:

@@ -1,6 +1,6 @@
 extends Node2D
-## Visual-only biome. One fullscreen-cullable world quad blends meadow and rocky
-## ore ground in a shader; the fixed factory/resource model is never touched.
+## One camera-clipped terrain quad blends meadow, mineral ground and flowing
+## rivers/lakes. The same deterministic water cells are collision data.
 const Model = preload("res://factory_model.gd")
 const TILE := 48.0
 const MASK_SCALE := 2
@@ -27,9 +27,10 @@ render_mode unshaded;
 uniform sampler2D rock_influence : filter_linear, repeat_disable;
 uniform sampler2D terrain_detail : filter_linear_mipmap, repeat_enable;
 uniform sampler2D stone_detail : filter_linear_mipmap, repeat_enable;
+uniform sampler2D water_info : filter_linear, repeat_disable;
 
 void fragment() {
-	vec2 tiles = UV * vec2(128.0, 96.0);
+	vec2 tiles = UV * vec2(224.0, 176.0);
 	float mask = texture(rock_influence, UV).r;
 	// Each tile receives ~128 source texels at the close-detail scale.
 	// Actual painted blades and sharp grit survive zooming; the previous
@@ -57,6 +58,32 @@ void fragment() {
 		(1.0 - smoothstep(0.67, 0.98, rock));
 	vec3 result = mix(meadow, stones, rock);
 	result = mix(result, vec3(0.270, 0.245, 0.188), transition * 0.12);
+
+	// One flow vector per water cell (R = mask, GB = river direction,
+	// A = river/lake type). Flow motion runs entirely on the GPU.
+	vec4 water = texture(water_info, UV);
+	float coverage = smoothstep(0.21, 0.74, water.r);
+	vec2 flow = water.gb * 2.0 - vec2(1.0);
+	float river = smoothstep(0.15, 0.75, water.a);
+	float river_phase = dot(tiles, flow) * 5.5 - TIME * 2.5;
+	float transverse = dot(tiles, vec2(-flow.y, flow.x));
+	float moving_ripples = sin(river_phase + sin(transverse * 2.3) * 0.7) * 0.5
+		+ sin(river_phase * 1.63 + transverse * 3.1) * 0.25;
+	float lake_ripples = sin(tiles.x * 4.1 + TIME * 0.55) *
+		sin(tiles.y * 3.7 - TIME * 0.42) * 0.35;
+	float motion = mix(lake_ripples, moving_ripples, river);
+	float water_noise = texture(stone_detail,
+		tiles * 0.11 + flow * TIME * 0.01).r - 0.5;
+	vec3 deep = vec3(0.042, 0.179, 0.224);
+	vec3 shallow = vec3(0.088, 0.277, 0.318);
+	vec3 water_color = mix(deep, shallow,
+		clamp(0.50 + motion * 0.16 + water_noise * 0.22, 0.0, 1.0));
+	// Light shore foam where water and land meet, without covering ore.
+	float edge = smoothstep(0.18, 0.55, water.r) *
+		(1.0 - smoothstep(0.68, 0.95, water.r));
+	result = mix(result, vec3(0.23, 0.32, 0.30), edge * 0.36);
+	result = mix(result, water_color, coverage);
+	result += vec3(0.030, 0.062, 0.061) * edge * coverage;
 	COLOR = vec4(result, 1.0);
 }
 """
@@ -64,6 +91,7 @@ void fragment() {
 	material.set_shader_parameter("rock_influence", _rock_mask())
 	material.set_shader_parameter("terrain_detail", _grass_texture())
 	material.set_shader_parameter("stone_detail", _stone_texture())
+	material.set_shader_parameter("water_info", _water_texture())
 	meadow_rect.material = material
 	add_child(meadow_rect)
 
@@ -116,23 +144,45 @@ func _surface_texture(seed: int, frequency: float, stone: bool) -> Texture2D:
 	image.generate_mipmaps()
 	return ImageTexture.create_from_image(image)
 
+func refresh_from_model() -> void:
+	if meadow_rect == null:
+		return
+	var surface: ShaderMaterial = meadow_rect.material
+	surface.set_shader_parameter("rock_influence", _rock_mask())
+	surface.set_shader_parameter("water_info", _water_texture())
+
+func _water_texture() -> Texture2D:
+	var image := Image.create(Model.WIDTH, Model.HEIGHT, false, Image.FORMAT_RGBA8)
+	image.fill(Color(0.0, 0.5, 0.5, 0.0))
+	for cell in model.water:
+		var water: Dictionary = model.water[cell]
+		var flow: Vector2 = water["flow"]
+		image.set_pixel(cell.x, cell.y, Color(1.0,
+			0.5 + flow.x * 0.5, 0.5 + flow.y * 0.5,
+			1.0 if water["kind"] == "river" else 0.0))
+	return ImageTexture.create_from_image(image)
+
 func _rock_mask() -> Texture2D:
-	# Nearby resources influence ground continuously, even between ore tiles.
-	# Smooth bilinear sampling and fine detail breakup conceal grid borders.
+	# Mark a 2.65-cell falloff around each actual mineral tile. Painting
+	# local regions costs far less than sampling a 5x5 mineral neighborhood
+	# for every pixel of the newly expanded 224x176 map.
 	var size := Vector2i(Model.WIDTH * MASK_SCALE, Model.HEIGHT * MASK_SCALE)
-	var img := Image.create(size.x, size.y, false, Image.FORMAT_L8)
-	for y in range(size.y):
-		for x in range(size.x):
-			var cx := float(x) / MASK_SCALE
-			var cy := float(y) / MASK_SCALE
-			var center := Vector2i(floori(cx), floori(cy))
-			var weight := 0.0
-			for dy in range(-2, 3):
-				for dx in range(-2, 3):
-					var p := center + Vector2i(dx, dy)
-					if not model.resources.has(p):
-						continue
-					var dist := Vector2(cx - float(p.x), cy - float(p.y)).length()
-					weight = maxf(weight, 1.0 - dist / 2.65)
-			img.set_pixel(x, y, Color(weight, weight, weight))
-	return ImageTexture.create_from_image(img)
+	var image := Image.create(size.x, size.y, false, Image.FORMAT_L8)
+	image.fill(Color.BLACK)
+	var radius := 2.65
+	var reach := ceili(radius * float(MASK_SCALE))
+	for ore in model.resources:
+		var at: Vector2i = ore
+		var px := at.x * MASK_SCALE
+		var py := at.y * MASK_SCALE
+		for y in range(maxi(0, py - reach), mini(size.y, py + reach + 1)):
+			for x in range(maxi(0, px - reach), mini(size.x, px + reach + 1)):
+				var dist := Vector2(float(x - px), float(y - py)).length() \
+					/ float(MASK_SCALE)
+				var strength := maxf(0.0, 1.0 - dist / radius)
+				if strength <= 0.0:
+					continue
+				var old: float = image.get_pixel(x, y).r
+				if strength > old:
+					image.set_pixel(x, y, Color(strength, strength, strength))
+	return ImageTexture.create_from_image(image)

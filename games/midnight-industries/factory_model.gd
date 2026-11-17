@@ -1,9 +1,10 @@
 extends RefCounted
 const Construction = preload("res://factory_construction.gd")
+const World = preload("res://factory_world.gd")
 ## Authoritative, renderer-independent fixed-step factory model.
 ## Machines are compact dictionaries keyed by cell; no per-item scene nodes.
-const WIDTH := 128
-const HEIGHT := 96
+const WIDTH := 224
+const HEIGHT := 176
 const STEP := 0.25
 const DIRS := [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]
 const SAVE_VERSION := 1
@@ -12,8 +13,10 @@ const MAX_BUFFER := 8
 
 var construction
 var resources: Dictionary = {}
+var water: Dictionary = {}
 var buildings: Dictionary = {}
-var delivered: Dictionary = {"iron_ingot": 0, "copper_ingot": 0, "iron_ore": 0, "copper_ore": 0}
+var delivered: Dictionary = {"iron_ingot": 0, "copper_ingot": 0, "gold_ingot": 0,
+	"iron_ore": 0, "copper_ore": 0, "gold_ore": 0}
 var steps := 0
 var accumulator := 0.0
 ## Renderer-only movement trace, not part of the save or authority model.
@@ -35,25 +38,8 @@ func _init(with_starter: bool = true) -> void:
 		place(Vector2i(25, 17), "storage", 0)
 
 func _seed_resources() -> void:
-	resources.clear()
-	var patches := [
-		{"pos": Vector2i(16, 17), "radius": 5, "kind": "iron"},
-		{"pos": Vector2i(36, 22), "radius": 6, "kind": "copper"},
-		{"pos": Vector2i(61, 47), "radius": 8, "kind": "iron"},
-		{"pos": Vector2i(82, 65), "radius": 7, "kind": "copper"},
-		{"pos": Vector2i(107, 28), "radius": 6, "kind": "iron"},
-	]
-	for patch in patches:
-		var center: Vector2i = patch.pos
-		var radius: int = patch.radius
-		for y in range(center.y - radius, center.y + radius + 1):
-			for x in range(center.x - radius, center.x + radius + 1):
-				var cell := Vector2i(x, y)
-				if not inside(cell):
-					continue
-				var distance := cell.distance_squared_to(center)
-				if distance <= radius * radius and (distance < 5 or (x * 17 + y * 31) % 11 != 0):
-					resources[cell] = patch.kind
+	# One deterministic geography source drives ore, water, collisions and map.
+	World.populate(resources, water)
 
 func inside(cell: Vector2i) -> bool:
 	return cell.x >= 0 and cell.y >= 0 and cell.x < WIDTH and cell.y < HEIGHT
@@ -62,7 +48,7 @@ func can_place(cell: Vector2i, kind: String) -> bool:
 	# The casino foundation is permanent terrain. Existing older-save
 	# machines inside its footprint are still restored and kept working,
 	# but no new machines can be placed on the protected build site.
-	if not inside(cell) or construction.inside(cell) or buildings.has(cell):
+	if not inside(cell) or water.has(cell) or construction.inside(cell) or buildings.has(cell):
 		return false
 	if not construction.is_machine_unlocked(kind):
 		return false
@@ -131,7 +117,7 @@ func _can_receive(machine: Dictionary, item: String) -> bool:
 		"belt":
 			return machine.item == ""
 		"smelter":
-			if not item in ["iron_ore", "copper_ore"]:
+			if not item in ["iron_ore", "copper_ore", "gold_ore"]:
 				return false
 			if not construction.is_recipe_unlocked(item.trim_suffix("_ore") + "_ingot"):
 				return false
@@ -242,6 +228,10 @@ func restore(data: Variant) -> bool:
 	if typeof(entries) != TYPE_ARRAY or typeof(totals) != TYPE_DICTIONARY or entries.size() > WIDTH * HEIGHT:
 		return false
 	var loaded: Dictionary = {}
+	# Preserve established miners from the old map even after their big
+	# mineral fields were moved. Failed/corrupt saves remain transactional.
+	var migrated_resources: Dictionary = resources.duplicate()
+	var migrated_water: Dictionary = water.duplicate()
 	for raw in entries:
 		if typeof(raw) != TYPE_DICTIONARY:
 			return false
@@ -249,8 +239,9 @@ func restore(data: Variant) -> bool:
 		var kind := str(raw.get("kind", ""))
 		if not inside(cell) or loaded.has(cell):
 			return false
-		if kind == "miner" and not resources.has(cell):
-			return false
+		if kind == "miner" and not migrated_resources.has(cell):
+			if not World.restore_legacy_miner(cell, migrated_resources, migrated_water):
+				return false
 		if kind != "miner" and not kind in ["belt", "smelter", "storage"]:
 			return false
 		var direction := int(raw.get("direction", -1))
@@ -258,9 +249,10 @@ func restore(data: Variant) -> bool:
 			return false
 		var item := str(raw.get("item", ""))
 		var recipe := str(raw.get("recipe", ""))
-		if not item in ["", "iron_ore", "copper_ore", "iron_ingot", "copper_ingot"]:
+		if not item in ["", "iron_ore", "copper_ore", "gold_ore",
+			"iron_ingot", "copper_ingot", "gold_ingot"]:
 			return false
-		if not recipe in ["", "iron", "copper"]:
+		if not recipe in ["", "iron", "copper", "gold"]:
 			return false
 		var buffer := int(raw.get("buffer", 0))
 		var ore := int(raw.get("ore", 0))
@@ -282,7 +274,13 @@ func restore(data: Variant) -> bool:
 		if amount < 0:
 			return false
 		new_totals[key] = amount
+	# Preserve previously built machines where rivers or lakes would now
+	# appear; the new geography may not flood an existing saved factory.
+	for cell in loaded:
+		migrated_water.erase(cell)
 	construction = restored_construction
+	resources = migrated_resources
+	water = migrated_water
 	buildings = loaded
 	cells_dirty = true
 	transit.clear()

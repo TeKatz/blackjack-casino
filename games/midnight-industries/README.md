@@ -32,13 +32,15 @@ Colors: graphite `#111A21`, steel `#273743`, illuminated amber `#F5C04A`, neon c
 | Ctrl+S | Save |
 | G or main-menu toggle | Show/hide the optional placement grid (visual preference saved separately) |
 | C or main-menu button | Center the camera on the casino construction site |
+| M | Open/close full-screen map (Escape also closes) |
+| Left-click inside world map | Recenter camera on that location and close map |
 | Escape | Open/close the main menu |
 
 The main menu supports continue, save, confirmed new factory, motion and grid settings, and **Save & Return to Casino**. The obsolete Sector Overview panel has been removed to free the right side of the screen. A built-in starter iron chain mines, transports, smelts and collects ingots. Copper deposits and additional patches allow building other chains.
 
 ## Project Midnight — construction and progression foundation
 
-The 128×96 world now contains a permanent **12×12-grid casino construction site**, close to the centre at grid origin `(70, 42)`. This location avoids the existing central iron field and southern copper field. Mineral patches, the starter production line and existing save-game machines are never moved. New factory buildings cannot be placed inside the reserved construction footprint; machines loaded there from historical saves remain intact and functional.
+The 224×176 world now contains a permanent **12×12-grid casino construction site**, centrally positioned at grid origin `(106, 82)`. The two former oversized deposits beside the casino have moved to remote biomes, leaving a wide clear approach. Mineral patches, the starter production line and existing save-game machines are never moved. New factory buildings cannot be placed inside the reserved construction footprint; machines loaded there from historical saves remain intact and functional.
 
 Each of the site's **48 intake connections** is tied to a separate side/grid position: 12 on the north border, 12 east, 12 south, and 12 west. A belt or producing machine can feed a side input only when it faces *into* that specific boundary cell. Corners can receive from either adjacent side. Input delivery uses the same two-phase simulation transport as the factory, reserving requirements per tick to avoid consuming excess items.
 
@@ -50,6 +52,16 @@ Construction progress is stored in an optional `construction` section in the exi
 
 Current factory recipes, throughput, production ticks, warehouse counters and casino integration remain unchanged.
 
+## Expanded world, minerals and water
+
+- World dimensions: **224×176 tiles** (formerly 128×96), rendered via 16×16 cached chunks. The small original starter iron/copper deposits and starter production line remain in place.
+- The oversized iron and copper clusters formerly at `(61,47)` and `(82,65)` moved to `(44,124)` and `(174,128)`. Other remote deposits support larger factory layouts. The casino is now central at `(106,82)` with clear space around it.
+- **Gold**: five small, rare outer-map deposits. Gold rock and ingot textures are made from the previously approved high-resolution mineral artwork, preserving its metallic lighting; existing iron/copper sprites remain unchanged. Gold can be mined, belted, smelted into ingots and deposited at warehouses with distinct stored counts.
+- `factory_world.gd` generates winding directional rivers and natural-looking lakes. Flow vectors drive inexpensive GPU water motion in the landscape shader; lakes ripple more slowly. No water grid cell overlaps any ore field, and waterways keep an extra two-tile ore margin. The player cannot place machines or conveyor belts on water.
+- **M** shows a modal full-screen map with terrain, rivers/lakes, mineral colors, existing machines, casino plot and camera viewport. It is hidden otherwise. M/Escape closes it; left-click on the map moves the camera there.
+- Existing saves remain readable. Older miners on relocated ore are preserved with local legacy ore underneath them, and previously built factory cells are kept clear of newly generated water. Gold totals default to zero for older saves. Save version stays v1.
+
+All twelve casino phase requirements remain deliberately empty; the new mineral and geography update does not invent any construction quotas.
 ## Validation
 
 ```sh

@@ -23,8 +23,8 @@ func _run() -> void:
 	root.add_child(game)
 	await process_frame
 	await process_frame
-	if game.static_view.chunks.size() != 48:
-		_fail("Industrial deck must be split into 48 visible chunks")
+	if game.static_view.chunks.size() != 154:
+		_fail("Expanded 224x176 factory must have 154 cached 16x16 chunks")
 		return
 	var biome: Node = game.get_node_or_null("MeadowAndOreBiome")
 	if biome == null or biome.get_node_or_null("SoftMeadowAndOreBiomes") == null:
@@ -47,6 +47,15 @@ func _run() -> void:
 	if stone_detail.get_width() < 1024 or stone_detail.get_height() < 1024:
 		_fail("Rock detail was not upgraded to 1024px")
 		return
+	var water_texture: Texture2D = material.get_shader_parameter("water_info")
+	if water_texture == null or water_texture.get_width() != 224 or water_texture.get_height() != 176:
+		_fail("Terrain water/directional flow texture is missing")
+		return
+	var water_image: Image = water_texture.get_image()
+	for cell in game.model.water:
+		if water_image.get_pixel(cell.x, cell.y).r < 0.9:
+			_fail("River and lake ground shader disagree with model collision")
+			return
 	# Keep the ORIGINAL ore and ingot atlas source art. Only ground
 	# placement/cluster silhouette varies.
 	for item in ["iron_ore", "copper_ore", "iron_ingot", "copper_ingot"]:
@@ -65,11 +74,11 @@ func _run() -> void:
 			return
 	# These are actual different rock silhouettes, not a transformed source pile.
 	var deposits: Texture2D = OreVariants.texture()
-	if deposits == null or deposits.get_width() != 12 * 112 or deposits.get_height() != 2 * 112:
+	if deposits == null or deposits.get_width() != 12 * 112 or deposits.get_height() != 3 * 112:
 		_fail("Twelve iron and copper ore formations must be available")
 		return
 	var deposit_image: Image = deposits.get_image()
-	for mineral in ["iron", "copper"]:
+	for mineral in ["iron", "copper", "gold"]:
 		var first: Image = deposit_image.get_region(Rect2i(
 			OreVariants.region(mineral, 0).position, Vector2i(112, 112)))
 		var different := 0

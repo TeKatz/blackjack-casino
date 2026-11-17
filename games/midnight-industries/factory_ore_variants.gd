@@ -1,9 +1,10 @@
 extends RefCounted
-## Twelve genuinely distinct iron/copper mineral formations. Each deposit is
+## Twelve genuinely distinct iron/copper/gold mineral formations. Each deposit is
 ## assembled from individual faceted boulders (not scaled copies of the old
 ## complete ore pile), with approved ore artwork sampled for surface material.
 ## Built once into a mipmapped atlas; no per-frame procedural drawing.
 const Atlas = preload("res://factory_atlas.gd")
+const GoldArt = preload("res://factory_gold_art.gd")
 const SIZE := 112
 const VARIANTS := 12
 const LAYOUTS = [
@@ -26,10 +27,10 @@ static var _cargo: Dictionary = {}
 static func texture() -> Texture2D:
 	if _atlas != null:
 		return _atlas
-	var result := Image.create(SIZE * VARIANTS, SIZE * 2, false, Image.FORMAT_RGBA8)
+	var result := Image.create(SIZE * VARIANTS, SIZE * 3, false, Image.FORMAT_RGBA8)
 	result.fill(Color.TRANSPARENT)
-	for material in range(2):
-		var sprite: Texture2D = Atlas.sprite(material, 1)
+	for material in range(3):
+		var sprite: Texture2D = GoldArt.ore_texture() if material == 2 else Atlas.sprite(material, 1)
 		if sprite == null:
 			return null
 		var source: Image = sprite.get_image()
@@ -43,7 +44,7 @@ static func texture() -> Texture2D:
 	return _atlas
 
 static func region(material: String, seed: int) -> Rect2:
-	var row := 0 if material == "iron" else 1
+	var row := 0 if material == "iron" else (1 if material == "copper" else 2)
 	return Rect2(float(posmod(seed, VARIANTS) * SIZE), float(row * SIZE),
 		float(SIZE), float(SIZE))
 
@@ -51,7 +52,7 @@ static func cargo_texture(material: String) -> Texture2D:
 	if _cargo.has(material):
 		return _cargo[material]
 	var index := 0 if material == "iron" else 1
-	var sprite: Texture2D = Atlas.sprite(index, 1)
+	var sprite: Texture2D = GoldArt.ore_texture() if material == "gold" else Atlas.sprite(index, 1)
 	if sprite == null:
 		return null
 	var source: Image = sprite.get_image()

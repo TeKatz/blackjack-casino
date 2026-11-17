@@ -4,6 +4,7 @@ const Model = preload("res://factory_model.gd")
 const StaticView = preload("res://factory_static.gd")
 const TerrainView = preload("res://factory_terrain.gd")
 const GridView = preload("res://factory_grid.gd")
+const MinimapView = preload("res://factory_minimap.gd")
 const ConstructionView = preload("res://factory_construction_view.gd")
 const Construction = preload("res://factory_construction.gd")
 const MotionView = preload("res://factory_motion.gd")
@@ -21,9 +22,11 @@ const DIR_TEXT := ["→", "↓", "←", "↑"]
 
 @onready var camera: Camera2D = $Camera
 var model
+var terrain_view: Node2D
 var static_view: Node2D
 var motion_view: Node2D
 var grid_view: Node2D
+var minimap: Control
 var construction_view: Node2D
 var show_grid := false
 const VISUAL_SETTINGS_FILE := "user://industries-visual-settings.cfg"
@@ -99,10 +102,10 @@ func _tr(de: String, en: String) -> String:
 
 func _create_world() -> void:
 	# Seamless meadow and stone blend beneath cullable factory chunks.
-	var terrain := TerrainView.new()
-	terrain.name = "MeadowAndOreBiome"
-	terrain.model = model
-	add_child(terrain)
+	terrain_view = TerrainView.new()
+	terrain_view.name = "MeadowAndOreBiome"
+	terrain_view.model = model
+	add_child(terrain_view)
 	grid_view = GridView.new()
 	grid_view.name = "OptionalPlacementGrid"
 	grid_view.camera = camera
@@ -306,8 +309,8 @@ func _create_interface() -> void:
 		side_col.add_child(btn)
 		tool_buttons[key] = btn
 	side_col.add_child(HSeparator.new())
-	var hint := _make_label(_tr("R   AUSGANG DREHEN\nRECHTSKLICK   BAU ABBRECHEN",
-		"R   ROTATE OUTPUT\nRIGHT CLICK   CANCEL BUILD"), 11, MUTED)
+	var hint := _make_label(_tr("R   AUSGANG DREHEN\nM   WELTKARTE\nRECHTSKLICK   BAU ABBRECHEN",
+		"R   ROTATE OUTPUT\nM   WORLD MAP\nRIGHT CLICK   CANCEL BUILD"), 11, MUTED)
 	side_col.add_child(hint)
 
 	# Inspector uses actual selection data and an illustrated machine portrait.
@@ -385,7 +388,7 @@ func _create_interface() -> void:
 	footer_row.add_child(left_footer)
 	status = _make_label("", 12, CYAN)
 	left_footer.add_child(status)
-	left_footer.add_child(_make_label(_tr("WASD  ·  RAD ZOOM  ·  LINKSKLICK-ZIEHEN (AUSWAHL)", "WASD  ·  WHEEL ZOOM  ·  LEFT-DRAG PAN (SELECT)"), 9, MUTED))
+	left_footer.add_child(_make_label(_tr("WASD · RAD ZOOM · M KARTE · LINKSKLICK-ZIEHEN", "WASD · WHEEL ZOOM · M MAP · LEFT-DRAG PAN"), 9, MUTED))
 	var slots := HBoxContainer.new()
 	slots.add_theme_constant_override("separation", 5)
 	footer_row.add_child(slots)
@@ -463,6 +466,14 @@ func _create_interface() -> void:
 	menu_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	menu_col.add_child(menu_note)
 
+	# Full-screen cartographic map is placed above the main menu and world.
+	# It remains hidden until M is pressed during gameplay.
+	minimap = MinimapView.new()
+	minimap.name = "WorldOverviewMap"
+	minimap.model = model
+	minimap.camera = camera
+	ui_layer.add_child(minimap)
+
 func _notice(message: String) -> void:
 	if status == null:
 		return
@@ -519,9 +530,10 @@ func _refresh_ui() -> void:
 	if model == null or production == null:
 		return
 	var totals: Dictionary = model.delivered
-	var output := "%s  %d    ·    %s  %d" % [
+	var output := "%s  %d    ·    %s  %d    ·    %s  %d" % [
 		_tr("EISEN", "IRON"), int(totals.iron_ingot),
-		_tr("KUPFER", "COPPER"), int(totals.copper_ingot)
+		_tr("KUPFER", "COPPER"), int(totals.copper_ingot),
+		_tr("GOLD", "GOLD"), int(totals.gold_ingot)
 	]
 	if last_totals != output:
 		last_totals = output
@@ -590,7 +602,8 @@ func _refresh_inspector() -> void:
 		"storage":
 			inspector_body.text = (_tr("Gemeinsame Lagerbilanz", "Shared warehouse totals") + "\n" +
 				_tr("Eisenbarren: ", "Iron ingots: ") + str(model.delivered.iron_ingot) + "\n" +
-				_tr("Kupferbarren: ", "Copper ingots: ") + str(model.delivered.copper_ingot))
+				_tr("Kupferbarren: ", "Copper ingots: ") + str(model.delivered.copper_ingot) + "\n" +
+				_tr("Goldbarren: ", "Gold ingots: ") + str(model.delivered.gold_ingot))
 			inspector_progress.value = 100.0
 
 func _rotate_selected() -> void:
@@ -650,6 +663,14 @@ func _on_construction_phase(number: int) -> void:
 		"Casino construction phase %02d completed") % number)
 	_refresh_ui()
 
+func _toggle_minimap() -> void:
+	if minimap.visible:
+		minimap.hide_map()
+		return
+	_cancel_select_drag()
+	moving_camera = false
+	minimap.show_map()
+
 func _focus_construction() -> void:
 	_show_menu(false)
 	camera.position = (Vector2(Construction.ORIGIN) +
@@ -667,6 +688,10 @@ func _new_factory() -> void:
 	new_button.text = _tr("＋   NEUE FABRIK STARTEN", "＋   START NEW FACTORY")
 	model = Model.new()
 	model.construction.phase_completed.connect(_on_construction_phase)
+	terrain_view.model = model
+	terrain_view.refresh_from_model()
+	minimap.model = model
+	minimap.refresh_map()
 	construction_view.model = model
 	construction_view.queue_redraw()
 	static_view.model = model
@@ -719,7 +744,7 @@ func _physics_process(delta: float) -> void:
 		_refresh_ui()
 
 func _process(delta: float) -> void:
-	if menu_open:
+	if menu_open or minimap.visible:
 		return
 	var movement := Vector2.ZERO
 	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
@@ -765,7 +790,7 @@ func _begin_select_drag(screen_position: Vector2) -> void:
 func _input(event: InputEvent) -> void:
 	# This keeps panning when the cursor passes over a HUD panel. A short
 	# press/release still selects the original world cell.
-	if not selection_pending:
+	if not selection_pending or minimap.visible:
 		return
 	if event is InputEventMouseMotion:
 		if not selection_dragging and event.position.distance_to(selection_press_screen) >= SELECT_DRAG_THRESHOLD:
@@ -782,6 +807,15 @@ func _input(event: InputEvent) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if minimap.visible:
+			if event.keycode == KEY_M or event.keycode == KEY_ESCAPE:
+				minimap.hide_map()
+			get_viewport().set_input_as_handled()
+			return
+		if not menu_open and event.keycode == KEY_M:
+			_toggle_minimap()
+			get_viewport().set_input_as_handled()
+			return
 		if event.keycode == KEY_ESCAPE:
 			_show_menu(not menu_open)
 			get_viewport().set_input_as_handled()
@@ -810,7 +844,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_C:
 			_focus_construction()
 		return
-	if menu_open:
+	if menu_open or minimap.visible:
 		return
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:

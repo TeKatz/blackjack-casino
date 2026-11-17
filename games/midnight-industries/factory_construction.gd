@@ -7,9 +7,9 @@ signal phase_completed(number: int)
 
 const WIDTH := 12
 const HEIGHT := 12
-# An ore-free site near the map centre, without moving existing deposits or
-# invalidating saves with miners in the old central iron patch.
-const ORIGIN := Vector2i(70, 42)
+# True center of the expanded 224x176 world, with a clear factory approach.
+# Existing saves keep their construction progress; the site geometry moves.
+const ORIGIN := Vector2i(106, 82)
 const PHASE_COUNT := 12
 const DIRS := [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]
 const PHASE_IDS := [
@@ -26,7 +26,7 @@ const MACHINE_UNLOCK_PHASES := {
 	"miner": 0, "belt": 0, "smelter": 0, "storage": 0
 }
 const RECIPE_UNLOCK_PHASES := {
-	"iron_ingot": 0, "copper_ingot": 0
+	"iron_ingot": 0, "copper_ingot": 0, "gold_ingot": 0
 }
 
 var completed_phases := 0

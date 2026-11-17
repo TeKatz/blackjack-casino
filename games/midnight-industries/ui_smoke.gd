@@ -24,8 +24,19 @@ func _run() -> void:
 		return
 	game._focus_construction()
 	if game.menu_open or not game.camera.position.is_equal_approx(
-		(Vector2(70, 42) + Vector2(6, 6)) * 48.0):
+		(Vector2(106, 82) + Vector2(6, 6)) * 48.0):
 		_fail("Camera cannot navigate to the casino site", game)
+		return
+	if game.minimap == null or game.minimap.visible:
+		_fail("Full-screen map must exist but remain closed by default", game)
+		return
+	game._toggle_minimap()
+	if not game.minimap.visible:
+		_fail("M map did not open", game)
+		return
+	game._toggle_minimap()
+	if game.minimap.visible:
+		_fail("M map did not close", game)
 		return
 	game._inspect(Vector2i(16, 17))
 	if game.inspector_title.text == "" or not game.inspector_controls.visible:

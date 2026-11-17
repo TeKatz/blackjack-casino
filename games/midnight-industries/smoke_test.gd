@@ -1,6 +1,8 @@
 extends SceneTree
 const Model = preload("res://factory_model.gd")
 const Construction = preload("res://factory_construction.gd")
+const World = preload("res://factory_world.gd")
+const GoldArt = preload("res://factory_gold_art.gd")
 
 func _initialize() -> void:
 	var model = Model.new(false)
@@ -61,6 +63,69 @@ func _initialize() -> void:
 		assert(construction.is_input(south, south + Vector2i.DOWN, 3))
 		assert(not construction.is_input(west, west + Vector2i.LEFT, 2))
 		assert(not construction.is_input(north, north + Vector2i.UP, 3))
+	# Expanded-world contract. The original massive central deposits have
+	# moved out, casino access is open, and water never occupies mineral tiles.
+	assert(Model.WIDTH == 224 and Model.HEIGHT == 176)
+	assert(World.WIDTH == Model.WIDTH and World.HEIGHT == Model.HEIGHT)
+	assert(Construction.ORIGIN == Vector2i(106, 82))
+	assert(not model.resources.has(Vector2i(61, 47)))
+	assert(not model.resources.has(Vector2i(82, 65)))
+	assert(model.resources.get(Vector2i(16, 17)) == "iron")
+	assert(model.resources.get(Vector2i(44, 124)) == "iron")
+	assert(model.resources.get(Vector2i(174, 128)) == "copper")
+	var iron_nodes := 0
+	var gold_nodes := 0
+	for cell in model.resources:
+		match str(model.resources[cell]):
+			"iron":
+				iron_nodes += 1
+			"gold":
+				gold_nodes += 1
+				assert(not World.near_site(cell, 24))
+	assert(gold_nodes > 12 and gold_nodes < iron_nodes)
+	assert(model.water.size() > 600)
+	var saw_river := false
+	var saw_lake := false
+	var flowing := false
+	for cell in model.water:
+		assert(not model.resources.has(cell))
+		assert(not construction.inside(cell))
+		assert(not model.can_place(cell, "belt"))
+		assert(not model.can_place(cell, "miner"))
+		if model.water[cell].kind == "river":
+			saw_river = true
+			var direction: Vector2 = model.water[cell].flow
+			if direction.length() > 0.5:
+				flowing = true
+		else:
+			saw_lake = true
+	assert(saw_river and saw_lake and flowing)
+	assert(GoldArt.ore_texture() != null)
+	assert(GoldArt.ingot_texture() != null)
+	# Gold participates in the existing ore > furnace > ingot > storage
+	# production pipeline without affecting iron/copper throughput.
+	var gold_line = Model.new(false)
+	var gold_cell := Vector2i(205, 154)
+	assert(gold_line.resources.get(gold_cell) == "gold")
+	assert(gold_line.place(gold_cell, "miner", 0))
+	assert(gold_line.place(gold_cell + Vector2i(1, 0), "belt", 0))
+	assert(gold_line.place(gold_cell + Vector2i(2, 0), "smelter", 0))
+	assert(gold_line.place(gold_cell + Vector2i(3, 0), "belt", 0))
+	assert(gold_line.place(gold_cell + Vector2i(4, 0), "storage", 0))
+	for iteration in range(120):
+		gold_line.advance(Model.STEP)
+	assert(int(gold_line.delivered.gold_ingot) > 0)
+	# Legacy miners on the two moved large deposits stay operational.
+	var older: Dictionary = model.snapshot()
+	older["machines"].append({
+		"x": 61, "y": 47, "kind": "miner", "direction": 0,
+		"item": "", "buffer": 0, "ore": 0,
+		"output": 0, "recipe": "", "progress": 0.0
+	})
+	var migrated = Model.new(false)
+	assert(migrated.restore(older))
+	assert(migrated.resources[Vector2i(61, 47)] == "iron")
+	assert(not migrated.water.has(Vector2i(61, 47)))
 	var entrance := Construction.ORIGIN + Vector2i(-1, 5)
 	var parked = Model.new(false)
 	assert(parked.place(entrance, "belt", 0))
