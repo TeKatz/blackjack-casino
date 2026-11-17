@@ -138,6 +138,7 @@ func _initialize() -> void:
 		assert(not sim.power.is_powered(cell))
 	assert(sim.can_place(bank, "water_wheel"), "Dismantling must free power slot")
 	assert(sim.place(other_bank, "water_wheel", 0))
+	sim._update_power()
 	assert(sim.power.slot_used == 1)
 
 	# Extended power networks connect through poles within 5 cells and
