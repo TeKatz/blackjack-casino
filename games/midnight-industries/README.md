@@ -194,3 +194,38 @@ The global inventory is a fully **data-driven**, scrollable native UI:
 - Materials are deducted only by existing game economy actions; viewing
   inventory is read-only. New world and old-save content are unaffected.
 
+
+## Redesigned compact gameplay HUD
+
+The gameplay HUD is now independent from the factory simulation and uses the
+same native, shadowed steel aesthetic as the approved menu surfaces.
+
+- **Top command bar**: original logo/wordmark, compact inventory and activity
+  readouts; six icon-labelled actions (Achievements, Jobs, Upgrades, Storage,
+  Pause/Resume, Menu). The first three explicitly identify upcoming content
+  instead of pretending their gameplay systems already exist.
+- **Left objectives drawer**: a narrow always-accessible arrow toggles an
+  animated side panel. It has an intentional placeholder for upcoming casino
+  goals. Its open/closed state is saved per world; Reduced Motion disables
+  transitions.
+- **Right machine inspector**: selects the existing live machine data, now
+  inside an updated native panel that slides/fades smoothly. Repeated telemetry
+  updates do not rebuild the panel or restart transitions.
+- **Bottom build dock**: a compact centered category bar, expandable horizontal
+  machine shelf, obvious active/hover/locked states and actual machine artwork.
+  Build costs, free relocation kits and current affordability remain connected
+  to the existing economy. The old left build catalog and long full-width
+  footer rail are removed.
+- **Data-driven extension**: categories and ordering come from
+  \`factory_build_catalog.gd\`; machines come from the existing
+  \`item_catalog.gd::MACHINES\`, with optional metadata for phase gates,
+  visibility and ordering. The authoritative unlock and affordability checks
+  stay in factory_model/construction/economy. Future categories and machine
+  tiles require no new HUD control construction code.
+- **Keyboard compatibility**: existing V/B inspect/build toggles, 1–5 machine
+  quick keys, rotate, grid, map, depot, save, pause and menu are preserved.
+- **Responsive principles**: a narrow command rail and approximately 1020-pixel
+  centered build dock preserve the factory view at 1920x1080, with horizontal
+  scroll for future long lists. Active animations are cancelable and honor the
+  global Reduced Motion setting.
+

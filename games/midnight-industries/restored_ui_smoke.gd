@@ -19,8 +19,10 @@ func _run() -> void:
 		if choice.value == 2:
 			assert(choice.button.button_pressed)
 			assert(choice.button.get_theme_stylebox("normal") is StyleBoxFlat)
-	assert(game.find_child("IndustrialBuildCatalog", true, false) != null)
-	assert(game.find_child("IndustrialQuickAccessRail", true, false) != null)
+	assert(game.find_child("FactoryBuildDock", true, false) != null)
+	assert(game.find_child("ObjectivesDrawer", true, false) != null)
+	assert(game.find_child("IndustrialBuildCatalog", true, false) == null)
+	assert(game.find_child("IndustrialQuickAccessRail", true, false) == null)
 	# These oversized rejected UI surfaces must NOT be restored.
 	assert(game.find_child("BottomConstructionDock", true, false) == null)
 	assert(game.find_child("DepotQuickPins", true, false) == null)
@@ -67,7 +69,7 @@ func _run() -> void:
 	assert(game.pause_world_label.text != "")
 	assert(game.menu_card.custom_minimum_size.x >= 700.0)
 	game._show_menu(false)
-	assert(game.sidebar_panel.visible == false)
+	assert(game.build_dock.inspecting and not game.build_dock._open)
 	game._toggle_storage()
 	assert(game.storage_view.visible)
 	assert(game.storage_view.main_panel.get_theme_stylebox("panel") is StyleBoxFlat)

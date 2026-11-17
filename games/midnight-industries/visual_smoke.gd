@@ -149,38 +149,48 @@ func _run() -> void:
 	if Art.machine_destination("smelter", Vector2.ZERO).position.y >= 0.0:
 		_fail("Furnace outlet was not moved up to belt height")
 		return
-	var side_panel: Control = game.find_child("IndustrialBuildCatalog", true, false)
+	var dock: Control = game.find_child("FactoryBuildDock", true, false)
+	var goals: Control = game.find_child("ObjectivesDrawer", true, false)
 	var inspect_panel: Control = game.find_child("IndustrialMachineConsole", true, false)
-	var footer: Control = game.find_child("IndustrialQuickAccessRail", true, false)
 	var header: Control = game.find_child("BrushedSteelCommandRail", true, false)
-	if side_panel == null or inspect_panel == null or footer == null or header == null:
-		_fail("Modern industrial HUD panels missing")
+	if dock == null or goals == null or inspect_panel == null or header == null:
+		_fail("New header, objectives, inspector or build dock missing")
 		return
-	if side_panel.size.x > 280 or inspect_panel.size.x > 345 or footer.size.y > 80 or header.size.y > 85:
-		_fail("HUD panels obstruct too much of the factory")
+	if game.find_child("IndustrialBuildCatalog", true, false) != null \
+		or game.find_child("IndustrialQuickAccessRail", true, false) != null:
+		_fail("Old build sidebar/bottom debug rail must be removed")
+		return
+	if header.size.y > 98 or inspect_panel.size.x > 410 \
+		or dock.category_panel.size.y > 80:
+		_fail("New HUD panels are too large at the test resolution")
 		return
 	if inspect_panel.visible:
-		_fail("Inspector should collapse without a selection")
+		_fail("Inspector must be collapsed without selection")
 		return
-	if side_panel.visible:
-		_fail("Full build catalog must be hidden in selection mode")
+	if dock._open:
+		_fail("Build shelf must be closed while inspecting")
 		return
 	game._set_mode("build")
-	if not side_panel.visible:
-		_fail("Build catalog must be visible when constructing")
+	if not dock._open or not dock.machine_panel.visible:
+		_fail("Category machine shelf must expand for building")
 		return
 	game._set_mode("inspect")
-	if side_panel.visible:
-		_fail("Build catalog must retract when returning to selection")
-		return
-	if game.tool_buttons.size() != 5 or game.quick_buttons.size() != 5:
-		_fail("Visual machine catalog or quick access deck is incomplete")
+	if dock._open:
+		_fail("Machine shelf must retract in inspect mode")
 		return
 	for kind in ["miner", "belt", "smelter", "storage", "depot"]:
-		var icon: Texture2D = game.tool_buttons[kind].icon
-		if icon == null or icon.get_width() != 144:
-			_fail("Illustrated machine is missing from the build catalog: " + kind)
+		game._select_tool(kind)
+		if game._machine_icon(kind) == null \
+			or game._machine_icon(kind).get_width() < 64:
+			_fail("Machine illustration missing for " + kind)
 			return
+	game._set_mode("inspect")
+	if dock.category_buttons.size() < 5:
+		_fail("Catalog categories are absent")
+		return
+	if game.header_buttons.size() != 6:
+		_fail("New command header must expose six interactive actions")
+		return
 	if game.menu_card.get_theme_stylebox("panel") is not StyleBoxFlat:
 		_fail("The native old menu surface has not been fully replaced")
 		return

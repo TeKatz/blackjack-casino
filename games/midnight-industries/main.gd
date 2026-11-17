@@ -17,6 +17,9 @@ const Settings = preload("res://industries_settings.gd")
 const Navigation = preload("res://factory_navigation.gd")
 const MenuSkin = preload("res://factory_menu_theme.gd")
 const WindowChrome = preload("res://factory_window_chrome.gd")
+const BuildDock = preload("res://factory_build_dock.gd")
+const Objectives = preload("res://factory_objectives_drawer.gd")
+const CommandIcons = preload("res://factory_ui_icons.gd")
 const TILE := 48.0
 const GOLD := Color("#F5C04A")
 const CYAN := Color("#00D8F4")
@@ -91,6 +94,11 @@ var settings
 var navigation: Control
 var window_chrome: Control
 var header_rail: Control
+var build_dock: Control
+var objectives_drawer: Control
+var header_buttons: Dictionary = {}
+var inspector_visible := false
+var inspector_tween: Tween
 var mode_rail: Control
 var pause_world_label: Label
 var pause_phase_label: Label
@@ -222,6 +230,37 @@ func _menu_button(value: String, handler: Callable, danger: bool = false,
 	b.pressed.connect(handler)
 	return b
 
+func _header_action(parent: Node, id: String, label: String,
+	handler: Callable) -> Button:
+	var button := Button.new()
+	button.name = "Header_" + id
+	button.text = label
+	button.icon = CommandIcons.icon(id)
+	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.custom_minimum_size = Vector2(101, 43)
+	if id == "achievements":
+		button.custom_minimum_size.x = 139
+	MenuSkin.style_button(button)
+	button.add_theme_font_size_override("font_size", 12)
+	button.tooltip_text = label
+	button.pressed.connect(handler)
+	parent.add_child(button)
+	header_buttons[id] = button
+	return button
+
+func _show_future_panel(id: String) -> void:
+	var names: Dictionary = {
+		"achievements": _tr("Erfolge", "Achievements"),
+		"jobs": "Jobs", "upgrades": "Upgrades"}
+	var dialog := AcceptDialog.new()
+	dialog.title = str(names.get(id, id))
+	dialog.dialog_text = _tr(
+		"Dieser Bereich ist für eine kommende Entwicklungsphase vorgesehen.",
+		"This feature is reserved for a future development phase.")
+	dialog.confirmed.connect(dialog.queue_free)
+	ui_layer.add_child(dialog)
+	dialog.popup_centered()
+
 func _section_title(text_value: String) -> VBoxContainer:
 	var group := VBoxContainer.new()
 	group.add_theme_constant_override("separation", 6)
@@ -238,144 +277,91 @@ func _create_interface() -> void:
 	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui_layer.add_child(hud)
 
-	# Top command rail: identity, real production receipts and system state.
+	# Compact native command rail: factory identity, telemetry, and systems.
 	var top := PanelContainer.new()
 	header_rail = top
 	top.name = "BrushedSteelCommandRail"
-	top.add_theme_stylebox_override("panel", _panel_style("header"))
+	top.add_theme_stylebox_override("panel", MenuSkin.panel("section"))
 	hud.add_child(top)
 	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	top.offset_left = 11
-	top.offset_right = -11
-	top.offset_top = 9
-	top.offset_bottom = 81
+	top.offset_left = 12
+	top.offset_right = -12
+	top.offset_top = 10
+	top.offset_bottom = 88
 	var top_row := HBoxContainer.new()
-	top_row.add_theme_constant_override("separation", 19)
+	top_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	top_row.add_theme_constant_override("separation", 12)
 	top.add_child(top_row)
 	var brand := HBoxContainer.new()
-	brand.add_theme_constant_override("separation", 11)
-	brand.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	brand.custom_minimum_size.x = 255
+	brand.add_theme_constant_override("separation", 12)
 	top_row.add_child(brand)
 	var logo := TextureRect.new()
 	logo.texture = _machine_icon("miner")
-	logo.custom_minimum_size = Vector2(42, 42)
+	logo.custom_minimum_size = Vector2(45, 45)
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	brand.add_child(logo)
 	var identity := VBoxContainer.new()
 	identity.alignment = BoxContainer.ALIGNMENT_CENTER
+	identity.add_theme_constant_override("separation", 1)
 	brand.add_child(identity)
-	identity.add_child(_make_label("MIDNIGHT", 17, TEXT))
-	identity.add_child(_make_label("I N D U S T R I E S", 14, GOLD))
-	identity.add_child(_make_label(_tr("INDUSTRIELLE AUTOMATISIERUNG", "INDUSTRIAL AUTOMATION"), 9, MUTED))
+	identity.add_child(_make_label("MIDNIGHT", 19, TEXT))
+	identity.add_child(_make_label("I N D U S T R I E S", 12, GOLD))
 	var resource_column := VBoxContainer.new()
 	resource_column.alignment = BoxContainer.ALIGNMENT_CENTER
-	resource_column.add_theme_constant_override("separation", 4)
+	resource_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	resource_column.add_theme_constant_override("separation", 3)
 	top_row.add_child(resource_column)
-	production = _make_label("", 15, TEXT)
+	production = _make_label("", 12, CYAN)
 	production.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	production.clip_text = true
+	production.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	resource_column.add_child(production)
 	var status_row := HBoxContainer.new()
 	status_row.alignment = BoxContainer.ALIGNMENT_END
-	status_row.add_theme_constant_override("separation", 16)
+	status_row.add_theme_constant_override("separation", 11)
 	resource_column.add_child(status_row)
-	header_status = _make_label("", 11, CYAN)
-	fps_label = _make_label("", 11, MUTED)
+	header_status = _make_label("", 10, MenuSkin.MUTED)
+	construction_status = _make_label("", 10, GOLD)
+	fps_label = _make_label("", 10, MenuSkin.MUTED)
 	status_row.add_child(header_status)
-	construction_status = _make_label("", 11, GOLD)
 	status_row.add_child(construction_status)
 	status_row.add_child(fps_label)
-	var inventory_button := _button(_tr("  LAGER  [I]  ", "  STORAGE  [I]  "), _toggle_storage)
-	inventory_button.custom_minimum_size.x = 109
-	inventory_button.custom_minimum_size.y = 39
-	top_row.add_child(inventory_button)
-	var menu_button := _button(_tr("  MENÜ  [ESC]  ", "  MENU  [ESC]  "), func() -> void: _show_menu(true))
-	menu_button.custom_minimum_size.x = 109
-	menu_button.custom_minimum_size.y = 39
-	top_row.add_child(menu_button)
-
-	# Production catalog deliberately replaces the previous debug-style tool list.
-	var sidebar := PanelContainer.new()
-	sidebar.name = "IndustrialBuildCatalog"
-	sidebar_panel = sidebar
-	sidebar.add_theme_stylebox_override("panel", _panel_style("panel"))
-	hud.add_child(sidebar)
-	sidebar.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	sidebar.offset_left = 11
-	sidebar.offset_top = 160
-	sidebar.offset_right = 277
-	sidebar.offset_bottom = 678
-	var side_col := VBoxContainer.new()
-	side_col.add_theme_constant_override("separation", 6)
-	sidebar.add_child(side_col)
-	side_col.add_child(_make_label(_tr("WERKZEUGZENTRALE", "FACTORY WORKSHOP"), 15, TEXT))
-	side_col.add_child(_make_label(_tr("PRODUKTION  /  LOGISTIK", "PRODUCTION  /  LOGISTICS"), 10, CYAN))
-	var mode_strip := PanelContainer.new()
-	mode_rail = mode_strip
-	mode_strip.name = "CompactBuildSelectSwitcher"
-	mode_strip.add_theme_stylebox_override("panel", _panel_style("header"))
-	hud.add_child(mode_strip)
-	mode_strip.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	mode_strip.offset_left = 11
-	mode_strip.offset_top = 87
-	mode_strip.offset_right = 277
-	mode_strip.offset_bottom = 153
-	var tabs := HBoxContainer.new()
-	tabs.add_theme_constant_override("separation", 7)
-	mode_strip.add_child(tabs)
-	var inspect_btn := _button(_tr("V  AUSWAHL", "V  SELECT"), func() -> void: _set_mode("inspect"))
-	var build_btn := _button(_tr("B  BAUEN", "B  BUILD"), func() -> void: _set_mode("build"))
-	inspect_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	build_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	inspect_btn.add_theme_font_size_override("font_size", 12)
-	build_btn.add_theme_font_size_override("font_size", 12)
-	tabs.add_child(inspect_btn)
-	tabs.add_child(build_btn)
-	mode_buttons = {"inspect": inspect_btn, "build": build_btn}
-	var ruler := HSeparator.new()
-	side_col.add_child(ruler)
-	side_col.add_child(_make_label(_tr("MASCHINENKATALOG", "MACHINE CATALOG"), 11, GOLD))
-	tool_title = _make_label(_tr("FÜNF ANLAGEN VERFÜGBAR", "FIVE SYSTEMS AVAILABLE"), 10, MUTED)
-	side_col.add_child(tool_title)
-	var names: Array[String] = [
-		_tr("ABBAUMASCHINE", "MINING DRILL"),
-		_tr("FÖRDERBAND", "CONVEYOR BELT"),
-		_tr("SCHMELZOFEN", "SMELTING FURNACE"),
-		_tr("INDUSTRIELAGER", "INDUSTRIAL STORAGE"),
-		_tr("GLOBALES DEPOT", "GLOBAL DEPOT")
-	]
-	for i in range(TOOLS.size()):
-		var key: String = TOOLS[i]
-		if i == 2:
-			side_col.add_child(_make_label(_tr("VERARBEITUNG  /  LAGER", "PROCESSING  /  STORAGE"), 10, GOLD))
-		var btn := _button("%d   %s" % [i + 1, names[i]], _select_tool.bind(key))
-		btn.icon = _machine_icon(key)
-		btn.expand_icon = true
-		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		btn.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
-		btn.custom_minimum_size.y = 55
-		side_col.add_child(btn)
-		tool_buttons[key] = btn
-	side_col.add_child(HSeparator.new())
-	tool_cost_label = _make_label("", 11, CYAN)
-	tool_cost_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	tool_cost_label.custom_minimum_size.y = 30
-	side_col.add_child(tool_cost_label)
-	var hint := _make_label(_tr("R   AUSGANG DREHEN\nI   BAULAGER\nRECHTSKLICK   BAU ABBRECHEN",
-		"R   ROTATE OUTPUT\nI   INVENTORY\nRIGHT CLICK   CANCEL BUILD"), 11, MUTED)
-	side_col.add_child(hint)
+	var action_scroll := ScrollContainer.new()
+	action_scroll.name = "CommandActionsScroll"
+	action_scroll.custom_minimum_size.x = 490
+	action_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	action_scroll.size_flags_stretch_ratio = 1.5
+	action_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	action_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	top_row.add_child(action_scroll)
+	var action_row := HBoxContainer.new()
+	action_row.add_theme_constant_override("separation", 7)
+	action_scroll.add_child(action_row)
+	_header_action(action_row, "achievements", _tr("ERFOLGE", "ACHIEVEMENTS"),
+		func() -> void: _show_future_panel("achievements"))
+	_header_action(action_row, "jobs", "JOBS",
+		func() -> void: _show_future_panel("jobs"))
+	_header_action(action_row, "upgrades", "UPGRADES",
+		func() -> void: _show_future_panel("upgrades"))
+	_header_action(action_row, "storage", _tr("LAGER", "STORAGE"), _toggle_storage)
+	pause_button = _header_action(action_row, "pause", _tr("PAUSE", "PAUSE"), _toggle_pause)
+	_header_action(action_row, "menu", _tr("MENÜ", "MENU"),
+		func() -> void: _show_menu(true))
 
 	# Inspector uses actual selection data and an illustrated machine portrait.
 	var inspector := PanelContainer.new()
 	inspector.name = "IndustrialMachineConsole"
 	inspector_panel = inspector
-	inspector.add_theme_stylebox_override("panel", _panel_style("inspector"))
+	inspector.add_theme_stylebox_override("panel", MenuSkin.panel("main"))
 	hud.add_child(inspector)
 	inspector.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	inspector.offset_left = -325
-	inspector.offset_right = -11
-	inspector.offset_top = 87
-	inspector.offset_bottom = 413
+	inspector.offset_left = -397
+	inspector.offset_right = -16
+	inspector.offset_top = 99
+	inspector.offset_bottom = 487
+	inspector.visible = false
 	var inspect_col := VBoxContainer.new()
 	inspect_col.add_theme_constant_override("separation", 12)
 	inspector.add_child(inspect_col)
@@ -421,44 +407,36 @@ func _create_interface() -> void:
 	inspector_controls.add_child(rotate_button)
 	inspector_controls.add_child(demolish_button)
 
-	var bottom := PanelContainer.new()
-	bottom.name = "IndustrialQuickAccessRail"
-	bottom.add_theme_stylebox_override("panel", _panel_style("header"))
-	hud.add_child(bottom)
-	bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom.offset_left = 11
-	bottom.offset_right = -11
-	bottom.offset_top = -76
-	bottom.offset_bottom = -10
-	var footer_row := HBoxContainer.new()
-	footer_row.add_theme_constant_override("separation", 12)
-	bottom.add_child(footer_row)
-	var left_footer := VBoxContainer.new()
-	left_footer.alignment = BoxContainer.ALIGNMENT_CENTER
-	left_footer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	left_footer.add_theme_constant_override("separation", 4)
-	footer_row.add_child(left_footer)
-	status = _make_label("", 12, CYAN)
-	left_footer.add_child(status)
-	left_footer.add_child(_make_label(_tr("WASD · RAD ZOOM · M KARTE · LINKSKLICK-ZIEHEN", "WASD · WHEEL ZOOM · M MAP · LEFT-DRAG PAN"), 9, MUTED))
-	var slots := HBoxContainer.new()
-	slots.add_theme_constant_override("separation", 5)
-	footer_row.add_child(slots)
-	for i in range(TOOLS.size()):
-		var name: String = TOOLS[i]
-		var shortcut := _button(str(i + 1), _select_tool.bind(name))
-		shortcut.icon = _machine_icon(name)
-		shortcut.expand_icon = true
-		shortcut.custom_minimum_size = Vector2(49, 44)
-		shortcut.add_theme_font_size_override("font_size", 11)
-		slots.add_child(shortcut)
-		quick_buttons[name] = shortcut
-	pause_button = _button(_tr("Ⅱ  PAUSE", "Ⅱ  PAUSE"), _toggle_pause)
-	pause_button.custom_minimum_size.x = 92
-	footer_row.add_child(pause_button)
-	var save_btn := _button(_tr("SPEICHERN", "SAVE"), _save_now)
-	save_btn.custom_minimum_size.x = 84
-	footer_row.add_child(save_btn)
+	# Independent bottom category dock with expandable machine shelf.
+	build_dock = BuildDock.new()
+	build_dock.model = model
+	build_dock.german = german
+	build_dock.reduced_motion = reduced_motion
+	build_dock.selected_machine = tool
+	build_dock.icon_provider = Callable(self, "_machine_icon")
+	build_dock.inspect_requested.connect(func() -> void: _set_mode("inspect"))
+	build_dock.build_mode_requested.connect(func() -> void: _set_mode("build"))
+	build_dock.machine_requested.connect(_select_tool)
+	hud.add_child(build_dock)
+	objectives_drawer = Objectives.new()
+	objectives_drawer.german = german
+	objectives_drawer.reduced_motion = reduced_motion
+	objectives_drawer.position = Vector2(-292, 139)
+	hud.add_child(objectives_drawer)
+	# Small nonintrusive gameplay notifications, no screen-wide bottom rail.
+	var status_bg := PanelContainer.new()
+	status_bg.name = "CompactGameStatus"
+	status_bg.add_theme_stylebox_override("panel", MenuSkin.panel("section"))
+	status_bg.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	status_bg.offset_left = 17
+	status_bg.offset_top = -66
+	status_bg.offset_right = 360
+	status_bg.offset_bottom = -17
+	hud.add_child(status_bg)
+	status = _make_label("", 11, MenuSkin.MUTED)
+	status.clip_text = true
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	status_bg.add_child(status)
 
 	# Dedicated pause screen, unlike the rejected Phase-1 HUD. A compact,
 	# legible control station with actual hierarchy and no random gold corner.
@@ -597,26 +575,26 @@ func _missing_text(kind: String) -> String:
 func _set_mode(next_mode: String) -> void:
 	_cancel_select_drag()
 	mode = next_mode
-	sidebar_panel.visible = mode == "build"
 	motion_view.cursor_mode = mode
+	if build_dock != null:
+		if mode == "inspect":
+			build_dock.set_inspecting()
+		else:
+			build_dock.set_building()
 	if mode == "inspect":
 		notice_selection()
 	else:
 		_notice(_tr("Baumodus aktiv · Richtung in der Vorschau sichtbar",
 			"Build mode active · output direction visible in preview"))
-	for key in mode_buttons:
-		mode_buttons[key].add_theme_stylebox_override("normal", _button_style(key == mode))
-	for key in tool_buttons:
-		tool_buttons[key].disabled = mode == "inspect"
-		tool_buttons[key].add_theme_stylebox_override("normal", _button_style(key == tool and mode == "build"))
-	for key in quick_buttons:
-		quick_buttons[key].add_theme_stylebox_override("normal", _button_style(key == tool and mode == "build"))
-	tool_title.text = _tr("WERKZEUGE BEREIT", "TOOLS READY") if mode == "build" else _tr("AUSWAHLMODUS AKTIV", "INSPECTION ACTIVE")
 	motion_view.queue_redraw()
 	_refresh_ui()
 
 func _select_tool(name: String) -> void:
+	if not model.construction.is_machine_unlocked(name) or not model.economy.registered(name):
+		return
 	tool = name
+	if build_dock != null:
+		build_dock.select_machine(name)
 	_set_mode("build")
 	motion_view.tool = tool
 	_notice(_tr("Ausgewählt: ", "Selected: ") + name.to_upper() +
@@ -665,17 +643,51 @@ func _refresh_ui() -> void:
 		construction_status.text = _tr("CASINO FERTIG", "CASINO COMPLETE")
 	fps_label.text = "FPS  %d" % Engine.get_frames_per_second()
 	pause_button.text = _tr("▶  WEITER", "▶  RESUME") if simulation_paused else _tr("Ⅱ  PAUSE", "Ⅱ  PAUSE")
+	pause_button.icon = CommandIcons.icon("play" if simulation_paused else "pause")
+	if build_dock != null:
+		build_dock.refresh()
+	if objectives_drawer != null:
+		objectives_drawer.set_phase(active_phase)
 	if tool_cost_label != null and mode == "build":
 		tool_cost_label.text = _tr("BAUKOSTEN: ", "BUILD COST: ") + _cost_text(tool)
 		tool_cost_label.add_theme_color_override("font_color",
 			CYAN if model.economy.has_funds(tool) else DANGER)
 	_refresh_inspector()
 
+func _animate_inspector(show: bool) -> void:
+	if inspector_panel == null:
+		return
+	if inspector_visible == show:
+		return
+	inspector_visible = show
+	if inspector_tween != null and inspector_tween.is_running():
+		inspector_tween.kill()
+	var target_x := get_viewport_rect().size.x - 397.0
+	if show:
+		inspector_panel.visible = true
+		inspector_panel.position.x = target_x + 28.0
+		inspector_panel.modulate.a = 0.0
+	if reduced_motion:
+		inspector_panel.position.x = target_x if show else target_x + 28.0
+		inspector_panel.modulate.a = 1.0 if show else 0.0
+		inspector_panel.visible = show
+		return
+	inspector_tween = create_tween().set_parallel(true)
+	inspector_tween.tween_property(inspector_panel, "position:x",
+		target_x if show else target_x + 28.0, 0.21).set_trans(
+		Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	inspector_tween.tween_property(inspector_panel, "modulate:a",
+		1.0 if show else 0.0, 0.18)
+	if not show:
+		inspector_tween.chain().tween_callback(func() -> void:
+			if not inspector_visible:
+				inspector_panel.visible = false)
+
 func _refresh_inspector() -> void:
 	if inspector_title == null:
 		return
 	if not model.buildings.has(inspected):
-		inspector_panel.visible = false
+		_animate_inspector(false)
 		inspector_portrait.visible = false
 		inspector_title.text = _tr("Kein Gebäude gewählt", "No building selected")
 		inspector_subtitle.text = _tr("AUSWAHLMODUS  [V]", "INSPECT MODE  [V]")
@@ -686,7 +698,7 @@ func _refresh_inspector() -> void:
 		return
 	var machine: Dictionary = model.buildings[inspected]
 	var kind: String = machine.kind
-	inspector_panel.visible = true
+	_animate_inspector(true)
 	inspector_portrait.visible = true
 	inspector_portrait.texture = _machine_icon(kind)
 	inspector_progress.visible = true
@@ -803,6 +815,8 @@ func _toggle_grid() -> void:
 
 func _on_construction_phase(number: int) -> void:
 	construction_view.queue_redraw()
+	if build_dock != null:
+		build_dock._build_machines()
 	_notice(_tr("Casino-Bauphase %02d abgeschlossen",
 		"Casino construction phase %02d completed") % number)
 	_refresh_ui()
@@ -911,10 +925,16 @@ func _bound_camera() -> void:
 	camera.position.y = clampf(camera.position.y, 0.0, float(Model.HEIGHT) * TILE)
 
 func _pointer_over_hud(point: Vector2) -> bool:
-	var screen := get_viewport_rect().size
-	return point.y < (114.0 if settings != null and int(settings.values.window_mode) == 0 else 84.0) or point.y > screen.y - 80.0 or (
-		point.x < 282.0 and (point.y < 157.0 or (sidebar_panel.visible and point.y < 583.0))) or (
-		point.x > screen.x - 329.0 and inspector_panel.visible and point.y < 418.0)
+	var top: float = 114.0 if settings != null \
+		and int(settings.values.window_mode) == 0 else 92.0
+	if point.y < top:
+		return true
+	if build_dock != null and build_dock.is_over(point):
+		return true
+	if objectives_drawer != null and objectives_drawer.is_over(point):
+		return true
+	return inspector_panel != null and inspector_panel.visible \
+		and inspector_panel.get_global_rect().has_point(point)
 
 func _cancel_select_drag() -> void:
 	selection_pending = false
@@ -1073,6 +1093,7 @@ func _tool_action(event: InputEvent) -> int:
 
 func _world_view() -> Dictionary:
 	var record: Dictionary = saved_view.duplicate(true)
+	record["objectives_expanded"] = objectives_drawer.expanded if objectives_drawer != null else false
 	record["camera_x"] = camera.position.x
 	record["camera_y"] = camera.position.y
 	record["zoom"] = camera.zoom.x
@@ -1108,8 +1129,13 @@ func open_world(id: String, record: Dictionary) -> void:
 	minimap.refresh_map()
 	storage_view.model = model
 	storage_view.german = german
+	build_dock.model = model
+	build_dock._build_machines()
+	build_dock.set_inspecting()
+	objectives_drawer.set_expanded(bool(record.view.get("objectives_expanded", false)))
 	inspected = Vector2i(-1, -1)
 	motion_view.inspected = inspected
+	_animate_inspector(false)
 	camera.position = Vector2(
 		float(record.view.get("camera_x", 1008.0)),
 		float(record.view.get("camera_y", 864.0)))
@@ -1142,6 +1168,10 @@ func apply_settings(changed: String = "") -> void:
 		_refresh_grid_button()
 	if changed in ["", "reduced_motion"]:
 		reduced_motion = bool(settings.values.reduced_motion)
+		if build_dock != null:
+			build_dock.reduced_motion = reduced_motion
+		if objectives_drawer != null:
+			objectives_drawer.reduced_motion = reduced_motion
 		motion_view.reduced_motion = reduced_motion
 		minimap.reduced_motion = reduced_motion
 		if effects_button != null:
@@ -1170,9 +1200,8 @@ func _sync_window_chrome() -> void:
 	if header_rail != null:
 		header_rail.offset_top = 39.0 if windowed else 9.0
 		header_rail.offset_bottom = 111.0 if windowed else 81.0
-	if mode_rail != null:
-		mode_rail.offset_top = 119.0 if windowed else 87.0
-		mode_rail.offset_bottom = 185.0 if windowed else 153.0
+	if objectives_drawer != null:
+		objectives_drawer.position.y = 159.0 if windowed else 123.0
 
 func _rebuild_interface_language() -> void:
 	var next_language := str(settings.values.language) == "de"
@@ -1186,6 +1215,9 @@ func _rebuild_interface_language() -> void:
 	var previous_pan: Vector2 = minimap.pan
 	var map_was_open: bool = minimap.visible
 	var storage_was_open: bool = storage_view.visible
+	var drawer_was_expanded: bool = objectives_drawer.expanded
+	var previous_category: String = build_dock.selected_category
+	var previous_tool: String = tool
 	var settings_was_open: bool = navigation.settings_screen.visible
 	var active_tab: String = navigation.active_tab
 	german = next_language
@@ -1194,7 +1226,13 @@ func _rebuild_interface_language() -> void:
 	tool_buttons.clear()
 	quick_buttons.clear()
 	mode_buttons.clear()
+	header_buttons.clear()
+	inspector_visible = false
 	_create_interface()
+	build_dock.selected_category = previous_category
+	build_dock.selected_machine = previous_tool
+	build_dock._build_machines()
+	objectives_drawer.set_expanded(drawer_was_expanded)
 	minimap.markers = previous_marker_list
 	minimap.layers = previous_layers
 	minimap.zoom = previous_zoom

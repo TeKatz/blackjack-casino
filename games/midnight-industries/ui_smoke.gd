@@ -102,9 +102,29 @@ func _run() -> void:
 	if game.storage_view.visible:
 		_fail("I inventory did not close", game)
 		return
-	if game.tool_buttons.size() != 5 or game.quick_buttons.size() != 5:
-		_fail("Depot missing from five-item build catalog", game)
+	if game.build_dock == null or game.build_dock.category_buttons.size() < 5:
+		_fail("Category-driven build dock missing", game)
 		return
+	if game.header_buttons.size() != 6 or game.header_buttons["pause"] != game.pause_button:
+		_fail("Header controls missing or Pause remained in bottom rail", game)
+		return
+	if game.objectives_drawer == null:
+		_fail("Objectives drawer missing", game)
+		return
+	game.objectives_drawer.set_expanded(true)
+	if not game.objectives_drawer.expanded:
+		_fail("Objectives drawer failed to expand", game)
+		return
+	game.objectives_drawer.set_expanded(false)
+	game.build_dock._activate_category("logistics")
+	if game.mode != "build" or game.build_dock.machine_buttons.size() < 3:
+		_fail("Logistics category did not open the build shelf", game)
+		return
+	game.build_dock._choose_machine("depot")
+	if game.tool != "depot":
+		_fail("Machine tile did not select its machine", game)
+		return
+	game._set_mode("inspect")
 	game.return_to_main()
 	if not game.worlds.delete_world(world_id):
 		_fail("Temporary test world could not be removed", game)
