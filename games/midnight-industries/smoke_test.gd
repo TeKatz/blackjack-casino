@@ -46,6 +46,7 @@ func _initialize() -> void:
 	assert(not construction.is_machine_unlocked("future_assembler"))
 	assert(not construction.is_recipe_unlocked("future_board"))
 	assert(construction.is_machine_unlocked("smelter"))
+	assert(construction.is_machine_unlocked("depot"))
 	assert(construction.is_recipe_unlocked("iron_ingot"))
 	assert(not model.can_place(Construction.ORIGIN, "belt"))
 	assert(not model.can_place(
