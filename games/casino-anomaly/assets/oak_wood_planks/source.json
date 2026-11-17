@@ -1,0 +1,23 @@
+{
+  "asset": "oak_wood_planks",
+  "sourcePage": "https://polyhaven.com/a/oak_wood_planks",
+  "creator": "Dimitrios Savva",
+  "license": "CC0-1.0",
+  "maps": {
+    "oak_wood_planks_diff_2k.jpg": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/oak_wood_planks/oak_wood_planks_diff_2k.jpg",
+      "sha256": "ec3d2deb1fe21150ede5f987b48c691b3c7dbffe4183850a9b8717e904917a46",
+      "bytes": 2736142
+    },
+    "oak_wood_planks_rough_2k.jpg": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/oak_wood_planks/oak_wood_planks_rough_2k.jpg",
+      "sha256": "18b2a97f44b18e1a794652dbb2ec4bbdfc35869e2f028e4bbb85441258da1018",
+      "bytes": 3396426
+    },
+    "oak_wood_planks_nor_gl_2k.png": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/oak_wood_planks/oak_wood_planks_nor_gl_2k.png",
+      "sha256": "6b499e196c13315cd2329414a118fb2980a3226fe0481ebc43881bf67402b42b",
+      "bytes": 20512520
+    }
+  }
+}
