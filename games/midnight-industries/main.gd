@@ -36,7 +36,6 @@ var minimap: Control
 var storage_view: Control
 var construction_view: Node2D
 var show_grid := false
-const VISUAL_SETTINGS_FILE := "user://industries-visual-settings.cfg"
 var mode := "inspect"
 var tool := "belt"
 var facing := 0
@@ -85,7 +84,6 @@ var header_pause_button: Button
 var resume_button: Button
 var new_button: Button
 var effects_button: Button
-var confirming_new := false
 var hover_tweens: Dictionary = {}
 var worlds
 var settings
@@ -269,17 +267,22 @@ func _create_interface() -> void:
 	status_row.add_child(construction_status)
 	status_row.add_child(fps_label)
 	var inventory_button := _button(_tr("  LAGER  [I]  ", "  STORAGE  [I]  "), _toggle_storage)
+	inventory_button.tooltip_text = _tr("Globales Baulager und Baukosten öffnen", "Open global build stock and construction costs")
 	inventory_button.custom_minimum_size.x = 109
 	inventory_button.custom_minimum_size.y = 39
 	top_row.add_child(inventory_button)
 	var map_button := _button(_tr("KARTE [M]", "MAP [M]"), _toggle_minimap)
+	map_button.tooltip_text = _tr("Vollständig aufgedeckte Weltkarte öffnen", "Open the fully revealed world map")
 	top_row.add_child(map_button)
 	var header_pause := _button(_tr("PAUSE", "PAUSE"), _toggle_pause)
+	header_pause.tooltip_text = _tr("Fabrikproduktion pausieren oder fortsetzen", "Pause or resume factory production")
 	top_row.add_child(header_pause)
 	header_pause_button = header_pause
 	var header_save := _button(_tr("SAVE", "SAVE"), _save_now)
+	header_save.tooltip_text = _tr("Aktuelle Welt mit Kamera und Markern speichern", "Save this world, camera and markers")
 	top_row.add_child(header_save)
 	var menu_button := _button(_tr("  MENÜ  [ESC]  ", "  MENU  [ESC]  "), func() -> void: _show_menu(true))
+	menu_button.tooltip_text = _tr("Pausenmenü mit Einstellungen und Weltwechsel", "Pause menu with settings and world selection")
 	menu_button.custom_minimum_size.x = 109
 	menu_button.custom_minimum_size.y = 39
 	top_row.add_child(menu_button)
@@ -759,16 +762,6 @@ func _toggle_effects() -> void:
 	settings.save()
 	effects_button.text = _tr("✦   ANIMATIONEN: AUS", "✦   ANIMATIONS: OFF") if reduced_motion else _tr("✦   ANIMATIONEN: AN", "✦   ANIMATIONS: ON")
 
-func _load_visual_settings() -> void:
-	var settings := ConfigFile.new()
-	if settings.load(VISUAL_SETTINGS_FILE) == OK:
-		show_grid = bool(settings.get_value("display", "show_grid", false))
-
-func _save_visual_settings() -> void:
-	var settings := ConfigFile.new()
-	settings.set_value("display", "show_grid", show_grid)
-	settings.save(VISUAL_SETTINGS_FILE)
-
 func _refresh_grid_button() -> void:
 	if grid_button != null:
 		grid_button.text = _tr("▦   RASTER: AN  [G]", "▦   GRID: ON  [G]") if show_grid else _tr(
@@ -830,7 +823,6 @@ func _show_menu(show: bool) -> void:
 	if show:
 		storage_view.close_inventory()
 		minimap.hide_map()
-		confirming_new = false
 		new_button.text = _tr("NEUE FABRIK STARTEN", "START NEW FACTORY")
 		menu_card.modulate.a = 0.0 if not reduced_motion else 1.0
 		if not reduced_motion:
@@ -1101,6 +1093,7 @@ func apply_settings() -> void:
 	grid_view.set_grid_visible(show_grid)
 	reduced_motion = bool(settings.values.reduced_motion)
 	motion_view.reduced_motion = reduced_motion
+	motion_view.effect_quality = clampi(int(settings.values.effect_quality), 0, 2)
 	minimap.reduced_motion = reduced_motion
 	minimap.water_motion = bool(settings.values.water_motion)
 	var next_language := str(settings.values.language) == "de"

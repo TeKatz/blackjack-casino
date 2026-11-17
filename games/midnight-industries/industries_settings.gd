@@ -10,8 +10,9 @@ const ACTIONS := {
 	"tool_4": KEY_4, "tool_5": KEY_5
 }
 var values := {"language":"de", "grid":false, "reduced_motion":false,
-	"high_contrast":false, "ui_scale":1.0, "autosave":60,
+	"high_contrast":false, "ui_scale":1.0, "autosave":60, "tooltip_density":1,
 	"window_mode":0, "vsync":true, "fps":60, "water_motion":true,
+	"effect_quality":2,
 	"resolution":"1600x900", "master":1.0, "music":1.0, "effects":1.0, "ui":1.0,
 	"master_mute":false, "music_mute":false, "effects_mute":false, "ui_mute":false}
 var keys: Dictionary = {}
@@ -26,6 +27,11 @@ func _init() -> void:
 			var key := int(cfg.get_value("keys", name, keys[name]))
 			if key > 0:
 				keys[name] = key
+	else:
+		var old := ConfigFile.new()
+		if old.load("user://industries-visual-settings.cfg") == OK:
+			values.grid = bool(old.get_value("display", "show_grid", false))
+			save()
 	_apply_keys()
 	apply()
 

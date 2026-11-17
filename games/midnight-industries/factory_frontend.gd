@@ -65,6 +65,12 @@ func play_ui_click() -> void:
 func _word(de: String, en: String) -> String:
 	return de if bool(game.german) else en
 
+func _tip(short_text: String, detail_text: String) -> String:
+	match clampi(int(settings.values.tooltip_density), 0, 2):
+		0: return ""
+		2: return short_text + "\n" + detail_text
+		_: return short_text
+
 func _panel(parent: Node, name: String) -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.name = name
@@ -281,7 +287,9 @@ func _select_category(category: String) -> void:
 		var name: String = str(entry.de if game.german else entry.en)
 		var button := _button(machine_row, "%d  %s\n%s" % [entry.key, name, cost], game._select_tool.bind(id))
 		button.icon = game._machine_icon(id)
-		button.tooltip_text = name + " · " + cost
+		button.tooltip_text = _tip(name + " · " + cost,
+			_word("Bau verbraucht Material aus dem globalen Depot. R dreht die Vorschau.",
+				"Building spends global depot stock. R rotates the preview."))
 		button.disabled = not game.model.construction.is_machine_unlocked(id)
 		button.custom_minimum_size.x = 190
 		button.custom_minimum_size.y = 53
@@ -344,7 +352,9 @@ func _refresh_pins() -> void:
 		var amount: int = game.model.economy.available(id) if not id.is_empty() else 0
 		var b := _button(pin_row, (Catalog.name_for(id, game.german) + "\n%d" % amount) if not id.is_empty() else "+", _choose_pin.bind(i))
 		b.custom_minimum_size.x = 88
-		b.tooltip_text = _word("Klicken zum Ändern", "Click to change")
+		b.tooltip_text = _tip(_word("Klicken zum Ändern", "Click to change"),
+			_word("Der Wert stammt nur aus globalen Depots, nicht aus Zwischenlagern.",
+				"This amount comes only from global depots, not local warehouses."))
 		if not id.is_empty():
 			b.icon = Catalog.icon(id)
 
@@ -452,6 +462,18 @@ func _build_settings() -> void:
 		slider.value = float(settings.values[key])
 		items.add_child(slider)
 		slider.value_changed.connect(func(value: float) -> void: _change_setting(key, value))
+	var tooltip_row := HBoxContainer.new()
+	items.add_child(tooltip_row)
+	_label(tooltip_row, _word("Tooltips", "Tooltips"), 13)
+	for choice in [[_word("Aus", "Off"), 0], [_word("Kurz", "Brief"), 1],
+		[_word("Detailliert", "Detailed"), 2]]:
+		_button(tooltip_row, choice[0], func() -> void: _change_setting("tooltip_density", choice[1]))
+	var quality_row := HBoxContainer.new()
+	items.add_child(quality_row)
+	_label(quality_row, _word("Effektqualität", "Effect quality"), 13)
+	for choice in [[_word("Aus", "Off"), 0], [_word("Niedrig", "Low"), 1],
+		[_word("Hoch", "High"), 2]]:
+		_button(quality_row, choice[0], func() -> void: _change_setting("effect_quality", choice[1]))
 	var resolutions := HBoxContainer.new()
 	items.add_child(resolutions)
 	for dimension in ["1280x720", "1600x900", "1920x1080"]:
@@ -501,6 +523,12 @@ func _change_setting(key: String, value: Variant) -> void:
 	settings.save()
 	settings.apply()
 	game.apply_settings()
+	if key == "tooltip_density":
+		_refresh_pins()
+		if not open_category.is_empty():
+			var category: String = open_category
+			open_category = ""
+			_select_category(category)
 
 func open_settings() -> void:
 	settings_screen.visible = true

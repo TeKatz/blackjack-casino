@@ -19,6 +19,9 @@ func _run() -> void:
 	game.frontend._change_setting("water_motion", false)
 	assert(not game.terrain_view.water_motion)
 	game.frontend._change_setting("water_motion", true)
+	game.frontend._change_setting("effect_quality", 0)
+	assert(game.motion_view.effect_quality == 0)
+	game.frontend._change_setting("effect_quality", 2)
 	game.frontend._change_setting("ui_scale", 1.1)
 	assert(is_equal_approx(game.get_viewport().content_scale_factor, 1.1))
 	game.frontend._change_setting("ui_scale", 1.0)
@@ -36,6 +39,13 @@ func _run() -> void:
 	assert(game.frontend.dock.visible and game.frontend.pin_panel.visible)
 	game.frontend._select_category("logistics")
 	assert(game.frontend.machine_row.get_child_count() == 3)
+	game.frontend._change_setting("tooltip_density", 0)
+	await process_frame
+	assert(game.frontend.machine_row.get_child(0).tooltip_text == "")
+	game.frontend._change_setting("tooltip_density", 2)
+	await process_frame
+	assert("global" in game.frontend.machine_row.get_child(0).tooltip_text.to_lower())
+	game.frontend._change_setting("tooltip_density", 1)
 	game._toggle_storage()
 	game.storage_view._show_tab("costs")
 	assert(game.storage_view.cost_list.get_child_count() == 5)
