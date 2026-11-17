@@ -94,6 +94,7 @@ var settings
 var navigation: Control
 var window_chrome: Control
 var header_rail: Control
+var status_rail: PanelContainer
 var build_dock: Control
 var objectives_drawer: Control
 var header_buttons: Dictionary = {}
@@ -129,6 +130,7 @@ func _ready() -> void:
 	menu_open = true
 	motion_view.menu_open = true
 	apply_settings()
+	get_viewport().size_changed.connect(_layout_status_rail)
 	get_tree().auto_accept_quit = false
 
 func _tr(de: String, en: String) -> String:
@@ -425,6 +427,7 @@ func _create_interface() -> void:
 	hud.add_child(objectives_drawer)
 	# Small nonintrusive gameplay notifications, no screen-wide bottom rail.
 	var status_bg := PanelContainer.new()
+	status_rail = status_bg
 	status_bg.name = "CompactGameStatus"
 	status_bg.add_theme_stylebox_override("panel", MenuSkin.panel("section"))
 	status_bg.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
@@ -437,6 +440,7 @@ func _create_interface() -> void:
 	status.clip_text = true
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	status_bg.add_child(status)
+	_layout_status_rail()
 
 	# Dedicated pause screen, unlike the rejected Phase-1 HUD. A compact,
 	# legible control station with actual hierarchy and no random gold corner.
@@ -924,10 +928,30 @@ func _bound_camera() -> void:
 	camera.position.x = clampf(camera.position.x, 0.0, float(Model.WIDTH) * TILE)
 	camera.position.y = clampf(camera.position.y, 0.0, float(Model.HEIGHT) * TILE)
 
+func _layout_status_rail() -> void:
+	if status_rail == null:
+		return
+	var width: float = get_viewport_rect().size.x
+	var dock_width: float = minf(1020.0, maxf(480.0, width - 28.0))
+	var dock_left: float = (width - dock_width) * 0.5
+	if dock_left < 290.0:
+		# On small windows place notices ABOVE the expanding build dock.
+		status_rail.offset_left = 17.0
+		status_rail.offset_right = 317.0
+		status_rail.offset_top = -242.0
+		status_rail.offset_bottom = -193.0
+	else:
+		status_rail.offset_left = 17.0
+		status_rail.offset_right = maxf(235.0, minf(357.0, dock_left - 22.0))
+		status_rail.offset_top = -66.0
+		status_rail.offset_bottom = -17.0
+
 func _pointer_over_hud(point: Vector2) -> bool:
 	var top: float = 114.0 if settings != null \
 		and int(settings.values.window_mode) == 0 else 92.0
 	if point.y < top:
+		return true
+	if status_rail != null and status_rail.get_global_rect().has_point(point):
 		return true
 	if build_dock != null and build_dock.is_over(point):
 		return true
