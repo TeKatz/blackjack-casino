@@ -74,15 +74,16 @@ static func populate(resources: Dictionary, water: Dictionary) -> void:
 					resources[cell] = str(patch["kind"])
 	# The water mask is shared by collision, rendering and the overview.
 	# Rivers and lakes are placed around ore, with an extra two-tile margin.
-	for lake in LAKES:
+	for raw_lake in LAKES:
+		var lake: Vector4 = raw_lake
 		for y in range(maxi(0, floori(lake.y - lake.w - 2.0)),
 			mini(HEIGHT, ceili(lake.y + lake.w + 2.0))):
 			for x in range(maxi(0, floori(lake.x - lake.z - 2.0)),
 				mini(WIDTH, ceili(lake.x + lake.z + 2.0))):
 				var cell := Vector2i(x, y)
-				var nx := (float(x) - lake.x) / lake.z
-				var ny := (float(y) - lake.y) / lake.w
-				var distorted := nx * nx + ny * ny \
+				var nx: float = (float(x) - lake.x) / lake.z
+				var ny: float = (float(y) - lake.y) / lake.w
+				var distorted: float = nx * nx + ny * ny \
 					+ 0.16 * sin(float(x) * 0.37 + float(y) * 0.13) \
 					+ 0.09 * cos(float(y) * 0.43 - float(x) * 0.21)
 				if distorted <= 1.0:

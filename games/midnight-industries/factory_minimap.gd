@@ -130,7 +130,7 @@ func _draw() -> void:
 
 func _label(font: Font, point: Vector2, value: String, pixels: int,
 	tint: Color) -> void:
-	draw_string(font, point, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels, tint)
+	draw_string(font, point, value, HORIZONTAL_ALIGNMENT_LEFT, -1, pixels, tint)
 
 func _legend(font: Font, x: float, y: float, tint: Color, name: String) -> void:
 	draw_rect(Rect2(Vector2(x, y - 12.0), Vector2(17.0, 17.0)), tint)
@@ -139,7 +139,7 @@ func _legend(font: Font, x: float, y: float, tint: Color, name: String) -> void:
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT and _map_rect.has_point(event.position):
-			var tile := (event.position - _map_rect.position) / _pixel_scale
+			var tile: Vector2 = (event.position - _map_rect.position) / _pixel_scale
 			camera.position = Vector2(
 				clampf(tile.x * TILE, 0.0, float(Model.WIDTH) * TILE),
 				clampf(tile.y * TILE, 0.0, float(Model.HEIGHT) * TILE))
