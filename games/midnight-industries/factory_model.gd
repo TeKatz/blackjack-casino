@@ -71,12 +71,13 @@ func building_cost(kind: String) -> Dictionary:
 func missing_materials(kind: String) -> Dictionary:
 	return economy.missing(kind)
 
-func _make_machine(kind: String, direction: int, paid: Dictionary = {}) -> Dictionary:
+func _make_machine(kind: String, direction: int, paid: Dictionary = {},
+	free_kit: bool = false) -> Dictionary:
 	return {
 		"kind": kind, "direction": posmod(direction, 4), "item": "",
 		"buffer": 0, "ore": 0, "output": 0,
 		"recipe": "", "progress": 0.0,
-		"inventory": {}, "paid": paid.duplicate()
+		"inventory": {}, "paid": paid.duplicate(), "kit": free_kit
 	}
 
 func place(cell: Vector2i, kind: String, direction: int,
@@ -84,11 +85,13 @@ func place(cell: Vector2i, kind: String, direction: int,
 	if not can_place_site(cell, kind):
 		return false
 	var paid: Dictionary = {}
+	var is_kit: bool = bootstrap or economy.has_free_kit(kind) \
+		or (kind == "depot" and economy.free_depot_available)
 	if not bootstrap:
 		if not economy.has_funds(kind):
 			return false
 		paid = economy.pay(kind)
-	buildings[cell] = _make_machine(kind, direction, paid)
+	buildings[cell] = _make_machine(kind, direction, paid, is_kit)
 	cells_dirty = true
 	return true
 
@@ -96,7 +99,12 @@ func erase(cell: Vector2i) -> bool:
 	if not buildings.has(cell):
 		return false
 	var machine: Dictionary = buildings[cell]
-	economy.refund(machine.get("paid", {}))
+	if bool(machine.get("kit", false)):
+		# The starter line may be dismantled and relocated without
+		# deadlocking production or minting free iron/copper.
+		economy.return_kit(str(machine.kind))
+	else:
+		economy.refund(machine.get("paid", {}))
 	buildings.erase(cell)
 	transit.erase(cell)
 	cells_dirty = true
@@ -274,6 +282,7 @@ func snapshot() -> Dictionary:
 			"output": b.output, "recipe": b.recipe, "progress": b.progress,
 			"inventory": b.get("inventory", {}).duplicate(),
 			"paid": b.get("paid", {}).duplicate(),
+			"kit": bool(b.get("kit", false)),
 		})
 	return {"version": SAVE_VERSION, "steps": steps, "delivered": delivered.duplicate(),
 		"machines": machines, "construction": construction.snapshot(),
@@ -350,11 +359,16 @@ func restore(data: Variant) -> bool:
 				or float(int(paid_amount)) != float(paid_amount):
 				return false
 			actual_paid[material] = int(paid_amount)
+		# Legacy unpaid buildings act as movable kits instead of
+		# granting raw materials on demolition.
+		var kit: Variant = raw.get("kit", actual_paid.is_empty())
+		if typeof(kit) != TYPE_BOOL or (bool(kit) and not actual_paid.is_empty()):
+			return false
 		loaded[cell] = {
 			"kind": kind, "direction": direction, "item": item,
 			"buffer": buffer, "ore": ore, "output": output,
 			"recipe": recipe, "progress": progress,
-			"inventory": stored, "paid": actual_paid
+			"inventory": stored, "paid": actual_paid, "kit": bool(kit)
 		}
 	var restored_construction = Construction.new()
 	if not restored_construction.restore(data.get("construction", {})):
@@ -375,7 +389,7 @@ func restore(data: Variant) -> bool:
 			var after: Vector2i = cell + DIRS[int(loaded[cell]["direction"])]
 			if inside(after) and not loaded.has(after) and not migrated_water.has(after) \
 				and not restored_construction.inside(after):
-				loaded[after] = _make_machine("depot", 0)
+				loaded[after] = _make_machine("depot", 0, {}, true)
 				restored_economy.free_depot_available = false
 				break
 	var new_totals := {}

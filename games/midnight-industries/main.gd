@@ -502,6 +502,8 @@ func _notice(message: String) -> void:
 		tween.tween_property(status, "modulate", Color("#9fd2c9"), 0.55)
 
 func _cost_text(kind: String) -> String:
+	if model.economy.has_free_kit(kind):
+		return _tr("UMZUGS-KIT GRATIS", "RELOCATION KIT FREE")
 	if kind == "depot" and model.economy.free_depot_available:
 		return _tr("1x GRATIS", "1x FREE")
 	var pieces: Array[String] = []
@@ -673,11 +675,17 @@ func _rotate_selected() -> void:
 		_notice(_tr("Ausgang gedreht", "Output rotated"))
 
 func _demolish_selected() -> void:
+	var is_kit: bool = bool(model.buildings[inspected].get("kit", false)) \
+		if model.buildings.has(inspected) else false
 	if model.erase(inspected):
 		static_view.refresh_cell(inspected)
 		_inspect(Vector2i(-1, -1))
-		_notice(_tr("Gebäude entfernt · 100 % bezahlte Baukosten erstattet",
-			"Machine removed · 100% of paid build materials refunded"))
+		if is_kit:
+			_notice(_tr("Starter-Kit zum kostenlosen Wiederaufbau erhalten",
+				"Starter relocation kit returned for free rebuild"))
+		else:
+			_notice(_tr("Gebäude entfernt · 100 % bezahlte Baukosten erstattet",
+				"Machine removed · 100% of paid build materials refunded"))
 		_refresh_ui()
 
 func _toggle_pause() -> void:

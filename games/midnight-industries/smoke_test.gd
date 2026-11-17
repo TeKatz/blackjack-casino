@@ -199,6 +199,12 @@ func _initialize() -> void:
 	assert(economy_test.place(cost_cell, "miner", 0, true))
 	assert(economy_test.erase(cost_cell))
 	assert(economy_test.economy.available("iron_ingot") == 8)
+	assert(economy_test.economy.has_free_kit("miner"))
+	assert(economy_test.place(cost_cell, "miner", 0))
+	assert(not economy_test.economy.has_free_kit("miner"))
+	assert(economy_test.erase(cost_cell))
+	assert(economy_test.economy.has_free_kit("miner"))
+	assert(economy_test.economy.available("iron_ingot") == 8)
 	# Copper bootstrap makes a paid furnace possible after iron production.
 	assert(economy_test.economy.available("copper_ingot") >= 6)
 	assert(economy_test.economy.credit("iron_ingot", 4))
@@ -240,6 +246,15 @@ func _initialize() -> void:
 	assert(paid_after_disk.buildings[Vector2i(16, 17)]["paid"]["iron_ingot"] == 8)
 	assert(paid_after_disk.erase(Vector2i(16, 17)))
 	assert(paid_after_disk.economy.available("iron_ingot") == 8)
+	var starter = Model.new()
+	assert(starter.buildings[Vector2i(25, 17)]["kind"] == "depot")
+	assert(starter.buildings[Vector2i(25, 17)]["kit"])
+	assert(starter.erase(Vector2i(25, 17)))
+	assert(starter.economy.has_free_kit("depot"))
+	assert(starter.can_place(Vector2i(25, 17), "depot"))
+	assert(starter.place(Vector2i(25, 17), "depot", 0))
+	assert(starter.economy.available("iron_ingot") == 0)
+	assert(not starter.economy.has_free_kit("depot"))
 	# The first free depot voucher is one-use; no paid construction costs
 	# can be fabricated by demolishing the complimentary depot.
 	var voucher = Model.new(false)
@@ -248,7 +263,11 @@ func _initialize() -> void:
 	assert(not voucher.economy.free_depot_available)
 	assert(voucher.erase(Vector2i(31, 17)))
 	assert(voucher.economy.available("iron_ingot") == 0)
-	assert(not voucher.can_place(Vector2i(31, 17), "depot"))
+	assert(voucher.economy.has_free_kit("depot"))
+	assert(voucher.can_place(Vector2i(31, 17), "depot"))
+	assert(voucher.place(Vector2i(31, 17), "depot", 0))
+	assert(not voucher.economy.has_free_kit("depot"))
+	assert(voucher.economy.available("iron_ingot") == 0)
 	# Existing warehouse counters become spendable exactly once. Save/restore
 	# carries the bank separately, so a reload must not mint them again.
 	var old_factory: Dictionary = logistics_save.duplicate(true)

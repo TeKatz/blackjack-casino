@@ -106,8 +106,13 @@ func _draw() -> void:
 				"Cu" if material == "copper_ingot" else "Au")
 			pieces.append("%s %d/%d" % [short, mini(have, need), need])
 		var can_buy: bool = model.economy.has_funds(machine)
+		var caption := "  ·  ".join(pieces)
+		if model.economy.has_free_kit(machine):
+			caption = _word("UMZUGS-KIT · GRATIS", "RELOCATION KIT · FREE")
+		elif machine == "depot" and model.economy.free_depot_available:
+			caption = _word("1x GRATIS DEPOT", "1x FREE DEPOT")
 		_text(font, Vector2(costs_start, y + 24),
-			"  ·  ".join(pieces), 12, CYAN if can_buy else Color("#F69A72"))
+			caption, 12, CYAN if can_buy else Color("#F69A72"))
 	var num_depots := int(model.counts().get("depot", 0))
 	_text(font, Vector2(costs_start, base.y + h - 96),
 		_word("VERBUNDENE DEPOTS: %d", "CONNECTED DEPOTS: %d") % num_depots,
