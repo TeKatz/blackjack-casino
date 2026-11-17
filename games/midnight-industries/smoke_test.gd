@@ -225,6 +225,20 @@ func _initialize() -> void:
 	var logistics_loaded = Model.new(false)
 	assert(logistics_loaded.restore(logistics_save))
 	assert(logistics_loaded.snapshot() == logistics_save)
+	# Simulate the actual Save File JSON representation. Godot JSON may
+	# decode integral numeric fields as floats; inventories/bills survive.
+	var file_equivalent: Variant = JSON.parse_string(JSON.stringify(logistics_save))
+	var disk_loaded = Model.new(false)
+	assert(disk_loaded.restore(file_equivalent))
+	assert(disk_loaded.economy.available("iron_ingot") == 1)
+	var paid_save = Model.new(false)
+	paid_save.economy.credit("iron_ingot", 8)
+	assert(paid_save.place(Vector2i(16, 17), "miner", 0))
+	var paid_after_disk = Model.new(false)
+	assert(paid_after_disk.restore(JSON.parse_string(JSON.stringify(paid_save.snapshot()))))
+	assert(paid_after_disk.buildings[Vector2i(16, 17)]["paid"]["iron_ingot"] == 8)
+	assert(paid_after_disk.erase(Vector2i(16, 17)))
+	assert(paid_after_disk.economy.available("iron_ingot") == 8)
 	# The first free depot voucher is one-use; no paid construction costs
 	# can be fabricated by demolishing the complimentary depot.
 	var voucher = Model.new(false)

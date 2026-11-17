@@ -329,19 +329,27 @@ func restore(data: Variant) -> bool:
 			if not material in Economy.MATERIALS:
 				return false
 			var count: Variant = inventory[material]
-			if typeof(count) != TYPE_INT or int(count) < 0:
+			if (typeof(count) != TYPE_INT and typeof(count) != TYPE_FLOAT) \
+				or not is_finite(float(count)) or float(count) < 0.0 \
+				or float(count) > float(WAREHOUSE_CAPACITY) \
+				or float(int(count)) != float(count):
 				return false
 			total_stored += int(count)
 			stored[material] = int(count)
 		if (kind != "storage" and not stored.is_empty()) or total_stored > WAREHOUSE_CAPACITY:
 			return false
 		var actual_paid: Dictionary = {}
-		var expected: Dictionary = economy.cost(kind)
+		# Save the amount actually paid at construction time. Do not force
+		# the present-day price: future balancing must not break old saves.
 		for material in paid:
-			if not expected.has(material) or typeof(paid[material]) != TYPE_INT \
-				or int(paid[material]) != int(expected[material]):
+			var paid_amount: Variant = paid[material]
+			if not material in Economy.MATERIALS \
+				or (typeof(paid_amount) != TYPE_INT and typeof(paid_amount) != TYPE_FLOAT) \
+				or not is_finite(float(paid_amount)) or float(paid_amount) < 0.0 \
+				or float(paid_amount) > 1000000.0 \
+				or float(int(paid_amount)) != float(paid_amount):
 				return false
-			actual_paid[material] = int(paid[material])
+			actual_paid[material] = int(paid_amount)
 		loaded[cell] = {
 			"kind": kind, "direction": direction, "item": item,
 			"buffer": buffer, "ore": ore, "output": output,
