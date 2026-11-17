@@ -24,6 +24,7 @@ var machine_row: HBoxContainer
 var category_buttons: Dictionary = {}
 var machine_buttons: Dictionary = {}
 var machine_subtitles: Dictionary = {}
+var _material_states: Dictionary = {}
 var _open := false
 var _transition: Tween
 
@@ -158,6 +159,7 @@ func _build_machines() -> void:
 		node.queue_free()
 	machine_buttons.clear()
 	machine_subtitles.clear()
+	_material_states.clear()
 	var machines: Array[Dictionary] = Catalog.machines(selected_category)
 	if machines.is_empty():
 		var placeholder := Label.new()
@@ -240,15 +242,28 @@ func _refresh_materials() -> void:
 		var button: Button = machine_buttons[kind]
 		var entry: Dictionary = ItemCatalog.machine(str(kind))
 		var unlocked: bool = Catalog.unlocked(entry, model)
-		button.disabled = not unlocked
-		var active: bool = unlocked and not inspecting and selected_machine == kind
-		MenuTheme.style_button(button, false, active)
+		var selected: bool = unlocked and not inspecting and selected_machine == kind
+		var affordable: bool = model.economy.has_funds(kind)
+		var state: String = "%d_%d_%d" % [
+			int(unlocked), int(selected), int(affordable)]
+		# A production update may arrive many times per second. Only touch
+		# theme overrides if its real UI state actually changed.
+		if _material_states.get(kind, "") != state:
+			_material_states[kind] = state
+			button.disabled = not unlocked
+			MenuTheme.style_button(button, false, selected)
+			if not unlocked:
+				continue
+			var subtitle_color: Label = machine_subtitles[kind]
+			subtitle_color.add_theme_color_override("font_color",
+				MenuTheme.CYAN if affordable else MenuTheme.RED)
 		if not unlocked:
 			continue
 		var subtitle: Label = machine_subtitles[kind]
+		var caption := ""
 		if model.economy.has_free_kit(kind) or (
 			kind == "depot" and model.economy.free_depot_available):
-			subtitle.text = _word("KOSTENLOS", "FREE KIT")
+			caption = _word("KOSTENLOS", "FREE KIT")
 		else:
 			var price: Dictionary = model.building_cost(kind)
 			var parts: Array[String] = []
@@ -256,9 +271,9 @@ func _refresh_materials() -> void:
 				var abbr := "Fe" if str(item).begins_with("iron") else (
 					"Cu" if str(item).begins_with("copper") else "Au")
 				parts.append("%s %d" % [abbr, int(price[item])])
-			subtitle.text = " · ".join(parts)
-		subtitle.add_theme_color_override("font_color",
-			MenuTheme.CYAN if model.economy.has_funds(kind) else MenuTheme.RED)
+			caption = " · ".join(parts)
+		if subtitle.text != caption:
+			subtitle.text = caption
 
 func _sync_style() -> void:
 	for category in category_buttons:
