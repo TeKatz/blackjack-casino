@@ -12,11 +12,13 @@ func _initialize() -> void:
 	assert(sim.buildings.is_empty(), "New factories start without premade machines")
 	assert(sim.progression.power_slots == 0 and sim.progression.completed.is_empty())
 	assert(sim.progression.current_job().id == "first_iron_delivery")
+	assert(sim.progression.active_jobs().size() == 1)
 	for name in ["miner", "belt", "depot"]:
 		assert(sim.is_unlocked(name))
 	for name in ["smelter", "water_wheel", "power_pole", "storage"]:
 		assert(not sim.is_unlocked(name), "Premature machine unlock: " + name)
 	assert(not sim.is_recipe_unlocked("iron_ingot"))
+	assert(not sim.is_recipe_unlocked("copper_ingot"))
 	assert(not sim.can_place_site(Vector2i(30, 17), "smelter"))
 	for kind in Economy.COSTS:
 		assert(sim.building_cost(str(kind)).is_empty(), "Building material costs not removed")
@@ -59,6 +61,8 @@ func _initialize() -> void:
 		assert(sim.is_unlocked(name), "Job reward absent: " + name)
 	assert(not sim.is_unlocked("storage"))
 	assert(sim.is_recipe_unlocked("iron_ingot"))
+	assert(sim.is_recipe_unlocked("copper_ingot"))
+	assert(sim.progression.active_jobs().is_empty())
 	assert(sim.progression.current_job().is_empty())
 	var completed_snapshot: Dictionary = sim.snapshot()
 	var roundtrip = Model.new(false)

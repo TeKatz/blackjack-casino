@@ -8,12 +8,15 @@ const JOBS := [
 	{
 		"id": "first_iron_delivery",
 		"stage": 1,
+		"type": "main",
+		"requires": [],
 		"de": "Die erste Lieferung",
 		"en": "The first delivery",
 		"description_de": "Liefere 100 Eisenerz an ein Depot.",
 		"description_en": "Deliver 100 iron ore to a depot.",
 		"delivery": {"iron_ore": 100},
 		"unlocks": ["power_pole", "water_wheel", "smelter"],
+		"recipes": ["iron_ingot", "copper_ingot", "gold_ingot"],
 		"slots_reward": 1,
 		"reward_de": "Strommast · Wasserrad · Schmelzofen · +1 Stromplatz",
 		"reward_en": "Power pole · Water wheel · Smelting furnace · +1 power slot"
@@ -34,9 +37,30 @@ func is_complete(id: String) -> bool:
 
 func current_job() -> Dictionary:
 	for entry in JOBS:
-		if not is_complete(str(entry.id)):
+		if str(entry.get("type", "main")) == "main" \
+			and not is_complete(str(entry.id)):
 			return entry
 	return {}
+
+func active_jobs() -> Array[Dictionary]:
+	# Main jobs run sequentially; future optional jobs can be available
+	# in parallel once their explicit prerequisites are completed.
+	var result: Array[Dictionary] = []
+	var current: Dictionary = current_job()
+	for entry in JOBS:
+		if is_complete(str(entry.id)):
+			continue
+		if str(entry.get("type", "main")) == "main" \
+			and str(current.get("id", "")) != str(entry.id):
+			continue
+		var eligible := true
+		for requirement in entry.get("requires", []):
+			if not is_complete(str(requirement)):
+				eligible = false
+				break
+		if eligible:
+			result.append(entry)
+	return result
 
 func delivered_count(id: String, material: String) -> int:
 	var record: Dictionary = progress.get(id, {})
@@ -50,34 +74,44 @@ func unlocked(kind: String) -> bool:
 			return true
 	return false
 
+func recipe_unlocked(recipe: String) -> bool:
+	for id in completed:
+		if recipe in job(id).get("recipes", []):
+			return true
+	return false
+
 func record_delivery(material: String, amount: int = 1) -> void:
 	if amount <= 0:
 		return
-	# Only count new, real deliveries. Stock changes or item recycling never
-	# advance a quest retroactively.
-	var entry: Dictionary = current_job()
-	if entry.is_empty():
-		return
-	var id: String = str(entry.id)
-	var requirements: Dictionary = entry.delivery
-	if not requirements.has(material):
-		return
-	var counters: Dictionary = progress.get(id, {}).duplicate()
-	counters[material] = mini(int(requirements[material]),
-		int(counters.get(material, 0)) + amount)
-	progress[id] = counters
-	var ready := true
-	for key in requirements:
-		if int(counters.get(key, 0)) < int(requirements[key]):
-			ready = false
-	if ready:
-		complete_job(id)
+	# Independent active objectives can listen to the same physical delivery
+	# in the future, with no changes to factory_model.gd or the depot.
+	var listening: Array[Dictionary] = active_jobs()
+	for entry in listening:
+		var id: String = str(entry.id)
+		var requirements: Dictionary = entry.delivery
+		if not requirements.has(material):
+			continue
+		var counters: Dictionary = progress.get(id, {}).duplicate()
+		counters[material] = mini(int(requirements[material]),
+			int(counters.get(material, 0)) + amount)
+		progress[id] = counters
+		var ready := true
+		for key in requirements:
+			if int(counters.get(key, 0)) < int(requirements[key]):
+				ready = false
+		if ready:
+			complete_job(id)
 
 func complete_job(id: String) -> void:
 	if is_complete(id) or job(id).is_empty():
 		return
 	var entry: Dictionary = job(id)
-	if current_job().get("id", "") != id:
+	var eligible := false
+	for active in active_jobs():
+		if str(active.id) == id:
+			eligible = true
+			break
+	if not eligible:
 		return
 	var requirements: Dictionary = entry.delivery
 	for key in requirements:

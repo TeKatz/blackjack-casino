@@ -58,7 +58,7 @@ func is_unlocked(kind: String) -> bool:
 		and economy.registered(kind)
 
 func is_recipe_unlocked(recipe: String) -> bool:
-	return progression.unlocked("smelter") and construction.is_recipe_unlocked(recipe)
+	return progression.recipe_unlocked(recipe) and construction.is_recipe_unlocked(recipe)
 
 func _river_bank(cell: Vector2i) -> bool:
 	for direction in DIRS:
