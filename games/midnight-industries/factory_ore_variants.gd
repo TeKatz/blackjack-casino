@@ -1,119 +1,141 @@
 extends RefCounted
-## Eight individually generated iron and copper cluster textures, not rotated
-## copies of a single bitmap. Each uses distinct boulder arrangements, facets
-## and material-specific veining. Created once, then cached on the GPU.
-const SIZE := 96
-const VARIANTS := 8
-static var cached: Texture2D
+## Twelve genuinely distinct iron/copper mineral formations. Each deposit is
+## assembled from individual faceted boulders (not scaled copies of the old
+## complete ore pile), with approved ore artwork sampled for surface material.
+## Built once into a mipmapped atlas; no per-frame procedural drawing.
+const Atlas = preload("res://factory_atlas.gd")
+const SIZE := 112
+const VARIANTS := 12
+const LAYOUTS = [
+	[Vector4(54, 68, 36, 31), Vector4(28, 82, 17, 13), Vector4(80, 84, 17, 14)],
+	[Vector4(35, 71, 25, 22), Vector4(78, 76, 19, 17), Vector4(57, 49, 24, 23)],
+	[Vector4(36, 75, 21, 17), Vector4(69, 78, 23, 20), Vector4(54, 43, 29, 27), Vector4(24, 91, 12, 9)],
+	[Vector4(29, 72, 20, 18), Vector4(55, 76, 18, 17), Vector4(80, 73, 16, 16), Vector4(45, 45, 16, 15), Vector4(71, 46, 12, 11)],
+	[Vector4(52, 70, 40, 25), Vector4(30, 90, 20, 12), Vector4(79, 88, 15, 13)],
+	[Vector4(26, 77, 16, 15), Vector4(49, 80, 18, 18), Vector4(73, 77, 16, 14), Vector4(90, 84, 12, 11), Vector4(57, 54, 15, 13)],
+	[Vector4(34, 80, 23, 18), Vector4(77, 80, 22, 19), Vector4(57, 57, 19, 18), Vector4(54, 33, 15, 16)],
+	[Vector4(57, 78, 34, 20), Vector4(28, 88, 14, 12), Vector4(81, 58, 15, 16)],
+	[Vector4(29, 82, 16, 14), Vector4(50, 82, 16, 15), Vector4(74, 81, 16, 16), Vector4(43, 58, 15, 15), Vector4(67, 55, 14, 14), Vector4(55, 37, 13, 12)],
+	[Vector4(29, 74, 28, 23), Vector4(73, 80, 26, 20), Vector4(69, 46, 17, 18), Vector4(23, 93, 12, 8)],
+	[Vector4(45, 76, 18, 17), Vector4(69, 81, 19, 15), Vector4(49, 52, 19, 16), Vector4(73, 39, 15, 17), Vector4(29, 87, 12, 10)],
+	[Vector4(54, 80, 22, 18), Vector4(30, 78, 17, 16), Vector4(81, 80, 18, 17), Vector4(55, 57, 23, 21), Vector4(34, 38, 13, 14), Vector4(76, 38, 13, 12)]
+]
+static var _atlas: Texture2D
+static var _cargo: Dictionary = {}
 
 static func texture() -> Texture2D:
-	if cached != null:
-		return cached
-	var im := Image.create(SIZE * VARIANTS, SIZE * 2, false, Image.FORMAT_RGBA8)
-	var noise := FastNoiseLite.new()
-	noise.seed = 49571
-	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
-	noise.frequency = 0.18
+	if _atlas != null:
+		return _atlas
+	var result := Image.create(SIZE * VARIANTS, SIZE * 2, false, Image.FORMAT_RGBA8)
+	result.fill(Color.TRANSPARENT)
 	for material in range(2):
+		var sprite: Texture2D = Atlas.sprite(material, 1)
+		if sprite == null:
+			return null
+		var source: Image = sprite.get_image()
+		if source.is_compressed() and source.decompress() != OK:
+			return null
 		for variant in range(VARIANTS):
-			_cluster(im, material, variant, noise)
-	im.generate_mipmaps()
-	cached = ImageTexture.create_from_image(im)
-	return cached
+			var origin := Vector2i(variant * SIZE, material * SIZE)
+			_cluster(result, origin, source, variant, material)
+	result.generate_mipmaps()
+	_atlas = ImageTexture.create_from_image(result)
+	return _atlas
 
 static func region(material: String, seed: int) -> Rect2:
 	var row := 0 if material == "iron" else 1
-	return Rect2(float(posmod(seed, VARIANTS) * SIZE), float(row * SIZE), SIZE, SIZE)
+	return Rect2(float(posmod(seed, VARIANTS) * SIZE), float(row * SIZE),
+		float(SIZE), float(SIZE))
 
-static func _cluster(im: Image, material: int, variant: int, noise: FastNoiseLite) -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = int(310703 + material * 16691 + variant * 10009)
-	var offset := Vector2i(variant * SIZE, material * SIZE)
-	var count := 3 + variant % 4
-	# Cluster morphology varies, not just its orientation. Shapes interlock
-	# into irregular piles of exposed mineral with per-cluster unique facets.
-	for i in range(count):
-		var middle := Vector2(48.0, 49.0)
-		if i > 0:
-			middle += Vector2(rng.randf_range(-25.0, 25.0), rng.randf_range(-22.0, 20.0))
-		else:
-			middle += Vector2(rng.randf_range(-8.0, 8.0), rng.randf_range(-5.0, 5.0))
-		var width := rng.randf_range(20.0, 31.0) if i == 0 else rng.randf_range(10.0, 21.0)
-		var height := rng.randf_range(17.0, 27.0) if i == 0 else rng.randf_range(9.0, 20.0)
-		var corners := 6 + (i + variant) % 3
-		var angle := rng.randf_range(-0.35, 0.35)
-		var polygon := PackedVector2Array()
-		for corner in range(corners):
-			var theta := TAU * float(corner) / float(corners) - PI * 0.5 + angle
-			var irregular := rng.randf_range(0.76, 1.12)
-			var point := middle + Vector2(cos(theta) * width, sin(theta) * height) * irregular
-			polygon.append(point)
-		_raster(im, offset, polygon, middle, Vector2(width, height), material, noise, rng)
-		var count_veins := 1 + (i + variant) % 3
-		for v in range(count_veins):
-			var from := middle + Vector2(rng.randf_range(-width * 0.45, width * 0.10), rng.randf_range(-height * 0.40, 0.0))
-			var to := from + Vector2(rng.randf_range(4.0, width * 0.54), rng.randf_range(1.0, height * 0.42))
-			var mineral := Color("#B7E1D9") if material == 0 else Color("#EFA86C")
-			_vein(im, offset, polygon, from, to, mineral)
-	# A few distinct ore flecks reinforce identity without ground-sized shadows.
-	for i in range(3 + variant % 3):
-		var v := Vector2i(rng.randi_range(22, 75), rng.randi_range(36, 76))
-		var c := Color("#87ABAD") if material == 0 else Color("#B86D3D")
-		_dot(im, offset + v, c)
+static func cargo_texture(material: String) -> Texture2D:
+	if _cargo.has(material):
+		return _cargo[material]
+	var index := 0 if material == "iron" else 1
+	var sprite: Texture2D = Atlas.sprite(index, 1)
+	if sprite == null:
+		return null
+	var source: Image = sprite.get_image()
+	var image := Image.create(80, 80, false, Image.FORMAT_RGBA8)
+	image.fill(Color.TRANSPARENT)
+	_paint_rock(image, Vector2i.ZERO, source, Vector4(40, 44, 26, 25), 41 + index * 17, 80)
+	image.generate_mipmaps()
+	var result := ImageTexture.create_from_image(image)
+	_cargo[material] = result
+	return result
 
-static func _raster(im: Image, offset: Vector2i, polygon: PackedVector2Array,
-	middle: Vector2, extents: Vector2, material: int, noise: FastNoiseLite,
-	rng: RandomNumberGenerator) -> void:
-	var min_x := 95
-	var min_y := 95
-	var max_x := 0
-	var max_y := 0
-	for p in polygon:
-		min_x = mini(min_x, floori(p.x) - 2)
-		min_y = mini(min_y, floori(p.y) - 2)
-		max_x = maxi(max_x, ceili(p.x) + 2)
-		max_y = maxi(max_y, ceili(p.y) + 2)
-	var tone := rng.randf_range(-0.09, 0.09)
-	var base: Color = Color("#718D9B") if material == 0 else Color("#B77243")
-	for y in range(maxi(2, min_y), mini(SIZE - 2, max_y + 1)):
-		for x in range(maxi(2, min_x), mini(SIZE - 2, max_x + 1)):
-			var point := Vector2(float(x) + 0.5, float(y) + 0.5)
-			var is_rock := Geometry2D.is_point_in_polygon(point, polygon)
-			if not is_rock:
-				# Only a tight contact shade underneath each boulder.
-				if Geometry2D.is_point_in_polygon(point - Vector2(0.0, 2.0), polygon):
-					im.set_pixel(offset.x + x, offset.y + y, Color(0.09, 0.09, 0.08, 0.13))
+static func _cluster(target: Image, offset: Vector2i, material_image: Image,
+	variant: int, material: int) -> void:
+	var pieces: Array = LAYOUTS[variant]
+	# All contact shadows are behind the formation, not pasted on top of it.
+	for i in range(pieces.size()):
+		_shadow(target, offset, pieces[i], SIZE)
+	# Paint rear rocks before front rocks; taller pieces actually overlap.
+	var ordered := pieces.duplicate()
+	ordered.sort_custom(func(a: Vector4, b: Vector4) -> bool:
+		return a.y < b.y)
+	for i in range(ordered.size()):
+		_paint_rock(target, offset, material_image, ordered[i],
+			variant * 37 + i * 11 + material * 149, SIZE)
+
+static func _shadow(target: Image, origin: Vector2i, part: Vector4, size: int) -> void:
+	var cx := part.x
+	var cy := part.y + part.w * 0.67
+	var rx := part.z * 0.95
+	var ry := maxf(3.0, part.w * 0.25)
+	for y in range(maxi(0, floori(cy - ry)), mini(size, ceili(cy + ry))):
+		for x in range(maxi(0, floori(cx - rx)), mini(size, ceili(cx + rx))):
+			var distance := pow((float(x) - cx) / rx, 2.0) + pow((float(y) - cy) / ry, 2.0)
+			if distance > 1.0:
 				continue
-			var fx := (point.x - middle.x) / maxf(1.0, extents.x)
-			var fy := (point.y - middle.y) / maxf(1.0, extents.y)
-			var grain := noise.get_noise_2d(offset.x * 2 + x * 1.9, offset.y * 3 + y * 1.9)
-			var brightness := clampf(0.16 - fy * 0.22 - fx * 0.13 + grain * 0.18 + tone, -0.36, 0.42)
-			var color: Color = base.lightened(brightness) if brightness > 0.0 else base.darkened(-brightness)
-			# Different exposed crystal planes for each fragment.
-			if fx - fy < -0.26:
-				color = color.lightened(0.14)
-			elif fx + fy > 0.34:
-				color = color.darkened(0.19)
-			# Rich metal flecks, not a flat repeated icon.
-			if grain > 0.43 and fy < 0.25:
-				color = color.lightened(0.22)
-			var edge := not Geometry2D.is_point_in_polygon(point + Vector2(1.5, 1.5), polygon)
-			if edge:
-				color = color.darkened(0.31)
-			im.set_pixel(offset.x + x, offset.y + y, color)
+			var location := origin + Vector2i(x, y)
+			var old: Color = target.get_pixelv(location)
+			var shade := Color(0.015, 0.021, 0.025, (1.0 - distance) * 0.28)
+			target.set_pixelv(location, old.blend(shade))
 
-static func _vein(im: Image, offset: Vector2i, polygon: PackedVector2Array,
-	from: Vector2, to: Vector2, color: Color) -> void:
-	var steps := maxi(1, int(from.distance_to(to) * 1.6))
-	for step in range(steps):
-		var p := from.lerp(to, float(step) / float(steps))
-		if not Geometry2D.is_point_in_polygon(p, polygon):
-			continue
-		var x := clampi(roundi(p.x), 0, SIZE - 1)
-		var y := clampi(roundi(p.y), 0, SIZE - 1)
-		im.set_pixel(offset.x + x, offset.y + y, color)
-
-static func _dot(im: Image, at: Vector2i, color: Color) -> void:
-	if at.x >= 0 and at.x < im.get_width() and at.y >= 0 and at.y < im.get_height():
-		if im.get_pixelv(at).a < 0.02:
-			im.set_pixelv(at, Color(color, 0.63))
+static func _paint_rock(target: Image, origin: Vector2i, source: Image,
+	part: Vector4, seed: int, cell_size: int) -> void:
+	var cx := part.x
+	var cy := part.y
+	var rx := part.z
+	var ry := part.w
+	var polygon := PackedVector2Array()
+	for i in range(9):
+		var angle := TAU * float(i) / 9.0 - PI * 0.5
+		var jitter := 0.83 + 0.16 * (0.5 + 0.5 * sin(float(seed * 13 + i * 27)))
+		polygon.append(Vector2(cx + cos(angle) * rx * jitter,
+			cy + sin(angle) * ry * jitter))
+	var min_x := maxi(0, floori(cx - rx) - 1)
+	var max_x := mini(cell_size - 1, ceili(cx + rx) + 1)
+	var min_y := maxi(0, floori(cy - ry) - 1)
+	var max_y := mini(cell_size - 1, ceili(cy + ry) + 1)
+	for y in range(min_y, max_y + 1):
+		for x in range(min_x, max_x + 1):
+			var point := Vector2(float(x) + 0.5, float(y) + 0.5)
+			if not Geometry2D.is_point_in_polygon(point, polygon):
+				continue
+			var u := (point.x - cx) / maxf(1.0, rx)
+			var v := (point.y - cy) / maxf(1.0, ry)
+			# Material comes from the ORIGINAL approved mineral art, including
+			# its natural surface grain and iron/copper color differences.
+			var sx := clampi(roundi(67.0 + u * 31.0 + sin(float(seed)) * 8.0), 36, 104)
+			var sy := clampi(roundi(69.0 + v * 25.0 + cos(float(seed)) * 7.0), 43, 101)
+			var color: Color = source.get_pixel(sx, sy)
+			if color.a < 0.2:
+				color = source.get_pixel(71, 72)
+			color.a = 1.0
+			# Distinct facets create 3D boulders rather than miniature copies
+			# of the complete old ore heap.
+			if v < -0.30 + u * 0.19:
+				color = color.lightened(0.20)
+			elif u > 0.18 and v > -0.27:
+				color = color.darkened(0.27)
+			elif u < -0.25 and v > 0.05:
+				color = color.darkened(0.13)
+			if v > 0.50:
+				color = color.darkened(0.22)
+			if absf(v + 0.20 - u * 0.31) < 0.028 and u < 0.26:
+				color = color.lightened(0.18)
+			# One-pixel contour, keeping the painterly metallic edge.
+			if not Geometry2D.is_point_in_polygon(point + Vector2(1.5, 1.5), polygon):
+				color = color.darkened(0.29)
+			target.set_pixelv(origin + Vector2i(x, y), color)
