@@ -1,4 +1,5 @@
 extends SceneTree
+const Catalog = preload("res://item_catalog.gd")
 ## Recovered main menu/settings/map integration without rejected build/depot HUD.
 func _initialize() -> void:
 	call_deferred("_run")
@@ -74,7 +75,7 @@ func _run() -> void:
 	assert(game.storage_view.quantities.has("gold_ore"))
 	assert(game.storage_view.item_rows.get_child_count() >= 6)
 	# Actual visual item icons, not the previous flat color swatches.
-	var icon := load("res://item_catalog.gd").icon("iron_ingot")
+	var icon: Texture2D = Catalog.icon("iron_ingot")
 	assert(icon != null and icon.get_width() >= 96)
 	var icon_image: Image = icon.get_image()
 	assert(icon_image.get_used_rect().has_area())
