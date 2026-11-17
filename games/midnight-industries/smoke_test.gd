@@ -14,7 +14,7 @@ func _initialize() -> void:
 		assert(model.place(Vector2i(x, 17), "belt", 0, true))
 	assert(model.place(Vector2i(21, 17), "smelter", 0, true))
 	for x in range(22, 25):
-		assert(model.place(Vector2i(x, 17), "belt", 0))
+		assert(model.place(Vector2i(x, 17), "belt", 0, true))
 	assert(model.place(Vector2i(25, 17), "depot", 0, true))
 	for i in range(320):
 		model.advance(0.25)
