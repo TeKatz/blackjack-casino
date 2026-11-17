@@ -12,10 +12,6 @@ const UiSkin = preload("res://factory_skin.gd")
 const Atlas = preload("res://factory_atlas.gd")
 const DepotArt = preload("res://factory_depot_art.gd")
 const StorageView = preload("res://factory_storage_view.gd")
-const WorldManager = preload("res://world_manager.gd")
-const Settings = preload("res://industries_settings.gd")
-const Frontend = preload("res://factory_frontend.gd")
-const Catalog = preload("res://item_catalog.gd")
 const TILE := 48.0
 const GOLD := Color("#F5C04A")
 const CYAN := Color("#00D8F4")
@@ -36,6 +32,7 @@ var minimap: Control
 var storage_view: Control
 var construction_view: Node2D
 var show_grid := false
+const VISUAL_SETTINGS_FILE := "user://industries-visual-settings.cfg"
 var mode := "inspect"
 var tool := "belt"
 var facing := 0
@@ -80,28 +77,19 @@ var inspector_controls: HBoxContainer
 var rotate_button: Button
 var demolish_button: Button
 var pause_button: Button
-var header_pause_button: Button
 var resume_button: Button
 var new_button: Button
 var effects_button: Button
-var hover_tweens: Dictionary = {}
-var worlds
-var settings
-var current_world := ""
-var played_since_save := 0.0
-var frontend: Control
+var confirming_new := false
 
 func _ready() -> void:
 	# Avoid unlimited rendering load when the window is idle or on high-refresh monitors.
-	settings = Settings.new()
-	worlds = WorldManager.new()
-	german = str(settings.values.language) != "en"
-	if "--language=en" in OS.get_cmdline_user_args():
-		german = false
+	Engine.max_fps = 60
+	german = not "--language=en" in OS.get_cmdline_user_args()
 	model = Model.new()
+	var previous: bool = model.load_game()
 	model.construction.phase_completed.connect(_on_construction_phase)
-	show_grid = bool(settings.values.grid)
-	reduced_motion = bool(settings.values.reduced_motion)
+	_load_visual_settings()
 	camera.position = Vector2(21, 18) * TILE
 	camera.zoom = Vector2.ONE
 	_create_world()
@@ -109,7 +97,8 @@ func _ready() -> void:
 	_set_mode("inspect")
 	_refresh_ui()
 	_show_menu(true)
-	_notice(_tr("Welt auswählen oder neu erstellen", "Select or create a world"))
+	_notice(_tr("Spielstand geladen", "Save restored") if previous else
+		_tr("Starterproduktion aufgebaut", "Starter line initialized"))
 	get_tree().auto_accept_quit = false
 
 func _tr(de: String, en: String) -> String:
@@ -186,9 +175,6 @@ func _button(value: String, handler: Callable, destructive: bool = false) -> But
 	b.add_theme_stylebox_override("disabled", _button_style(false, destructive))
 	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	b.pressed.connect(handler)
-	b.pressed.connect(func() -> void:
-		if frontend != null:
-			frontend.play_ui_click())
 	b.mouse_entered.connect(_button_hover.bind(b, true))
 	b.mouse_exited.connect(_button_hover.bind(b, false))
 	return b
@@ -196,11 +182,7 @@ func _button(value: String, handler: Callable, destructive: bool = false) -> But
 func _button_hover(b: Button, entered: bool) -> void:
 	if reduced_motion:
 		return
-	var id := b.get_instance_id()
-	if hover_tweens.has(id) and hover_tweens[id].is_running():
-		hover_tweens[id].kill()
 	var tween := create_tween()
-	hover_tweens[id] = tween
 	tween.tween_property(b, "modulate", Color.WHITE if entered else Color("#DDE7EC"), 0.16)
 
 func _section_title(text_value: String) -> VBoxContainer:
@@ -253,7 +235,6 @@ func _create_interface() -> void:
 	resource_column.add_theme_constant_override("separation", 4)
 	top_row.add_child(resource_column)
 	production = _make_label("", 15, TEXT)
-	production.visible = false
 	production.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	resource_column.add_child(production)
 	var status_row := HBoxContainer.new()
@@ -267,22 +248,10 @@ func _create_interface() -> void:
 	status_row.add_child(construction_status)
 	status_row.add_child(fps_label)
 	var inventory_button := _button(_tr("  LAGER  [I]  ", "  STORAGE  [I]  "), _toggle_storage)
-	inventory_button.tooltip_text = _tr("Globales Baulager und Baukosten öffnen", "Open global build stock and construction costs")
 	inventory_button.custom_minimum_size.x = 109
 	inventory_button.custom_minimum_size.y = 39
 	top_row.add_child(inventory_button)
-	var map_button := _button(_tr("KARTE [M]", "MAP [M]"), _toggle_minimap)
-	map_button.tooltip_text = _tr("Vollständig aufgedeckte Weltkarte öffnen", "Open the fully revealed world map")
-	top_row.add_child(map_button)
-	var header_pause := _button(_tr("PAUSE", "PAUSE"), _toggle_pause)
-	header_pause.tooltip_text = _tr("Fabrikproduktion pausieren oder fortsetzen", "Pause or resume factory production")
-	top_row.add_child(header_pause)
-	header_pause_button = header_pause
-	var header_save := _button(_tr("SAVE", "SAVE"), _save_now)
-	header_save.tooltip_text = _tr("Aktuelle Welt mit Kamera und Markern speichern", "Save this world, camera and markers")
-	top_row.add_child(header_save)
 	var menu_button := _button(_tr("  MENÜ  [ESC]  ", "  MENU  [ESC]  "), func() -> void: _show_menu(true))
-	menu_button.tooltip_text = _tr("Pausenmenü mit Einstellungen und Weltwechsel", "Pause menu with settings and world selection")
 	menu_button.custom_minimum_size.x = 109
 	menu_button.custom_minimum_size.y = 39
 	top_row.add_child(menu_button)
@@ -494,8 +463,6 @@ func _create_interface() -> void:
 	menu_col.add_child(_button(_tr("⌖   ZUM CASINO-BAUPLATZ [C]", "⌖   FIND CASINO SITE [C]"),
 		_focus_construction))
 	menu_col.add_child(_button(_tr("▣   SPIELSTAND SPEICHERN", "▣   SAVE PROGRESS"), _save_now))
-	menu_col.add_child(_button(_tr("⚙   EINSTELLUNGEN", "⚙   SETTINGS"), func() -> void: frontend.open_settings()))
-	menu_col.add_child(_button(_tr("↩   ZUM HAUPTMENÜ", "↩   MAIN MENU"), return_to_main))
 	effects_button = _button(_tr("✦   ANIMATIONEN: AN", "✦   ANIMATIONS: ON"), _toggle_effects)
 	menu_col.add_child(effects_button)
 	grid_button = _button("", _toggle_grid)
@@ -503,7 +470,6 @@ func _create_interface() -> void:
 	_refresh_grid_button()
 	new_button = _button(_tr("＋   NEUE FABRIK STARTEN", "＋   START NEW FACTORY"), _new_factory, true)
 	menu_col.add_child(new_button)
-	new_button.visible = false
 	menu_col.add_child(HSeparator.new())
 	var exit_btn := _button(_tr("↩   SPEICHERN & ZUM CASINO", "↩   SAVE & RETURN TO CASINO"), _exit_to_casino)
 	exit_btn.custom_minimum_size.y = 45
@@ -519,33 +485,17 @@ func _create_interface() -> void:
 	minimap.name = "WorldOverviewMap"
 	minimap.model = model
 	minimap.camera = camera
-	minimap.german = german
 	ui_layer.add_child(minimap)
 	storage_view = StorageView.new()
 	storage_view.name = "GlobalConstructionInventory"
 	storage_view.model = model
 	storage_view.german = german
 	ui_layer.add_child(storage_view)
-	frontend = Frontend.new()
-	frontend.name = "WorldAndFactoryInterface"
-	frontend.game = self
-	frontend.manager = worlds
-	frontend.settings = settings
-	ui_layer.add_child(frontend)
-	ui_layer.move_child(minimap, -1)
-	ui_layer.move_child(storage_view, -1)
-	frontend.set_world_ui(false)
-	apply_settings()
-	sidebar_panel.hide()
-	mode_buttons.inspect.get_parent().get_parent().hide()
-	quick_buttons.belt.get_parent().get_parent().get_parent().hide()
 
 func _notice(message: String) -> void:
 	if status == null:
 		return
 	status.text = message
-	if frontend != null and not current_world.is_empty():
-		frontend.show_notice(message)
 	if not reduced_motion:
 		status.modulate = Color("#ffffff")
 		var tween := create_tween()
@@ -574,7 +524,7 @@ func _missing_text(kind: String) -> String:
 func _set_mode(next_mode: String) -> void:
 	_cancel_select_drag()
 	mode = next_mode
-	sidebar_panel.visible = false
+	sidebar_panel.visible = mode == "build"
 	motion_view.cursor_mode = mode
 	if mode == "inspect":
 		notice_selection()
@@ -596,8 +546,6 @@ func _select_tool(name: String) -> void:
 	tool = name
 	_set_mode("build")
 	motion_view.tool = tool
-	if frontend != null:
-		frontend.select_tool(name)
 	_notice(_tr("Ausgewählt: ", "Selected: ") + name.to_upper() +
 		" · " + _cost_text(name))
 
@@ -621,8 +569,6 @@ func _inspect(cell: Vector2i) -> void:
 func _refresh_ui() -> void:
 	if model == null or production == null:
 		return
-	if frontend != null:
-		frontend.update_stock()
 	var totals: Dictionary = model.economy.stock
 	var output := "%s   %s %d  ·  %s %d  ·  %s %d" % [
 		_tr("BAULAGER", "BUILD STOCK"),
@@ -646,7 +592,6 @@ func _refresh_ui() -> void:
 		construction_status.text = _tr("CASINO FERTIG", "CASINO COMPLETE")
 	fps_label.text = "FPS  %d" % Engine.get_frames_per_second()
 	pause_button.text = _tr("▶  WEITER", "▶  RESUME") if simulation_paused else _tr("Ⅱ  PAUSE", "Ⅱ  PAUSE")
-	header_pause_button.text = _tr("WEITER", "RESUME") if simulation_paused else _tr("PAUSE", "PAUSE")
 	if tool_cost_label != null and mode == "build":
 		tool_cost_label.text = _tr("BAUKOSTEN: ", "BUILD COST: ") + _cost_text(tool)
 		tool_cost_label.add_theme_color_override("font_color",
@@ -686,18 +631,17 @@ func _refresh_inspector() -> void:
 	match kind:
 		"miner":
 			var ore_type: String = model.resources.get(inspected, "iron")
-			inspector_body.text = _tr("Rohstoff: ", "Resource: ") + Catalog.name_for(ore_type + "_ore", german) + "\n" + (
+			inspector_body.text = _tr("Rohstoff: ", "Resource: ") + ore_type.to_upper() + "\n" + (
 				_tr("Puffer: %d/%d Erz", "Buffer: %d/%d ore") % [machine.buffer, Model.MAX_BUFFER]) + "\n" + (
 				_tr("Tempo: 1 Erz / Sekunde", "Rate: 1 ore / second"))
 			inspector_progress.value = 100.0 * float(machine.progress) / 1.0
 		"belt":
 			var item: String = machine.item
-			inspector_body.text = _tr("Transportiert: ", "Carrying: ") + (Catalog.name_for(item, german) if item != "" else
+			inspector_body.text = _tr("Transportiert: ", "Carrying: ") + (item.to_upper() if item != "" else
 				_tr("Leer", "Empty")) + "\n" + _tr("Transport: 4 Felder / Sekunde", "Transport: 4 tiles / second") + "\n" + _tr("Kapazität: 1 Gegenstand", "Capacity: 1 item")
 			inspector_progress.value = 100.0 if item != "" else 0.0
 		"smelter":
-			var recipe_name := Catalog.name_for(str(machine.recipe) + "_ingot", german) if str(machine.recipe) != "" else "—"
-			inspector_body.text = (_tr("Rezept: ", "Recipe: ") + recipe_name + "\n" +
+			inspector_body.text = (_tr("Rezept: ", "Recipe: ") + str(machine.recipe).to_upper() + "\n" +
 				_tr("Erz: %d/8    Produkt: %d/8", "Ore: %d/8    Output: %d/8") % [machine.ore, machine.output] + "\n" +
 				_tr("Tempo: 1 Barren / 2 Sekunden", "Rate: 1 ingot / 2 seconds"))
 			inspector_progress.value = clampf(100.0 * float(machine.progress) / 2.0, 0.0, 100.0)
@@ -709,7 +653,7 @@ func _refresh_inspector() -> void:
 			var listing := []
 			for material in inventory:
 				if int(inventory[material]) > 0:
-					listing.append("%s %d" % [Catalog.name_for(str(material), german), int(inventory[material])])
+					listing.append("%s %d" % [str(material), int(inventory[material])])
 			inspector_body.text = _tr("Lokales Zwischenlager", "Local warehouse buffer") + \
 				"\n%d/%d   ·   %s" % [used, Model.WAREHOUSE_CAPACITY, (
 				", ".join(listing) if not listing.is_empty() else _tr("Leer", "Empty"))] + \
@@ -752,15 +696,23 @@ func _toggle_pause() -> void:
 	_refresh_ui()
 
 func _save_now() -> void:
-	_notice(_tr("Spielstand gespeichert", "Factory saved") if _save_world() else
+	_notice(_tr("Spielstand gespeichert", "Factory saved") if model.save_game() else
 		_tr("Speichern fehlgeschlagen", "Save failed"))
 
 func _toggle_effects() -> void:
 	reduced_motion = not reduced_motion
 	motion_view.reduced_motion = reduced_motion
-	settings.values.reduced_motion = reduced_motion
-	settings.save()
 	effects_button.text = _tr("✦   ANIMATIONEN: AUS", "✦   ANIMATIONS: OFF") if reduced_motion else _tr("✦   ANIMATIONEN: AN", "✦   ANIMATIONS: ON")
+
+func _load_visual_settings() -> void:
+	var settings := ConfigFile.new()
+	if settings.load(VISUAL_SETTINGS_FILE) == OK:
+		show_grid = bool(settings.get_value("display", "show_grid", false))
+
+func _save_visual_settings() -> void:
+	var settings := ConfigFile.new()
+	settings.set_value("display", "show_grid", show_grid)
+	settings.save(VISUAL_SETTINGS_FILE)
 
 func _refresh_grid_button() -> void:
 	if grid_button != null:
@@ -771,8 +723,7 @@ func _toggle_grid() -> void:
 	show_grid = not show_grid
 	grid_view.set_grid_visible(show_grid)
 	_refresh_grid_button()
-	settings.values.grid = show_grid
-	settings.save()
+	_save_visual_settings()
 	_notice(_tr("Bauraster eingeblendet", "Placement grid visible") if show_grid else
 		_tr("Bauraster ausgeblendet", "Placement grid hidden"))
 
@@ -810,19 +761,47 @@ func _focus_construction() -> void:
 		"Casino construction · 48 material inputs"))
 
 func _new_factory() -> void:
-	return_to_main()
-	frontend.name_edit.grab_focus()
+	if not confirming_new:
+		confirming_new = true
+		new_button.text = _tr("!   WIRKLICH NEU STARTEN?", "!   CONFIRM NEW FACTORY?")
+		return
+	confirming_new = false
+	new_button.text = _tr("＋   NEUE FABRIK STARTEN", "＋   START NEW FACTORY")
+	model = Model.new()
+	model.construction.phase_completed.connect(_on_construction_phase)
+	terrain_view.model = model
+	terrain_view.refresh_from_model()
+	minimap.model = model
+	minimap.refresh_map()
+	storage_view.model = model
+	storage_view.close_inventory()
+	construction_view.model = model
+	construction_view.queue_redraw()
+	static_view.model = model
+	motion_view.model = model
+	static_view.refresh_all()
+	inspected = Vector2i(-1, -1)
+	motion_view.inspected = inspected
+	camera.position = Vector2(21, 18) * TILE
+	simulation_paused = false
+	motion_view.simulation_paused = false
+	save_accumulator = 0.0
+	last_totals = ""
+	if model.save_game():
+		_notice(_tr("Neue Fabrik erstellt", "New factory created"))
+	else:
+		_notice(_tr("Neue Fabrik: Speichern fehlgeschlagen", "New factory: save failed"))
+	_show_menu(false)
 
 func _show_menu(show: bool) -> void:
 	_cancel_select_drag()
 	menu_open = show
 	motion_view.menu_open = show
 	menu_mask.visible = show
-	if frontend != null:
-		frontend.set_world_ui(not show and not frontend.start_screen.visible)
 	if show:
 		storage_view.close_inventory()
 		minimap.hide_map()
+		confirming_new = false
 		new_button.text = _tr("NEUE FABRIK STARTEN", "START NEW FACTORY")
 		menu_card.modulate.a = 0.0 if not reduced_motion else 1.0
 		if not reduced_motion:
@@ -832,7 +811,7 @@ func _show_menu(show: bool) -> void:
 		motion_view.queue_redraw()
 
 func _exit_to_casino() -> void:
-	if not _save_world():
+	if not model.save_game():
 		_notice(_tr("Speichern fehlgeschlagen · Zurück nicht möglich", "Save failed · cannot quit safely"))
 		return
 	get_tree().quit()
@@ -841,27 +820,25 @@ func _physics_process(delta: float) -> void:
 	if not menu_open and not simulation_paused:
 		model.advance(delta)
 		save_accumulator += delta
-		played_since_save += delta
-		if save_accumulator >= float(settings.values.autosave):
+		if save_accumulator >= 30.0:
 			save_accumulator = 0.0
-			if not _save_world():
-				_notice(_tr("Autosave fehlgeschlagen", "Autosave failed"))
+			model.save_game()
 	ui_accumulator += delta
 	if ui_accumulator >= 0.30:
 		ui_accumulator = 0.0
 		_refresh_ui()
 
 func _process(delta: float) -> void:
-	if menu_open or minimap.visible or storage_view.visible or frontend.settings_screen.visible or get_viewport().gui_get_focus_owner() is LineEdit:
+	if menu_open or minimap.visible or storage_view.visible:
 		return
 	var movement := Vector2.ZERO
-	if Input.is_action_pressed("industries_up") or Input.is_key_pressed(KEY_UP):
+	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
 		movement.y -= 1.0
-	if Input.is_action_pressed("industries_down") or Input.is_key_pressed(KEY_DOWN):
+	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
 		movement.y += 1.0
-	if Input.is_action_pressed("industries_left") or Input.is_key_pressed(KEY_LEFT):
+	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
 		movement.x -= 1.0
-	if Input.is_action_pressed("industries_right") or Input.is_key_pressed(KEY_RIGHT):
+	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
 		movement.x += 1.0
 	if movement != Vector2.ZERO:
 		camera.position += movement.normalized() * (740.0 * delta / camera.zoom.x)
@@ -879,7 +856,8 @@ func _bound_camera() -> void:
 
 func _pointer_over_hud(point: Vector2) -> bool:
 	var screen := get_viewport_rect().size
-	return point.y < 150.0 or point.y > screen.y - (135.0 if frontend.open_category != "" else 85.0) or (
+	return point.y < 84.0 or point.y > screen.y - 80.0 or (
+		point.x < 282.0 and (point.y < 157.0 or (sidebar_panel.visible and point.y < 583.0))) or (
 		point.x > screen.x - 329.0 and inspector_panel.visible and point.y < 418.0)
 
 func _cancel_select_drag() -> void:
@@ -914,66 +892,53 @@ func _input(event: InputEvent) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
-		if frontend.waiting_key != "" or frontend.settings_screen.visible:
-			if event.is_action_pressed("industries_menu") and frontend.waiting_key == "":
-				frontend.close_settings()
-			get_viewport().set_input_as_handled()
-			return
-		if get_viewport().gui_get_focus_owner() is LineEdit:
-			return
-		if frontend.start_screen.visible:
-			return
 		if storage_view.visible:
-			if event.is_action_pressed("industries_inventory") or event.is_action_pressed("industries_menu"):
+			if event.keycode == KEY_I or event.keycode == KEY_ESCAPE:
 				storage_view.close_inventory()
 			get_viewport().set_input_as_handled()
 			return
 		if minimap.visible:
-			if event.is_action_pressed("industries_map") or event.is_action_pressed("industries_menu"):
+			if event.keycode == KEY_M or event.keycode == KEY_ESCAPE:
 				minimap.hide_map()
 			get_viewport().set_input_as_handled()
 			return
-		if not menu_open and event.is_action_pressed("industries_inventory"):
+		if not menu_open and event.keycode == KEY_I:
 			_toggle_storage()
 			get_viewport().set_input_as_handled()
 			return
-		if not menu_open and event.is_action_pressed("industries_map"):
+		if not menu_open and event.keycode == KEY_M:
 			_toggle_minimap()
 			get_viewport().set_input_as_handled()
 			return
-		if event.is_action_pressed("industries_menu"):
+		if event.keycode == KEY_ESCAPE:
 			_show_menu(not menu_open)
 			get_viewport().set_input_as_handled()
 			return
 		if menu_open:
 			return
-		if event.is_action_pressed("industries_save"):
+		if event.ctrl_pressed and event.keycode == KEY_S:
 			_save_now()
-		elif event.is_action_pressed("industries_inspect"):
+		elif event.keycode == KEY_V:
 			_set_mode("inspect")
-		elif event.is_action_pressed("industries_build"):
+		elif event.keycode == KEY_B:
 			_set_mode("build")
-		elif _tool_action(event) >= 0:
-			_select_tool(TOOLS[_tool_action(event)])
-		elif event.is_action_pressed("industries_rotate"):
+		elif event.keycode >= KEY_1 and event.keycode <= KEY_5:
+			_select_tool(TOOLS[event.keycode - KEY_1])
+		elif event.keycode == KEY_R:
 			if mode == "build":
 				facing = (facing + 1) % 4
 				motion_view.facing = facing
 				_notice(_tr("Baurichtung: ", "Build direction: ") + DIR_TEXT[facing])
 			else:
 				_rotate_selected()
-		elif event.is_action_pressed("industries_pause"):
+		elif event.keycode == KEY_SPACE:
 			_toggle_pause()
-		elif event.is_action_pressed("industries_grid"):
+		elif event.keycode == KEY_G:
 			_toggle_grid()
-		elif event.is_action_pressed("industries_casino"):
+		elif event.keycode == KEY_C:
 			_focus_construction()
-		elif event.is_action_pressed("industries_zoom_in"):
-			camera.zoom = (camera.zoom * 1.12).clamp(Vector2(0.55, 0.55), Vector2(2.4, 2.4))
-		elif event.is_action_pressed("industries_zoom_out"):
-			camera.zoom = (camera.zoom / 1.12).clamp(Vector2(0.55, 0.55), Vector2(2.4, 2.4))
 		return
-	if menu_open or minimap.visible or storage_view.visible or frontend.settings_screen.visible:
+	if menu_open or minimap.visible or storage_view.visible:
 		return
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
@@ -1021,140 +986,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST and model != null:
-		if current_world.is_empty() or _save_world():
+		if model.save_game():
 			get_tree().quit()
 		else:
 			_notice(_tr("Speichern fehlgeschlagen", "Save failed"))
 
 func _exit_tree() -> void:
-	if model != null and not current_world.is_empty():
-		_save_world()
-
-func _tool_action(event: InputEvent) -> int:
-	for i in range(TOOLS.size()):
-		if event.is_action_pressed("industries_tool_%d" % (i + 1)):
-			return i
-	return -1
-
-func _world_view() -> Dictionary:
-	return {"camera_x": camera.position.x, "camera_y": camera.position.y,
-		"zoom": camera.zoom.x, "pins": frontend.pins.duplicate(),
-		"markers": minimap.markers.duplicate(true), "layers": minimap.layers.duplicate(true)}
-
-func _save_world() -> bool:
-	if current_world.is_empty():
-		return false
-	if not worlds.save_world(current_world, model, _world_view(), played_since_save):
-		return false
-	played_since_save = 0.0
-	return true
-
-func open_world(id: String, record: Dictionary) -> void:
-	model = record.model
-	current_world = id
-	model.construction.phase_completed.connect(_on_construction_phase)
-	terrain_view.model = model
-	terrain_view.refresh_from_model()
-	static_view.model = model
-	static_view.refresh_all()
-	motion_view.model = model
-	construction_view.model = model
-	construction_view.queue_redraw()
-	minimap.model = model
-	minimap.reduced_motion = reduced_motion
-	minimap.water_motion = bool(settings.values.water_motion)
-	minimap.markers = record.view.get("markers", []).duplicate(true)
-	minimap.layers = record.view.get("layers", minimap.DEFAULT_LAYERS).duplicate(true)
-	minimap.refresh_map()
-	storage_view.model = model
-	inspected = Vector2i(-1, -1)
-	motion_view.inspected = inspected
-	camera.position = Vector2(float(record.view.get("camera_x", 1008.0)), float(record.view.get("camera_y", 864.0)))
-	camera.zoom = Vector2.ONE * float(record.view.get("zoom", 1.0))
-	_bound_camera()
-	save_accumulator = 0.0
-	played_since_save = 0.0
-	last_totals = ""
-	_refresh_ui()
-	frontend.set_world_ui(true)
-
-func return_to_main() -> void:
-	if not _save_world():
-		_notice(_tr("Speichern fehlgeschlagen; Welt bleibt geöffnet", "Save failed; world remains open"))
-		return
-	current_world = ""
-	frontend.show_start()
-	_show_menu(false)
-	menu_open = true
-	motion_view.menu_open = true
-
-func apply_settings() -> void:
-	show_grid = bool(settings.values.grid)
-	grid_view.set_grid_visible(show_grid)
-	reduced_motion = bool(settings.values.reduced_motion)
-	motion_view.reduced_motion = reduced_motion
-	motion_view.effect_quality = clampi(int(settings.values.effect_quality), 0, 2)
-	minimap.reduced_motion = reduced_motion
-	minimap.water_motion = bool(settings.values.water_motion)
-	var next_language := str(settings.values.language) == "de"
-	if german != next_language:
-		german = next_language
-		call_deferred("_rebuild_interface_language")
-	storage_view.german = german
-	terrain_view.set_water_motion(bool(settings.values.water_motion))
-	_refresh_grid_button()
-	frontend._refresh_pins()
-	get_viewport().content_scale_factor = clampf(float(settings.values.ui_scale), 0.8, 1.3)
-	_apply_contrast(ui_layer)
-
-func _rebuild_interface_language() -> void:
-	var old_pins: Array = frontend.pins.duplicate()
-	var old_markers: Array = minimap.markers.duplicate(true)
-	var old_layers: Dictionary = minimap.layers.duplicate(true)
-	var old_map_zoom: float = minimap.zoom
-	var old_map_pan: Vector2 = minimap.pan
-	var old_map_open: bool = minimap.visible
-	var old_storage_open: bool = storage_view.visible
-	var old_settings_open: bool = frontend.settings_screen.visible
-	var old_menu_open: bool = menu_open
-	ui_layer.free()
-	tool_buttons.clear()
-	quick_buttons.clear()
-	mode_buttons.clear()
-	_create_interface()
-	frontend.pins = old_pins
-	frontend._refresh_pins()
-	minimap.markers = old_markers
-	minimap.layers = old_layers
-	minimap.zoom = old_map_zoom
-	minimap.pan = old_map_pan
-	if current_world.is_empty():
-		_show_menu(false)
-		menu_open = true
-		motion_view.menu_open = true
-	else:
-		frontend.start_screen.hide()
-		_show_menu(old_menu_open)
-		_set_mode(mode)
-		if old_map_open:
-			minimap.show_map()
-		if old_storage_open:
-			storage_view.open_inventory()
-	if old_settings_open:
-		frontend.open_settings()
-	_refresh_ui()
-
-func _apply_contrast(node: Node) -> void:
-	if node is Label:
-		var label := node as Label
-		if bool(settings.values.high_contrast):
-			if not label.has_meta("original_font_color"):
-				label.set_meta("original_font_color", label.get_theme_color("font_color"))
-			label.add_theme_color_override("font_color", Color.WHITE)
-			label.add_theme_color_override("font_shadow_color", Color.BLACK)
-		else:
-			if label.has_meta("original_font_color"):
-				label.add_theme_color_override("font_color", label.get_meta("original_font_color"))
-			label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.38))
-	for child in node.get_children():
-		_apply_contrast(child)
+	if model != null:
+		model.save_game()

@@ -49,10 +49,4 @@ jobs:
           if grep -Eq 'SCRIPT ERROR:|Parse Error:|^ERROR:' /tmp/industries-visual.log; then exit 1; fi
           if grep -Eq 'SCRIPT ERROR:|Parse Error:|^ERROR:' /tmp/industries-ui.log; then exit 1; fi
           timeout --signal=TERM --kill-after=5s 45s "$godot" --headless --path "$project" --script res://performance_smoke.gd 2>&1 | tee /tmp/industries-perf.log
-          phase1_data=$(mktemp -d)
-          XDG_DATA_HOME="$phase1_data" timeout --signal=TERM --kill-after=5s 45s "$godot" --headless --path "$project" --script res://phase1_smoke.gd 2>&1 | tee /tmp/industries-phase1.log
-          XDG_DATA_HOME="$phase1_data" timeout --signal=TERM --kill-after=5s 45s "$godot" --headless --path "$project" --script res://phase1_ui_smoke.gd 2>&1 | tee /tmp/industries-phase1-ui.log
           grep -Fq "Midnight Industries large-grid simulation smoke PASS" /tmp/industries-perf.log
-          grep -Fq "Midnight Industries multiworld, recovery, settings and catalog PASS" /tmp/industries-phase1.log
-          grep -Fq "Midnight Industries main menu, world switching, HUD/map persistence PASS" /tmp/industries-phase1-ui.log
-          if grep -Eq 'SCRIPT ERROR:|Parse Error:|^ERROR:' /tmp/industries-phase1.log /tmp/industries-phase1-ui.log; then exit 1; fi

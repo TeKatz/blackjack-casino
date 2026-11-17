@@ -6,7 +6,6 @@ const TILE := 48.0
 const MASK_SCALE := 2
 var model
 var meadow_rect: ColorRect
-var water_motion := true
 static var _grass_detail_cache: Texture2D
 static var _stone_detail_cache: Texture2D
 
@@ -29,7 +28,6 @@ uniform sampler2D rock_influence : filter_linear, repeat_disable;
 uniform sampler2D terrain_detail : filter_linear_mipmap, repeat_enable;
 uniform sampler2D stone_detail : filter_linear_mipmap, repeat_enable;
 uniform sampler2D water_info : filter_linear, repeat_disable;
-uniform float water_speed = 1.0;
 
 void fragment() {
 	vec2 tiles = UV * vec2(224.0, 176.0);
@@ -67,15 +65,15 @@ void fragment() {
 	float coverage = smoothstep(0.21, 0.74, water.r);
 	vec2 flow = water.gb * 2.0 - vec2(1.0);
 	float river = smoothstep(0.15, 0.75, water.a);
-	float river_phase = dot(tiles, flow) * 5.5 - TIME * water_speed * 2.5;
+	float river_phase = dot(tiles, flow) * 5.5 - TIME * 2.5;
 	float transverse = dot(tiles, vec2(-flow.y, flow.x));
 	float moving_ripples = sin(river_phase + sin(transverse * 2.3) * 0.7) * 0.5
 		+ sin(river_phase * 1.63 + transverse * 3.1) * 0.25;
-	float lake_ripples = sin(tiles.x * 4.1 + TIME * water_speed * 0.55) *
-		sin(tiles.y * 3.7 - TIME * water_speed * 0.42) * 0.35;
+	float lake_ripples = sin(tiles.x * 4.1 + TIME * 0.55) *
+		sin(tiles.y * 3.7 - TIME * 0.42) * 0.35;
 	float motion = mix(lake_ripples, moving_ripples, river);
 	float water_noise = texture(stone_detail,
-		tiles * 0.11 + flow * TIME * water_speed * 0.01).r - 0.5;
+		tiles * 0.11 + flow * TIME * 0.01).r - 0.5;
 	vec3 deep = vec3(0.042, 0.179, 0.224);
 	vec3 shallow = vec3(0.088, 0.277, 0.318);
 	vec3 water_color = mix(deep, shallow,
@@ -94,7 +92,6 @@ void fragment() {
 	material.set_shader_parameter("terrain_detail", _grass_texture())
 	material.set_shader_parameter("stone_detail", _stone_texture())
 	material.set_shader_parameter("water_info", _water_texture())
-	material.set_shader_parameter("water_speed", 1.0 if water_motion else 0.0)
 	meadow_rect.material = material
 	add_child(meadow_rect)
 
@@ -189,8 +186,3 @@ func _rock_mask() -> Texture2D:
 				if strength > old:
 					image.set_pixel(x, y, Color(strength, strength, strength))
 	return ImageTexture.create_from_image(image)
-
-func set_water_motion(enabled: bool) -> void:
-	water_motion = enabled
-	if meadow_rect != null:
-		(meadow_rect.material as ShaderMaterial).set_shader_parameter("water_speed", 1.0 if enabled else 0.0)

@@ -17,7 +17,6 @@ var facing := 0
 var menu_open := false
 var simulation_paused := false
 var reduced_motion := false
-var effect_quality := 2
 var tick := 0.0
 
 func _process(delta: float) -> void:
@@ -100,7 +99,7 @@ func _miner_vfx(at: Vector2, machine: Dictionary, cell: Vector2i) -> void:
 	var bar := Vector2.RIGHT.rotated(angle) * 6.3
 	draw_line(hub - bar, hub + bar, Color("#DAF5FF", 0.74), 2.1)
 	draw_circle(hub, 2.0, CYAN)
-	if not reduced_motion and effect_quality > 0:
+	if not reduced_motion:
 		var shimmer := fposmod(tick * 5.0 + cell.x * 0.17, 1.0)
 		draw_circle(hub + Vector2(10, 10 - shimmer * 10.0), 1.5,
 			Color("#FFA92C", 0.45 * (1.0 - shimmer)))
@@ -116,8 +115,8 @@ func _smelter_vfx(at: Vector2, machine: Dictionary, cell: Vector2i) -> void:
 	draw_circle(center, 23.0, Color("#FF6E18", 0.052 + pulse * 0.13))
 	draw_circle(center, 16.0, Color("#FF982D", 0.090 + pulse * 0.19))
 	draw_circle(center, 9.0, Color("#FFC369", 0.16 + pulse * 0.15))
-	if not reduced_motion and effect_quality > 0:
-		for i in range(1 if effect_quality == 1 else 3):
+	if not reduced_motion:
+		for i in range(3):
 			var phase := fposmod(tick * 0.73 + float(i) * 0.27 + float(cell.y % 7) * 0.13, 1.0)
 			var rise := phase * 22.0
 			var drift := sin(tick * 1.4 + float(i) * 1.8) * 5.0
