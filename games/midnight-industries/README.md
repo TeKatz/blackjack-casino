@@ -1,6 +1,6 @@
 # Midnight Industries — premium-industrial factory prototype
 
-Standalone Godot 4.5.1 Windows mode integrated into The Midnight Club via the **Empire → Midnight Industries** left navigation link, without adding a lobby tile. The mode is offline, keeps its own versioned save file and never changes casino credits.
+Standalone Godot 4.5.1 Windows mode integrated into The Midnight Club via the **Empire → Midnight Industries** left navigation link, without adding a lobby tile. The mode is offline, keeps independent versioned worlds and never changes casino credits.
 
 ## Industrial art direction
 
@@ -10,7 +10,7 @@ The visual identity is **Modern Industrial / Premium Automation**. Previous gree
 - **Machines:** dedicated 144-pixel metallic art for drill, conveyor, furnace and storage. The warehouse and other machines sample isolated cached 144px textures rather than neighboring atlas cells, preventing mipmap bleed and left-neighbor clipping. Smelters are optically offset two pixels upward for clean conveyor joins. Four conveyor orientations use dedicated artwork: the approved right-facing machine remains intact; the left-facing moving track is reversed inside the original chassis; north/south combine the original detailed tread with independently lit supports. Terrain deposits now use **twelve distinct boulder formations per mineral** with different outlines, layered heights, individual rock sizes and clustered silhouettes, textured from the approved source art. Transported ore uses distinct single-stone cargo artwork with contact shadows and belt-rail occlusion rather than a pasted full deposit icon; ingots retain their approved source look.
 - **Production animation:** belts show directional cyan pulses, goods interpolate at the display framerate, drills indicate mechanical motion, active furnaces emit warm glow, sparks and smoke, storage displays a subtle status light.
 - **Interaction:** selection uses amber industrial scan brackets; build previews show the final machine graphic and a strong outgoing arrow; invalid placement uses red hazard feedback.
-- **UI:** distinct embossed graphite and steel panel families, amber active controls, restrained cyan information channels, a compact HUD and a collapsible idle inspector, a German/English machine catalog with genuine sprite icons, selected-machine telemetry, resource readouts, quick slots, an animated menu and usable typography (Bahnschrift/Segoe UI with fallbacks).
+- **UI:** distinct embossed graphite and steel panel families, amber active controls, restrained cyan information channels, a compact HUD and a collapsible idle inspector, a bottom category catalog with genuine sprite icons, selected-machine telemetry, configurable depot pins, a title screen and usable typography (Bahnschrift/Segoe UI with fallbacks).
 
 The approved 144-pixel machine and material artwork is shipped as `assets/industrial_hd_atlas.webp`. `factory_art.gd` varies ground mineral clusters by arranging this existing artwork; `factory_belt_art.gd` combines the approved illustrated conveyor surface with new north/south metal frames once. `factory_terrain.gd` builds cached 1024px grass/stone detail textures and a resource-aware transition mask once on startup. `factory_skin.gd` caches nine-slice metal UI textures; `factory_chunk.gd` and `factory_static.gd` draw only placed assets and visible resource deposits; `factory_motion.gd` contains animation only. No runtime downloads are required.
 
@@ -30,14 +30,16 @@ Colors: graphite `#111A21`, steel `#273743`, illuminated amber `#F5C04A`, neon c
 | Right click | Cancel build / clear selection (never destructive) |
 | Space | Pause production |
 | Ctrl+S | Save |
-| G or main-menu toggle | Show/hide the optional placement grid (visual preference saved separately) |
+| G or settings toggle | Show/hide the optional placement grid (visual preference saved separately) |
 | C or main-menu button | Center the camera on the casino construction site |
 | I or header Storage button | Open/close global depot construction inventory |
 | M | Open/close full-screen map (Escape also closes) |
-| Left-click inside world map | Recenter camera on that location and close map |
-| Escape | Open/close the main menu |
+| Wheel / drag on world map | Zoom around cursor / pan the atlas |
+| Double-click world map | Recenter the factory camera and close the map |
+| Right-click world map | Create or edit a named marker |
+| Escape | Close the active overlay or open/close the in-game pause menu |
 
-The main menu supports continue, save, confirmed new factory, motion and grid settings, and **Save & Return to Casino**. The obsolete Sector Overview panel has been removed to free the right side of the screen. A built-in starter iron chain mines, transports, smelts and deposits ingots to the global bank. Copper deposits and additional patches allow building other chains.
+The title screen opens before a world loads and provides continue, named worlds, new world creation, global settings, credits and quit. In a world, Escape opens a pause menu with save, settings, return to title and Save & Return to Casino. The obsolete Sector Overview panel has been removed. A built-in starter iron chain mines, transports, smelts and deposits ingots to the global bank. Copper deposits and additional patches allow building other chains.
 
 ## Project Midnight — construction and progression foundation
 
@@ -59,7 +61,7 @@ Current factory recipes, throughput, production ticks, warehouse counters and ca
 - The oversized iron and copper clusters formerly at `(61,47)` and `(82,65)` moved to `(44,124)` and `(174,128)`. Other remote deposits support larger factory layouts. The casino is now central at `(106,82)` with clear space around it.
 - **Gold**: five small, rare outer-map deposits. Gold rock and ingot textures are made from the previously approved high-resolution mineral artwork, preserving its metallic lighting; existing iron/copper sprites remain unchanged. Gold can be mined, belted, smelted into ingots and deposited at warehouses with distinct stored counts.
 - `factory_world.gd` generates winding directional rivers and natural-looking lakes. Flow vectors drive inexpensive GPU water motion in the landscape shader; lakes ripple more slowly. No water grid cell overlaps any ore field, and waterways keep an extra two-tile ore margin. The player cannot place machines or conveyor belts on water.
-- **M** shows a modal full-screen map with terrain, rivers/lakes, mineral colors, existing machines, casino plot and camera viewport. It is hidden otherwise. M/Escape closes it; left-click on the map moves the camera there.
+- **M** shows a modal full-screen map with terrain, rivers/lakes, mineral colors, existing machines, casino plot and camera viewport. It is hidden otherwise. M/Escape closes it; wheel zooms, left drag pans and double-click moves the camera. Right-click edits markers; the side panel filters layers and lists markers. The full map is visible immediately, without fog of war.
 - Existing saves remain readable. Older miners on relocated ore are preserved with local legacy ore underneath them, and previously built factory cells are kept clear of newly generated water. Gold totals default to zero for older saves. Save version stays v1.
 
 All twelve casino phase requirements remain deliberately empty; the new mineral and geography update does not invent any construction quotas.
@@ -78,12 +80,23 @@ The factory now has a physical **Depot** machine (tool **5**) and a separate glo
 - **Depot** is a one-tile conveyor destination with a separate metallic/cyan sprite. Every item delivered physically to any depot adds one unit to the **global, uncapped** spendable inventory, accessible from anywhere on the map. Depots do not output goods automatically.
 - **Warehouse** no longer spends material into a global counter. It has its own local **64-item buffer**, accepts all six current material types and sends inventory out along its chosen direction when a receiving belt or depot is available. The Warehouse inspector reports the real local buffer.
 - The permanent casino construction site still receives only physical deliveries to its 48 perimeter intakes. Those requirements and its 12-phase progress remain **completely separate** from the global machine-building bank.
-- The **I** key or **Lager [I] / Storage [I]** header button opens the full-screen construction inventory: six material stocks, costs, available/short materials and connected depot count. **I/Escape** closes it. In Build mode, the selected machine's cost and affordability are shown in the catalog and a red build preview indicates insufficient stock. The keyboard has **1–5** quick slots.
+- The **I** key or **Lager [I] / Storage [I]** header button opens the searchable full-screen construction inventory with six material stocks and item details. The top material pins read the same uncapped global bank. **I/Escape** closes it. In Build mode, the selected machine's cost and affordability are shown in the catalog and a red build preview indicates insufficient stock. The keyboard retains **1–5** machine shortcuts.
 - **New games** spawn with the original functional starter production line feeding a **complimentary depot at (25,17)**. A one-time 12-copper-ingot bootstrap inventory avoids the smelting-cost bootstrap paradox; iron is still produced and physically delivered. Starter structures are recorded as unpaid.
 - **100% of actually paid construction resources** are returned when a machine is demolished, including depots and conveyor pieces. Free starter or gifted machines return a **reusable, type-specific relocation kit**, not raw building materials: a free drill can be moved and rebuilt once for free but cannot be duplicated or sold for ingots. This prevents a factory softlock from deleting the last complimentary drill, furnace, belt or depot. Contents inside demolished machines are discarded; paid construction bills are still refunded in full.
 - **Existing save games** import old Warehouse delivered totals as global inventory exactly once, preserving already produced materials. When possible the migration attaches one complimentary depot to an existing Warehouse's output; otherwise it grants a single free depot placement voucher. Subsequent saves store the global stock, one-time voucher, per-warehouse buffers and actual paid construction bills without changing the save version.
 
 All original iron/copper/gold production recipes remain available. More expensive higher-tier recipes and machines can later use this same economy and the pre-existing casino-phase unlock registry.
+
+
+## Worlds, interface and settings
+
+`world_manager.gd` stores each world in `user://industries-worlds/<stable-id>.json`, with lightweight metadata in `index.json`. The model's version-1 factory snapshot remains authoritative inside a version-1 world envelope; camera, map layers, named markers and pinned material slots are separate per-world view data. Saving writes a temporary file and rotates up to three backups. Loading validates the factory snapshot and tries backups if the current file is damaged. The prior `user://midnight-industries-v1.json` or its `.bak` is imported once and left intact. World names are independent of IDs; deletion requires two clicks on the same world. The title screen lists update time, played minutes and casino phase.
+
+The compact top rail gives menu, pause, save, map and depot access. Under it, the collapsible configurable material strip shows live global depot amounts, including zero. The bottom category dock offers Abbau, Logistik and Produktion; selecting a machine enters build mode. The side inspector only appears for a selected machine. `item_catalog.gd` supplies shared material names, element marks and artwork to depot and pins. The atlas caches geography, draws machine and marker overlays, and saves layer choices per world. Casino inputs remain distinct from the global build bank.
+
+Global settings are saved in `user://industries-settings.cfg`: audio bus volume and mute (Master/Music/Effects/UI), window mode and resolution, VSync, FPS limit, UI scale, water motion, reduced motion, high contrast, language, grid, autosave interval and rebinding of gameplay actions. UI clicks use a locally synthesized feedback tone routed to the UI bus. Music and effects buses are ready for audio sources; no music track is shipped with this phase. A conflicting key is rejected. World controls are ignored while a text field has focus.
+
+The headless checks prove menu/world switching, save independence, backup recovery, pin/marker/layer/camera persistence, catalog and key rebinding, but device-side Windows visual and audio review at 1920×1080 and smaller sizes remains necessary. Marker animation is a restrained selected pulse; the water animation setting controls the actual world shader.
 
 ## Validation
 
@@ -93,6 +106,8 @@ godot --headless --path games/midnight-industries --script res://smoke_test.gd
 godot --headless --path games/midnight-industries --script res://ui_smoke.gd
 godot --headless --path games/midnight-industries --script res://visual_smoke.gd
 godot --headless --path games/midnight-industries --script res://performance_smoke.gd
+godot --headless --path games/midnight-industries --script res://phase1_smoke.gd
+godot --headless --path games/midnight-industries --script res://phase1_ui_smoke.gd
 ```
 
 The CI workflow validates 1024px grass/stone details, unchanged raw material artwork, different ground-ore layouts, the vertical belt textures, safe machine footprints, the grid toggle, sector-panel removal, atlas decoding, machine icons, building/inspection UI and production/model behavior. The Windows export script additionally validates the premium visual package before packaging. A headless factory benchmark is not a GPU framerate guarantee; device-specific 1080p/1440p quality and performance still require visual testing on a Windows client.
@@ -101,6 +116,6 @@ The CI workflow validates 1024px grass/stone details, unchanged raw material art
 
 - A protected 12×12 casino foundation adds twelve empty progression phases and 48 inward-facing item intakes, without altering existing ore patches or the original material recipes.
 - The old repetitive metal platform was replaced with one meadow-to-rock shader surface. Two 1024px detail textures now hold sharp material variation at close zoom, while ore deposits retain softly blended organic rocky patches. No per-frame primitive ground drawing.
-- The machine inspector collapses when no building is selected; header, catalog and quickbar are substantially narrower.
+- The machine inspector collapses when no building is selected. The header, top material strip and bottom category dock leave the center of the factory open.
 - Approved original ore and cargo sprites were restored; only ground-cluster arrangements vary. Vertical conveyors have dedicated lighting-correct artwork, belts and ore have no oversized drop shadows, and warehouses no longer overlap left neighbors.
 - Actual Windows FPS remains a device-side acceptance check; headless simulation speed is not a GPU benchmark.

@@ -1,133 +1,128 @@
 extends Control
-## Modal global construction inventory. No capacity limits are invented yet:
-## only material actually arriving at depots is spendable.
+## Global, uncapped build stock. Warehouse contents are deliberately separate.
+const Catalog = preload("res://item_catalog.gd")
 const Economy = preload("res://factory_economy.gd")
 const UiSkin = preload("res://factory_skin.gd")
-const TEXT := Color("#EAF4F5")
-const MUTED := Color("#9DB5C0")
-const AMBER := Color("#F5BC59")
-const CYAN := Color("#19D5F2")
-const METALS := [
-	["iron_ingot", "EISENBARREN", "IRON INGOTS", Color("#8DAAB8")],
-	["copper_ingot", "KUPFERBARREN", "COPPER INGOTS", Color("#D08A53")],
-	["gold_ingot", "GOLDBARREN", "GOLD INGOTS", Color("#EAC358")],
-	["iron_ore", "EISENERZ", "IRON ORE", Color("#76909D")],
-	["copper_ore", "KUPFERERZ", "COPPER ORE", Color("#B46D44")],
-	["gold_ore", "GOLDERZ", "GOLD ORE", Color("#C89F39")]
-]
 var model
 var german := true
-var _close_rect := Rect2()
+var search: LineEdit
+var category: OptionButton
+var list: VBoxContainer
+var details: Label
+var _last_stock := ""
+var _selected := ""
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	visible = false
+	var bg := ColorRect.new()
+	bg.color = Color("#07141D", 0.98)
+	add_child(bg)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var center := CenterContainer.new()
+	add_child(center)
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var frame := PanelContainer.new()
+	frame.custom_minimum_size = Vector2(830, 580)
+	frame.add_theme_stylebox_override("panel", UiSkin.panel("menu"))
+	center.add_child(frame)
+	var col := VBoxContainer.new()
+	frame.add_child(col)
+	_label(col, "MIDNIGHT INDUSTRIES / GLOBALES BAULAGER", 22)
+	_label(col, "Lieferungen an Depots finanzieren Anlagen. Zwischenlager zählen nicht zum globalen Bestand.", 12)
+	var controls := HBoxContainer.new()
+	col.add_child(controls)
+	search = LineEdit.new()
+	search.placeholder_text = "Material suchen / Search material"
+	search.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	controls.add_child(search)
+	search.text_changed.connect(func(_query: String) -> void: _refresh())
+	category = OptionButton.new()
+	for entry in ["Alle / All", "Erze / Ores", "Barren / Ingots"]:
+		category.add_item(entry)
+	category.item_selected.connect(func(_index: int) -> void: _refresh())
+	controls.add_child(category)
+	_button(controls, "Schließen [I]", close_inventory)
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size.y = 295
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(scroll)
+	list = VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
+	details = _label(col, "", 14)
+	details.custom_minimum_size.y = 75
+
+func _label(parent: Node, title: String, font_size: int) -> Label:
+	var l := Label.new()
+	l.text = title
+	l.add_theme_font_override("font", UiSkin.font())
+	l.add_theme_font_size_override("font_size", font_size)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	parent.add_child(l)
+	return l
+
+func _button(parent: Node, title: String, action: Callable) -> Button:
+	var b := Button.new()
+	b.text = title
+	b.custom_minimum_size.y = 39
+	b.add_theme_stylebox_override("normal", UiSkin.button("button"))
+	b.add_theme_stylebox_override("hover", UiSkin.button("button_active"))
+	b.pressed.connect(action)
+	parent.add_child(b)
+	return b
 
 func open_inventory() -> void:
 	visible = true
-	queue_redraw()
+	_refresh()
 
 func close_inventory() -> void:
 	visible = false
 
 func _process(_delta: float) -> void:
-	if visible:
-		queue_redraw()
+	if visible and model != null:
+		var stock: String = JSON.stringify(model.economy.stock)
+		if stock != _last_stock:
+			_refresh()
 
-func _word(de: String, en: String) -> String:
-	return de if german else en
-
-func _text(font: Font, p: Vector2, content: String, size_px: int,
-	tint: Color = TEXT) -> void:
-	draw_string(font, p, content, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, tint)
-
-func _draw() -> void:
-	if model == null:
+func _refresh() -> void:
+	if model == null or list == null:
 		return
-	var font: Font = UiSkin.font()
-	draw_rect(Rect2(Vector2.ZERO, size), Color("#061118", 0.97))
-	var w := minf(1040.0, size.x - 60.0)
-	var h := minf(690.0, size.y - 90.0)
-	var base := Vector2((size.x - w) * 0.5, (size.y - h) * 0.5)
-	var frame := Rect2(base, Vector2(w, h))
-	draw_rect(frame, Color("#152630"))
-	draw_rect(frame, Color("#516672"), false, 2.0)
-	draw_rect(Rect2(base + Vector2(12, 12), Vector2(w - 24.0, 70.0)),
-		Color("#21343E"))
-	_text(font, base + Vector2(35, 52), "MIDNIGHT INDUSTRIES   /   " +
-		_word("GLOBALES BAULAGER", "GLOBAL BUILD INVENTORY"), 23, TEXT)
-	_text(font, base + Vector2(36, 73), _word(
-		"Lieferungen an Depots finanzieren neue Maschinen.",
-		"Materials delivered to depots fund new machinery."), 12, MUTED)
-	_close_rect = Rect2(base + Vector2(w - 58, 25), Vector2(33, 31))
-	draw_rect(_close_rect, Color("#3B5260"))
-	_text(font, _close_rect.position + Vector2(11, 23), "X", 16, TEXT)
+	_last_stock = JSON.stringify(model.economy.stock)
+	for child in list.get_children():
+		child.queue_free()
+	for item in Catalog.ITEMS:
+		if category.selected == 1 and item.category != "ore":
+			continue
+		if category.selected == 2 and item.category != "ingot":
+			continue
+		var name: String = str(item.de if german else item.en)
+		if not search.text.is_empty() and not search.text.to_lower() in name.to_lower():
+			continue
+		var id: String = item.id
+		var row := HBoxContainer.new()
+		list.add_child(row)
+		var b := _button(row, "%s   %s   ·   %d" % [item.mark, name, model.economy.available(id)],
+			_show_details.bind(id))
+		b.icon = Catalog.icon(id)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_show_details(_selected)
 
-	var left_width := w * 0.53
-	var separator_x := base.x + left_width
-	draw_line(Vector2(separator_x, base.y + 100),
-		Vector2(separator_x, base.y + h - 45), Color("#385260"), 1.0)
-	_text(font, base + Vector2(35, 124), _word("MATERIALIEN", "MATERIALS"),
-		15, AMBER)
-	var row_h := minf(72.0, (h - 208.0) / 6.0)
-	for i in range(METALS.size()):
-		var spec: Array = METALS[i]
-		var material: String = str(spec[0])
-		var y: float = base.y + 140.0 + i * row_h
-		draw_rect(Rect2(base.x + 28, y, left_width - 51, row_h - 9),
-			Color("#1D343F"))
-		draw_rect(Rect2(base.x + 44, y + 14, 13, 21), spec[3])
-		_text(font, Vector2(base.x + 68, y + 30),
-			str(spec[1] if german else spec[2]), 15, TEXT)
-		_text(font, Vector2(base.x + left_width - 146, y + 30),
-			"%d" % model.economy.available(material), 17, CYAN)
-
-	var labels := {
-		"miner": ["ABBAUMASCHINE", "MINING DRILL"],
-		"belt": ["FÖRDERBAND", "CONVEYOR BELT"],
-		"smelter": ["SCHMELZOFEN", "SMELTING FURNACE"],
-		"storage": ["WAREHOUSE", "WAREHOUSE"],
-		"depot": ["DEPOT", "DEPOT"]
-	}
-	var costs_start := separator_x + 28.0
-	_text(font, Vector2(costs_start, base.y + 124),
-		_word("BAUKOSTEN", "BUILD COSTS"), 15, AMBER)
-	for i in range(Economy.COSTS.size()):
-		var machine: String = str(Economy.COSTS.keys()[i])
-		var y := base.y + 160.0 + i * 79.0
-		_text(font, Vector2(costs_start, y),
-			str(labels[machine][0 if german else 1]), 14, TEXT)
-		var pieces: Array[String] = []
-		for material in Economy.COSTS[machine]:
-			var need: int = int(Economy.COSTS[machine][material])
-			var have: int = model.economy.available(material)
-			var short := "Fe" if material == "iron_ingot" else (
-				"Cu" if material == "copper_ingot" else "Au")
-			pieces.append("%s %d/%d" % [short, mini(have, need), need])
-		var can_buy: bool = model.economy.has_funds(machine)
-		var caption := "  ·  ".join(pieces)
-		if model.economy.has_free_kit(machine):
-			caption = _word("UMZUGS-KIT · GRATIS", "RELOCATION KIT · FREE")
-		elif machine == "depot" and model.economy.free_depot_available:
-			caption = _word("1x GRATIS DEPOT", "1x FREE DEPOT")
-		_text(font, Vector2(costs_start, y + 24),
-			caption, 12, CYAN if can_buy else Color("#F69A72"))
-	var num_depots := int(model.counts().get("depot", 0))
-	_text(font, Vector2(costs_start, base.y + h - 96),
-		_word("VERBUNDENE DEPOTS: %d", "CONNECTED DEPOTS: %d") % num_depots,
-		13, AMBER)
-	if model.economy.free_depot_available:
-		_text(font, Vector2(costs_start, base.y + h - 73),
-			_word("1 KOSTENLOSES DEPOT VERFÜGBAR", "1 FREE DEPOT AVAILABLE"),
-			12, CYAN)
-	_text(font, base + Vector2(37, h - 25),
-		_word("I / ESC SCHLIESSEN   ·   KEINE LAGERGRENZE",
-			"I / ESC CLOSE   ·   NO CAPACITY LIMIT"), 12, MUTED)
-
-func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed \
-		and event.button_index == MOUSE_BUTTON_LEFT:
-		if _close_rect.has_point(event.position):
-			close_inventory()
-		accept_event()
+func _show_details(id: String) -> void:
+	_selected = id
+	if id.is_empty():
+		details.text = ("%d Depots · Globales Lager ohne Kapazitätsgrenze\n" % int(model.counts().get("depot", 0))) + \
+			("Baukosten werden beim Abriss bezahlter Anlagen vollständig erstattet." if german else
+			"Paid construction costs are fully refunded on demolition.")
+		return
+	var info: Dictionary = Catalog.item(id)
+	var costs := []
+	for machine in Economy.COSTS:
+		if Economy.COSTS[machine].has(id):
+			costs.append("%s %d" % [machine, Economy.COSTS[machine][id]])
+	details.text = "%s · %s · %d\n%s" % [Catalog.name_for(id, german),
+		("Erz" if german else "Ore") if info.category == "ore" else ("Barren" if german else "Ingot"),
+		model.economy.available(id),
+		("Baukosten: " if german else "Build costs: ") + (", ".join(costs) if not costs.is_empty() else "—")]

@@ -157,12 +157,15 @@ func _run() -> void:
 		_fail("Full build catalog must be hidden in selection mode")
 		return
 	game._set_mode("build")
-	if not side_panel.visible:
-		_fail("Build catalog must be visible when constructing")
+	game.frontend._select_category("logistics")
+	if side_panel.visible or not game.frontend.machine_row.get_parent().visible \
+		or game.frontend.machine_row.get_child_count() != 3:
+		_fail("Bottom logistics catalog must expand without the old sidebar")
 		return
 	game._set_mode("inspect")
-	if side_panel.visible:
-		_fail("Build catalog must retract when returning to selection")
+	game.frontend._select_category("")
+	if side_panel.visible or game.frontend.machine_row.get_parent().visible:
+		_fail("Bottom catalog must retract when returning to selection")
 		return
 	if game.tool_buttons.size() != 5 or game.quick_buttons.size() != 5:
 		_fail("Visual machine catalog or quick access deck is incomplete")
