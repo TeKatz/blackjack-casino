@@ -69,11 +69,38 @@ func _run() -> void:
 	assert(game.sidebar_panel.visible == false)
 	game._toggle_storage()
 	assert(game.storage_view.visible)
+	assert(game.storage_view.main_panel.get_theme_stylebox("panel") is StyleBoxFlat)
+	assert(game.storage_view.quantities.has("iron_ingot"))
+	assert(game.storage_view.quantities.has("gold_ore"))
+	assert(game.storage_view.item_rows.get_child_count() >= 6)
+	# Actual visual item icons, not the previous flat color swatches.
+	var icon := load("res://item_catalog.gd").icon("iron_ingot")
+	assert(icon != null and icon.get_width() >= 96)
+	var icon_image: Image = icon.get_image()
+	assert(icon_image.get_used_rect().has_area())
+	# New future materials must appear automatically, without editing the
+	# storage menu or the six original known material list.
+	game.model.economy.stock["future_machine_part"] = 17
+	game.storage_view._process(0.3)
+	assert(game.storage_view.quantities.has("future_machine_part"))
+	assert(game.storage_view.quantities["future_machine_part"].text == "17")
+	game.storage_view.search_field.text = "gold"
+	game.storage_view._rebuild_materials()
+	assert(not game.storage_view.quantities.has("iron_ingot"))
+	assert(game.storage_view.quantities.has("gold_ore"))
+	game.storage_view.search_field.clear()
+	game.storage_view._rebuild_materials()
+	game.model.economy.stock.erase("future_machine_part")
 	game._toggle_storage()
 	game._toggle_minimap()
 	await process_frame
 	assert(game.minimap.visible)
 	assert(game.minimap._ore_layers.has("gold"))
+	assert(game.minimap._surface.clip_contents)
+	assert(game.minimap._map_frame.get_theme_stylebox("panel") is StyleBoxFlat)
+	assert(game.minimap._side_panel.get_theme_stylebox("panel") is StyleBoxFlat)
+	assert(game.minimap.layer_row.find_child("MapLayer_gold", true, false) != null)
+	assert(game.minimap._surface.size.x > 0.0)
 	var ore_found := false
 	for cell in game.model.resources:
 		if game.model.resources[cell] == "gold":

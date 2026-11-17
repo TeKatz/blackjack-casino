@@ -1,5 +1,6 @@
 extends RefCounted
 const Atlas = preload("res://factory_atlas.gd")
+const IconArt = preload("res://factory_item_icon_art.gd")
 const ITEMS := [
 	{"id":"iron_ore", "de":"Eisenerz", "en":"Iron ore", "category":"ore", "sprite":0, "mark":"Fe"},
 	{"id":"copper_ore", "de":"Kupfererz", "en":"Copper ore", "category":"ore", "sprite":1, "mark":"Cu"},
@@ -27,8 +28,25 @@ static func name_for(id: String, german: bool = true) -> String:
 	return str(entry.get("de" if german else "en", id))
 
 static func icon(id: String) -> Texture2D:
-	var entry := item(id)
-	return Atlas.sprite(int(entry.sprite), 1) if not entry.is_empty() else null
+	var entry: Dictionary = item(id)
+	# Future items may specify authored image assets directly in their
+	# catalog entry: "icon_path": "res://assets/items/..."
+	var path: String = str(entry.get("icon_path", ""))
+	if not path.is_empty() and ResourceLoader.exists(path):
+		var loaded: Resource = load(path)
+		if loaded is Texture2D:
+			return loaded
+	# Use a distinct illustrated object, not the old incorrect ingot mapping
+	# from the generic industrial atlas. Unknown items get a 3D component.
+	return IconArt.icon(id, entry)
+
+static func all_item_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for entry in ITEMS:
+		var id: String = str(entry.get("id", ""))
+		if not id.is_empty() and not ids.has(id):
+			ids.append(id)
+	return ids
 
 static func machine(id: String) -> Dictionary:
 	for entry in MACHINES:

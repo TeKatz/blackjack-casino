@@ -167,3 +167,30 @@ Relevant recovered files: \`factory_navigation.gd\`, \`world_manager.gd\`,
 Regression tests include \`restored_systems_smoke.gd\` and
 \`restored_ui_smoke.gd\`.
 
+
+## Consistent World Atlas and inventory UI
+
+The full-screen **World Atlas** and **Global Build Inventory** now share
+\`factory_menu_theme.gd\` with the approved menu redesign. The atlas keeps
+its fully revealed geography (no fog of war), mouse-centered zoom, pan,
+camera jump, region and resource filters, animated water, editable markers
+and per-world marker/layer persistence. The actual map is rendered through
+a clipped \`factory_map_surface.gd\` canvas so zooming cannot draw across the
+separate legend and navigation controls. The right-hand panel has legible
+resource icons and native Godot toggle controls.
+
+The global inventory is a fully **data-driven**, scrollable native UI:
+- Every entry in \`item_catalog.gd::ITEMS\` appears automatically, even with
+  zero stock; items discovered in stock or cost recipes are additionally
+  included. New catalog items require **no inventory view changes**.
+- Catalog item IDs, names, categories and optional \`icon_path\` assets
+  drive visuals. \`factory_item_icon_art.gd\` provides original
+  material-specific, dimensional ingot and ore illustrations when no
+  dedicated image asset exists, and a component illustration for future
+  categories. The old colored-square icons have been removed.
+- Search, category filters, live material counts, and scroll containers
+  scale with future recipes and material types. The right-hand machine
+  cost overview also derives its rows dynamically from machine recipes.
+- Materials are deducted only by existing game economy actions; viewing
+  inventory is read-only. New world and old-save content are unaffected.
+
