@@ -1,0 +1,96 @@
+name: Casino Anomaly Windows Preview
+
+on:
+  pull_request:
+    paths:
+      - 'games/casino-anomaly/**'
+      - '.github/workflows/casino-anomaly-windows-preview.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  preview-windows:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download pinned Godot 4.5.1 and Windows export template
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ProgressPreference = 'SilentlyContinue'
+          $version = '4.5.1'
+          $base = "https://github.com/godotengine/godot-builds/releases/download/$version-stable"
+          $work = Join-Path $env:RUNNER_TEMP 'casino-anomaly-godot'
+          $editorDir = Join-Path $work 'editor'
+          $templateDir = Join-Path $env:APPDATA "Godot/export_templates/$version.stable"
+          New-Item -ItemType Directory -Force $work, $editorDir, $templateDir | Out-Null
+          $editorZip = Join-Path $work 'godot-editor.zip'
+          Invoke-WebRequest "$base/Godot_v$version-stable_win64.exe.zip" -OutFile $editorZip
+          Expand-Archive $editorZip $editorDir -Force
+          $editor = Join-Path $editorDir "Godot_v$version-stable_win64_console.exe"
+          if (!(Test-Path $editor)) { throw 'Pinned Godot editor missing from archive' }
+          $archivePath = Join-Path $work 'export-templates.tpz'
+          Invoke-WebRequest "$base/Godot_v$version-stable_export_templates.tpz" -OutFile $archivePath
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
+          try {
+            $entry = $zip.GetEntry('templates/windows_release_x86_64.exe')
+            if ($null -eq $entry) { throw 'Godot Windows export template missing' }
+            $template = Join-Path $templateDir 'windows_release_x86_64.exe'
+            [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $template, $true)
+          } finally {
+            $zip.Dispose()
+          }
+          "GODOT_EDITOR=$editor" >> $env:GITHUB_ENV
+
+      - name: Build independent Godot Windows preview
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $project = Join-Path (Get-Location) 'games/casino-anomaly'
+          $output = Join-Path (Get-Location) 'artifacts/casino-anomaly-windows'
+          New-Item -ItemType Directory -Force $output | Out-Null
+          $exe = Join-Path $output 'CasinoAnomalyFloorTest.exe'
+          $importLog = Join-Path $env:RUNNER_TEMP 'casino-import.log'
+          $exportLog = Join-Path $env:RUNNER_TEMP 'casino-export.log'
+          & "$env:GODOT_EDITOR" --headless --path $project --editor --import 2>&1 | Tee-Object -FilePath $importLog
+          if ($LASTEXITCODE -ne 0 -or (Get-Content $importLog -Raw) -match '(?m)(SCRIPT ERROR:|Parse Error:|Failed to load|^ERROR:)') {
+            throw 'Godot reported an import error'
+          }
+          & "$env:GODOT_EDITOR" --headless --path $project --export-release 'Windows Desktop' $exe 2>&1 | Tee-Object -FilePath $exportLog
+          if ($LASTEXITCODE -ne 0 -or (Get-Content $exportLog -Raw) -match '(?m)(SCRIPT ERROR:|Parse Error:|Failed to load|^ERROR:)') {
+            throw 'Godot reported an export error'
+          }
+          $pck = Join-Path $output 'CasinoAnomalyFloorTest.pck'
+          if (!(Test-Path $exe) -or !(Test-Path $pck)) {
+            throw 'Windows preview export incomplete'
+          }
+          if ((Get-Item $exe).Length -lt 1000000 -or (Get-Item $pck).Length -lt 1000000) {
+            throw 'Windows preview contains suspiciously small files'
+          }
+          Copy-Item 'games/midnight-descent/licenses/GODOT-LICENSE.txt' $output
+          Copy-Item 'games/midnight-descent/licenses/GODOT-COPYRIGHT.txt' $output
+          @'
+          Casino Anomaly - Eichenholzboden-Prototyp
+          
+          1. CasinoAnomalyFloorTest.exe starten.
+          2. Maus bewegen: Umschauen.
+          3. W, A, S, D: Durch den Testbereich laufen.
+          4. Esc: Maus freigeben. Klick ins Fenster: Maus wieder einfangen.
+          
+          Dies ist ein separater, einfacher Godot-Test mit einer 14 x 14 Meter grossen
+          Bodenflaeche. Noch keine Casino-App-Integration, keine Waende oder Anomalien.
+          Die Bodenoberflaeche nutzt die Original-PBR-Texturen von Poly Haven (CC0).
+          '@ | Set-Content -Path (Join-Path $output 'BITTE-LESEN.txt') -Encoding utf8
+          Write-Host "Godot Windows preview built: $exe"
+
+      - name: Upload portable Windows test build
+        uses: actions/upload-artifact@v4
+        with:
+          name: casino-anomaly-oak-floor-windows-preview
+          path: artifacts/casino-anomaly-windows/
+          if-no-files-found: error
+          retention-days: 14
