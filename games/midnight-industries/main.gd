@@ -10,6 +10,8 @@ const Construction = preload("res://factory_construction.gd")
 const MotionView = preload("res://factory_motion.gd")
 const UiSkin = preload("res://factory_skin.gd")
 const Atlas = preload("res://factory_atlas.gd")
+const DepotArt = preload("res://factory_depot_art.gd")
+const StorageView = preload("res://factory_storage_view.gd")
 const TILE := 48.0
 const GOLD := Color("#F5C04A")
 const CYAN := Color("#00D8F4")
@@ -17,7 +19,7 @@ const INK := Color("#0C161D")
 const TEXT := Color("#F0F3F3")
 const MUTED := Color("#94ACB5")
 const DANGER := Color("#FF725F")
-const TOOLS := ["miner", "belt", "smelter", "storage"]
+const TOOLS := ["miner", "belt", "smelter", "storage", "depot"]
 const DIR_TEXT := ["→", "↓", "←", "↑"]
 
 @onready var camera: Camera2D = $Camera
@@ -27,6 +29,7 @@ var static_view: Node2D
 var motion_view: Node2D
 var grid_view: Node2D
 var minimap: Control
+var storage_view: Control
 var construction_view: Node2D
 var show_grid := false
 const VISUAL_SETTINGS_FILE := "user://industries-visual-settings.cfg"
@@ -56,6 +59,7 @@ var fps_label: Label
 var construction_status: Label
 var status: Label
 var tool_title: Label
+var tool_cost_label: Label
 var grid_button: Button
 var inspector_portrait: TextureRect
 var quick_buttons: Dictionary = {}
@@ -147,7 +151,7 @@ func _machine_icon(kind: String) -> Texture2D:
 	if icon_cache.has(kind):
 		return icon_cache[kind]
 	var index: int = int({"miner":0, "belt":1, "smelter":2, "storage":3}.get(kind, 0))
-	var icon: Texture2D = Atlas.sprite(index)
+	var icon: Texture2D = DepotArt.texture() if kind == "depot" else Atlas.sprite(index)
 	icon_cache[kind] = icon
 	return icon
 
@@ -243,6 +247,10 @@ func _create_interface() -> void:
 	construction_status = _make_label("", 11, GOLD)
 	status_row.add_child(construction_status)
 	status_row.add_child(fps_label)
+	var inventory_button := _button(_tr("  LAGER  [I]  ", "  STORAGE  [I]  "), _toggle_storage)
+	inventory_button.custom_minimum_size.x = 109
+	inventory_button.custom_minimum_size.y = 39
+	top_row.add_child(inventory_button)
 	var menu_button := _button(_tr("  MENÜ  [ESC]  ", "  MENU  [ESC]  "), func() -> void: _show_menu(true))
 	menu_button.custom_minimum_size.x = 109
 	menu_button.custom_minimum_size.y = 39
@@ -258,7 +266,7 @@ func _create_interface() -> void:
 	sidebar.offset_left = 11
 	sidebar.offset_top = 160
 	sidebar.offset_right = 277
-	sidebar.offset_bottom = 578
+	sidebar.offset_bottom = 678
 	var side_col := VBoxContainer.new()
 	side_col.add_theme_constant_override("separation", 6)
 	sidebar.add_child(side_col)
@@ -288,13 +296,14 @@ func _create_interface() -> void:
 	var ruler := HSeparator.new()
 	side_col.add_child(ruler)
 	side_col.add_child(_make_label(_tr("MASCHINENKATALOG", "MACHINE CATALOG"), 11, GOLD))
-	tool_title = _make_label(_tr("VIER ANLAGEN VERFÜGBAR", "FOUR SYSTEMS AVAILABLE"), 10, MUTED)
+	tool_title = _make_label(_tr("FÜNF ANLAGEN VERFÜGBAR", "FIVE SYSTEMS AVAILABLE"), 10, MUTED)
 	side_col.add_child(tool_title)
 	var names: Array[String] = [
 		_tr("ABBAUMASCHINE", "MINING DRILL"),
 		_tr("FÖRDERBAND", "CONVEYOR BELT"),
 		_tr("SCHMELZOFEN", "SMELTING FURNACE"),
-		_tr("INDUSTRIELAGER", "INDUSTRIAL STORAGE")
+		_tr("INDUSTRIELAGER", "INDUSTRIAL STORAGE"),
+		_tr("GLOBALES DEPOT", "GLOBAL DEPOT")
 	]
 	for i in range(TOOLS.size()):
 		var key: String = TOOLS[i]
@@ -309,8 +318,12 @@ func _create_interface() -> void:
 		side_col.add_child(btn)
 		tool_buttons[key] = btn
 	side_col.add_child(HSeparator.new())
-	var hint := _make_label(_tr("R   AUSGANG DREHEN\nM   WELTKARTE\nRECHTSKLICK   BAU ABBRECHEN",
-		"R   ROTATE OUTPUT\nM   WORLD MAP\nRIGHT CLICK   CANCEL BUILD"), 11, MUTED)
+	tool_cost_label = _make_label("", 11, CYAN)
+	tool_cost_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tool_cost_label.custom_minimum_size.y = 30
+	side_col.add_child(tool_cost_label)
+	var hint := _make_label(_tr("R   AUSGANG DREHEN\nI   BAULAGER\nRECHTSKLICK   BAU ABBRECHEN",
+		"R   ROTATE OUTPUT\nI   INVENTORY\nRIGHT CLICK   CANCEL BUILD"), 11, MUTED)
 	side_col.add_child(hint)
 
 	# Inspector uses actual selection data and an illustrated machine portrait.
@@ -473,6 +486,11 @@ func _create_interface() -> void:
 	minimap.model = model
 	minimap.camera = camera
 	ui_layer.add_child(minimap)
+	storage_view = StorageView.new()
+	storage_view.name = "GlobalConstructionInventory"
+	storage_view.model = model
+	storage_view.german = german
+	ui_layer.add_child(storage_view)
 
 func _notice(message: String) -> void:
 	if status == null:
@@ -482,6 +500,24 @@ func _notice(message: String) -> void:
 		status.modulate = Color("#ffffff")
 		var tween := create_tween()
 		tween.tween_property(status, "modulate", Color("#9fd2c9"), 0.55)
+
+func _cost_text(kind: String) -> String:
+	if kind == "depot" and model.economy.free_depot_available:
+		return _tr("1x GRATIS", "1x FREE")
+	var pieces: Array[String] = []
+	var costs: Dictionary = model.building_cost(kind)
+	for item in costs:
+		var short := "Fe" if item == "iron_ingot" else (
+			"Cu" if item == "copper_ingot" else "Au")
+		pieces.append("%s %d" % [short, int(costs[item])])
+	return " · ".join(pieces)
+
+func _missing_text(kind: String) -> String:
+	var missing: Dictionary = model.missing_materials(kind)
+	var pieces: Array[String] = []
+	for item in missing:
+		pieces.append("%s %d" % [str(item).to_upper(), int(missing[item])])
+	return ", ".join(pieces)
 
 func _set_mode(next_mode: String) -> void:
 	_cancel_select_drag()
@@ -502,12 +538,14 @@ func _set_mode(next_mode: String) -> void:
 		quick_buttons[key].add_theme_stylebox_override("normal", _button_style(key == tool and mode == "build"))
 	tool_title.text = _tr("WERKZEUGE BEREIT", "TOOLS READY") if mode == "build" else _tr("AUSWAHLMODUS AKTIV", "INSPECTION ACTIVE")
 	motion_view.queue_redraw()
+	_refresh_ui()
 
 func _select_tool(name: String) -> void:
 	tool = name
 	_set_mode("build")
 	motion_view.tool = tool
-	_notice(_tr("Ausgewählt: ", "Selected: ") + name.to_upper())
+	_notice(_tr("Ausgewählt: ", "Selected: ") + name.to_upper() +
+		" · " + _cost_text(name))
 
 func notice_selection() -> void:
 	if model.buildings.has(inspected):
@@ -529,8 +567,9 @@ func _inspect(cell: Vector2i) -> void:
 func _refresh_ui() -> void:
 	if model == null or production == null:
 		return
-	var totals: Dictionary = model.delivered
-	var output := "%s  %d    ·    %s  %d    ·    %s  %d" % [
+	var totals: Dictionary = model.economy.stock
+	var output := "%s   %s %d  ·  %s %d  ·  %s %d" % [
+		_tr("BAULAGER", "BUILD STOCK"),
 		_tr("EISEN", "IRON"), int(totals.iron_ingot),
 		_tr("KUPFER", "COPPER"), int(totals.copper_ingot),
 		_tr("GOLD", "GOLD"), int(totals.gold_ingot)
@@ -551,6 +590,10 @@ func _refresh_ui() -> void:
 		construction_status.text = _tr("CASINO FERTIG", "CASINO COMPLETE")
 	fps_label.text = "FPS  %d" % Engine.get_frames_per_second()
 	pause_button.text = _tr("▶  WEITER", "▶  RESUME") if simulation_paused else _tr("Ⅱ  PAUSE", "Ⅱ  PAUSE")
+	if tool_cost_label != null and mode == "build":
+		tool_cost_label.text = _tr("BAUKOSTEN: ", "BUILD COST: ") + _cost_text(tool)
+		tool_cost_label.add_theme_color_override("font_color",
+			CYAN if model.economy.has_funds(tool) else DANGER)
 	_refresh_inspector()
 
 func _refresh_inspector() -> void:
@@ -573,11 +616,12 @@ func _refresh_inspector() -> void:
 	inspector_portrait.texture = _machine_icon(kind)
 	inspector_progress.visible = true
 	inspector_controls.visible = true
-	rotate_button.disabled = kind == "storage"
+	rotate_button.disabled = kind == "depot"
 	var label_name := {"miner": _tr("Abbaumaschine", "Mining drill"),
 		"belt": _tr("Förderband", "Conveyor belt"),
 		"smelter": _tr("Schmelzofen", "Smelting furnace"),
-		"storage": _tr("Lager", "Warehouse")}
+		"storage": _tr("Zwischenlager", "Warehouse"),
+		"depot": _tr("Globales Depot", "Global depot")}
 	inspector_title.text = label_name[kind]
 	inspector_subtitle.text = "%s  %d, %d     ·     %s  %s" % [
 		_tr("POSITION", "POSITION"), inspected.x, inspected.y,
@@ -600,10 +644,26 @@ func _refresh_inspector() -> void:
 				_tr("Tempo: 1 Barren / 2 Sekunden", "Rate: 1 ingot / 2 seconds"))
 			inspector_progress.value = clampf(100.0 * float(machine.progress) / 2.0, 0.0, 100.0)
 		"storage":
-			inspector_body.text = (_tr("Gemeinsame Lagerbilanz", "Shared warehouse totals") + "\n" +
-				_tr("Eisenbarren: ", "Iron ingots: ") + str(model.delivered.iron_ingot) + "\n" +
-				_tr("Kupferbarren: ", "Copper ingots: ") + str(model.delivered.copper_ingot) + "\n" +
-				_tr("Goldbarren: ", "Gold ingots: ") + str(model.delivered.gold_ingot))
+			var inventory: Dictionary = machine.get("inventory", {})
+			var used := 0
+			for quantity in inventory.values():
+				used += int(quantity)
+			var listing := []
+			for material in inventory:
+				if int(inventory[material]) > 0:
+					listing.append("%s %d" % [str(material), int(inventory[material])])
+			inspector_body.text = _tr("Lokales Zwischenlager", "Local warehouse buffer") + \
+				"\n%d/%d   ·   %s" % [used, Model.WAREHOUSE_CAPACITY, (
+				", ".join(listing) if not listing.is_empty() else _tr("Leer", "Empty"))] + \
+				"\n" + _tr("Gibt Waren über den Ausgang weiter", "Forwards goods via its output")
+			inspector_progress.value = 100.0 * float(used) / float(Model.WAREHOUSE_CAPACITY)
+		"depot":
+			inspector_body.text = _tr("Alle eingehenden Materialien", "All arriving materials") + \
+				"\n" + _tr("werden dem Baulager gutgeschrieben.", "credit the global build inventory.") + \
+				"\nFe %d    Cu %d    Au %d" % [
+					model.economy.available("iron_ingot"),
+					model.economy.available("copper_ingot"),
+					model.economy.available("gold_ingot")]
 			inspector_progress.value = 100.0
 
 func _rotate_selected() -> void:
@@ -616,7 +676,9 @@ func _demolish_selected() -> void:
 	if model.erase(inspected):
 		static_view.refresh_cell(inspected)
 		_inspect(Vector2i(-1, -1))
-		_notice(_tr("Gebäude demontiert · Inhalt verworfen", "Building demolished · items discarded"))
+		_notice(_tr("Gebäude entfernt · 100 % bezahlte Baukosten erstattet",
+			"Machine removed · 100% of paid build materials refunded"))
+		_refresh_ui()
 
 func _toggle_pause() -> void:
 	simulation_paused = not simulation_paused
@@ -663,7 +725,18 @@ func _on_construction_phase(number: int) -> void:
 		"Casino construction phase %02d completed") % number)
 	_refresh_ui()
 
+func _toggle_storage() -> void:
+	if storage_view.visible:
+		storage_view.close_inventory()
+		return
+	minimap.hide_map()
+	_cancel_select_drag()
+	moving_camera = false
+	storage_view.open_inventory()
+
 func _toggle_minimap() -> void:
+	if storage_view.visible:
+		storage_view.close_inventory()
 	if minimap.visible:
 		minimap.hide_map()
 		return
@@ -692,6 +765,8 @@ func _new_factory() -> void:
 	terrain_view.refresh_from_model()
 	minimap.model = model
 	minimap.refresh_map()
+	storage_view.model = model
+	storage_view.close_inventory()
 	construction_view.model = model
 	construction_view.queue_redraw()
 	static_view.model = model
@@ -716,6 +791,8 @@ func _show_menu(show: bool) -> void:
 	motion_view.menu_open = show
 	menu_mask.visible = show
 	if show:
+		storage_view.close_inventory()
+		minimap.hide_map()
 		confirming_new = false
 		new_button.text = _tr("NEUE FABRIK STARTEN", "START NEW FACTORY")
 		menu_card.modulate.a = 0.0 if not reduced_motion else 1.0
@@ -744,7 +821,7 @@ func _physics_process(delta: float) -> void:
 		_refresh_ui()
 
 func _process(delta: float) -> void:
-	if menu_open or minimap.visible:
+	if menu_open or minimap.visible or storage_view.visible:
 		return
 	var movement := Vector2.ZERO
 	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
@@ -790,7 +867,7 @@ func _begin_select_drag(screen_position: Vector2) -> void:
 func _input(event: InputEvent) -> void:
 	# This keeps panning when the cursor passes over a HUD panel. A short
 	# press/release still selects the original world cell.
-	if not selection_pending or minimap.visible:
+	if not selection_pending or minimap.visible or storage_view.visible:
 		return
 	if event is InputEventMouseMotion:
 		if not selection_dragging and event.position.distance_to(selection_press_screen) >= SELECT_DRAG_THRESHOLD:
@@ -807,9 +884,18 @@ func _input(event: InputEvent) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if storage_view.visible:
+			if event.keycode == KEY_I or event.keycode == KEY_ESCAPE:
+				storage_view.close_inventory()
+			get_viewport().set_input_as_handled()
+			return
 		if minimap.visible:
 			if event.keycode == KEY_M or event.keycode == KEY_ESCAPE:
 				minimap.hide_map()
+			get_viewport().set_input_as_handled()
+			return
+		if not menu_open and event.keycode == KEY_I:
+			_toggle_storage()
 			get_viewport().set_input_as_handled()
 			return
 		if not menu_open and event.keycode == KEY_M:
@@ -828,7 +914,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_set_mode("inspect")
 		elif event.keycode == KEY_B:
 			_set_mode("build")
-		elif event.keycode >= KEY_1 and event.keycode <= KEY_4:
+		elif event.keycode >= KEY_1 and event.keycode <= KEY_5:
 			_select_tool(TOOLS[event.keycode - KEY_1])
 		elif event.keycode == KEY_R:
 			if mode == "build":
@@ -844,7 +930,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_C:
 			_focus_construction()
 		return
-	if menu_open or minimap.visible:
+	if menu_open or minimap.visible or storage_view.visible:
 		return
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
@@ -870,7 +956,12 @@ func _unhandled_input(event: InputEvent) -> void:
 					_begin_select_drag(event.position)
 				elif model.place(hovered, tool, facing):
 					static_view.refresh_cell(hovered)
-					_notice(_tr("Gebäude platziert", "Building placed"))
+					_notice(_tr("Gebäude platziert", "Building placed") +
+						" · " + _cost_text(tool))
+					_refresh_ui()
+				elif model.can_place_site(hovered, tool):
+					_notice(_tr("Fehlende Baumaterialien: ", "Missing build materials: ") +
+						_missing_text(tool))
 				else:
 					_notice(_tr("Bauplatz blockiert", "Building site blocked"))
 				get_viewport().set_input_as_handled()

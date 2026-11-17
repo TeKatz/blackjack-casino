@@ -6,6 +6,7 @@ const Atlas = preload("res://factory_atlas.gd")
 const BeltArt = preload("res://factory_belt_art.gd")
 const OreVariants = preload("res://factory_ore_variants.gd")
 const GoldArt = preload("res://factory_gold_art.gd")
+const DepotArt = preload("res://factory_depot_art.gd")
 const TILE := 48.0
 const DIRS := [Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT, Vector2.UP]
 const GOLD := Color("#F4BD59")
@@ -24,10 +25,13 @@ static func machine(canvas: CanvasItem, at: Vector2, kind: String, direction: in
 			canvas.draw_texture_rect(belt, Rect2(at, Vector2(48, 48)),
 				false, Color(1.0, 1.0, 1.0, opacity))
 	else:
-		var texture: Texture2D = Atlas.sprite(index)
+		var texture: Texture2D = DepotArt.texture() if kind == "depot" else Atlas.sprite(index)
 		if texture != null:
 			canvas.draw_texture_rect(texture, machine_destination(kind, at),
 				false, Color(1.0, 1.0, 1.0, opacity))
+		if kind == "depot":
+			canvas.draw_rect(Rect2(at + Vector2(17, 37), Vector2(15, 3)),
+				Color("#16D4F0", opacity * 0.64))
 	if ghost:
 		arrow(canvas, center, direction, GOLD, 19.0)
 		for c in [Vector2(2, 2), Vector2(46, 2), Vector2(2, 46), Vector2(46, 46)]:

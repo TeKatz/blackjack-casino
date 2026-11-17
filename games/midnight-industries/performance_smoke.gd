@@ -6,8 +6,8 @@ func _initialize() -> void:
 	for y in range(28, 72):
 		for x in range(24, 112):
 			var tile := Vector2i(x, y)
-			if sim.can_place(tile, "belt"):
-				sim.place(tile, "belt", 0)
+			if sim.can_place_site(tile, "belt"):
+				sim.place(tile, "belt", 0, true)
 	var total: int = int(sim.buildings.size())
 	if total < 3000:
 		push_error("Factory scale test did not create enough buildings: %d" % total)

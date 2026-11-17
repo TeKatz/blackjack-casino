@@ -63,6 +63,8 @@ func _draw() -> void:
 					_smelter_vfx(at, machine, cell)
 				"storage":
 					_storage_vfx(at, cell)
+				"depot":
+					_depot_vfx(at, cell)
 	_selection_vfx()
 	if menu_open or not model.inside(hovered):
 		return
@@ -131,6 +133,16 @@ func _storage_vfx(at: Vector2, cell: Vector2i) -> void:
 	var phase := 0.85 if reduced_motion else 0.75 + sin(tick * 2.4 + cell.x) * 0.20
 	draw_circle(at + Vector2(38, 36), 3.2, Color(CYAN, phase * 0.4))
 	draw_circle(at + Vector2(38, 36), 1.6, Color(CYAN, phase))
+
+func _depot_vfx(at: Vector2, cell: Vector2i) -> void:
+	var pulse := 0.78 if reduced_motion else 0.74 + 0.18 * sin(tick * 2.3 + float(cell.x))
+	draw_circle(at + Vector2(25, 13), 5.5,
+		Color("#00C4E4", 0.11 * pulse))
+	draw_circle(at + Vector2(25, 13), 2.8,
+		Color("#9CECF6", 0.55 * pulse))
+	if not reduced_motion:
+		draw_line(at + Vector2(16, 40), at + Vector2(32, 40),
+			Color("#19D3EC", 0.26 + 0.28 * pulse), 1.7)
 
 func _selection_vfx() -> void:
 	if not model.inside(inspected) or not model.buildings.has(inspected):

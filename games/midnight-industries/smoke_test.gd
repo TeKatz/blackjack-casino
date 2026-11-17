@@ -3,18 +3,19 @@ const Model = preload("res://factory_model.gd")
 const Construction = preload("res://factory_construction.gd")
 const World = preload("res://factory_world.gd")
 const GoldArt = preload("res://factory_gold_art.gd")
+const Economy = preload("res://factory_economy.gd")
 
 func _initialize() -> void:
 	var model = Model.new(false)
 	assert(not model.place(Vector2i(0, 0), "miner", 0), "Miner placed off ore")
 	assert(not model.place(Vector2i(-1, 0), "belt", 0), "Outside placement allowed")
-	assert(model.place(Vector2i(16, 17), "miner", 0))
+	assert(model.place(Vector2i(16, 17), "miner", 0, true))
 	for x in range(17, 21):
-		assert(model.place(Vector2i(x, 17), "belt", 0))
-	assert(model.place(Vector2i(21, 17), "smelter", 0))
+		assert(model.place(Vector2i(x, 17), "belt", 0, true))
+	assert(model.place(Vector2i(21, 17), "smelter", 0, true))
 	for x in range(22, 25):
 		assert(model.place(Vector2i(x, 17), "belt", 0))
-	assert(model.place(Vector2i(25, 17), "storage", 0))
+	assert(model.place(Vector2i(25, 17), "depot", 0, true))
 	for i in range(320):
 		model.advance(0.25)
 	if int(model.delivered.iron_ingot) < 8:
@@ -107,11 +108,11 @@ func _initialize() -> void:
 	var gold_line = Model.new(false)
 	var gold_cell := Vector2i(205, 154)
 	assert(gold_line.resources.get(gold_cell) == "gold")
-	assert(gold_line.place(gold_cell, "miner", 0))
-	assert(gold_line.place(gold_cell + Vector2i(1, 0), "belt", 0))
-	assert(gold_line.place(gold_cell + Vector2i(2, 0), "smelter", 0))
-	assert(gold_line.place(gold_cell + Vector2i(3, 0), "belt", 0))
-	assert(gold_line.place(gold_cell + Vector2i(4, 0), "storage", 0))
+	assert(gold_line.place(gold_cell, "miner", 0, true))
+	assert(gold_line.place(gold_cell + Vector2i(1, 0), "belt", 0, true))
+	assert(gold_line.place(gold_cell + Vector2i(2, 0), "smelter", 0, true))
+	assert(gold_line.place(gold_cell + Vector2i(3, 0), "belt", 0, true))
+	assert(gold_line.place(gold_cell + Vector2i(4, 0), "depot", 0, true))
 	for iteration in range(120):
 		gold_line.advance(Model.STEP)
 	assert(int(gold_line.delivered.gold_ingot) > 0)
@@ -128,7 +129,7 @@ func _initialize() -> void:
 	assert(not migrated.water.has(Vector2i(61, 47)))
 	var entrance := Construction.ORIGIN + Vector2i(-1, 5)
 	var parked = Model.new(false)
-	assert(parked.place(entrance, "belt", 0))
+	assert(parked.place(entrance, "belt", 0, true))
 	parked.buildings[entrance].item = "iron_ingot"
 	parked.advance(Model.STEP)
 	assert(parked.buildings[entrance].item == "iron_ingot")
@@ -140,7 +141,7 @@ func _initialize() -> void:
 		"phase_01": {"iron_ingot": 2},
 		"phase_02": {"copper_ingot": 1}
 	}, {"future_assembler": 1}, {"future_board": 2})
-	assert(staged.place(entrance, "belt", 0))
+	assert(staged.place(entrance, "belt", 0, true))
 	assert(not staged.construction.is_machine_unlocked("future_assembler"))
 	assert(not staged.construction.is_recipe_unlocked("future_board"))
 	staged.buildings[entrance].item = "iron_ingot"
@@ -165,6 +166,7 @@ func _initialize() -> void:
 	# machines on the new lot, must remain importable.
 	var legacy_snapshot: Dictionary = model.snapshot()
 	legacy_snapshot.erase("construction")
+	legacy_snapshot.erase("economy")
 	legacy_snapshot["machines"].append({
 		"x": Construction.ORIGIN.x, "y": Construction.ORIGIN.y,
 		"kind": "belt", "direction": 0, "item": "",
@@ -178,5 +180,78 @@ func _initialize() -> void:
 	var corrupted: Dictionary = progress_snapshot.duplicate(true)
 	corrupted["construction"]["completed_phases"] = 13
 	assert(not Model.new(false).restore(corrupted))
+	# Construction economy: genuine insufficient-material rejection, exact
+	# debit, 100% refund and no refunds for complimentary starter units.
+	assert(Economy.COSTS.size() == 5)
+	var economy_test = Model.new(false)
+	var cost_cell := Vector2i(16, 17)
+	assert(not economy_test.can_place(cost_cell, "miner"))
+	assert(not economy_test.place(cost_cell, "miner", 0))
+	assert(economy_test.economy.available("iron_ingot") == 0)
+	assert(economy_test.economy.credit("iron_ingot", 8))
+	assert(economy_test.can_place(cost_cell, "miner"))
+	assert(economy_test.place(cost_cell, "miner", 0))
+	assert(economy_test.economy.available("iron_ingot") == 0)
+	assert(economy_test.buildings[cost_cell]["paid"]["iron_ingot"] == 8)
+	assert(economy_test.erase(cost_cell))
+	assert(economy_test.economy.available("iron_ingot") == 8)
+	assert(economy_test.place(cost_cell, "miner", 0, true))
+	assert(economy_test.erase(cost_cell))
+	assert(economy_test.economy.available("iron_ingot") == 8)
+	# Copper bootstrap makes a paid furnace possible after iron production.
+	assert(economy_test.economy.available("copper_ingot") >= 6)
+	assert(economy_test.economy.credit("iron_ingot", 4))
+	assert(economy_test.place(Vector2i(30, 17), "smelter", 0))
+	assert(economy_test.economy.available("iron_ingot") == 0)
+	assert(economy_test.economy.available("copper_ingot") == Economy.START_COPPER - 6)
+	assert(economy_test.erase(Vector2i(30, 17)))
+	assert(economy_test.economy.available("iron_ingot") == 12)
+	assert(economy_test.economy.available("copper_ingot") == Economy.START_COPPER)
+	# Warehouse is a local buffer, NOT the same as the global bank. It must
+	# send physical cargo onward into a depot before money increases.
+	var logistics = Model.new(false)
+	var entry := Vector2i(30, 17)
+	assert(logistics.place(entry, "belt", 0, true))
+	assert(logistics.place(entry + Vector2i(1, 0), "storage", 0, true))
+	assert(logistics.place(entry + Vector2i(2, 0), "depot", 0, true))
+	logistics.buildings[entry].item = "iron_ingot"
+	logistics.advance(Model.STEP)
+	assert(logistics.economy.available("iron_ingot") == 0)
+	assert(logistics.buildings[entry + Vector2i(1, 0)]["inventory"]["iron_ingot"] == 1)
+	logistics.advance(Model.STEP)
+	assert(logistics.economy.available("iron_ingot") == 1)
+	assert(logistics.buildings[entry + Vector2i(1, 0)]["inventory"].is_empty())
+	var logistics_save: Dictionary = logistics.snapshot()
+	var logistics_loaded = Model.new(false)
+	assert(logistics_loaded.restore(logistics_save))
+	assert(logistics_loaded.snapshot() == logistics_save)
+	# The first free depot voucher is one-use; no paid construction costs
+	# can be fabricated by demolishing the complimentary depot.
+	var voucher = Model.new(false)
+	voucher.economy.free_depot_available = true
+	assert(voucher.place(Vector2i(31, 17), "depot", 0))
+	assert(not voucher.economy.free_depot_available)
+	assert(voucher.erase(Vector2i(31, 17)))
+	assert(voucher.economy.available("iron_ingot") == 0)
+	assert(not voucher.can_place(Vector2i(31, 17), "depot"))
+	# Existing warehouse counters become spendable exactly once. Save/restore
+	# carries the bank separately, so a reload must not mint them again.
+	var old_factory: Dictionary = logistics_save.duplicate(true)
+	old_factory.erase("economy")
+	for machine in old_factory["machines"]:
+		if machine["kind"] == "depot":
+			machine["kind"] = "storage"
+		machine.erase("inventory")
+		machine.erase("paid")
+	old_factory["delivered"]["iron_ingot"] = 47
+	var loaded_old = Model.new(false)
+	assert(loaded_old.restore(old_factory))
+	assert(loaded_old.economy.available("iron_ingot") == 47)
+	assert(loaded_old.economy.available("copper_ingot") >= Economy.START_COPPER)
+	var migrated_once: Dictionary = loaded_old.snapshot()
+	var loaded_twice = Model.new(false)
+	assert(loaded_twice.restore(migrated_once))
+	assert(loaded_twice.economy.available("iron_ingot") == 47)
+	assert(loaded_twice.snapshot() == migrated_once)
 	print("Midnight Industries factory simulation smoke PASS")
 	quit()

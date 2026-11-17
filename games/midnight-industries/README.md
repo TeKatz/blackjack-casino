@@ -25,18 +25,19 @@ Colors: graphite `#111A21`, steel `#273743`, illuminated amber `#F5C04A`, neon c
 | Middle-drag / mouse wheel | Pan (all modes) / zoom |
 | V | Inspect/select mode; click to inspect a building |
 | B | Construction mode; click to place the active machine |
-| 1–4 | Choose mining drill, belt, furnace, warehouse |
+| 1–5 | Choose mining drill, belt, furnace, warehouse, depot |
 | R | Rotate build preview or selected machine |
 | Right click | Cancel build / clear selection (never destructive) |
 | Space | Pause production |
 | Ctrl+S | Save |
 | G or main-menu toggle | Show/hide the optional placement grid (visual preference saved separately) |
 | C or main-menu button | Center the camera on the casino construction site |
+| I or header Storage button | Open/close global depot construction inventory |
 | M | Open/close full-screen map (Escape also closes) |
 | Left-click inside world map | Recenter camera on that location and close map |
 | Escape | Open/close the main menu |
 
-The main menu supports continue, save, confirmed new factory, motion and grid settings, and **Save & Return to Casino**. The obsolete Sector Overview panel has been removed to free the right side of the screen. A built-in starter iron chain mines, transports, smelts and collects ingots. Copper deposits and additional patches allow building other chains.
+The main menu supports continue, save, confirmed new factory, motion and grid settings, and **Save & Return to Casino**. The obsolete Sector Overview panel has been removed to free the right side of the screen. A built-in starter iron chain mines, transports, smelts and deposits ingots to the global bank. Copper deposits and additional patches allow building other chains.
 
 ## Project Midnight — construction and progression foundation
 
@@ -62,6 +63,28 @@ Current factory recipes, throughput, production ticks, warehouse counters and ca
 - Existing saves remain readable. Older miners on relocated ore are preserved with local legacy ore underneath them, and previously built factory cells are kept clear of newly generated water. Gold totals default to zero for older saves. Save version stays v1.
 
 All twelve casino phase requirements remain deliberately empty; the new mineral and geography update does not invent any construction quotas.
+## Depots, construction costs and the global build inventory
+
+The factory now has a physical **Depot** machine (tool **5**) and a separate global materials economy in `factory_economy.gd`. No factory building is free to place repeatedly: each normal placement checks the global depot stock and removes the entire cost atomically; insufficient stock leaves the world and balance unchanged.
+
+| Machine | Materials |
+| --- | --- |
+| Mining drill | 8 iron ingots |
+| Conveyor belt | 1 iron ingot per tile |
+| Smelting furnace | 12 iron ingots + 6 copper ingots |
+| Warehouse | 15 iron ingots |
+| Depot | 20 iron ingots + 10 copper ingots |
+
+- **Depot** is a one-tile conveyor destination with a separate metallic/cyan sprite. Every item delivered physically to any depot adds one unit to the **global, uncapped** spendable inventory, accessible from anywhere on the map. Depots do not output goods automatically.
+- **Warehouse** no longer spends material into a global counter. It has its own local **64-item buffer**, accepts all six current material types and sends inventory out along its chosen direction when a receiving belt or depot is available. The Warehouse inspector reports the real local buffer.
+- The permanent casino construction site still receives only physical deliveries to its 48 perimeter intakes. Those requirements and its 12-phase progress remain **completely separate** from the global machine-building bank.
+- The **I** key or **Lager [I] / Storage [I]** header button opens the full-screen construction inventory: six material stocks, costs, available/short materials and connected depot count. **I/Escape** closes it. In Build mode, the selected machine's cost and affordability are shown in the catalog and a red build preview indicates insufficient stock. The keyboard has **1–5** quick slots.
+- **New games** spawn with the original functional starter production line feeding a **complimentary depot at (25,17)**. A one-time 12-copper-ingot bootstrap inventory avoids the smelting-cost bootstrap paradox; iron is still produced and physically delivered. Starter structures are recorded as unpaid.
+- **100% of actually paid construction resources** are returned when a machine is demolished, including depots and individual conveyor pieces. Free starter/gifted machines refund nothing, so they cannot be farmed for resources. Contents inside a demolished warehouse or machine are discarded; only its paid construction bill is refunded.
+- **Existing save games** import old Warehouse delivered totals as global inventory exactly once, preserving already produced materials. When possible the migration attaches one complimentary depot to an existing Warehouse's output; otherwise it grants a single free depot placement voucher. Subsequent saves store the global stock, one-time voucher, per-warehouse buffers and actual paid construction bills without changing the save version.
+
+All original iron/copper/gold production recipes remain available. More expensive higher-tier recipes and machines can later use this same economy and the pre-existing casino-phase unlock registry.
+
 ## Validation
 
 ```sh

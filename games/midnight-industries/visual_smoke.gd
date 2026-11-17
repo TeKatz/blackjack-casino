@@ -5,6 +5,7 @@ const UiSkin = preload("res://factory_skin.gd")
 const Art = preload("res://factory_art.gd")
 const BeltArt = preload("res://factory_belt_art.gd")
 const OreVariants = preload("res://factory_ore_variants.gd")
+const DepotArt = preload("res://factory_depot_art.gd")
 
 func _initialize() -> void:
 	call_deferred("_run")
@@ -132,6 +133,10 @@ func _run() -> void:
 		if repaired_storage.get_pixel(26, y) != original_storage.get_pixel(3 * 144 + 143 - 26, y):
 			_fail("Warehouse left-side geometry was not actually repaired")
 			return
+	var depot_art: Texture2D = DepotArt.texture()
+	if depot_art == null or depot_art.get_width() != 144:
+		_fail("Dedicated illustrated depot machine texture is unavailable")
+		return
 	if Art.machine_destination("smelter", Vector2.ZERO).position.y >= 0.0:
 		_fail("Furnace outlet was not moved up to belt height")
 		return
@@ -159,10 +164,10 @@ func _run() -> void:
 	if side_panel.visible:
 		_fail("Build catalog must retract when returning to selection")
 		return
-	if game.tool_buttons.size() != 4 or game.quick_buttons.size() != 4:
+	if game.tool_buttons.size() != 5 or game.quick_buttons.size() != 5:
 		_fail("Visual machine catalog or quick access deck is incomplete")
 		return
-	for kind in ["miner", "belt", "smelter", "storage"]:
+	for kind in ["miner", "belt", "smelter", "storage", "depot"]:
 		var icon: Texture2D = game.tool_buttons[kind].icon
 		if icon == null or icon.get_width() != 144:
 			_fail("Illustrated machine is missing from the build catalog: " + kind)

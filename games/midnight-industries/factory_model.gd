@@ -1,6 +1,7 @@
 extends RefCounted
 const Construction = preload("res://factory_construction.gd")
 const World = preload("res://factory_world.gd")
+const Economy = preload("res://factory_economy.gd")
 ## Authoritative, renderer-independent fixed-step factory model.
 ## Machines are compact dictionaries keyed by cell; no per-item scene nodes.
 const WIDTH := 224
@@ -10,8 +11,10 @@ const DIRS := [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]
 const SAVE_VERSION := 1
 const SAVE_FILE := "user://midnight-industries-v1.json"
 const MAX_BUFFER := 8
+const WAREHOUSE_CAPACITY := 64
 
 var construction
+var economy
 var resources: Dictionary = {}
 var water: Dictionary = {}
 var buildings: Dictionary = {}
@@ -26,16 +29,19 @@ var cells_dirty := true
 
 func _init(with_starter: bool = true) -> void:
 	construction = Construction.new()
+	economy = Economy.new()
 	_seed_resources()
 	if with_starter:
 		# A functioning introductory iron line, intended to be extended.
-		place(Vector2i(16, 17), "miner", 0)
+		place(Vector2i(16, 17), "miner", 0, true)
 		for x in range(17, 21):
-			place(Vector2i(x, 17), "belt", 0)
-		place(Vector2i(21, 17), "smelter", 0)
+			place(Vector2i(x, 17), "belt", 0, true)
+		place(Vector2i(21, 17), "smelter", 0, true)
 		for x in range(22, 25):
-			place(Vector2i(x, 17), "belt", 0)
-		place(Vector2i(25, 17), "storage", 0)
+			place(Vector2i(x, 17), "belt", 0, true)
+		# One free depot already wired into the original iron line. Copper
+		# bootstrap stock lets players build their first copper smelter.
+		place(Vector2i(25, 17), "depot", 0, true)
 
 func _seed_resources() -> void:
 	# One deterministic geography source drives ore, water, collisions and map.
@@ -44,33 +50,53 @@ func _seed_resources() -> void:
 func inside(cell: Vector2i) -> bool:
 	return cell.x >= 0 and cell.y >= 0 and cell.x < WIDTH and cell.y < HEIGHT
 
-func can_place(cell: Vector2i, kind: String) -> bool:
-	# The casino foundation is permanent terrain. Existing older-save
-	# machines inside its footprint are still restored and kept working,
-	# but no new machines can be placed on the protected build site.
-	if not inside(cell) or water.has(cell) or construction.inside(cell) or buildings.has(cell):
+func can_place_site(cell: Vector2i, kind: String) -> bool:
+	# Geography and technology checks are separate from affordability. They
+	# also power the editor preview's distinct blocked/insufficient states.
+	if not inside(cell) or water.has(cell) or construction.inside(cell) \
+		or buildings.has(cell):
 		return false
-	if not construction.is_machine_unlocked(kind):
+	if not construction.is_machine_unlocked(kind) or not economy.registered(kind):
 		return false
 	if kind == "miner":
 		return resources.has(cell)
-	# Logistics can be built across a deposit; only miners extract it.
-	return kind in ["belt", "smelter", "storage"]
+	return true
 
-func place(cell: Vector2i, kind: String, direction: int) -> bool:
-	if not can_place(cell, kind):
-		return false
-	buildings[cell] = {
+func can_place(cell: Vector2i, kind: String) -> bool:
+	return can_place_site(cell, kind) and economy.has_funds(kind)
+
+func building_cost(kind: String) -> Dictionary:
+	return economy.cost(kind)
+
+func missing_materials(kind: String) -> Dictionary:
+	return economy.missing(kind)
+
+func _make_machine(kind: String, direction: int, paid: Dictionary = {}) -> Dictionary:
+	return {
 		"kind": kind, "direction": posmod(direction, 4), "item": "",
 		"buffer": 0, "ore": 0, "output": 0,
 		"recipe": "", "progress": 0.0,
+		"inventory": {}, "paid": paid.duplicate()
 	}
+
+func place(cell: Vector2i, kind: String, direction: int,
+	bootstrap: bool = false) -> bool:
+	if not can_place_site(cell, kind):
+		return false
+	var paid: Dictionary = {}
+	if not bootstrap:
+		if not economy.has_funds(kind):
+			return false
+		paid = economy.pay(kind)
+	buildings[cell] = _make_machine(kind, direction, paid)
 	cells_dirty = true
 	return true
 
 func erase(cell: Vector2i) -> bool:
 	if not buildings.has(cell):
 		return false
+	var machine: Dictionary = buildings[cell]
+	economy.refund(machine.get("paid", {}))
 	buildings.erase(cell)
 	transit.erase(cell)
 	cells_dirty = true
@@ -100,6 +126,19 @@ func _less_cell(a: Vector2i, b: Vector2i) -> bool:
 		return a.x < b.x
 	return a.y < b.y
 
+func _warehouse_item(machine: Dictionary) -> String:
+	var items: Dictionary = machine.get("inventory", {})
+	for material in Economy.MATERIALS:
+		if int(items.get(material, 0)) > 0:
+			return material
+	return ""
+
+func _warehouse_load(machine: Dictionary) -> int:
+	var total := 0
+	for quantity in machine.get("inventory", {}).values():
+		total += int(quantity)
+	return total
+
 func _outgoing(cell: Vector2i, machine: Dictionary) -> String:
 	match machine.kind:
 		"miner":
@@ -110,6 +149,8 @@ func _outgoing(cell: Vector2i, machine: Dictionary) -> String:
 		"smelter":
 			if machine.output > 0:
 				return str(machine.recipe) + "_ingot"
+		"storage":
+			return _warehouse_item(machine)
 	return ""
 
 func _can_receive(machine: Dictionary, item: String) -> bool:
@@ -123,7 +164,10 @@ func _can_receive(machine: Dictionary, item: String) -> bool:
 				return false
 			return machine.ore < MAX_BUFFER and (machine.recipe == "" or machine.recipe == item.trim_suffix("_ore"))
 		"storage":
-			return delivered.has(item)
+			return item in Economy.MATERIALS \
+				and _warehouse_load(machine) < WAREHOUSE_CAPACITY
+		"depot":
+			return item in Economy.MATERIALS
 	return false
 
 func _remove_output(machine: Dictionary) -> void:
@@ -134,6 +178,13 @@ func _remove_output(machine: Dictionary) -> void:
 			machine.item = ""
 		"smelter":
 			machine.output -= 1
+		"storage":
+			var item: String = _warehouse_item(machine)
+			if item != "":
+				var inventory: Dictionary = machine["inventory"]
+				inventory[item] = int(inventory.get(item, 0)) - 1
+				if int(inventory[item]) <= 0:
+					inventory.erase(item)
 
 func _receive(machine: Dictionary, item: String) -> void:
 	match machine.kind:
@@ -143,7 +194,12 @@ func _receive(machine: Dictionary, item: String) -> void:
 			machine.recipe = item.trim_suffix("_ore")
 			machine.ore += 1
 		"storage":
-			delivered[item] = int(delivered[item]) + 1
+			var inventory: Dictionary = machine["inventory"]
+			inventory[item] = int(inventory.get(item, 0)) + 1
+		"depot":
+			# Only an actual physical delivery creates spendable inventory.
+			if economy.credit(item):
+				delivered[item] = int(delivered.get(item, 0)) + 1
 
 func _step() -> void:
 	steps += 1
@@ -216,9 +272,12 @@ func snapshot() -> Dictionary:
 			"x": cell.x, "y": cell.y, "kind": b.kind, "direction": b.direction,
 			"item": b.item, "buffer": b.buffer, "ore": b.ore,
 			"output": b.output, "recipe": b.recipe, "progress": b.progress,
+			"inventory": b.get("inventory", {}).duplicate(),
+			"paid": b.get("paid", {}).duplicate(),
 		})
 	return {"version": SAVE_VERSION, "steps": steps, "delivered": delivered.duplicate(),
-		"machines": machines, "construction": construction.snapshot()}
+		"machines": machines, "construction": construction.snapshot(),
+		"economy": economy.snapshot()}
 
 func restore(data: Variant) -> bool:
 	if typeof(data) != TYPE_DICTIONARY or data.get("version", 0) != SAVE_VERSION:
@@ -242,7 +301,7 @@ func restore(data: Variant) -> bool:
 		if kind == "miner" and not migrated_resources.has(cell):
 			if not World.restore_legacy_miner(cell, migrated_resources, migrated_water):
 				return false
-		if kind != "miner" and not kind in ["belt", "smelter", "storage"]:
+		if kind != "miner" and not kind in ["belt", "smelter", "storage", "depot"]:
 			return false
 		var direction := int(raw.get("direction", -1))
 		if direction < 0 or direction >= 4:
@@ -260,14 +319,57 @@ func restore(data: Variant) -> bool:
 		var progress := float(raw.get("progress", 0.0))
 		if buffer < 0 or buffer > MAX_BUFFER or ore < 0 or ore > MAX_BUFFER or output < 0 or output > MAX_BUFFER or not is_finite(progress) or progress < 0.0 or progress > 2.0:
 			return false
+		var inventory: Variant = raw.get("inventory", {})
+		var paid: Variant = raw.get("paid", {})
+		if typeof(inventory) != TYPE_DICTIONARY or typeof(paid) != TYPE_DICTIONARY:
+			return false
+		var stored: Dictionary = {}
+		var total_stored := 0
+		for material in inventory:
+			if not material in Economy.MATERIALS:
+				return false
+			var count: Variant = inventory[material]
+			if typeof(count) != TYPE_INT or int(count) < 0:
+				return false
+			total_stored += int(count)
+			stored[material] = int(count)
+		if (kind != "storage" and not stored.is_empty()) or total_stored > WAREHOUSE_CAPACITY:
+			return false
+		var actual_paid: Dictionary = {}
+		var expected: Dictionary = economy.cost(kind)
+		for material in paid:
+			if not expected.has(material) or typeof(paid[material]) != TYPE_INT \
+				or int(paid[material]) != int(expected[material]):
+				return false
+			actual_paid[material] = int(paid[material])
 		loaded[cell] = {
 			"kind": kind, "direction": direction, "item": item,
 			"buffer": buffer, "ore": ore, "output": output,
 			"recipe": recipe, "progress": progress,
+			"inventory": stored, "paid": actual_paid
 		}
 	var restored_construction = Construction.new()
 	if not restored_construction.restore(data.get("construction", {})):
 		return false
+	var restored_economy = Economy.new()
+	var has_wallet := data.has("economy")
+	if has_wallet:
+		if not restored_economy.restore(data["economy"]):
+			return false
+	else:
+		restored_economy.restore_legacy(totals)
+		# Old warehouses used to consume items directly into delivered totals.
+		# Keep their current layout and attach one free depot to a warehouse
+		# outlet when possible. Otherwise preserve a free placement voucher.
+		for cell in loaded.keys():
+			if str(loaded[cell]["kind"]) != "storage":
+				continue
+			var after: Vector2i = cell + DIRS[int(loaded[cell]["direction"])]
+			if inside(after) and not loaded.has(after) and not migrated_water.has(after) \
+				and not restored_construction.inside(after):
+				loaded[after] = _make_machine("depot", 0)
+				restored_economy.free_depot_available = false
+				break
 	var new_totals := {}
 	for key in delivered.keys():
 		var amount := int(totals.get(key, 0))
@@ -279,6 +381,7 @@ func restore(data: Variant) -> bool:
 	for cell in loaded:
 		migrated_water.erase(cell)
 	construction = restored_construction
+	economy = restored_economy
 	resources = migrated_resources
 	water = migrated_water
 	buildings = loaded
@@ -320,7 +423,7 @@ func load_game() -> bool:
 	return false
 
 func counts() -> Dictionary:
-	var totals := {"miner": 0, "belt": 0, "smelter": 0, "storage": 0}
+	var totals := {"miner": 0, "belt": 0, "smelter": 0, "storage": 0, "depot": 0}
 	for building in buildings.values():
 		totals[building.kind] += 1
 	return totals

@@ -49,6 +49,10 @@ func _run() -> void:
 	game.facing = 1
 	game.motion_view.facing = 1
 	var target := Vector2i(26, 17)
+	if game.model.can_place(target, "belt"):
+		_fail("Starter factory must not get free unlimited build materials", game)
+		return
+	game.model.economy.credit("iron_ingot", 3)
 	if not game.model.place(target, "belt", game.facing):
 		_fail("belt placement rejected", game)
 		return
@@ -77,6 +81,23 @@ func _run() -> void:
 	game._demolish_selected()
 	if game.model.buildings.has(target):
 		_fail("inspector demolish failed", game)
+		return
+	if game.model.economy.available("iron_ingot") != 3:
+		_fail("Demolition did not refund the full paid belt price", game)
+		return
+	if game.storage_view == null or game.storage_view.visible:
+		_fail("Global stock overlay must start hidden", game)
+		return
+	game._toggle_storage()
+	if not game.storage_view.visible or game.storage_view.model != game.model:
+		_fail("I inventory did not open on the shared build storage", game)
+		return
+	game._toggle_storage()
+	if game.storage_view.visible:
+		_fail("I inventory did not close", game)
+		return
+	if game.tool_buttons.size() != 5 or game.quick_buttons.size() != 5:
+		_fail("Depot missing from five-item build catalog", game)
 		return
 	print("Midnight Industries menu, inspector and build visual smoke PASS")
 	game.queue_free()
