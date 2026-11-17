@@ -12,6 +12,9 @@ const UiSkin = preload("res://factory_skin.gd")
 const Atlas = preload("res://factory_atlas.gd")
 const DepotArt = preload("res://factory_depot_art.gd")
 const StorageView = preload("res://factory_storage_view.gd")
+const WorldManager = preload("res://world_manager.gd")
+const Settings = preload("res://industries_settings.gd")
+const Navigation = preload("res://factory_navigation.gd")
 const TILE := 48.0
 const GOLD := Color("#F5C04A")
 const CYAN := Color("#00D8F4")
@@ -81,24 +84,36 @@ var resume_button: Button
 var new_button: Button
 var effects_button: Button
 var confirming_new := false
+var worlds
+var settings
+var navigation: Control
+var current_world := ""
+var played_since_save := 0.0
+var saved_view: Dictionary = {}
+var hover_tweens: Dictionary = {}
 
 func _ready() -> void:
-	# Avoid unlimited rendering load when the window is idle or on high-refresh monitors.
-	Engine.max_fps = 60
-	german = not "--language=en" in OS.get_cmdline_user_args()
-	model = Model.new()
-	var previous: bool = model.load_game()
+	settings = Settings.new()
+	worlds = WorldManager.new()
+	german = str(settings.values.language) != "en"
+	if "--language=en" in OS.get_cmdline_user_args():
+		german = false
+	# No world is simulated/overwritten until the player explicitly chooses
+	# Continue, Load or New World in the recovered main menu.
+	model = Model.new(false)
 	model.construction.phase_completed.connect(_on_construction_phase)
-	_load_visual_settings()
+	show_grid = bool(settings.values.grid)
 	camera.position = Vector2(21, 18) * TILE
 	camera.zoom = Vector2.ONE
 	_create_world()
 	_create_interface()
 	_set_mode("inspect")
 	_refresh_ui()
-	_show_menu(true)
-	_notice(_tr("Spielstand geladen", "Save restored") if previous else
-		_tr("Starterproduktion aufgebaut", "Starter line initialized"))
+	menu_mask.hide()
+	navigation.show_start()
+	menu_open = true
+	motion_view.menu_open = true
+	apply_settings()
 	get_tree().auto_accept_quit = false
 
 func _tr(de: String, en: String) -> String:
@@ -180,10 +195,16 @@ func _button(value: String, handler: Callable, destructive: bool = false) -> But
 	return b
 
 func _button_hover(b: Button, entered: bool) -> void:
-	if reduced_motion:
+	if reduced_motion or not is_instance_valid(b):
 		return
+	if hover_tweens.has(b):
+		var previous: Tween = hover_tweens[b]
+		if previous != null and previous.is_running():
+			previous.kill()
 	var tween := create_tween()
-	tween.tween_property(b, "modulate", Color.WHITE if entered else Color("#DDE7EC"), 0.16)
+	hover_tweens[b] = tween
+	tween.tween_property(b, "modulate",
+		Color.WHITE if entered else Color("#DDE7EC"), 0.13)
 
 func _section_title(text_value: String) -> VBoxContainer:
 	var group := VBoxContainer.new()
@@ -463,6 +484,10 @@ func _create_interface() -> void:
 	menu_col.add_child(_button(_tr("⌖   ZUM CASINO-BAUPLATZ [C]", "⌖   FIND CASINO SITE [C]"),
 		_focus_construction))
 	menu_col.add_child(_button(_tr("▣   SPIELSTAND SPEICHERN", "▣   SAVE PROGRESS"), _save_now))
+	menu_col.add_child(_button(_tr("⚙   EINSTELLUNGEN", "⚙   SETTINGS"),
+		func() -> void: navigation.open_settings()))
+	menu_col.add_child(_button(_tr("↩   WELTEN UND SPIELSTÄNDE", "↩   WORLDS & SAVES"),
+		return_to_main))
 	effects_button = _button(_tr("✦   ANIMATIONEN: AN", "✦   ANIMATIONS: ON"), _toggle_effects)
 	menu_col.add_child(effects_button)
 	grid_button = _button("", _toggle_grid)
@@ -470,6 +495,7 @@ func _create_interface() -> void:
 	_refresh_grid_button()
 	new_button = _button(_tr("＋   NEUE FABRIK STARTEN", "＋   START NEW FACTORY"), _new_factory, true)
 	menu_col.add_child(new_button)
+	new_button.hide()
 	menu_col.add_child(HSeparator.new())
 	var exit_btn := _button(_tr("↩   SPEICHERN & ZUM CASINO", "↩   SAVE & RETURN TO CASINO"), _exit_to_casino)
 	exit_btn.custom_minimum_size.y = 45
@@ -485,12 +511,19 @@ func _create_interface() -> void:
 	minimap.name = "WorldOverviewMap"
 	minimap.model = model
 	minimap.camera = camera
+	minimap.german = german
 	ui_layer.add_child(minimap)
 	storage_view = StorageView.new()
 	storage_view.name = "GlobalConstructionInventory"
 	storage_view.model = model
 	storage_view.german = german
 	ui_layer.add_child(storage_view)
+	navigation = Navigation.new()
+	navigation.name = "WorldSaveSettingsNavigation"
+	navigation.game = self
+	navigation.manager = worlds
+	navigation.settings = settings
+	ui_layer.add_child(navigation)
 
 func _notice(message: String) -> void:
 	if status == null:
@@ -696,13 +729,13 @@ func _toggle_pause() -> void:
 	_refresh_ui()
 
 func _save_now() -> void:
-	_notice(_tr("Spielstand gespeichert", "Factory saved") if model.save_game() else
+	_notice(_tr("Spielstand gespeichert", "Factory saved") if _save_world() else
 		_tr("Speichern fehlgeschlagen", "Save failed"))
 
 func _toggle_effects() -> void:
-	reduced_motion = not reduced_motion
-	motion_view.reduced_motion = reduced_motion
-	effects_button.text = _tr("✦   ANIMATIONEN: AUS", "✦   ANIMATIONS: OFF") if reduced_motion else _tr("✦   ANIMATIONEN: AN", "✦   ANIMATIONS: ON")
+	settings.values.reduced_motion = not bool(settings.values.reduced_motion)
+	settings.save()
+	apply_settings("reduced_motion")
 
 func _load_visual_settings() -> void:
 	var settings := ConfigFile.new()
@@ -721,9 +754,10 @@ func _refresh_grid_button() -> void:
 
 func _toggle_grid() -> void:
 	show_grid = not show_grid
+	settings.values.grid = show_grid
+	settings.save()
 	grid_view.set_grid_visible(show_grid)
 	_refresh_grid_button()
-	_save_visual_settings()
 	_notice(_tr("Bauraster eingeblendet", "Placement grid visible") if show_grid else
 		_tr("Bauraster ausgeblendet", "Placement grid hidden"))
 
@@ -761,84 +795,62 @@ func _focus_construction() -> void:
 		"Casino construction · 48 material inputs"))
 
 func _new_factory() -> void:
-	if not confirming_new:
-		confirming_new = true
-		new_button.text = _tr("!   WIRKLICH NEU STARTEN?", "!   CONFIRM NEW FACTORY?")
-		return
-	confirming_new = false
-	new_button.text = _tr("＋   NEUE FABRIK STARTEN", "＋   START NEW FACTORY")
-	model = Model.new()
-	model.construction.phase_completed.connect(_on_construction_phase)
-	terrain_view.model = model
-	terrain_view.refresh_from_model()
-	minimap.model = model
-	minimap.refresh_map()
-	storage_view.model = model
-	storage_view.close_inventory()
-	construction_view.model = model
-	construction_view.queue_redraw()
-	static_view.model = model
-	motion_view.model = model
-	static_view.refresh_all()
-	inspected = Vector2i(-1, -1)
-	motion_view.inspected = inspected
-	camera.position = Vector2(21, 18) * TILE
-	simulation_paused = false
-	motion_view.simulation_paused = false
-	save_accumulator = 0.0
-	last_totals = ""
-	if model.save_game():
-		_notice(_tr("Neue Fabrik erstellt", "New factory created"))
-	else:
-		_notice(_tr("Neue Fabrik: Speichern fehlgeschlagen", "New factory: save failed"))
-	_show_menu(false)
+	return_to_main()
+	if navigation != null:
+		navigation.name_edit.grab_focus()
 
 func _show_menu(show: bool) -> void:
 	_cancel_select_drag()
+	storage_view.close_inventory()
+	minimap.hide_map()
+	if current_world.is_empty():
+		menu_open = true
+		motion_view.menu_open = true
+		menu_mask.hide()
+		if navigation != null:
+			navigation.show_start()
+		return
 	menu_open = show
 	motion_view.menu_open = show
 	menu_mask.visible = show
 	if show:
-		storage_view.close_inventory()
-		minimap.hide_map()
 		confirming_new = false
 		new_button.text = _tr("NEUE FABRIK STARTEN", "START NEW FACTORY")
-		menu_card.modulate.a = 0.0 if not reduced_motion else 1.0
-		if not reduced_motion:
-			var pop := create_tween()
-			pop.tween_property(menu_card, "modulate:a", 1.0, 0.20)
+		menu_card.modulate.a = 1.0
 	else:
 		motion_view.queue_redraw()
 
 func _exit_to_casino() -> void:
-	if not model.save_game():
+	if not _save_world():
 		_notice(_tr("Speichern fehlgeschlagen · Zurück nicht möglich", "Save failed · cannot quit safely"))
 		return
 	get_tree().quit()
 
 func _physics_process(delta: float) -> void:
-	if not menu_open and not simulation_paused:
+	if not current_world.is_empty() and not menu_open and not simulation_paused:
 		model.advance(delta)
 		save_accumulator += delta
-		if save_accumulator >= 30.0:
+		played_since_save += delta
+		if save_accumulator >= float(settings.values.autosave):
 			save_accumulator = 0.0
-			model.save_game()
+			if not _save_world():
+				_notice(_tr("Autosave fehlgeschlagen", "Autosave failed"))
 	ui_accumulator += delta
 	if ui_accumulator >= 0.30:
 		ui_accumulator = 0.0
 		_refresh_ui()
 
 func _process(delta: float) -> void:
-	if menu_open or minimap.visible or storage_view.visible:
+	if menu_open or minimap.visible or storage_view.visible or navigation.settings_screen.visible:
 		return
 	var movement := Vector2.ZERO
-	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
+	if Input.is_action_pressed("industries_up") or Input.is_key_pressed(KEY_UP):
 		movement.y -= 1.0
-	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
+	if Input.is_action_pressed("industries_down") or Input.is_key_pressed(KEY_DOWN):
 		movement.y += 1.0
-	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
+	if Input.is_action_pressed("industries_left") or Input.is_key_pressed(KEY_LEFT):
 		movement.x -= 1.0
-	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
+	if Input.is_action_pressed("industries_right") or Input.is_key_pressed(KEY_RIGHT):
 		movement.x += 1.0
 	if movement != Vector2.ZERO:
 		camera.position += movement.normalized() * (740.0 * delta / camera.zoom.x)
@@ -875,7 +887,7 @@ func _begin_select_drag(screen_position: Vector2) -> void:
 func _input(event: InputEvent) -> void:
 	# This keeps panning when the cursor passes over a HUD panel. A short
 	# press/release still selects the original world cell.
-	if not selection_pending or minimap.visible or storage_view.visible:
+	if not selection_pending or minimap.visible or storage_view.visible or navigation.settings_screen.visible:
 		return
 	if event is InputEventMouseMotion:
 		if not selection_dragging and event.position.distance_to(selection_press_screen) >= SELECT_DRAG_THRESHOLD:
@@ -892,53 +904,67 @@ func _input(event: InputEvent) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if navigation.waiting_key != "" or navigation.settings_screen.visible:
+			if event.is_action_pressed("industries_menu") and navigation.waiting_key == "":
+				navigation.close_settings()
+			get_viewport().set_input_as_handled()
+			return
+		if get_viewport().gui_get_focus_owner() is LineEdit:
+			return
+		if navigation.start_screen.visible:
+			get_viewport().set_input_as_handled()
+			return
 		if storage_view.visible:
-			if event.keycode == KEY_I or event.keycode == KEY_ESCAPE:
+			if event.is_action_pressed("industries_inventory") or event.is_action_pressed("industries_menu"):
 				storage_view.close_inventory()
 			get_viewport().set_input_as_handled()
 			return
 		if minimap.visible:
-			if event.keycode == KEY_M or event.keycode == KEY_ESCAPE:
+			if event.is_action_pressed("industries_map") or event.is_action_pressed("industries_menu"):
 				minimap.hide_map()
 			get_viewport().set_input_as_handled()
 			return
-		if not menu_open and event.keycode == KEY_I:
+		if not menu_open and event.is_action_pressed("industries_inventory"):
 			_toggle_storage()
 			get_viewport().set_input_as_handled()
 			return
-		if not menu_open and event.keycode == KEY_M:
+		if not menu_open and event.is_action_pressed("industries_map"):
 			_toggle_minimap()
 			get_viewport().set_input_as_handled()
 			return
-		if event.keycode == KEY_ESCAPE:
+		if event.is_action_pressed("industries_menu"):
 			_show_menu(not menu_open)
 			get_viewport().set_input_as_handled()
 			return
 		if menu_open:
 			return
-		if event.ctrl_pressed and event.keycode == KEY_S:
+		if event.is_action_pressed("industries_save"):
 			_save_now()
-		elif event.keycode == KEY_V:
+		elif event.is_action_pressed("industries_inspect"):
 			_set_mode("inspect")
-		elif event.keycode == KEY_B:
+		elif event.is_action_pressed("industries_build"):
 			_set_mode("build")
-		elif event.keycode >= KEY_1 and event.keycode <= KEY_5:
-			_select_tool(TOOLS[event.keycode - KEY_1])
-		elif event.keycode == KEY_R:
+		elif _tool_action(event) >= 0:
+			_select_tool(TOOLS[_tool_action(event)])
+		elif event.is_action_pressed("industries_rotate"):
 			if mode == "build":
 				facing = (facing + 1) % 4
 				motion_view.facing = facing
 				_notice(_tr("Baurichtung: ", "Build direction: ") + DIR_TEXT[facing])
 			else:
 				_rotate_selected()
-		elif event.keycode == KEY_SPACE:
+		elif event.is_action_pressed("industries_pause"):
 			_toggle_pause()
-		elif event.keycode == KEY_G:
+		elif event.is_action_pressed("industries_grid"):
 			_toggle_grid()
-		elif event.keycode == KEY_C:
+		elif event.is_action_pressed("industries_casino"):
 			_focus_construction()
+		elif event.is_action_pressed("industries_zoom_in"):
+			camera.zoom = (camera.zoom * 1.12).clamp(Vector2(0.55, 0.55), Vector2(2.4, 2.4))
+		elif event.is_action_pressed("industries_zoom_out"):
+			camera.zoom = (camera.zoom / 1.12).clamp(Vector2(0.55, 0.55), Vector2(2.4, 2.4))
 		return
-	if menu_open or minimap.visible or storage_view.visible:
+	if menu_open or minimap.visible or storage_view.visible or navigation.settings_screen.visible:
 		return
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
@@ -986,11 +1012,163 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST and model != null:
-		if model.save_game():
+		if current_world.is_empty() or _save_world():
 			get_tree().quit()
 		else:
 			_notice(_tr("Speichern fehlgeschlagen", "Save failed"))
 
 func _exit_tree() -> void:
-	if model != null:
-		model.save_game()
+	if model != null and not current_world.is_empty():
+		_save_world()
+
+func _tool_action(event: InputEvent) -> int:
+	for i in range(TOOLS.size()):
+		if event.is_action_pressed("industries_tool_%d" % (i + 1)):
+			return i
+	return -1
+
+func _world_view() -> Dictionary:
+	var record: Dictionary = saved_view.duplicate(true)
+	record["camera_x"] = camera.position.x
+	record["camera_y"] = camera.position.y
+	record["zoom"] = camera.zoom.x
+	record["markers"] = minimap.markers.duplicate(true)
+	record["layers"] = minimap.layers.duplicate(true)
+	# Preserve old Phase-1 pinned items in saves without reintroducing the
+	# rejected oversized toolbar. They remain available for a future UI.
+	return record
+
+func _save_world() -> bool:
+	if current_world.is_empty():
+		return false
+	if not worlds.save_world(current_world, model, _world_view(), played_since_save):
+		return false
+	played_since_save = 0.0
+	return true
+
+func open_world(id: String, record: Dictionary) -> void:
+	model = record.model
+	current_world = id
+	saved_view = record.view.duplicate(true)
+	model.construction.phase_completed.connect(_on_construction_phase)
+	terrain_view.model = model
+	terrain_view.refresh_from_model()
+	static_view.model = model
+	static_view.refresh_all()
+	motion_view.model = model
+	construction_view.model = model
+	construction_view.queue_redraw()
+	minimap.model = model
+	minimap.markers = record.view.get("markers", []).duplicate(true)
+	minimap.layers = record.view.get("layers", minimap.DEFAULT_LAYERS).duplicate(true)
+	minimap.refresh_map()
+	storage_view.model = model
+	storage_view.german = german
+	inspected = Vector2i(-1, -1)
+	motion_view.inspected = inspected
+	camera.position = Vector2(
+		float(record.view.get("camera_x", 1008.0)),
+		float(record.view.get("camera_y", 864.0)))
+	camera.zoom = Vector2.ONE * clampf(float(record.view.get("zoom", 1.0)), 0.55, 2.4)
+	_bound_camera()
+	save_accumulator = 0.0
+	played_since_save = 0.0
+	last_totals = ""
+	simulation_paused = false
+	motion_view.simulation_paused = false
+	_refresh_ui()
+
+func return_to_main() -> void:
+	if not current_world.is_empty() and not _save_world():
+		_notice(_tr("Speichern fehlgeschlagen; Welt bleibt geöffnet",
+			"Save failed; world remains open"))
+		return
+	current_world = ""
+	menu_mask.hide()
+	menu_open = true
+	motion_view.menu_open = true
+	storage_view.close_inventory()
+	minimap.hide_map()
+	navigation.show_start()
+
+func apply_settings(changed: String = "") -> void:
+	if changed in ["", "grid"]:
+		show_grid = bool(settings.values.grid)
+		grid_view.set_grid_visible(show_grid)
+		_refresh_grid_button()
+	if changed in ["", "reduced_motion"]:
+		reduced_motion = bool(settings.values.reduced_motion)
+		motion_view.reduced_motion = reduced_motion
+		minimap.reduced_motion = reduced_motion
+		if effects_button != null:
+			effects_button.text = _tr("✦   ANIMATIONEN: AUS", "✦   ANIMATIONS: OFF") \
+				if reduced_motion else _tr("✦   ANIMATIONEN: AN", "✦   ANIMATIONS: ON")
+	if changed in ["", "effect_quality"]:
+		motion_view.effect_quality = clampi(int(settings.values.effect_quality), 0, 2)
+	if changed in ["", "water_motion"]:
+		minimap.water_motion = bool(settings.values.water_motion)
+		terrain_view.set_water_motion(bool(settings.values.water_motion))
+	if changed in ["", "high_contrast"]:
+		_apply_contrast(ui_layer)
+	if changed in ["", "ui_scale_commit"]:
+		var scale := clampf(float(settings.values.ui_scale), 0.8, 1.3)
+		if not is_equal_approx(get_viewport().content_scale_factor, scale):
+			get_viewport().content_scale_factor = scale
+	# Language is rebuilt ONCE when Settings closes, not on every
+	# _change_setting value_changed signal during panel interaction.
+
+func _rebuild_interface_language() -> void:
+	var next_language := str(settings.values.language) == "de"
+	if german == next_language:
+		return
+	var previous_mode: String = mode
+	var previous_menu: bool = menu_open
+	var previous_marker_list: Array = minimap.markers.duplicate(true)
+	var previous_layers: Dictionary = minimap.layers.duplicate(true)
+	var previous_zoom: float = minimap.zoom
+	var previous_pan: Vector2 = minimap.pan
+	var map_was_open: bool = minimap.visible
+	var storage_was_open: bool = storage_view.visible
+	german = next_language
+	ui_layer.free()
+	hover_tweens.clear()
+	tool_buttons.clear()
+	quick_buttons.clear()
+	mode_buttons.clear()
+	_create_interface()
+	minimap.markers = previous_marker_list
+	minimap.layers = previous_layers
+	minimap.zoom = previous_zoom
+	minimap.pan = previous_pan
+	minimap.reduced_motion = reduced_motion
+	minimap.water_motion = bool(settings.values.water_motion)
+	_set_mode(previous_mode)
+	if current_world.is_empty():
+		menu_mask.hide()
+		menu_open = true
+		motion_view.menu_open = true
+		navigation.show_start()
+	else:
+		navigation.start_screen.hide()
+		_show_menu(previous_menu)
+		if map_was_open:
+			minimap.show_map()
+		if storage_was_open:
+			storage_view.open_inventory()
+	_refresh_ui()
+
+func _apply_contrast(node: Node) -> void:
+	if node is Label:
+		var label := node as Label
+		if bool(settings.values.high_contrast):
+			if not label.has_meta("original_font_color"):
+				label.set_meta("original_font_color", label.get_theme_color("font_color"))
+			label.add_theme_color_override("font_color", Color.WHITE)
+			label.add_theme_color_override("font_shadow_color", Color.BLACK)
+		else:
+			if label.has_meta("original_font_color"):
+				label.add_theme_color_override("font_color",
+					label.get_meta("original_font_color"))
+			label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.38))
+	for child in node.get_children():
+		_apply_contrast(child)

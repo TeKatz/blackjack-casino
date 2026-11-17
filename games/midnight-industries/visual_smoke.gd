@@ -24,6 +24,15 @@ func _run() -> void:
 	root.add_child(game)
 	await process_frame
 	await process_frame
+	if not game.navigation.start_screen.visible:
+		_fail("Recovered world selection must appear on first launch")
+		return
+	game.navigation.name_edit.text = "Visual Smoke Factory"
+	game.navigation._create_world()
+	var world_id: String = game.current_world
+	if world_id.is_empty():
+		_fail("World selection did not create a playable factory")
+		return
 	if game.static_view.chunks.size() != 154:
 		_fail("Expanded 224x176 factory must have 154 cached 16x16 chunks")
 		return
@@ -225,6 +234,10 @@ func _run() -> void:
 	game._input(up)
 	if game.inspected != Vector2i(16, 17):
 		_fail("A short selection click no longer inspects machinery")
+		return
+	game.return_to_main()
+	if not game.worlds.delete_world(world_id):
+		_fail("Temporary visual test world could not be removed")
 		return
 	print("Midnight Industries industrial visual asset smoke PASS")
 	game.queue_free()

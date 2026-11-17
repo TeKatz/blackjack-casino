@@ -104,3 +104,39 @@ The CI workflow validates 1024px grass/stone details, unchanged raw material art
 - The machine inspector collapses when no building is selected; header, catalog and quickbar are substantially narrower.
 - Approved original ore and cargo sprites were restored; only ground-cluster arrangements vary. Vertical conveyors have dedicated lighting-correct artwork, belts and ore have no oversized drop shadows, and warehouses no longer overlap left neighbors.
 - Actual Windows FPS remains a device-side acceptance check; headless simulation speed is not a GPU benchmark.
+
+## Restored: world selection, settings and interactive map
+
+The tested Phase-1 HUD overhaul was rolled back. The subsequent selective
+recovery keeps the **original compact construction catalog** and **original
+full-screen depot inventory** while bringing back only the following useful
+parts:
+
+- A real main menu on game launch, with **Continue**, **New World**, and
+  **Worlds & Saves**. Each world has its own saved factory, camera view and
+  interactive-map markers and layers. Backups, recovery, renaming and deletion
+  are managed by \`world_manager.gd\` with three rotating backups. Existing
+  single-save data is imported once; the original save is not overwritten.
+- A standalone settings panel with audio bus volumes/mute, VSync, frame limit,
+  screen mode/resolution, visual effects, water animation, language, input
+  bindings, grid, tooltips, contrast, autosave and UI scale. Settings are
+  global, independent of the chosen world.
+- **Flicker guard**: changing audio sliders, checkboxes and quality settings
+  no longer resizes the OS window, rebuilds the HUD or re-renders the complete
+  interface. Resolution and window mode change only on explicit user request;
+  UI scale is committed after the settings screen closes, and language
+  refreshes once after closing. Hover tweens on controls are canceled when
+  replaced.
+- The more interactive map has fully revealed terrain **without fog of war**,
+  mouse-centric zoom, drag-to-pan, resource overlays and filter toggles,
+  river animation, editable named markers, and a double-click camera jump.
+  Map markers/layer choices persist with each world.
+- The **oversized quick-pin depot bar** and the **Phase-1 bottom Shapez dock**
+  are intentionally *not* reintroduced. Those interfaces require a separate
+  visual design and review before further implementation.
+
+Relevant recovered files: \`factory_navigation.gd\`, \`world_manager.gd\`,
+\`industries_settings.gd\`, \`factory_minimap.gd\`, and \`item_catalog.gd\`.
+Regression tests include \`restored_systems_smoke.gd\` and
+\`restored_ui_smoke.gd\`.
+

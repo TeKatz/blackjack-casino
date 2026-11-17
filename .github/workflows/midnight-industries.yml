@@ -44,6 +44,12 @@ jobs:
           grep -Fq "Midnight Industries factory simulation smoke PASS" /tmp/industries-smoke.log
           timeout --signal=TERM --kill-after=5s 45s "$godot" --headless --path "$project" --script res://ui_smoke.gd 2>&1 | tee /tmp/industries-ui.log
           grep -Fq "Midnight Industries menu, inspector and build visual smoke PASS" /tmp/industries-ui.log
+          timeout --signal=TERM --kill-after=5s 45s "$godot" --headless --path "$project" --script res://restored_systems_smoke.gd 2>&1 | tee /tmp/industries-restored-systems.log
+          grep -Fq "Midnight Industries multiworld, recovery, settings and catalog PASS" /tmp/industries-restored-systems.log
+          timeout --signal=TERM --kill-after=5s 45s "$godot" --headless --path "$project" --script res://restored_ui_smoke.gd 2>&1 | tee /tmp/industries-restored-ui.log
+          grep -Fq "Midnight Industries restored menu, settings and map UI smoke PASS" /tmp/industries-restored-ui.log
+          if grep -Eq 'SCRIPT ERROR:|Parse Error:|^ERROR:' /tmp/industries-restored-systems.log; then exit 1; fi
+          if grep -Eq 'SCRIPT ERROR:|Parse Error:|^ERROR:' /tmp/industries-restored-ui.log; then exit 1; fi
           timeout --signal=TERM --kill-after=5s 45s "$godot" --headless --path "$project" --script res://visual_smoke.gd 2>&1 | tee /tmp/industries-visual.log
           grep -Fq "Midnight Industries industrial visual asset smoke PASS" /tmp/industries-visual.log
           if grep -Eq 'SCRIPT ERROR:|Parse Error:|^ERROR:' /tmp/industries-visual.log; then exit 1; fi

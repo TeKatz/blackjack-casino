@@ -9,8 +9,14 @@ func _run() -> void:
 	root.add_child(game)
 	await process_frame
 	await process_frame
-	if not game.menu_open or not game.menu_mask.visible or game.mode != "inspect":
-		_fail("startup menu or selection mode missing", game)
+	if not game.menu_open or not game.navigation.start_screen.visible or game.menu_mask.visible or game.mode != "inspect":
+		_fail("startup world-selection menu or selection mode missing", game)
+		return
+	game.navigation.name_edit.text = "UI Smoke Factory"
+	game.navigation._create_world()
+	var world_id: String = game.current_world
+	if world_id.is_empty() or game.menu_open or game.navigation.start_screen.visible:
+		_fail("Creating a world did not enter the factory", game)
 		return
 	if game.static_view == null or game.motion_view == null:
 		_fail("cached/rendering layers not created", game)
@@ -98,6 +104,10 @@ func _run() -> void:
 		return
 	if game.tool_buttons.size() != 5 or game.quick_buttons.size() != 5:
 		_fail("Depot missing from five-item build catalog", game)
+		return
+	game.return_to_main()
+	if not game.worlds.delete_world(world_id):
+		_fail("Temporary test world could not be removed", game)
 		return
 	print("Midnight Industries menu, inspector and build visual smoke PASS")
 	game.queue_free()
