@@ -96,6 +96,7 @@ func _new_button(parent: Node, name: String, width: float, fn: Callable) -> Butt
 
 func _build_categories() -> void:
 	for node in category_row.get_children():
+		category_row.remove_child(node)
 		node.queue_free()
 	category_buttons.clear()
 	var inspect := _new_button(category_row, "Category_inspect", 124.0,
@@ -113,11 +114,34 @@ func _build_categories() -> void:
 
 func _activate_category(category: String) -> void:
 	selected_category = category
+	var options: Array[Dictionary] = Catalog.machines(category)
+	var chosen := ""
+	# Never leave a belt selected when the player switches to Mining, or
+	# allow accidental placement of an unrelated machine.
+	for entry in options:
+		if str(entry.id) == selected_machine and Catalog.unlocked(entry, model):
+			chosen = selected_machine
+			break
+	if chosen.is_empty():
+		for entry in options:
+			if Catalog.unlocked(entry, model):
+				chosen = str(entry.id)
+				break
+	if chosen.is_empty():
+		# Browsing empty or fully locked future categories does not start
+		# placing the machine selected in a different category.
+		inspect_requested.emit()
+		inspecting = false
+		_build_machines()
+		_sync_style()
+		_set_shelf(true)
+		return
+	selected_machine = chosen
 	inspecting = false
 	_build_machines()
 	_sync_style()
 	_set_shelf(true)
-	build_mode_requested.emit()
+	machine_requested.emit(chosen)
 
 func set_inspecting() -> void:
 	inspecting = true
@@ -131,13 +155,16 @@ func set_building() -> void:
 
 func select_machine(kind: String) -> void:
 	selected_machine = kind
+	var category_changed := false
 	for category in Catalog.categories():
 		for entry in Catalog.machines(str(category.id)):
-			if str(entry.id) == kind:
+			if str(entry.id) == kind and selected_category != str(category.id):
 				selected_category = str(category.id)
+				category_changed = true
 				break
 	inspecting = false
-	_build_machines()
+	if category_changed:
+		_build_machines()
 	_sync_style()
 	_set_shelf(true)
 
@@ -156,6 +183,7 @@ func _machine_icon(kind: String) -> Texture2D:
 
 func _build_machines() -> void:
 	for node in machine_row.get_children():
+		machine_row.remove_child(node)
 		node.queue_free()
 	machine_buttons.clear()
 	machine_subtitles.clear()
