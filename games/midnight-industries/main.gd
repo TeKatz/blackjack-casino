@@ -537,10 +537,10 @@ func _create_interface() -> void:
 	bottom_line.color = Color("#507181", 0.45)
 	bottom_line.custom_minimum_size.y = 1
 	menu_col.add_child(bottom_line)
-	var hint := _make_label(_tr("ESC  FORTSETZEN  ·  AUTOSAVE AKTIV",
+	var pause_hint := _make_label(_tr("ESC  FORTSETZEN  ·  AUTOSAVE AKTIV",
 		"ESC  RESUME  ·  AUTOSAVE ENABLED"), 12, MenuSkin.MUTED)
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	menu_col.add_child(hint)
+	pause_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	menu_col.add_child(pause_hint)
 
 	# Full-screen cartographic map is placed above the main menu and world.
 	# It remains hidden until M is pressed during gameplay.
