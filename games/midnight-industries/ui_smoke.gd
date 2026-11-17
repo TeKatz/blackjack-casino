@@ -124,6 +124,18 @@ func _run() -> void:
 	if game.tool != "depot":
 		_fail("Machine tile did not select its machine", game)
 		return
+	game.build_dock._activate_category("mining")
+	if game.tool != "miner" or game.mode != "build":
+		_fail("Switching categories kept an unrelated build tool selected", game)
+		return
+	game.build_dock._activate_category("production")
+	if game.tool != "smelter" or game.mode != "build":
+		_fail("Production category did not select its own unlocked machine", game)
+		return
+	game.build_dock._activate_category("energy")
+	if game.mode != "inspect" or not game.build_dock._open:
+		_fail("Empty future category allowed unrelated machine placement", game)
+		return
 	game._set_mode("inspect")
 	game.return_to_main()
 	if not game.worlds.delete_world(world_id):
