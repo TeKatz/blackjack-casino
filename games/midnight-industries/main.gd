@@ -81,6 +81,7 @@ var inspector_controls: HBoxContainer
 var rotate_button: Button
 var demolish_button: Button
 var pause_button: Button
+var header_pause_button: Button
 var resume_button: Button
 var new_button: Button
 var effects_button: Button
@@ -275,6 +276,7 @@ func _create_interface() -> void:
 	top_row.add_child(map_button)
 	var header_pause := _button(_tr("PAUSE", "PAUSE"), _toggle_pause)
 	top_row.add_child(header_pause)
+	header_pause_button = header_pause
 	var header_save := _button(_tr("SAVE", "SAVE"), _save_now)
 	top_row.add_child(header_save)
 	var menu_button := _button(_tr("  MENÜ  [ESC]  ", "  MENU  [ESC]  "), func() -> void: _show_menu(true))
@@ -641,6 +643,7 @@ func _refresh_ui() -> void:
 		construction_status.text = _tr("CASINO FERTIG", "CASINO COMPLETE")
 	fps_label.text = "FPS  %d" % Engine.get_frames_per_second()
 	pause_button.text = _tr("▶  WEITER", "▶  RESUME") if simulation_paused else _tr("Ⅱ  PAUSE", "Ⅱ  PAUSE")
+	header_pause_button.text = _tr("WEITER", "RESUME") if simulation_paused else _tr("PAUSE", "PAUSE")
 	if tool_cost_label != null and mode == "build":
 		tool_cost_label.text = _tr("BAUKOSTEN: ", "BUILD COST: ") + _cost_text(tool)
 		tool_cost_label.add_theme_color_override("font_color",

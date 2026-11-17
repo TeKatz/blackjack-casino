@@ -5,7 +5,8 @@ const Construction = preload("res://factory_construction.gd")
 const Catalog = preload("res://item_catalog.gd")
 const UiSkin = preload("res://factory_skin.gd")
 const TILE := 48.0
-const DEFAULT_LAYERS := {"ore":true, "water":true, "buildings":true,
+const DEFAULT_LAYERS := {"ore":true, "iron":true, "copper":true, "gold":true,
+	"water":true, "buildings":true,
 	"casino":true, "markers":true}
 const ORE_COLOR := {"iron":Color("#96ADB6"), "copper":Color("#E0935B"),
 	"gold":Color("#F5CB68")}
@@ -16,6 +17,7 @@ var markers: Array = []
 var layers: Dictionary = DEFAULT_LAYERS.duplicate()
 var _ground: Texture2D
 var _ore: Texture2D
+var _ore_layers: Dictionary = {}
 var _water: Texture2D
 var _map_rect := Rect2()
 var _base_scale := 1.0
@@ -63,6 +65,7 @@ func hide_map() -> void:
 func refresh_map() -> void:
 	_ground = null
 	_ore = null
+	_ore_layers.clear()
 	_water = null
 	zoom = 1.0
 	pan = Vector2.ZERO
@@ -83,6 +86,9 @@ func _bake_geography() -> void:
 		return
 	var ground := Image.create(Model.WIDTH, Model.HEIGHT, false, Image.FORMAT_RGBA8)
 	var ore := Image.create(Model.WIDTH, Model.HEIGHT, false, Image.FORMAT_RGBA8)
+	var mineral_images := {}
+	for mineral in ORE_COLOR:
+		mineral_images[mineral] = Image.create(Model.WIDTH, Model.HEIGHT, false, Image.FORMAT_RGBA8)
 	var water := Image.create(Model.WIDTH, Model.HEIGHT, false, Image.FORMAT_RGBA8)
 	for y in range(Model.HEIGHT):
 		for x in range(Model.WIDTH):
@@ -98,9 +104,14 @@ func _bake_geography() -> void:
 				water.set_pixel(x, y, Color("#4A9AA3") if shore else (
 					Color("#1D6379") if model.water[cell].kind == "river" else Color("#27748A")))
 			if model.resources.has(cell):
-				ore.set_pixel(x, y, ORE_COLOR.get(model.resources[cell], Color.WHITE))
+				var mineral: String = str(model.resources[cell])
+				var tint: Color = ORE_COLOR.get(mineral, Color.WHITE)
+				ore.set_pixel(x, y, tint)
+				mineral_images[mineral].set_pixel(x, y, tint)
 	_ground = ImageTexture.create_from_image(ground)
 	_ore = ImageTexture.create_from_image(ore)
+	for mineral in mineral_images:
+		_ore_layers[mineral] = ImageTexture.create_from_image(mineral_images[mineral])
 	_water = ImageTexture.create_from_image(water)
 	_find_ore_centers()
 
@@ -157,9 +168,13 @@ func _draw() -> void:
 	if layers.get("water", true):
 		draw_texture_rect(_water, _map_rect, false)
 	if layers.get("ore", true):
-		draw_texture_rect(_ore, _map_rect, false)
+		for mineral in ["iron", "copper", "gold"]:
+			if layers.get(mineral, true):
+				draw_texture_rect(_ore_layers[mineral], _map_rect, false)
 		var map_font: Font = UiSkin.font()
 		for cluster in ore_centers:
+			if not layers.get(str(cluster.kind), true):
+				continue
 			var point := _map_position(cluster.position)
 			var mark := str(Catalog.item(str(cluster.kind) + "_ore").get("mark", "?"))
 			var symbol_size := 8.5 if zoom >= 0.8 else 6.5
@@ -293,7 +308,11 @@ func _refresh_controls() -> void:
 	for key in DEFAULT_LAYERS:
 		var toggle := CheckBox.new()
 		toggle.text = {
-			"ore":_word("Erze", "Ores"), "water":_word("Gewässer", "Water"),
+			"ore":_word("Alle Erze", "All ores"),
+			"iron":_word("Eisen Fe", "Iron Fe"),
+			"copper":_word("Kupfer Cu", "Copper Cu"),
+			"gold":_word("Gold Au", "Gold Au"),
+			"water":_word("Gewässer", "Water"),
 			"buildings":_word("Anlagen", "Factory"), "casino":"Casino",
 			"markers":_word("Markierungen", "Markers")}[key]
 		toggle.button_pressed = bool(layers.get(key, true))
@@ -387,7 +406,8 @@ func _gui_input(event: InputEvent) -> void:
 			queue_redraw()
 		if _map_rect.has_point(event.position):
 			var tile := _tile_at(event.position)
-			coordinates.text = "%d, %d  ·  %d%%" % [tile.x, tile.y, roundi(zoom * 100)]
+			var named := Catalog.name_for(str(model.resources[tile]) + "_ore", german) if model.resources.has(tile) else _word("Karte", "Map")
+			coordinates.text = "%s · %d, %d · %d%%" % [named, tile.x, tile.y, roundi(zoom * 100)]
 	elif event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
 			_change_zoom(1.15, event.position)
@@ -410,6 +430,15 @@ func _gui_input(event: InputEvent) -> void:
 						hide_map()
 					else:
 						last_click = now
+						selected = -1
+						var cell := _tile_at(event.position)
+						for i in range(markers.size()):
+							var marker: Dictionary = markers[i]
+							if Vector2i(int(marker.x), int(marker.y)).distance_to(cell) <= 2.0:
+								selected = i
+								coordinates.text = "%s · %d, %d" % [marker.name, marker.x, marker.y]
+								break
+						queue_redraw()
 				accept_event()
 		elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed and _map_rect.has_point(event.position):
 			_edit_marker(_tile_at(event.position))

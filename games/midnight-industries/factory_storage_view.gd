@@ -9,6 +9,10 @@ var search: LineEdit
 var category: OptionButton
 var list: VBoxContainer
 var details: Label
+var materials_scroll: ScrollContainer
+var costs_scroll: ScrollContainer
+var cost_list: VBoxContainer
+var selected_tab := "stock"
 var _last_stock := ""
 var _selected := ""
 
@@ -36,7 +40,13 @@ func _ready() -> void:
 	_label(col, _word("MIDNIGHT INDUSTRIES / GLOBALES BAULAGER", "MIDNIGHT INDUSTRIES / GLOBAL BUILD STOCK"), 22)
 	_label(col, _word("Lieferungen an Depots finanzieren Anlagen. Zwischenlager zählen nicht zum globalen Bestand.",
 		"Deliveries to depots fund construction. Warehouse contents are separate."), 12)
+	var tabs := HBoxContainer.new()
+	col.add_child(tabs)
+	_button(tabs, _word("Materialien", "Materials"), _show_tab.bind("stock"))
+	_button(tabs, _word("Baukosten", "Build costs"), _show_tab.bind("costs"))
+	_button(tabs, _word("Schließen [I]", "Close [I]"), close_inventory)
 	var controls := HBoxContainer.new()
+	controls.name = "MaterialControls"
 	col.add_child(controls)
 	search = LineEdit.new()
 	search.placeholder_text = "Material suchen / Search material"
@@ -48,16 +58,33 @@ func _ready() -> void:
 		category.add_item(entry)
 	category.item_selected.connect(func(_index: int) -> void: _refresh())
 	controls.add_child(category)
-	_button(controls, _word("Schließen [I]", "Close [I]"), close_inventory)
-	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size.y = 295
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	col.add_child(scroll)
+	materials_scroll = ScrollContainer.new()
+	materials_scroll.custom_minimum_size.y = 295
+	materials_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(materials_scroll)
 	list = VBoxContainer.new()
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(list)
+	materials_scroll.add_child(list)
+	costs_scroll = ScrollContainer.new()
+	costs_scroll.custom_minimum_size.y = 295
+	costs_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(costs_scroll)
+	cost_list = VBoxContainer.new()
+	cost_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	costs_scroll.add_child(cost_list)
 	details = _label(col, "", 14)
 	details.custom_minimum_size.y = 75
+	_show_tab("stock")
+
+func _show_tab(tab: String) -> void:
+	selected_tab = tab
+	if materials_scroll == null:
+		return
+	materials_scroll.visible = tab == "stock"
+	details.visible = tab == "stock"
+	search.get_parent().visible = tab == "stock"
+	costs_scroll.visible = tab == "costs"
+	_refresh()
 
 func _label(parent: Node, title: String, font_size: int) -> Label:
 	var l := Label.new()
@@ -95,6 +122,9 @@ func _refresh() -> void:
 	if model == null or list == null:
 		return
 	_last_stock = JSON.stringify(model.economy.stock)
+	if selected_tab == "costs":
+		_refresh_costs()
+		return
 	for child in list.get_children():
 		child.queue_free()
 	for item in Catalog.ITEMS:
@@ -113,6 +143,26 @@ func _refresh() -> void:
 		b.icon = Catalog.icon(id)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_show_details(_selected)
+
+func _refresh_costs() -> void:
+	for child in cost_list.get_children():
+		child.queue_free()
+	for machine in Catalog.MACHINES:
+		var id: String = machine.id
+		var needed: Array[String] = []
+		for material in Economy.COSTS[id]:
+			var amount: int = int(Economy.COSTS[id][material])
+			var available: int = model.economy.available(material)
+			needed.append("%s %d/%d" % [Catalog.name_for(material, german), available, amount])
+		var name: String = str(machine.de if german else machine.en)
+		var text_value := name + " · " + "  ·  ".join(needed)
+		if model.economy.has_free_kit(id) or (id == "depot" and model.economy.free_depot_available):
+			text_value += _word("  ·  Umzugs-Kit/Gratis", "  ·  Free relocation kit")
+		elif not model.economy.has_funds(id):
+			text_value += _word("  ·  FEHLT", "  ·  MISSING")
+		var row := _button(cost_list, text_value, func() -> void: pass)
+		row.icon = Catalog.icon(str(Economy.COSTS[id].keys()[0]))
+		row.disabled = not model.construction.is_machine_unlocked(id)
 
 func _show_details(id: String) -> void:
 	_selected = id

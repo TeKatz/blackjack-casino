@@ -36,6 +36,10 @@ func _run() -> void:
 	assert(game.frontend.dock.visible and game.frontend.pin_panel.visible)
 	game.frontend._select_category("logistics")
 	assert(game.frontend.machine_row.get_child_count() == 3)
+	game._toggle_storage()
+	game.storage_view._show_tab("costs")
+	assert(game.storage_view.cost_list.get_child_count() == 5)
+	game._toggle_storage()
 	game.frontend._set_pin("gold_ore")
 	game.frontend.pins[2] = "gold_ore"
 	game._toggle_minimap()
@@ -46,6 +50,9 @@ func _run() -> void:
 			gold_visible = game.minimap._ore.get_image().get_pixel(cell.x, cell.y).a > 0.9
 			break
 	assert(gold_visible)
+	assert(game.minimap._ore_layers.has("gold"))
+	game.minimap.layers.gold = false
+	assert(game.minimap.layers.iron and not game.minimap.layers.gold)
 	game.minimap._change_zoom(1.25, game.minimap.size * 0.5)
 	assert(game.minimap.zoom > 1.0)
 	game.minimap._edit_marker(Vector2i(90, 100))
@@ -78,6 +85,7 @@ func _run() -> void:
 	game.frontend._open_world(first)
 	assert(game.model.economy.available("iron_ingot") == 23)
 	assert(game.minimap.markers[0].name == "South" and not game.minimap.layers.ore)
+	assert(not game.minimap.layers.gold and game.minimap.layers.iron)
 	assert(game.frontend.pins[2] == "gold_ore")
 	assert(game.camera.position.is_equal_approx(Vector2(2120, 1430)))
 	game.return_to_main()
