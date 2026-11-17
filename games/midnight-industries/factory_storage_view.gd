@@ -2,7 +2,7 @@ extends Control
 ## Modal global construction inventory. No capacity limits are invented yet:
 ## only material actually arriving at depots is spendable.
 const Economy = preload("res://factory_economy.gd")
-const Skin = preload("res://factory_skin.gd")
+const UiSkin = preload("res://factory_skin.gd")
 const TEXT := Color("#EAF4F5")
 const MUTED := Color("#9DB5C0")
 const AMBER := Color("#F5BC59")
@@ -45,7 +45,7 @@ func _text(font: Font, p: Vector2, content: String, size_px: int,
 func _draw() -> void:
 	if model == null:
 		return
-	var font: Font = Skin.font()
+	var font: Font = UiSkin.font()
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#061118", 0.97))
 	var w := minf(1040.0, size.x - 60.0)
 	var h := minf(690.0, size.y - 90.0)

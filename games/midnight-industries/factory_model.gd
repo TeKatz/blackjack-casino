@@ -352,7 +352,7 @@ func restore(data: Variant) -> bool:
 	if not restored_construction.restore(data.get("construction", {})):
 		return false
 	var restored_economy = Economy.new()
-	var has_wallet := data.has("economy")
+	var has_wallet: bool = data.has("economy")
 	if has_wallet:
 		if not restored_economy.restore(data["economy"]):
 			return false
