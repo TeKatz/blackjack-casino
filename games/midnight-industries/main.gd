@@ -94,7 +94,8 @@ var settings
 var navigation: Control
 var window_chrome: Control
 var header_rail: Control
-var status_rail: PanelContainer
+var status_tween: Tween
+var header_compact := false
 var build_dock: Control
 var objectives_drawer: Control
 var header_buttons: Dictionary = {}
@@ -130,7 +131,8 @@ func _ready() -> void:
 	menu_open = true
 	motion_view.menu_open = true
 	apply_settings()
-	get_viewport().size_changed.connect(_layout_status_rail)
+	get_viewport().size_changed.connect(_layout_hud)
+	_layout_hud()
 	get_tree().auto_accept_quit = false
 
 func _tr(de: String, en: String) -> String:
@@ -239,9 +241,19 @@ func _header_action(parent: Node, id: String, label: String,
 	button.text = label
 	button.icon = CommandIcons.icon(id)
 	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	button.custom_minimum_size = Vector2(101, 43)
-	if id == "achievements":
-		button.custom_minimum_size.x = 139
+	button.custom_minimum_size = Vector2(95, 42)
+	match id:
+		"achievements":
+			button.custom_minimum_size.x = 144
+		"upgrades":
+			button.custom_minimum_size.x = 127
+		"storage":
+			button.custom_minimum_size.x = 111
+		"jobs":
+			button.custom_minimum_size.x = 86
+		"menu":
+			button.custom_minimum_size.x = 91
+	button.set_meta("full_label", label)
 	MenuSkin.style_button(button)
 	button.add_theme_font_size_override("font_size", 12)
 	button.tooltip_text = label
@@ -249,6 +261,23 @@ func _header_action(parent: Node, id: String, label: String,
 	parent.add_child(button)
 	header_buttons[id] = button
 	return button
+
+func _header_indicator(parent: HBoxContainer, accent: Color) -> Label:
+	var plate := StyleBoxFlat.new()
+	plate.bg_color = Color("#102431")
+	plate.border_color = Color("#2F4D5A")
+	plate.set_border_width_all(1)
+	plate.set_corner_radius_all(7)
+	plate.content_margin_left = 9
+	plate.content_margin_right = 9
+	plate.content_margin_top = 8
+	plate.content_margin_bottom = 8
+	var background := PanelContainer.new()
+	background.add_theme_stylebox_override("panel", plate)
+	parent.add_child(background)
+	var label := _make_label("", 11, accent)
+	background.add_child(label)
+	return label
 
 func _show_future_panel(id: String) -> void:
 	var names: Dictionary = {
@@ -292,55 +321,43 @@ func _create_interface() -> void:
 	top.offset_bottom = 88
 	var top_row := HBoxContainer.new()
 	top_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	top_row.add_theme_constant_override("separation", 12)
+	top_row.add_theme_constant_override("separation", 13)
 	top.add_child(top_row)
 	var brand := HBoxContainer.new()
-	brand.custom_minimum_size.x = 255
-	brand.add_theme_constant_override("separation", 12)
+	brand.custom_minimum_size.x = 220
+	brand.add_theme_constant_override("separation", 10)
 	top_row.add_child(brand)
 	var logo := TextureRect.new()
 	logo.texture = _machine_icon("miner")
-	logo.custom_minimum_size = Vector2(45, 45)
+	logo.custom_minimum_size = Vector2(43, 43)
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	brand.add_child(logo)
 	var identity := VBoxContainer.new()
 	identity.alignment = BoxContainer.ALIGNMENT_CENTER
-	identity.add_theme_constant_override("separation", 1)
+	identity.add_theme_constant_override("separation", 2)
 	brand.add_child(identity)
-	identity.add_child(_make_label("MIDNIGHT", 19, TEXT))
+	identity.add_child(_make_label("MIDNIGHT", 18, TEXT))
 	identity.add_child(_make_label("I N D U S T R I E S", 12, GOLD))
-	var resource_column := VBoxContainer.new()
-	resource_column.alignment = BoxContainer.ALIGNMENT_CENTER
-	resource_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	resource_column.add_theme_constant_override("separation", 3)
-	top_row.add_child(resource_column)
-	production = _make_label("", 12, CYAN)
-	production.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	production.clip_text = true
-	production.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	resource_column.add_child(production)
+
+	# Compact at-a-glance indicators. Material stock belongs in Storage, not
+	# in a cramped header ticker; these three labels never trigger scrolling.
 	var status_row := HBoxContainer.new()
-	status_row.alignment = BoxContainer.ALIGNMENT_END
-	status_row.add_theme_constant_override("separation", 11)
-	resource_column.add_child(status_row)
-	header_status = _make_label("", 10, MenuSkin.MUTED)
-	construction_status = _make_label("", 10, GOLD)
-	fps_label = _make_label("", 10, MenuSkin.MUTED)
-	status_row.add_child(header_status)
-	status_row.add_child(construction_status)
-	status_row.add_child(fps_label)
-	var action_scroll := ScrollContainer.new()
-	action_scroll.name = "CommandActionsScroll"
-	action_scroll.custom_minimum_size.x = 490
-	action_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	action_scroll.size_flags_stretch_ratio = 1.5
-	action_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	action_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	top_row.add_child(action_scroll)
+	status_row.name = "FactoryStatusIndicators"
+	status_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	status_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	status_row.add_theme_constant_override("separation", 10)
+	top_row.add_child(status_row)
+	header_status = _header_indicator(status_row, MenuSkin.CYAN)
+	construction_status = _header_indicator(status_row, MenuSkin.AMBER)
+	fps_label = _header_indicator(status_row, MenuSkin.MUTED)
+
+	# All six actions always fit inside a plain HBoxContainer. No scrollbar,
+	# scroll track or extra scrollbar strip can ever be drawn in the header.
 	var action_row := HBoxContainer.new()
-	action_row.add_theme_constant_override("separation", 7)
-	action_scroll.add_child(action_row)
+	action_row.name = "CommandActionsRow"
+	action_row.add_theme_constant_override("separation", 6)
+	top_row.add_child(action_row)
 	_header_action(action_row, "achievements", _tr("ERFOLGE", "ACHIEVEMENTS"),
 		func() -> void: _show_future_panel("achievements"))
 	_header_action(action_row, "jobs", "JOBS",
@@ -348,7 +365,7 @@ func _create_interface() -> void:
 	_header_action(action_row, "upgrades", "UPGRADES",
 		func() -> void: _show_future_panel("upgrades"))
 	_header_action(action_row, "storage", _tr("LAGER", "STORAGE"), _toggle_storage)
-	pause_button = _header_action(action_row, "pause", _tr("PAUSE", "PAUSE"), _toggle_pause)
+	pause_button = _header_action(action_row, "pause", "PAUSE", _toggle_pause)
 	_header_action(action_row, "menu", _tr("MENÜ", "MENU"),
 		func() -> void: _show_menu(true))
 
@@ -358,11 +375,14 @@ func _create_interface() -> void:
 	inspector_panel = inspector
 	inspector.add_theme_stylebox_override("panel", MenuSkin.panel("main"))
 	hud.add_child(inspector)
-	inspector.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	inspector.offset_left = -397
+	inspector.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	inspector.set_anchor(SIDE_TOP, 0.0, false)
+	inspector.set_anchor(SIDE_BOTTOM, 0.0, false)
+	inspector.offset_left = -376
 	inspector.offset_right = -16
-	inspector.offset_top = 99
-	inspector.offset_bottom = 487
+	inspector.offset_top = 103
+	inspector.offset_bottom = 438
+	inspector.clip_contents = true
 	inspector.visible = false
 	var inspect_col := VBoxContainer.new()
 	inspect_col.add_theme_constant_override("separation", 12)
@@ -425,22 +445,18 @@ func _create_interface() -> void:
 	objectives_drawer.reduced_motion = reduced_motion
 	objectives_drawer.position = Vector2(-292, 139)
 	hud.add_child(objectives_drawer)
-	# Small nonintrusive gameplay notifications, no screen-wide bottom rail.
-	var status_bg := PanelContainer.new()
-	status_rail = status_bg
-	status_bg.name = "CompactGameStatus"
-	status_bg.add_theme_stylebox_override("panel", MenuSkin.panel("section"))
-	status_bg.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	status_bg.offset_left = 17
-	status_bg.offset_top = -66
-	status_bg.offset_right = 360
-	status_bg.offset_bottom = -17
-	hud.add_child(status_bg)
-	status = _make_label("", 11, MenuSkin.MUTED)
+	# Transient notice text only. No permanent empty rectangle at bottom left.
+	status = _make_label("", 12, MenuSkin.CYAN)
+	status.name = "FactoryNotice"
+	status.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	status.offset_left = 21
+	status.offset_right = 540
+	status.offset_top = -225
+	status.offset_bottom = -201
 	status.clip_text = true
-	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status_bg.add_child(status)
-	_layout_status_rail()
+	status.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	status.visible = false
+	hud.add_child(status)
 
 	# Dedicated pause screen, unlike the rejected Phase-1 HUD. A compact,
 	# legible control station with actual hierarchy and no random gold corner.
@@ -550,11 +566,20 @@ func _create_interface() -> void:
 func _notice(message: String) -> void:
 	if status == null:
 		return
+	if status_tween != null and status_tween.is_running():
+		status_tween.kill()
 	status.text = message
-	if not reduced_motion:
-		status.modulate = Color("#ffffff")
-		var tween := create_tween()
-		tween.tween_property(status, "modulate", Color("#9fd2c9"), 0.55)
+	status.visible = true
+	status.modulate.a = 1.0
+	# The game doesn't reserve a permanent HUD box for notifications; the
+	# text vanishes after a short time, with the last message taking priority.
+	status_tween = create_tween()
+	status_tween.tween_interval(2.8)
+	status_tween.tween_property(status, "modulate:a", 0.0,
+		0.0 if reduced_motion else 0.35)
+	status_tween.tween_callback(func() -> void:
+		if is_instance_valid(status):
+			status.visible = false)
 
 func _cost_text(kind: String) -> String:
 	if model.economy.has_free_kit(kind):
@@ -622,31 +647,18 @@ func _inspect(cell: Vector2i) -> void:
 		notice_selection()
 
 func _refresh_ui() -> void:
-	if model == null or production == null:
+	if model == null or header_status == null:
 		return
-	var totals: Dictionary = model.economy.stock
-	var output := "%s   %s %d  ·  %s %d  ·  %s %d" % [
-		_tr("BAULAGER", "BUILD STOCK"),
-		_tr("EISEN", "IRON"), int(totals.iron_ingot),
-		_tr("KUPFER", "COPPER"), int(totals.copper_ingot),
-		_tr("GOLD", "GOLD"), int(totals.gold_ingot)
-	]
-	if last_totals != output:
-		last_totals = output
-		production.text = output
-		if not reduced_motion:
-			var pulse := create_tween()
-			production.modulate = Color("#ffffff")
-			pulse.tween_property(production, "modulate", CYAN, 0.35)
 	var unit_count: int = model.buildings.size()
-	var pause_state := _tr("PAUSIERT", "PAUSED") if simulation_paused else _tr("PRODUKTION AKTIV", "PRODUCTION LIVE")
-	header_status.text = "●  %s   ·   %d %s    " % [pause_state, unit_count, _tr("Gebäude", "buildings")]
+	var pause_state := _tr("STOPP", "PAUSED") if simulation_paused else _tr("AKTIV", "LIVE")
+	header_status.text = "● %s  ·  %d" % [pause_state, unit_count]
 	var active_phase: int = model.construction.phase_number()
 	construction_status.text = _tr("CASINO %02d/12", "CASINO %02d/12") % active_phase
 	if model.construction.completed_phases >= Construction.PHASE_COUNT:
 		construction_status.text = _tr("CASINO FERTIG", "CASINO COMPLETE")
-	fps_label.text = "FPS  %d" % Engine.get_frames_per_second()
-	pause_button.text = _tr("▶  WEITER", "▶  RESUME") if simulation_paused else _tr("Ⅱ  PAUSE", "Ⅱ  PAUSE")
+	fps_label.text = "%d FPS" % Engine.get_frames_per_second()
+	pause_button.text = "" if header_compact else (
+		_tr("WEITER", "RESUME") if simulation_paused else "PAUSE")
 	pause_button.icon = CommandIcons.icon("play" if simulation_paused else "pause")
 	if build_dock != null:
 		build_dock.refresh()
@@ -666,7 +678,7 @@ func _animate_inspector(show: bool) -> void:
 	inspector_visible = show
 	if inspector_tween != null and inspector_tween.is_running():
 		inspector_tween.kill()
-	var target_x := get_viewport_rect().size.x - 397.0
+	var target_x := get_viewport_rect().size.x - 376.0
 	if show:
 		inspector_panel.visible = true
 		inspector_panel.position.x = target_x + 28.0
@@ -928,30 +940,32 @@ func _bound_camera() -> void:
 	camera.position.x = clampf(camera.position.x, 0.0, float(Model.WIDTH) * TILE)
 	camera.position.y = clampf(camera.position.y, 0.0, float(Model.HEIGHT) * TILE)
 
-func _layout_status_rail() -> void:
-	if status_rail == null:
-		return
-	var width: float = get_viewport_rect().size.x
-	var dock_width: float = minf(1020.0, maxf(480.0, width - 28.0))
-	var dock_left: float = (width - dock_width) * 0.5
-	if dock_left < 290.0:
-		# On small windows place notices ABOVE the expanding build dock.
-		status_rail.offset_left = 17.0
-		status_rail.offset_right = 317.0
-		status_rail.offset_top = -242.0
-		status_rail.offset_bottom = -193.0
-	else:
-		status_rail.offset_left = 17.0
-		status_rail.offset_right = maxf(235.0, minf(357.0, dock_left - 22.0))
-		status_rail.offset_top = -66.0
-		status_rail.offset_bottom = -17.0
+func _layout_hud() -> void:
+	var view: Vector2 = get_viewport_rect().size
+	header_compact = view.x < 1430.0
+	for id in header_buttons:
+		var action: Button = header_buttons[id]
+		action.text = "" if header_compact else str(action.get_meta("full_label", ""))
+		action.custom_minimum_size.x = 48.0 if header_compact else float({
+			"achievements":144.0, "jobs":86.0, "upgrades":127.0,
+			"storage":111.0, "pause":95.0, "menu":91.0}.get(id, 95.0))
+	if pause_button != null:
+		pause_button.text = "" if header_compact else (
+			_tr("WEITER", "RESUME") if simulation_paused else "PAUSE")
+	if inspector_panel != null:
+		# Anchor the inspector to the top only. It must never stretch down
+		# behind the bottom build dock at any viewport height or UI scale.
+		inspector_panel.set_anchor(SIDE_BOTTOM, 0.0, false)
+		inspector_panel.offset_top = 109.0
+		inspector_panel.offset_bottom = minf(441.0, view.y - 236.0)
+		inspector_panel.offset_left = -376.0
+		inspector_panel.offset_right = -16.0
+
 
 func _pointer_over_hud(point: Vector2) -> bool:
 	var top: float = 114.0 if settings != null \
 		and int(settings.values.window_mode) == 0 else 92.0
 	if point.y < top:
-		return true
-	if status_rail != null and status_rail.get_global_rect().has_point(point):
 		return true
 	if build_dock != null and build_dock.is_over(point):
 		return true
@@ -1224,6 +1238,7 @@ func _sync_window_chrome() -> void:
 	if header_rail != null:
 		header_rail.offset_top = 39.0 if windowed else 9.0
 		header_rail.offset_bottom = 111.0 if windowed else 81.0
+	_layout_hud()
 	if objectives_drawer != null:
 		objectives_drawer.position.y = 159.0 if windowed else 123.0
 

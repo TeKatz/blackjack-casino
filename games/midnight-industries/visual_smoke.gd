@@ -191,13 +191,46 @@ func _run() -> void:
 	if game.header_buttons.size() != 6:
 		_fail("New command header must expose six interactive actions")
 		return
+	if game.header_rail.find_child("CommandActionsScroll", true, false) != null:
+		_fail("Header contains forbidden horizontal scrollbar")
+		return
+	if game.find_child("CompactGameStatus", true, false) != null:
+		_fail("Orphaned blank status box still exists")
+		return
+	if game.production != null:
+		_fail("Build stock ticker must not occupy the header")
+		return
+	if not game.build_dock.category_panel.get_theme_stylebox("panel") is StyleBoxEmpty \
+		or not game.build_dock.machine_panel.get_theme_stylebox("panel") is StyleBoxEmpty:
+		_fail("The build dock still has the oversized background frames")
+		return
+	for action in game.header_buttons.values():
+		if not action.is_visible_in_tree():
+			_fail("One or more header actions are hidden")
+			return
+		if action.get_global_rect().end.x > game.get_viewport_rect().size.x + 1:
+			_fail("Header action clipped beyond viewport; no scroll fallback allowed")
+			return
+	if game.header_buttons["pause"].text.contains("Ⅱ"):
+		_fail("Pause action still has duplicate Unicode icon")
+		return
 	if game.menu_card.get_theme_stylebox("panel") is not StyleBoxFlat:
 		_fail("The native old menu surface has not been fully replaced")
 		return
 	game._show_menu(false)
 	game._inspect(Vector2i(16, 17))
+	await process_frame
+	await process_frame
 	if not inspect_panel.visible:
 		_fail("Selecting a machine must open its inspector")
+		return
+	var inspector_rect: Rect2 = inspect_panel.get_global_rect()
+	var shelf_top: float = dock.get_global_rect().position.y + 14.0
+	print("Midnight Industries HUD layout: inspector ", inspector_rect,
+		", build shelf begins at ", shelf_top, ", viewport ",
+		game.get_viewport_rect().size)
+	if inspector_rect.end.y > shelf_top - 14.0:
+		_fail("Inspector overlaps the bottom machine shelf")
 		return
 	if game.inspector_portrait.texture == null:
 		_fail("Selected machine has no high-detail inspector art")

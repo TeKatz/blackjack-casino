@@ -45,7 +45,8 @@ func _word(de: String, en: String) -> String:
 func _build() -> void:
 	machine_panel = PanelContainer.new()
 	machine_panel.name = "BuildMachineShelf"
-	machine_panel.add_theme_stylebox_override("panel", MenuTheme.panel("section"))
+	# Floating machine cards: no large opaque shelf, border or shadow.
+	machine_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	machine_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(machine_panel)
 	var machines_scroll := ScrollContainer.new()
@@ -55,11 +56,14 @@ func _build() -> void:
 	machines_scroll.follow_focus = true
 	machine_panel.add_child(machines_scroll)
 	machine_row = HBoxContainer.new()
-	machine_row.add_theme_constant_override("separation", 8)
+	machine_row.add_theme_constant_override("separation", 10)
+	machine_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	machine_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	machines_scroll.add_child(machine_row)
 	category_panel = PanelContainer.new()
 	category_panel.name = "BuildCategoryBar"
-	category_panel.add_theme_stylebox_override("panel", MenuTheme.panel("section"))
+	# Categories themselves are the visual controls, not a framed container.
+	category_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	category_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(category_panel)
 	var category_scroll := ScrollContainer.new()
@@ -68,7 +72,9 @@ func _build() -> void:
 	category_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	category_panel.add_child(category_scroll)
 	category_row = HBoxContainer.new()
-	category_row.add_theme_constant_override("separation", 9)
+	category_row.add_theme_constant_override("separation", 11)
+	category_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	category_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	category_scroll.add_child(category_row)
 	_build_categories()
 	_build_machines()
@@ -81,9 +87,9 @@ func _layout() -> void:
 	var dock_width: float = minf(1020.0, maxf(480.0, width - 28.0))
 	var left: float = (width - dock_width) * 0.5
 	category_panel.position = Vector2(left, 112.0)
-	category_panel.size = Vector2(dock_width, 66.0)
+	category_panel.size = Vector2(dock_width, 60.0)
 	machine_panel.position = Vector2(left, 14.0 if _open else 28.0)
-	machine_panel.size = Vector2(dock_width, 92.0)
+	machine_panel.size = Vector2(dock_width, 85.0)
 
 func _new_button(parent: Node, name: String, width: float, fn: Callable) -> Button:
 	var button := Button.new()
@@ -106,7 +112,7 @@ func _build_categories() -> void:
 	category_buttons["inspect"] = inspect
 	for category in Catalog.categories():
 		var category_id: String = str(category.id)
-		var btn := _new_button(category_row, "Category_" + category_id, 145.0,
+		var btn := _new_button(category_row, "Category_" + category_id, 136.0,
 			_activate_category.bind(category_id))
 		btn.icon = Icons.icon(str(category.get("icon", "special")))
 		btn.text = str(category.get("de" if german else "en", category_id))
@@ -203,7 +209,7 @@ func _build_machines() -> void:
 		var id: String = str(entry.id)
 		var title: String = str(entry.get("de" if german else "en", id))
 		var unlocked: bool = Catalog.unlocked(entry, model)
-		var button := _new_button(machine_row, "Machine_" + id, 182,
+		var button := _new_button(machine_row, "Machine_" + id, 174,
 			_choose_machine.bind(id))
 		button.custom_minimum_size.y = 62
 		button.text = ""

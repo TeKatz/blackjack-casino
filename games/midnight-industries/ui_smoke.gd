@@ -108,6 +108,16 @@ func _run() -> void:
 	if game.header_buttons.size() != 6 or game.header_buttons["pause"] != game.pause_button:
 		_fail("Header controls missing or Pause remained in bottom rail", game)
 		return
+	if game.find_child("CommandActionsScroll", true, false) != null \
+		or game.find_child("CompactGameStatus", true, false) != null:
+		_fail("Outdated scrollbar or empty bottom-left status background still present", game)
+		return
+	if game.pause_button.text.contains("Ⅱ") or game.pause_button.icon == null:
+		_fail("Pause action must have exactly one icon", game)
+		return
+	if not game.build_dock.category_panel.get_theme_stylebox("panel") is StyleBoxEmpty:
+		_fail("Bottom category bar should use floating buttons, not a frame", game)
+		return
 	if game.objectives_drawer == null:
 		_fail("Objectives drawer missing", game)
 		return
