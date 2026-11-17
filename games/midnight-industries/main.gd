@@ -76,7 +76,7 @@ var ui_layer: CanvasLayer
 var tool_buttons: Dictionary = {}
 var mode_buttons: Dictionary = {}
 var sidebar_panel: PanelContainer
-var inspector_panel: PanelContainer
+var inspector_panel: Panel
 var inspector_title: Label
 var inspector_body: Label
 var inspector_subtitle: Label
@@ -370,7 +370,7 @@ func _create_interface() -> void:
 		func() -> void: _show_menu(true))
 
 	# Inspector uses actual selection data and an illustrated machine portrait.
-	var inspector := PanelContainer.new()
+	var inspector := Panel.new()
 	inspector.name = "IndustrialMachineConsole"
 	inspector_panel = inspector
 	inspector.add_theme_stylebox_override("panel", MenuSkin.panel("main"))
@@ -384,9 +384,24 @@ func _create_interface() -> void:
 	inspector.offset_bottom = 438
 	inspector.clip_contents = true
 	inspector.visible = false
+	# A native Panel doesn't grow to fit its children. The old PanelContainer
+	# silently stretched to several thousand pixels tall on Windows/Godot.
+	# A bounded inner ScrollContainer retains all telemetry and controls,
+	# without allowing the inspector to cover the bottom build dock.
+	var inspector_scroll := ScrollContainer.new()
+	inspector_scroll.name = "InspectorContents"
+	inspector_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	inspector_scroll.offset_left = 22
+	inspector_scroll.offset_right = -22
+	inspector_scroll.offset_top = 17
+	inspector_scroll.offset_bottom = -16
+	inspector_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	inspector_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	inspector.add_child(inspector_scroll)
 	var inspect_col := VBoxContainer.new()
-	inspect_col.add_theme_constant_override("separation", 12)
-	inspector.add_child(inspect_col)
+	inspect_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inspect_col.add_theme_constant_override("separation", 9)
+	inspector_scroll.add_child(inspect_col)
 	inspect_col.add_child(_make_label(_tr("ANLAGENÜBERWACHUNG", "MACHINE TELEMETRY"), 12, GOLD))
 	var portrait_row := HBoxContainer.new()
 	portrait_row.add_theme_constant_override("separation", 8)
@@ -957,7 +972,7 @@ func _layout_hud() -> void:
 		# behind the bottom build dock at any viewport height or UI scale.
 		inspector_panel.set_anchor(SIDE_BOTTOM, 0.0, false)
 		inspector_panel.offset_top = 109.0
-		inspector_panel.offset_bottom = minf(441.0, view.y - 236.0)
+		inspector_panel.offset_bottom = minf(468.0, view.y - 214.0)
 		inspector_panel.offset_left = -376.0
 		inspector_panel.offset_right = -16.0
 
