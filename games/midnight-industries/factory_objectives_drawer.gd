@@ -21,7 +21,7 @@ func _ready() -> void:
 	size = Vector2(WIDTH, 252)
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	_build()
-	_set_position(false)
+	_update_slide(false)
 
 func _word(de: String, en: String) -> String:
 	return de if german else en
@@ -71,7 +71,7 @@ func _build() -> void:
 	toggle_button.pressed.connect(toggle)
 	add_child(toggle_button)
 
-func _set_position(animated: bool) -> void:
+func _update_slide(animated: bool) -> void:
 	if _tween != null and _tween.is_running():
 		_tween.kill()
 	var target: float = OPEN_X if expanded else CLOSED_X
@@ -89,11 +89,11 @@ func _set_position(animated: bool) -> void:
 
 func toggle() -> void:
 	expanded = not expanded
-	_set_position(true)
+	_update_slide(true)
 
 func set_expanded(value: bool, animated: bool = false) -> void:
 	expanded = value
-	_set_position(animated)
+	_update_slide(animated)
 
 func set_phase(phase: int) -> void:
 	phase_line.text = _word("CASINO · PHASE ", "CASINO · PHASE ") + "%02d/12" % phase
