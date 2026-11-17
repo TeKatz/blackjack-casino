@@ -19,7 +19,7 @@ static func ingot_texture() -> Texture2D:
 static func _recolor(original: Texture2D, ingot: bool) -> Texture2D:
 	if original == null:
 		return null
-	var source: Image = original.get_image()
+	var source: Image = original.get_image().duplicate()
 	if source.is_compressed() and source.decompress() != OK:
 		return null
 	source.convert(Image.FORMAT_RGBA8)
