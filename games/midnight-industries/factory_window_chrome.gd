@@ -52,7 +52,7 @@ func _ready() -> void:
 	resize.gui_input.connect(_resize_input)
 	resize_grip = resize
 	# Keep resize grip in a sibling so it remains at the actual window corner.
-	var layer := game.ui_layer
+	var layer: CanvasLayer = game.ui_layer
 	layer.add_child(resize)
 	resize.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	visible = false
