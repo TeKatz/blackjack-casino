@@ -1,4 +1,5 @@
 extends RefCounted
+const Construction = preload("res://factory_construction.gd")
 ## Authoritative, renderer-independent fixed-step factory model.
 ## Machines are compact dictionaries keyed by cell; no per-item scene nodes.
 const WIDTH := 128
@@ -9,6 +10,7 @@ const SAVE_VERSION := 1
 const SAVE_FILE := "user://midnight-industries-v1.json"
 const MAX_BUFFER := 8
 
+var construction
 var resources: Dictionary = {}
 var buildings: Dictionary = {}
 var delivered: Dictionary = {"iron_ingot": 0, "copper_ingot": 0, "iron_ore": 0, "copper_ore": 0}
@@ -20,6 +22,7 @@ var cached_cells: Array = []
 var cells_dirty := true
 
 func _init(with_starter: bool = true) -> void:
+	construction = Construction.new()
 	_seed_resources()
 	if with_starter:
 		# A functioning introductory iron line, intended to be extended.
@@ -56,7 +59,12 @@ func inside(cell: Vector2i) -> bool:
 	return cell.x >= 0 and cell.y >= 0 and cell.x < WIDTH and cell.y < HEIGHT
 
 func can_place(cell: Vector2i, kind: String) -> bool:
-	if not inside(cell) or buildings.has(cell):
+	# The casino foundation is permanent terrain. Existing older-save
+	# machines inside its footprint are still restored and kept working,
+	# but no new machines can be placed on the protected build site.
+	if not inside(cell) or construction.inside(cell) or buildings.has(cell):
+		return false
+	if not construction.is_machine_unlocked(kind):
 		return false
 	if kind == "miner":
 		return resources.has(cell)
@@ -125,6 +133,8 @@ func _can_receive(machine: Dictionary, item: String) -> bool:
 		"smelter":
 			if not item in ["iron_ore", "copper_ore"]:
 				return false
+			if not construction.is_recipe_unlocked(item.trim_suffix("_ore") + "_ingot"):
+				return false
 			return machine.ore < MAX_BUFFER and (machine.recipe == "" or machine.recipe == item.trim_suffix("_ore"))
 		"storage":
 			return delivered.has(item)
@@ -178,12 +188,23 @@ func _step() -> void:
 	# of dictionary iteration order; each destination accepts at most one.
 	var moves: Array = []
 	var reserved: Dictionary = {}
+	var reserved_for_site: Dictionary = {}
 	for cell in cells:
 		var source: Dictionary = buildings[cell]
 		var item := _outgoing(cell, source)
 		if item == "":
 			continue
 		var next: Vector2i = cell + DIRS[int(source.direction)]
+		# 48 physical site intakes: any inward-facing output adjacent to an
+		# outer edge can deliver when that phase explicitly requests the item.
+		# Empty requirements intentionally do not consume anything.
+		if not buildings.has(next) and construction.is_input(
+			next, cell, int(source.direction)):
+			var already: int = int(reserved_for_site.get(item, 0))
+			if construction.can_accept(item, already):
+				moves.append({"from": cell, "to": next, "item": item, "site": true})
+				reserved_for_site[item] = already + 1
+			continue
 		if reserved.has(next) or not buildings.has(next):
 			continue
 		var destination: Dictionary = buildings[next]
@@ -194,6 +215,9 @@ func _step() -> void:
 	for move in moves:
 		_remove_output(buildings[move["from"]])
 	for move in moves:
+		if bool(move.get("site", false)):
+			construction.receive(str(move.item))
+			continue
 		_receive(buildings[move["to"]], move["item"])
 		if buildings[move["to"]].kind == "belt":
 			transit[move["to"]] = {"from": move["from"], "item": move["item"]}
@@ -207,7 +231,8 @@ func snapshot() -> Dictionary:
 			"item": b.item, "buffer": b.buffer, "ore": b.ore,
 			"output": b.output, "recipe": b.recipe, "progress": b.progress,
 		})
-	return {"version": SAVE_VERSION, "steps": steps, "delivered": delivered.duplicate(), "machines": machines}
+	return {"version": SAVE_VERSION, "steps": steps, "delivered": delivered.duplicate(),
+		"machines": machines, "construction": construction.snapshot()}
 
 func restore(data: Variant) -> bool:
 	if typeof(data) != TYPE_DICTIONARY or data.get("version", 0) != SAVE_VERSION:
@@ -248,12 +273,16 @@ func restore(data: Variant) -> bool:
 			"buffer": buffer, "ore": ore, "output": output,
 			"recipe": recipe, "progress": progress,
 		}
+	var restored_construction = Construction.new()
+	if not restored_construction.restore(data.get("construction", {})):
+		return false
 	var new_totals := {}
 	for key in delivered.keys():
 		var amount := int(totals.get(key, 0))
 		if amount < 0:
 			return false
 		new_totals[key] = amount
+	construction = restored_construction
 	buildings = loaded
 	cells_dirty = true
 	transit.clear()

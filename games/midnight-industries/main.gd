@@ -4,6 +4,8 @@ const Model = preload("res://factory_model.gd")
 const StaticView = preload("res://factory_static.gd")
 const TerrainView = preload("res://factory_terrain.gd")
 const GridView = preload("res://factory_grid.gd")
+const ConstructionView = preload("res://factory_construction_view.gd")
+const Construction = preload("res://factory_construction.gd")
 const MotionView = preload("res://factory_motion.gd")
 const UiSkin = preload("res://factory_skin.gd")
 const Atlas = preload("res://factory_atlas.gd")
@@ -22,6 +24,7 @@ var model
 var static_view: Node2D
 var motion_view: Node2D
 var grid_view: Node2D
+var construction_view: Node2D
 var show_grid := false
 const VISUAL_SETTINGS_FILE := "user://industries-visual-settings.cfg"
 var mode := "inspect"
@@ -47,6 +50,7 @@ var menu_card: PanelContainer
 var header_status: Label
 var production: Label
 var fps_label: Label
+var construction_status: Label
 var status: Label
 var tool_title: Label
 var grid_button: Button
@@ -77,6 +81,7 @@ func _ready() -> void:
 	german = not "--language=en" in OS.get_cmdline_user_args()
 	model = Model.new()
 	var previous: bool = model.load_game()
+	model.construction.phase_completed.connect(_on_construction_phase)
 	_load_visual_settings()
 	camera.position = Vector2(21, 18) * TILE
 	camera.zoom = Vector2.ONE
@@ -103,6 +108,10 @@ func _create_world() -> void:
 	grid_view.camera = camera
 	add_child(grid_view)
 	grid_view.set_grid_visible(show_grid)
+	construction_view = ConstructionView.new()
+	construction_view.name = "CasinoConstructionSite"
+	construction_view.model = model
+	add_child(construction_view)
 	static_view = StaticView.new()
 	static_view.name = "IndustrialDeckChunks"
 	static_view.model = model
@@ -228,6 +237,8 @@ func _create_interface() -> void:
 	header_status = _make_label("", 11, CYAN)
 	fps_label = _make_label("", 11, MUTED)
 	status_row.add_child(header_status)
+	construction_status = _make_label("", 11, GOLD)
+	status_row.add_child(construction_status)
 	status_row.add_child(fps_label)
 	var menu_button := _button(_tr("  MENÜ  [ESC]  ", "  MENU  [ESC]  "), func() -> void: _show_menu(true))
 	menu_button.custom_minimum_size.x = 109
@@ -433,6 +444,8 @@ func _create_interface() -> void:
 	resume_button = _button(_tr("▶   FABRIK FORTSETZEN", "▶   RESUME FACTORY"), func() -> void: _show_menu(false))
 	resume_button.custom_minimum_size.y = 47
 	menu_col.add_child(resume_button)
+	menu_col.add_child(_button(_tr("⌖   ZUM CASINO-BAUPLATZ [C]", "⌖   FIND CASINO SITE [C]"),
+		_focus_construction))
 	menu_col.add_child(_button(_tr("▣   SPIELSTAND SPEICHERN", "▣   SAVE PROGRESS"), _save_now))
 	effects_button = _button(_tr("✦   ANIMATIONEN: AN", "✦   ANIMATIONS: ON"), _toggle_effects)
 	menu_col.add_child(effects_button)
@@ -495,7 +508,12 @@ func _inspect(cell: Vector2i) -> void:
 	inspected = cell if model.buildings.has(cell) else Vector2i(-1, -1)
 	motion_view.inspected = inspected
 	_refresh_inspector()
-	notice_selection()
+	if model.construction.inside(cell) and not model.buildings.has(cell):
+		_notice(_tr("Casino-Bauplatz · Phase %02d/12 · Anforderungen folgen",
+			"Casino construction · Phase %02d/12 · requirements pending")
+			% model.construction.phase_number())
+	else:
+		notice_selection()
 
 func _refresh_ui() -> void:
 	if model == null or production == null:
@@ -515,6 +533,10 @@ func _refresh_ui() -> void:
 	var unit_count: int = model.buildings.size()
 	var pause_state := _tr("PAUSIERT", "PAUSED") if simulation_paused else _tr("PRODUKTION AKTIV", "PRODUCTION LIVE")
 	header_status.text = "●  %s   ·   %d %s    " % [pause_state, unit_count, _tr("Gebäude", "buildings")]
+	var active_phase: int = model.construction.phase_number()
+	construction_status.text = _tr("CASINO %02d/12", "CASINO %02d/12") % active_phase
+	if model.construction.completed_phases >= Construction.PHASE_COUNT:
+		construction_status.text = _tr("CASINO FERTIG", "CASINO COMPLETE")
 	fps_label.text = "FPS  %d" % Engine.get_frames_per_second()
 	pause_button.text = _tr("▶  WEITER", "▶  RESUME") if simulation_paused else _tr("Ⅱ  PAUSE", "Ⅱ  PAUSE")
 	_refresh_inspector()
@@ -622,6 +644,20 @@ func _toggle_grid() -> void:
 	_notice(_tr("Bauraster eingeblendet", "Placement grid visible") if show_grid else
 		_tr("Bauraster ausgeblendet", "Placement grid hidden"))
 
+func _on_construction_phase(number: int) -> void:
+	construction_view.queue_redraw()
+	_notice(_tr("Casino-Bauphase %02d abgeschlossen",
+		"Casino construction phase %02d completed") % number)
+	_refresh_ui()
+
+func _focus_construction() -> void:
+	_show_menu(false)
+	camera.position = (Vector2(Construction.ORIGIN) +
+		Vector2(Construction.WIDTH, Construction.HEIGHT) * 0.5) * TILE
+	_bound_camera()
+	_notice(_tr("Casino-Bauplatz · 48 Materialeingänge",
+		"Casino construction · 48 material inputs"))
+
 func _new_factory() -> void:
 	if not confirming_new:
 		confirming_new = true
@@ -630,6 +666,9 @@ func _new_factory() -> void:
 	confirming_new = false
 	new_button.text = _tr("＋   NEUE FABRIK STARTEN", "＋   START NEW FACTORY")
 	model = Model.new()
+	model.construction.phase_completed.connect(_on_construction_phase)
+	construction_view.model = model
+	construction_view.queue_redraw()
 	static_view.model = model
 	motion_view.model = model
 	static_view.refresh_all()
@@ -768,6 +807,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_pause()
 		elif event.keycode == KEY_G:
 			_toggle_grid()
+		elif event.keycode == KEY_C:
+			_focus_construction()
 		return
 	if menu_open:
 		return

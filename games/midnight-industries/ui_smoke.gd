@@ -15,7 +15,18 @@ func _run() -> void:
 	if game.static_view == null or game.motion_view == null:
 		_fail("cached/rendering layers not created", game)
 		return
-	game._show_menu(false)
+	var construction_view: Node = game.get_node_or_null("CasinoConstructionSite")
+	if construction_view == null or construction_view.get("model") != game.model:
+		_fail("Casino construction site is missing from the world", game)
+		return
+	if game.construction_status == null or not "01/12" in game.construction_status.text:
+		_fail("Twelve-phase construction status is missing", game)
+		return
+	game._focus_construction()
+	if game.menu_open or not game.camera.position.is_equal_approx(
+		(Vector2(70, 42) + Vector2(6, 6)) * 48.0):
+		_fail("Camera cannot navigate to the casino site", game)
+		return
 	game._inspect(Vector2i(16, 17))
 	if game.inspector_title.text == "" or not game.inspector_controls.visible:
 		_fail("selected miner has no inspector", game)

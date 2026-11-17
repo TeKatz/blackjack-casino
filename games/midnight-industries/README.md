@@ -31,11 +31,24 @@ Colors: graphite `#111A21`, steel `#273743`, illuminated amber `#F5C04A`, neon c
 | Space | Pause production |
 | Ctrl+S | Save |
 | G or main-menu toggle | Show/hide the optional placement grid (visual preference saved separately) |
+| C or main-menu button | Center the camera on the casino construction site |
 | Escape | Open/close the main menu |
 
 The main menu supports continue, save, confirmed new factory, motion and grid settings, and **Save & Return to Casino**. The obsolete Sector Overview panel has been removed to free the right side of the screen. A built-in starter iron chain mines, transports, smelts and collects ingots. Copper deposits and additional patches allow building other chains.
 
-**No changes to `factory_model.gd`** are required by this visual package. The machine recipes, ticks, throughput, inventory values, version-1 save shape, old-save compatibility and independent casino profile are unchanged.
+## Project Midnight — construction and progression foundation
+
+The 128×96 world now contains a permanent **12×12-grid casino construction site**, close to the centre at grid origin `(70, 42)`. This location avoids the existing central iron field and southern copper field. Mineral patches, the starter production line and existing save-game machines are never moved. New factory buildings cannot be placed inside the reserved construction footprint; machines loaded there from historical saves remain intact and functional.
+
+Each of the site's **48 intake connections** is tied to a separate side/grid position: 12 on the north border, 12 east, 12 south, and 12 west. A belt or producing machine can feed a side input only when it faces *into* that specific boundary cell. Corners can receive from either adjacent side. Input delivery uses the same two-phase simulation transport as the factory, reserving requirements per tick to avoid consuming excess items.
+
+`factory_construction.gd` defines **12 stable phases** (`phase_01` through `phase_12`), saved per-phase material receipts and unlock gates for machinery and recipes. `MACHINE_UNLOCK_PHASES` and `RECIPE_UNLOCK_PHASES` map an identifier to the **number of completed phases** required (zero means available from the beginning). All current machines and current ingot recipes remain unlocked. Later machines and recipes can be registered here without inventing placeholder content now.
+
+**No requirements are configured for any of the 12 phases yet.** An empty phase cannot complete automatically and will not consume conveyor items. When requirements are eventually defined in `PHASE_REQUIREMENTS`, the foundation can collect those exact materials from any of its 48 inputs, keep partial progress, complete the current phase and open the next when the last requirement arrives. Actual building growth and new content are intentionally deferred.
+
+Construction progress is stored in an optional `construction` section in the existing **version-1 save format**; older saves without it load into phase one, leaving machine inventories, delivered ingots and ore resources untouched. The foundation is rendered by `factory_construction_view.gd`, with a compact HUD phase label and **C** / main-menu camera jump to the site.
+
+Current factory recipes, throughput, production ticks, warehouse counters and casino integration remain unchanged.
 
 ## Validation
 
@@ -51,6 +64,7 @@ The CI workflow validates 1024px grass/stone details, unchanged raw material art
 
 ### Current quality/performance pass
 
+- A protected 12×12 casino foundation adds twelve empty progression phases and 48 inward-facing item intakes, without altering existing ore patches or the original material recipes.
 - The old repetitive metal platform was replaced with one meadow-to-rock shader surface. Two 1024px detail textures now hold sharp material variation at close zoom, while ore deposits retain softly blended organic rocky patches. No per-frame primitive ground drawing.
 - The machine inspector collapses when no building is selected; header, catalog and quickbar are substantially narrower.
 - Approved original ore and cargo sprites were restored; only ground-cluster arrangements vary. Vertical conveyors have dedicated lighting-correct artwork, belts and ore have no oversized drop shadows, and warehouses no longer overlap left neighbors.
