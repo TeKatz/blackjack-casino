@@ -25,27 +25,28 @@ Colors: graphite `#111A21`, steel `#273743`, illuminated amber `#F5C04A`, neon c
 | Middle-drag / mouse wheel | Pan (all modes) / zoom |
 | V | Inspect/select mode; click to inspect a building |
 | B | Construction mode; click to place the active machine |
-| 1–5 | Choose mining drill, belt, furnace, warehouse, depot |
+| 1–7 | Drill, belt, furnace, warehouse, depot, power pole, water wheel (locked keys are ignored) |
 | R | Rotate build preview or selected machine |
 | Right click | Cancel build / clear selection (never destructive) |
 | Space | Pause production |
 | Ctrl+S | Save |
 | G or main-menu toggle | Show/hide the optional placement grid (visual preference saved separately) |
 | C or main-menu button | Center the camera on the casino construction site |
-| I or header Storage button | Open/close global depot construction inventory |
+| I or header Storage button | Open/close global depot material inventory |
+| J or header Jobs button | Open/close Jobs and power progression |
 | M | Open/close full-screen map (Escape also closes) |
 | Left-click inside world map | Recenter camera on that location and close map |
 | Escape | Open/close the main menu |
 
-The main menu supports continue, save, confirmed new factory, motion and grid settings, and **Save & Return to Casino**. The obsolete Sector Overview panel has been removed to free the right side of the screen. A built-in starter iron chain mines, transports, smelts and deposits ingots to the global bank. Copper deposits and additional patches allow building other chains.
+The main menu supports continue, save, confirmed new factory, motion and grid settings, and **Save & Return to Casino**. The obsolete Sector Overview panel has been removed to free the right side of the screen. Fresh worlds begin empty: the first raw-iron delivery line is built by the player. Further production unlocks through Jobs.
 
 ## Project Midnight — construction and progression foundation
 
-The 224×176 world now contains a permanent **12×12-grid casino construction site**, centrally positioned at grid origin `(106, 82)`. The two former oversized deposits beside the casino have moved to remote biomes, leaving a wide clear approach. Mineral patches, the starter production line and existing save-game machines are never moved. New factory buildings cannot be placed inside the reserved construction footprint; machines loaded there from historical saves remain intact and functional.
+The 224×176 world now contains a permanent **12×12-grid casino construction site**, centrally positioned at grid origin `(106, 82)`. The two former oversized deposits beside the casino have moved to remote biomes, leaving a wide clear approach. Mineral patches and existing save-game machines are never moved. New factory buildings cannot be placed inside the reserved construction footprint; machines loaded there from historical saves remain intact and functional.
 
 Each of the site's **48 intake connections** is tied to a separate side/grid position: 12 on the north border, 12 east, 12 south, and 12 west. A belt or producing machine can feed a side input only when it faces *into* that specific boundary cell. Corners can receive from either adjacent side. Input delivery uses the same two-phase simulation transport as the factory, reserving requirements per tick to avoid consuming excess items.
 
-`factory_construction.gd` defines **12 stable phases** (`phase_01` through `phase_12`), saved per-phase material receipts and unlock gates for machinery and recipes. `MACHINE_UNLOCK_PHASES` and `RECIPE_UNLOCK_PHASES` map an identifier to the **number of completed phases** required (zero means available from the beginning). All current machines and current ingot recipes remain unlocked. Later machines and recipes can be registered here without inventing placeholder content now.
+`factory_construction.gd` defines **12 stable phases** (`phase_01` through `phase_12`), saved per-phase material receipts and unlock gates for machinery and recipes. `MACHINE_UNLOCK_PHASES` and `RECIPE_UNLOCK_PHASES` map an identifier to the **number of completed phases** required (zero means available from the beginning). Only drill, belt and depot are initially available. Job progress controls further machines and recipes independently of the twelve Casino construction phases.
 
 **No requirements are configured for any of the 12 phases yet.** An empty phase cannot complete automatically and will not consume conveyor items. When requirements are eventually defined in `PHASE_REQUIREMENTS`, the foundation can collect those exact materials from any of its 48 inputs, keep partial progress, complete the current phase and open the next when the last requirement arrives. Actual building growth and new content are intentionally deferred.
 
@@ -55,7 +56,7 @@ Current factory recipes, throughput, production ticks, warehouse counters and ca
 
 ## Expanded world, minerals and water
 
-- World dimensions: **224×176 tiles** (formerly 128×96), rendered via 16×16 cached chunks. The small original starter iron/copper deposits and starter production line remain in place.
+- World dimensions: **224×176 tiles** (formerly 128×96), rendered via 16×16 cached chunks. The small original iron/copper deposits remain; new saves do not spawn a premade line.
 - The oversized iron and copper clusters formerly at `(61,47)` and `(82,65)` moved to `(44,124)` and `(174,128)`. Other remote deposits support larger factory layouts. The casino is now central at `(106,82)` with clear space around it.
 - **Gold**: five small, rare outer-map deposits. Gold rock and ingot textures are made from the previously approved high-resolution mineral artwork, preserving its metallic lighting; existing iron/copper sprites remain unchanged. Gold can be mined, belted, smelted into ingots and deposited at warehouses with distinct stored counts.
 - `factory_world.gd` generates winding directional rivers and natural-looking lakes. Flow vectors drive inexpensive GPU water motion in the landscape shader; lakes ripple more slowly. No water grid cell overlaps any ore field, and waterways keep an extra two-tile ore margin. The player cannot place machines or conveyor belts on water.
@@ -63,27 +64,57 @@ Current factory recipes, throughput, production ticks, warehouse counters and ca
 - Existing saves remain readable. Older miners on relocated ore are preserved with local legacy ore underneath them, and previously built factory cells are kept clear of newly generated water. Gold totals default to zero for older saves. Save version stays v1.
 
 All twelve casino phase requirements remain deliberately empty; the new mineral and geography update does not invent any construction quotas.
-## Depots, construction costs and the global build inventory
+## Stage 1 – jobs, free construction and real electricity
 
-The factory now has a physical **Depot** machine (tool **5**) and a separate global materials economy in `factory_economy.gd`. No factory building is free to place repeatedly: each normal placement checks the global depot stock and removes the entire cost atomically; insufficient stock leaves the world and balance unchanged.
+New worlds are **empty**. The only initially unlocked buildings are the
+**Mining Drill**, **Conveyor Belt** and **Depot**, and every building is free
+to place, move, rebuild or demolish. There is no copper bootstrap, starter
+construction bill or manual mining inventory. Genuine historic paid amounts
+are still safely refunded once if an old building is demolished.
 
-| Machine | Materials |
-| --- | --- |
-| Mining drill | 8 iron ingots |
-| Conveyor belt | 1 iron ingot per tile |
-| Smelting furnace | 12 iron ingots + 6 copper ingots |
-| Warehouse | 15 iron ingots |
-| Depot | 20 iron ingots + 10 copper ingots |
+**Main Job 001 – The First Delivery / Die erste Lieferung**
 
-- **Depot** is a one-tile conveyor destination with a separate metallic/cyan sprite. Every item delivered physically to any depot adds one unit to the **global, uncapped** spendable inventory, accessible from anywhere on the map. Depots do not output goods automatically.
-- **Warehouse** no longer spends material into a global counter. It has its own local **64-item buffer**, accepts all six current material types and sends inventory out along its chosen direction when a receiving belt or depot is available. The Warehouse inspector reports the real local buffer.
-- The permanent casino construction site still receives only physical deliveries to its 48 perimeter intakes. Those requirements and its 12-phase progress remain **completely separate** from the global machine-building bank.
-- The **I** key or **Lager [I] / Storage [I]** header button opens the full-screen construction inventory: six material stocks, costs, available/short materials and connected depot count. **I/Escape** closes it. In Build mode, the selected machine's cost and affordability are shown in the catalog and a red build preview indicates insufficient stock. The keyboard has **1–5** quick slots.
-- **New games** spawn with the original functional starter production line feeding a **complimentary depot at (25,17)**. A one-time 12-copper-ingot bootstrap inventory avoids the smelting-cost bootstrap paradox; iron is still produced and physically delivered. Starter structures are recorded as unpaid.
-- **100% of actually paid construction resources** are returned when a machine is demolished, including depots and conveyor pieces. Free starter or gifted machines return a **reusable, type-specific relocation kit**, not raw building materials: a free drill can be moved and rebuilt once for free but cannot be duplicated or sold for ingots. This prevents a factory softlock from deleting the last complimentary drill, furnace, belt or depot. Contents inside demolished machines are discarded; paid construction bills are still refunded in full.
-- **Existing save games** import old Warehouse delivered totals as global inventory exactly once, preserving already produced materials. When possible the migration attaches one complimentary depot to an existing Warehouse's output; otherwise it grants a single free depot placement voucher. Subsequent saves store the global stock, one-time voucher, per-warehouse buffers and actual paid construction bills without changing the save version.
+- Objective: **Deliver 100 iron ore to a depot / Liefere 100 Eisenerz an ein Depot**.
+- Only new *physical deliveries* to a Depot count. Existing stock, historic
+  deliveries, manual credits and Casino deliveries are excluded.
+- Completion permanently unlocks **Smelting Furnace**, **Power Pole**,
+  **Water Wheel**, plus **one global power-generator slot**.
+- Rewards and progress persist per world in the progression snapshot.
+  The Jobs header button and J key open the localized overview.
+- Later main jobs, optional side jobs and Casino material demands are not
+  invented yet. Add those to factory_progression.gd in future stages.
 
-All original iron/copper/gold production recipes remain available. More expensive higher-tier recipes and machines can later use this same economy and the pre-existing casino-phase unlock registry.
+**Electrical distribution**
+
+- Each **Water Wheel** uses one global generator slot and generates **30 kW**.
+  It must be on land adjacent to an existing **river** (not on water itself).
+- Each **Power Pole** uses zero slots and zero kW. Power poles and wheels
+  automatically link when within five map cells. Consumers connect within
+  the same radius and power never crosses isolated network components.
+- Each **Smelting Furnace** needs **10 kW**. Disconnected or undersupplied
+  smelters pause until their local network can supply the full demand.
+- There are **zero available generator slots before Job 001** and exactly
+  **one after completion**. Dismantling a generator returns its occupied slot;
+  placed but disconnected generators still count against the global limit.
+- Power poles and wheels have distinct original **144px** industrial machine
+  artwork with animated highlights; visible links assist network planning.
+- factory_power.gd owns deterministic connected-component simulation and
+  load allocation. Networks rebuild when buildings change, not every tick.
+  Future generator tiers can define their own output and slot requirements.
+  Additional power-slot side jobs have not been added yet.
+
+**Materials, backups and legacy worlds**
+
+- Depots continue storing physical ore/ingot deliveries in the global
+  uncapped inventory; warehouses keep local 64-item buffers. Materials now
+  serve Jobs and future Casino phases, not building construction prices.
+- The save envelope version is unchanged, and backups remain loadable.
+  Old saves with a furnace are grandfathered into the first technology
+  unlock/slot, but existing furnaces still need newly placed electrical
+  infrastructure to operate.
+- Progression snapshots store completed job IDs, partial deliveries and
+  earned power slots; loaded topology and active kW are always recalculated
+  from placed machines. Malformed/forged slot claims are rejected.
 
 ## Validation
 
@@ -191,8 +222,8 @@ The global inventory is a fully **data-driven**, scrollable native UI:
 - Search, category filters, live material counts, and scroll containers
   scale with future recipes and material types. The right-hand machine
   cost overview also derives its rows dynamically from machine recipes.
-- Materials are deducted only by existing game economy actions; viewing
-  inventory is read-only. New world and old-save content are unaffected.
+- The inventory is read-only: new physical deliveries affect stock and Job
+  progress, while building placement never deducts materials.
 
 
 ## Redesigned compact gameplay HUD
@@ -213,7 +244,7 @@ same native, shadowed steel aesthetic as the approved menu surfaces.
   updates do not rebuild the panel or restart transitions.
 - **Bottom build dock**: a compact centered category bar, expandable horizontal
   machine shelf, obvious active/hover/locked states and actual machine artwork.
-  Build costs, free relocation kits and current affordability remain connected
+  Unlock state, generator slots and live power demand are reflected in the catalog
   to the existing economy. The old left build catalog and long full-width
   footer rail are removed.
 - **Data-driven extension**: categories and ordering come from
