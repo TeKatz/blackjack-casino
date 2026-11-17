@@ -368,24 +368,38 @@ func _refresh_live() -> void:
 		var label: Label = quantities[id]
 		if is_instance_valid(label):
 			label.text = "%d" % model.economy.available(str(id))
+	model._update_power()
 	for kind in _machine_ids():
 		if not availability.has(kind):
 			continue
-		var ready: bool = model.economy.has_funds(kind)
+		var unlocked: bool = model.is_unlocked(kind)
+		var allowed: bool = unlocked and (
+			kind != "water_wheel" or model.power.can_add_generator(kind))
 		var state: Label = availability[kind]
-		state.text = _word("BAUBAR", "READY") if ready else _word("FEHLT", "SHORT")
+		if not unlocked:
+			state.text = _word("GESPERRT", "LOCKED")
+		elif not allowed:
+			state.text = _word("SLOTS VOLL", "SLOTS FULL")
+		else:
+			state.text = _word("BAUBAR", "READY")
 		state.add_theme_color_override("font_color",
-			MenuTheme.CYAN if ready else MenuTheme.RED)
+			MenuTheme.CYAN if allowed else MenuTheme.RED)
 		var status: Label = availability[kind + "_status"]
-		if true:
-			var details: Array[String] = []
-			var costs: Dictionary = model.building_cost(kind)
-			for material in costs:
-				var need: int = int(costs[material])
-				var have: int = model.economy.available(str(material))
-				details.append("%s %d / %d" % [
-					_material_name(str(material)), mini(have, need), need])
-			status.text = _word("Keine Materialkosten", "No material costs") if details.is_empty() else "  ·  ".join(details)
+		if not unlocked:
+			status.text = _word("Schalte Technologie über einen Job frei",
+				"Unlock through progression Jobs")
+		elif kind == "water_wheel":
+			status.text = _word("30 kW · 1 Slot · Flussufer",
+				"30 kW · 1 slot · river bank")
+		elif kind == "smelter":
+			status.text = _word("10 kW Verbrauch · Stromanschluss nötig",
+				"10 kW demand · requires power network")
+		elif kind == "power_pole":
+			status.text = _word("0 kW · Reichweite 5 Felder",
+				"0 kW · 5-tile link range")
+		else:
+			status.text = _word("Keine Materialkosten", "No material costs")
+
 	depot_label.text = _word("DEPOTS VERBUNDEN: %d", "CONNECTED DEPOTS: %d") % \
 		int(model.counts().get("depot", 0))
 	model._update_power()
