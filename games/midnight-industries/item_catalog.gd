@@ -14,7 +14,9 @@ const MACHINES := [
 	{"id":"belt", "de":"Förderband", "en":"Conveyor belt", "category":"logistics", "key":2},
 	{"id":"storage", "de":"Zwischenlager", "en":"Warehouse", "category":"logistics", "key":4},
 	{"id":"depot", "de":"Globales Depot", "en":"Global depot", "category":"logistics", "key":5},
-	{"id":"smelter", "de":"Schmelzofen", "en":"Smelting furnace", "category":"production", "key":3, "unlock_job":"first_iron_delivery"}
+	{"id":"smelter", "de":"Schmelzofen", "en":"Smelting furnace", "category":"production", "key":3, "unlock_job":"first_iron_delivery"},
+	{"id":"power_pole", "de":"Strommast", "en":"Power pole", "category":"energy", "key":6, "unlock_job":"first_iron_delivery"},
+	{"id":"water_wheel", "de":"Wasserrad", "en":"Water wheel", "category":"energy", "key":7, "unlock_job":"first_iron_delivery"}
 ]
 
 static func item(id: String) -> Dictionary:

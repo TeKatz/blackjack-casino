@@ -160,8 +160,12 @@ func _run() -> void:
 	if game.tool != "smelter" or game.mode != "build":
 		_fail("Production category did not unlock after first job", game)
 		return
+	assert(game.build_dock.machine_buttons.has("smelter"))
+	assert(game.model.progression.power_slots == 1)
 	game.build_dock._activate_category("energy")
-	if game.tool != "power_pole" or game.mode != "build":
+	if not game.build_dock.machine_buttons.has("power_pole") \
+		or not game.build_dock.machine_buttons.has("water_wheel") \
+		or game.tool != "power_pole" or game.mode != "build":
 		_fail("Energy category did not expose new electricity buildings", game)
 		return
 	game._set_mode("inspect")

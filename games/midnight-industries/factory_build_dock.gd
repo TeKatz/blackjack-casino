@@ -175,8 +175,7 @@ func select_machine(kind: String) -> void:
 	_set_shelf(true)
 
 func _choose_machine(kind: String) -> void:
-	if model == null or not model.construction.is_machine_unlocked(kind) \
-		or not model.economy.registered(kind):
+	if model == null or not model.is_unlocked(kind):
 		return
 	selected_machine = kind
 	_sync_style()
@@ -253,10 +252,9 @@ func _build_machines() -> void:
 	_refresh_materials()
 
 func _unlock_message(entry: Dictionary) -> String:
-	var needed: int = Catalog.phase_required(entry)
-	if needed < 0:
-		return _word("Noch nicht verfügbar", "Not yet available")
-	return _word("Ab Phase %d", "After phase %d") % needed
+	if str(entry.get("unlock_job", "")) == "first_iron_delivery":
+		return _word("Job 001 abschließen", "Complete job 001")
+	return _word("Noch nicht verfügbar", "Future stage")
 
 func _tooltip(entry: Dictionary, unlocked: bool) -> String:
 	var title: String = str(entry.get("de" if german else "en", entry.id))
@@ -284,6 +282,9 @@ func _refresh_materials() -> void:
 		var unlocked: bool = Catalog.unlocked(entry, model)
 		var selected: bool = unlocked and not inspecting and selected_machine == kind
 		var affordable: bool = model.economy.has_funds(kind)
+		if kind == "water_wheel":
+			model._update_power()
+			affordable = model.power.can_add_generator(kind)
 		var state: String = "%d_%d_%d" % [
 			int(unlocked), int(selected), int(affordable)]
 		# A production update may arrive many times per second. Only touch
@@ -301,9 +302,12 @@ func _refresh_materials() -> void:
 			continue
 		var subtitle: Label = machine_subtitles[kind]
 		var caption := ""
-		if model.economy.has_free_kit(kind) or (
-			kind == "depot" and model.economy.free_depot_available):
-			caption = _word("KOSTENLOS", "FREE KIT")
+		if kind == "water_wheel":
+			model._update_power()
+			caption = "30 kW · " + _word("Slot ", "Slot ") + \
+				"%d/%d" % [model.power.slot_used, model.power.slot_limit]
+		elif kind == "power_pole":
+			caption = _word("0 kW · kostenlos", "0 kW · free")
 		else:
 			var price: Dictionary = model.building_cost(kind)
 			var parts: Array[String] = []
@@ -312,6 +316,8 @@ func _refresh_materials() -> void:
 					"Cu" if str(item).begins_with("copper") else "Au")
 				parts.append("%s %d" % [abbr, int(price[item])])
 			caption = " · ".join(parts)
+		if caption.is_empty():
+			caption = _word("KOSTENLOS", "FREE")
 		if subtitle.text != caption:
 			subtitle.text = caption
 
