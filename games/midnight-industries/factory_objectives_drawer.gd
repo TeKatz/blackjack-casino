@@ -3,6 +3,7 @@ extends Control
 ## through data without redesigning the surface or breaking saved view state.
 const MenuTheme = preload("res://factory_menu_theme.gd")
 const Icons = preload("res://factory_ui_icons.gd")
+const ItemCatalog = preload("res://item_catalog.gd")
 
 var german := false
 var reduced_motion := false
@@ -108,7 +109,7 @@ func set_progression(factory) -> void:
 		body.text = str(job.get("description_de" if german else "description_en", ""))
 		for item in job.get("delivery", {}):
 			var current: int = factory.progression.delivered_count(str(job.id), str(item))
-			body.text += "\n" + str(item).replace("_", " ").capitalize() + (
+			body.text += "\n" + ItemCatalog.name_for(str(item), german) + (
 				": %d / %d" % [current, int(job.delivery[item])])
 	if factory.progression.is_complete("first_iron_delivery") and not \
 		factory.progression.is_complete("furnace_expansion"):

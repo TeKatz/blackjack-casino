@@ -318,7 +318,7 @@ waterways and the gameplay/saves are unaffected.
   furnace. An authored high-detail 144px industrial pressing machine has
   four true rotational variants; corresponding iron/copper plate icons and
   in-world conveyor cargo are bundled procedurally and cached.
-- The machine inspector includes **two recipe controls**. Switching is
+- The machine inspector includes **two recipe controls** (press **8** to select the Constructor once unlocked). Switching is
   blocked if input/output buffers or in-progress production contain material
   to prevent silently converting iron into copper. All outputs are real
   logistics items deliverable to depots or warehouses and stored in saves.

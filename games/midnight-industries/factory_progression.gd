@@ -213,6 +213,12 @@ func restore(raw: Variant) -> bool:
 				return false
 		completed_ids.append(id)
 		earned += int(entry.get("slots_reward", 0))
+	# A completed job must never precede a required milestone in a loaded save,
+	# regardless of the order its completed IDs were serialized.
+	for id in completed_ids:
+		for requirement in job(id).get("requires", []):
+			if not completed_ids.has(str(requirement)):
+				return false
 	# Prevent tampering with available generator capacity; future missions
 	# may award more but the number must always match completed milestones.
 	if earned != int(slots) or float(earned) != float(slots):

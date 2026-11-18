@@ -141,5 +141,10 @@ func _initialize() -> void:
 	var saved = Progression.new()
 	assert(saved.restore(JSON.parse_string(JSON.stringify(progress_save))))
 	assert(saved.is_complete("furnace_expansion") and saved.power_slots == 2)
+	var invalid_dependency: Dictionary = saved.snapshot()
+	invalid_dependency["completed"].erase("first_iron_delivery")
+	invalid_dependency["power_slots"] = 1
+	assert(not Progression.new().restore(invalid_dependency),
+		"An optional job cannot be restored without its main prerequisite")
 	print("Midnight Industries stage-two constructor, metal deliveries and side-job smoke PASS")
 	quit()
