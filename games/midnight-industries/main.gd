@@ -82,6 +82,8 @@ var sidebar_panel: PanelContainer
 var inspector_panel: Panel
 var inspector_title: Label
 var inspector_body: Label
+var inspector_power_banner: PanelContainer
+var inspector_power_label: Label
 var inspector_subtitle: Label
 var inspector_progress: ProgressBar
 var inspector_controls: HBoxContainer
@@ -427,6 +429,25 @@ func _create_interface() -> void:
 	inspector_subtitle = _make_label("", 12, CYAN)
 	inspector_subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title_col.add_child(inspector_subtitle)
+	# Prominent persistent warning in the inspector, not just a subtle red
+	# overlay on the machine. Only consumers without adequate power show it.
+	inspector_power_banner = PanelContainer.new()
+	inspector_power_banner.name = "MachinePowerWarning"
+	var warning_style := StyleBoxFlat.new()
+	warning_style.bg_color = Color("#38242D")
+	warning_style.border_color = Color("#EE7477")
+	warning_style.set_border_width_all(1)
+	warning_style.set_corner_radius_all(7)
+	warning_style.content_margin_left = 11
+	warning_style.content_margin_right = 11
+	warning_style.content_margin_top = 8
+	warning_style.content_margin_bottom = 8
+	inspector_power_banner.add_theme_stylebox_override("panel", warning_style)
+	inspector_power_label = _make_label("", 14, Color("#FFB6B5"))
+	inspector_power_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	inspector_power_banner.add_child(inspector_power_label)
+	inspect_col.add_child(inspector_power_banner)
+	inspector_power_banner.visible = false
 	inspect_col.add_child(HSeparator.new())
 	inspect_col.add_child(_make_label(_tr("PROZESSDATEN / STATUS", "PROCESS DATA / STATUS"), 11, MUTED))
 	inspector_body = _make_label("", 13, TEXT)
@@ -672,7 +693,7 @@ func notice_selection() -> void:
 		_notice(_tr("Auswahlmodus · Klicke eine Maschine", "Inspect mode · click a machine"))
 
 func _inspect(cell: Vector2i) -> void:
-	inspected = cell if model.buildings.has(cell) else Vector2i(-1, -1)
+	inspected = model.anchor_at(cell)
 	motion_view.inspected = inspected
 	_refresh_inspector()
 	if model.construction.inside(cell) and not model.buildings.has(cell):
@@ -743,6 +764,7 @@ func _refresh_inspector() -> void:
 	if not model.buildings.has(inspected):
 		_animate_inspector(false)
 		inspector_portrait.visible = false
+		inspector_power_banner.visible = false
 		inspector_title.text = _tr("Kein Gebäude gewählt", "No building selected")
 		inspector_subtitle.text = _tr("AUSWAHLMODUS  [V]", "INSPECT MODE  [V]")
 		inspector_body.text = _tr("Klicke einen Miner, ein Förderband, einen Ofen oder ein Lager. Hier erscheinen Zustand, Inventar und Produktionswerte.",
@@ -750,14 +772,28 @@ func _refresh_inspector() -> void:
 		inspector_progress.visible = false
 		inspector_controls.visible = false
 		return
+	model._update_power()
 	var machine: Dictionary = model.buildings[inspected]
 	var kind: String = machine.kind
+	var power_state: String = model.power.status(inspected)
+	var requires_power: bool = model.power.demand(kind) > 0
+	inspector_power_banner.visible = requires_power and power_state != "ok"
+	if inspector_power_banner.visible:
+		var lacking_connection: bool = power_state == "no_power"
+		inspector_power_label.text = _tr(
+			"⚡  KEIN STROMANSCHLUSS" if lacking_connection else "⚡  NICHT GENUG STROM",
+			"⚡  NO POWER" if lacking_connection else "⚡  INSUFFICIENT POWER")
+		var frame: StyleBoxFlat = inspector_power_banner.get_theme_stylebox("panel") as StyleBoxFlat
+		frame.bg_color = Color("#36232A") if lacking_connection else Color("#3C3325")
+		frame.border_color = Color("#ED7279") if lacking_connection else Color("#E9B65F")
+		inspector_power_label.add_theme_color_override("font_color",
+			Color("#FFB5B9") if lacking_connection else Color("#F7D58D"))
 	_animate_inspector(true)
 	inspector_portrait.visible = true
 	inspector_portrait.texture = _machine_icon(kind)
 	inspector_progress.visible = true
 	inspector_controls.visible = true
-	rotate_button.disabled = kind in ["depot", "power_pole", "water_wheel"]
+	rotate_button.disabled = kind in ["depot", "power_pole"]
 	var label_name := {"miner": _tr("Abbaumaschine", "Mining drill"),
 		"belt": _tr("Förderband", "Conveyor belt"),
 		"smelter": _tr("Schmelzofen", "Smelting furnace"),
@@ -768,7 +804,8 @@ func _refresh_inspector() -> void:
 	inspector_title.text = str(label_name.get(kind, kind.capitalize()))
 	inspector_subtitle.text = "%s  %d, %d     ·     %s  %s" % [
 		_tr("POSITION", "POSITION"), inspected.x, inspected.y,
-		_tr("AUSGANG", "OUTPUT"), DIR_TEXT[int(machine.direction)]]
+		(_tr("WASSERSEITE", "WATER SIDE") if kind == "water_wheel" else
+		_tr("AUSGANG", "OUTPUT")), DIR_TEXT[int(machine.direction)]]
 	match kind:
 		"miner":
 			var ore_type: String = model.resources.get(inspected, "iron")
@@ -782,12 +819,21 @@ func _refresh_inspector() -> void:
 				_tr("Leer", "Empty")) + "\n" + _tr("Transport: 4 Felder / Sekunde", "Transport: 4 tiles / second") + "\n" + _tr("Kapazität: 1 Gegenstand", "Capacity: 1 item")
 			inspector_progress.value = 100.0 if item != "" else 0.0
 		"smelter":
-			inspector_body.text = (_tr("Strom: ", "Power: ") + (
-				"10 kW · " + (_tr("AKTIV", "ON") if model.power.is_powered(inspected) else
-				_tr("KEINE VERSORGUNG", "NO SUPPLY"))) + "\n" +
-				_tr("Rezept: ", "Recipe: ") + str(machine.recipe).to_upper() + "\n" +
-				_tr("Erz: %d/8    Produkt: %d/8", "Ore: %d/8    Output: %d/8") % [machine.ore, machine.output] + "\n" +
-				_tr("Tempo: 1 Barren / 2 Sekunden", "Rate: 1 ingot / 2 seconds"))
+			var circuit: Dictionary = model.power.network_stats(inspected)
+			var power_text: String = _tr("VERSORGT", "POWERED")
+			if power_state == "no_power":
+				power_text = _tr("KEIN STROMANSCHLUSS", "NO POWER")
+			elif power_state == "insufficient":
+				power_text = _tr("NICHT GENUG STROM", "INSUFFICIENT POWER")
+			inspector_body.text = _tr("Leistungsbedarf: 10 kW", "Demand: 10 kW") + "\n" + (
+				_tr("Status: ", "Status: ") + power_text) + "\n" + (
+				_tr("Netzleistung: %d kW · Netzlast: %d kW",
+					"Grid supply: %d kW · Grid demand: %d kW") % [
+					int(circuit.supply), int(circuit.demand)]) + "\n" + (
+				_tr("Rezept: ", "Recipe: ") + str(machine.recipe).to_upper()) + "\n" + (
+				_tr("Erz: %d/8    Produkt: %d/8", "Ore: %d/8    Output: %d/8")
+					% [machine.ore, machine.output]) + "\n" + _tr(
+				"Tempo: 1 Barren / 2 Sekunden", "Rate: 1 ingot / 2 seconds")
 			inspector_progress.value = clampf(100.0 * float(machine.progress) / 2.0, 0.0, 100.0)
 		"storage":
 			var inventory: Dictionary = machine.get("inventory", {})
@@ -823,19 +869,41 @@ func _refresh_inspector() -> void:
 		"water_wheel":
 			inspector_body.text = _tr("Wasserkraft · 30 kW", "Hydropower · 30 kW") + "\n" + (
 				_tr("Stromslots: ", "Power slots: ") + "1") + "\n" + _tr(
-				"Nur an Flussufern · Stromnetz mit Masten erweitern.",
-				"River banks only · extend the grid with power poles.")
+				"Landfeld + angrenzendes Flussfeld · mit R drehen.",
+				"One land tile + adjacent river tile · rotate with R.")
 			inspector_progress.visible = false
 
 func _rotate_selected() -> void:
+	if not model.buildings.has(inspected):
+		return
+	var original: Dictionary = model.buildings[inspected]
+	var before: Array[Vector2i] = model.footprint_cells(
+		inspected, str(original.kind), int(original.direction))
 	if model.rotate(inspected):
-		static_view.refresh_cell(inspected)
+		var machine: Dictionary = model.buildings[inspected]
+		for cell in before:
+			static_view.refresh_cell(cell)
+		for cell in model.footprint_cells(inspected, str(machine.kind),
+			int(machine.direction)):
+			static_view.refresh_cell(cell)
+		motion_view.queue_redraw()
 		_refresh_inspector()
-		_notice(_tr("Ausgang gedreht", "Output rotated"))
+		_notice(_tr("Wasserseite gedreht", "Water side rotated")
+			if str(machine.kind) == "water_wheel" else
+			_tr("Ausgang gedreht", "Output rotated"))
+	elif str(original.kind) == "water_wheel":
+		_notice(_tr("Keine andere freie Flussseite für dieses Wasserrad",
+			"No other free river-side orientation at this location"))
 
 func _demolish_selected() -> void:
+	if not model.buildings.has(inspected):
+		return
+	var machine: Dictionary = model.buildings[inspected]
+	var cells: Array[Vector2i] = model.footprint_cells(
+		inspected, str(machine.kind), int(machine.direction))
 	if model.erase(inspected):
-		static_view.refresh_cell(inspected)
+		for cell in cells:
+			static_view.refresh_cell(cell)
 		_inspect(Vector2i(-1, -1))
 		_notice(_tr("Gebäude entfernt · kostenloser Neubau jederzeit möglich",
 			"Building removed · rebuild for free anytime"))
@@ -1158,19 +1226,20 @@ func _unhandled_input(event: InputEvent) -> void:
 				if mode == "inspect":
 					_begin_select_drag(event.position)
 				elif model.place(hovered, tool, facing):
-					static_view.refresh_cell(hovered)
+					for cell in model.footprint_cells(hovered, tool, facing):
+						static_view.refresh_cell(cell)
 					_notice(_tr("Gebäude platziert", "Building placed") +
 						" · " + _cost_text(tool))
 					_refresh_ui()
 				else:
-					var issue: String = model.placement_issue(hovered, tool)
+					var issue: String = model.placement_issue(hovered, tool, facing)
 					match issue:
 						"slots":
 							_notice(_tr("Keine Stromslots frei · Generator entfernen oder Nebenauftrag abschließen",
 								"No power slots free · remove a generator or complete a side job"))
 						"river":
-							_notice(_tr("Wasserräder benötigen ein Flussufer",
-								"Water wheels must be placed beside a river"))
+							_notice(_tr("Wasserrad: Landfeld und angrenzendes Flussfeld benötigt · R zum Drehen",
+								"Water wheel needs a land tile and adjacent river tile · press R to rotate"))
 						"locked":
 							_notice(_tr("Maschine noch gesperrt · Jobs prüfen",
 								"Machine locked · check Jobs"))
@@ -1296,6 +1365,11 @@ func apply_settings(changed: String = "") -> void:
 				if reduced_motion else _tr("✦   ANIMATIONEN: AN", "✦   ANIMATIONS: ON")
 	if changed in ["", "effect_quality"]:
 		motion_view.effect_quality = clampi(int(settings.values.effect_quality), 0, 2)
+	if changed in ["", "power_lines"]:
+		var visibility: String = str(settings.values.get("power_lines", "auto"))
+		motion_view.power_line_mode = visibility if visibility in [
+			"off", "auto", "always"] else "auto"
+		motion_view.queue_redraw()
 	if changed in ["", "water_motion"]:
 		minimap.water_motion = bool(settings.values.water_motion)
 		terrain_view.set_water_motion(bool(settings.values.water_motion))
