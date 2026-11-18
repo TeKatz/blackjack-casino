@@ -266,8 +266,9 @@ func _tooltip(entry: Dictionary, unlocked: bool) -> String:
 		parts.append("%s × %d" % [
 			ItemCatalog.name_for(str(material), german), int(cost[material])])
 	if str(entry.id) == "water_wheel":
-		return title + "\n" + _word("30 kW · 1 Stromslot · nur am Flussufer",
-			"30 kW · 1 power slot · river bank only")
+		return title + "\n" + _word(
+			"30 kW · 1 Slot · 1 Landfeld + 1 Flussfeld · R zum Drehen",
+			"30 kW · 1 slot · 1 land + 1 river tile · R to rotate")
 	if str(entry.id) == "power_pole":
 		return title + "\n" + _word("0 kW · Reichweite 5 Felder",
 			"0 kW · 5-tile connection range")

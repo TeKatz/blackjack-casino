@@ -11,7 +11,7 @@ const ACTIONS := {
 	"tool_6": KEY_6, "tool_7": KEY_7
 }
 var values := {"language":"en", "language_explicit":false, "grid":false, "reduced_motion":false,
-	"high_contrast":false, "ui_scale":1.0, "autosave":60, "tooltip_density":1,
+	"high_contrast":false, "power_lines":"auto", "ui_scale":1.0, "autosave":60, "tooltip_density":1,
 	"window_mode":1, "vsync":true, "fps":60, "water_motion":true,
 	"effect_quality":2,
 	"resolution":"1600x900", "window_configured":false, "master":1.0, "music":1.0, "effects":1.0, "ui":1.0,

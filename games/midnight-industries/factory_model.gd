@@ -23,6 +23,8 @@ var power_dirty := true
 var resources: Dictionary = {}
 var water: Dictionary = {}
 var buildings: Dictionary = {}
+## Secondary occupied cells of multi-tile machines, mapped to land anchors.
+var occupied: Dictionary = {}
 var delivered: Dictionary = {"iron_ingot": 0, "copper_ingot": 0, "gold_ingot": 0,
 	"iron_ore": 0, "copper_ore": 0, "gold_ore": 0}
 var steps := 0
@@ -60,12 +62,33 @@ func is_unlocked(kind: String) -> bool:
 func is_recipe_unlocked(recipe: String) -> bool:
 	return progression.recipe_unlocked(recipe) and construction.is_recipe_unlocked(recipe)
 
-func _river_bank(cell: Vector2i) -> bool:
-	for direction in DIRS:
-		var other: Vector2i = cell + direction
-		if water.has(other) and str(water[other].kind) == "river":
-			return true
-	return false
+## One stable anchor on land and a second occupied tile extending into
+## flowing water. Rotation 0/1/2/3 points the wheel to right/down/left/up.
+## Other machines retain their original single-cell footprints.
+func wheel_water_cell(anchor: Vector2i, direction: int) -> Vector2i:
+	return anchor + DIRS[posmod(direction, 4)]
+
+func footprint_cells(anchor: Vector2i, kind: String,
+	direction: int = 0) -> Array[Vector2i]:
+	var result: Array[Vector2i] = [anchor]
+	if kind == "water_wheel":
+		result.append(wheel_water_cell(anchor, direction))
+	return result
+
+func anchor_at(cell: Vector2i) -> Vector2i:
+	if buildings.has(cell):
+		return cell
+	return occupied.get(cell, Vector2i(-1, -1))
+
+func _wheel_water_valid(cell: Vector2i, direction: int,
+	ignore_owner: Vector2i = Vector2i(-1, -1)) -> bool:
+	var water_cell: Vector2i = wheel_water_cell(cell, direction)
+	if not inside(water_cell) or not water.has(water_cell) \
+		or str(water[water_cell].get("kind", "")) != "river":
+		return false
+	if buildings.has(water_cell):
+		return false
+	return not occupied.has(water_cell) or occupied[water_cell] == ignore_owner
 
 func _update_power() -> void:
 	if not power_dirty:
@@ -73,31 +96,13 @@ func _update_power() -> void:
 	power.rebuild(buildings, progression.power_slots)
 	power_dirty = false
 
-func can_place_site(cell: Vector2i, kind: String) -> bool:
-	# Geography and technology checks are separate from affordability. They
-	# also power the editor preview's distinct blocked/insufficient states.
-	if not inside(cell) or water.has(cell) or construction.inside(cell) \
-		or buildings.has(cell):
-		return false
-	if not is_unlocked(kind):
-		return false
-	if kind == "water_wheel" and not _river_bank(cell):
-		return false
-	if Power.slots(kind) > 0:
-		_update_power()
-		if not power.can_add_generator(kind):
-			return false
-	if kind == "miner":
-		return resources.has(cell)
-	return true
-
-func placement_issue(cell: Vector2i, kind: String) -> String:
+func placement_issue(cell: Vector2i, kind: String, direction: int = 0) -> String:
 	if not is_unlocked(kind):
 		return "locked"
 	if not inside(cell) or construction.inside(cell) or water.has(cell) \
-		or buildings.has(cell):
+		or buildings.has(cell) or occupied.has(cell):
 		return "blocked"
-	if kind == "water_wheel" and not _river_bank(cell):
+	if kind == "water_wheel" and not _wheel_water_valid(cell, direction):
 		return "river"
 	if kind == "miner" and not resources.has(cell):
 		return "ore"
@@ -107,8 +112,12 @@ func placement_issue(cell: Vector2i, kind: String) -> String:
 			return "slots"
 	return ""
 
-func can_place(cell: Vector2i, kind: String) -> bool:
-	return can_place_site(cell, kind)
+func can_place_site(cell: Vector2i, kind: String,
+	direction: int = 0) -> bool:
+	return placement_issue(cell, kind, direction).is_empty()
+
+func can_place(cell: Vector2i, kind: String, direction: int = 0) -> bool:
+	return can_place_site(cell, kind, direction)
 
 func building_cost(kind: String) -> Dictionary:
 	return economy.cost(kind)
@@ -127,30 +136,48 @@ func _make_machine(kind: String, direction: int, paid: Dictionary = {},
 
 func place(cell: Vector2i, kind: String, direction: int,
 	bootstrap: bool = false) -> bool:
-	if not can_place_site(cell, kind):
+	if not can_place_site(cell, kind, direction):
 		return false
 	buildings[cell] = _make_machine(kind, direction, {}, bootstrap)
+	if kind == "water_wheel":
+		occupied[wheel_water_cell(cell, direction)] = cell
 	cells_dirty = true
 	power_dirty = true
 	return true
 
 func erase(cell: Vector2i) -> bool:
-	if not buildings.has(cell):
+	var anchor: Vector2i = anchor_at(cell)
+	if not buildings.has(anchor):
 		return false
-	var machine: Dictionary = buildings[cell]
-	# New structures are free; genuine legacy paid structures are refunded
-	# only once on removal. Old relocation vouchers are ignored.
+	var machine: Dictionary = buildings[anchor]
+	# Legacy paid amounts are refunded exactly once; new buildings are free.
 	economy.refund(machine.get("paid", {}))
-	buildings.erase(cell)
-	transit.erase(cell)
+	if str(machine.kind) == "water_wheel":
+		occupied.erase(wheel_water_cell(anchor, int(machine.direction)))
+	buildings.erase(anchor)
+	transit.erase(anchor)
 	cells_dirty = true
 	power_dirty = true
 	return true
 
 func rotate(cell: Vector2i) -> bool:
-	if not buildings.has(cell):
+	var anchor: Vector2i = anchor_at(cell)
+	if not buildings.has(anchor):
 		return false
-	buildings[cell].direction = (int(buildings[cell].direction) + 1) % 4
+	var machine: Dictionary = buildings[anchor]
+	if str(machine.kind) == "water_wheel":
+		var old_direction: int = int(machine.direction)
+		for offset in range(1, 4):
+			var next_direction: int = (old_direction + offset) % 4
+			if _wheel_water_valid(anchor, next_direction, anchor):
+				occupied.erase(wheel_water_cell(anchor, old_direction))
+				occupied[wheel_water_cell(anchor, next_direction)] = anchor
+				machine.direction = next_direction
+				cells_dirty = true
+				power_dirty = true
+				return true
+		return false
+	machine.direction = (int(machine.direction) + 1) % 4
 	return true
 
 func advance(delta: float) -> void:
@@ -326,7 +353,8 @@ func snapshot() -> Dictionary:
 			"paid": b.get("paid", {}).duplicate(),
 			"kit": bool(b.get("kit", false)),
 		})
-	return {"version": SAVE_VERSION, "steps": steps, "delivered": delivered.duplicate(),
+	return {"version": SAVE_VERSION, "wheel_footprint_version": 2,
+		"steps": steps, "delivered": delivered.duplicate(),
 		"machines": machines, "construction": construction.snapshot(),
 		"economy": economy.snapshot(), "progression": progression.snapshot()}
 
@@ -446,6 +474,40 @@ func restore(data: Variant) -> bool:
 				existing_furnace = true
 				break
 		restored_progression.restore_legacy(existing_furnace)
+	# Version-1 saves placed the wheel on a single land cell next to any
+	# river. Migrate their stored facing to an actual adjacent river tile.
+	# In the new schema the orientation and the complete footprint are
+	# authoritative; reject invalid or overlapping footprints before commit.
+	var new_occupied: Dictionary = {}
+	var footprint_version: int = int(data.get("wheel_footprint_version", 1))
+	if footprint_version < 1 or footprint_version > 2:
+		return false
+	var wheel_anchors: Array = loaded.keys()
+	wheel_anchors.sort_custom(_less_cell)
+	for anchor in wheel_anchors:
+		var saved: Dictionary = loaded[anchor]
+		if str(saved.kind) != "water_wheel":
+			continue
+		if migrated_water.has(anchor):
+			return false
+		var original_direction: int = int(saved.direction)
+		var directions: Array[int] = [original_direction]
+		if footprint_version == 1:
+			for candidate_direction in range(4):
+				if not directions.has(candidate_direction):
+					directions.append(candidate_direction)
+		var accepted := false
+		for direction in directions:
+			var river_cell: Vector2i = wheel_water_cell(anchor, direction)
+			if inside(river_cell) and migrated_water.has(river_cell) \
+				and str(migrated_water[river_cell].get("kind", "")) == "river" \
+				and not loaded.has(river_cell) and not new_occupied.has(river_cell):
+				new_occupied[river_cell] = anchor
+				saved.direction = direction
+				accepted = true
+				break
+		if not accepted:
+			return false
 	var used_slots := 0
 	for saved_machine in loaded.values():
 		used_slots += Power.slots(str(saved_machine.kind))
@@ -469,6 +531,7 @@ func restore(data: Variant) -> bool:
 	resources = migrated_resources
 	water = migrated_water
 	buildings = loaded
+	occupied = new_occupied
 	cells_dirty = true
 	transit.clear()
 	delivered = new_totals

@@ -260,3 +260,30 @@ same native, shadowed steel aesthetic as the approved menu surfaces.
   scroll for future long lists. Active animations are cancelable and honor the
   global Reduced Motion setting.
 
+
+## Power-network visibility and two-tile river wheels
+
+- Under **Settings → Game & UI → Power lines**, choose **Off** (hide),
+  **Auto** (show while placing/inspecting electrical components), or
+  **Always** (leave the electrical-network overlay visible). The choice
+  persists in the global configuration and updates without a scene reload.
+- The Power Pole and Water Wheel are infrastructure rather than conveyors:
+  neither shows the yellow transport output dot or directional arrow.
+- The Water Wheel occupies **one land anchor + one adjacent river tile**.
+  Press R to rotate the land-to-water direction (right/down/left/up). Both
+  cells are reserved for placement, collision and selection; the flooded
+  cell resolves to the land anchor when inspected or demolished. A genuine
+  two-cell, 144×288 or 288×144 industrial sprite follows the shoreline.
+- Generation stays at **30 kW / 1 slot**. Power connections use the
+  land-side module. Existing pre-change single-cell wheel saves migrate
+  by finding a valid river-facing orientation. New saves mark the two-cell
+  footprint schema and reject invalid or overlapping footprint data.
+- The electricity simulation distinguishes **No Power** (disconnected or
+  no generator) from **Insufficient Power** (connected but undersupplied).
+  A small red/amber hovering bolt with pulse/bob indicates the fault on
+  electric consumers, with a localized warning banner and exact network
+  supply/demand in the inspector. Reduced Motion disables the bob.
+- Smoke coverage includes river bank placement, rotated art, two-cell
+  selection, demolition/rotation, legacy saves, power-line visibility,
+  10/30/40 kW overloading and both power-fault states.
+

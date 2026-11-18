@@ -389,8 +389,8 @@ func _refresh_live() -> void:
 			status.text = _word("Schalte Technologie über einen Job frei",
 				"Unlock through progression Jobs")
 		elif kind == "water_wheel":
-			status.text = _word("30 kW · 1 Slot · Flussufer",
-				"30 kW · 1 slot · river bank")
+			status.text = _word("30 kW · 1 Slot · Land und Flussfeld",
+				"30 kW · 1 slot · land and river tiles")
 		elif kind == "smelter":
 			status.text = _word("10 kW Verbrauch · Stromanschluss nötig",
 				"10 kW demand · requires power network")

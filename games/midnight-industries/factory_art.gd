@@ -26,19 +26,21 @@ static func machine(canvas: CanvasItem, at: Vector2, kind: String, direction: in
 			canvas.draw_texture_rect(belt, Rect2(at, Vector2(48, 48)),
 				false, Color(1.0, 1.0, 1.0, opacity))
 	else:
-		var texture: Texture2D = PowerArt.texture(kind) if kind in ["water_wheel", "power_pole"] else (
-			DepotArt.texture() if kind == "depot" else Atlas.sprite(index))
+		var texture: Texture2D = PowerArt.wheel_world(direction) if kind == "water_wheel" else (
+			PowerArt.texture(kind) if kind == "power_pole" else (
+			DepotArt.texture() if kind == "depot" else Atlas.sprite(index)))
 		if texture != null:
-			canvas.draw_texture_rect(texture, machine_destination(kind, at),
+			canvas.draw_texture_rect(texture, machine_destination(kind, at, direction),
 				false, Color(1.0, 1.0, 1.0, opacity))
 		if kind == "depot":
 			canvas.draw_rect(Rect2(at + Vector2(17, 37), Vector2(15, 3)),
 				Color("#16D4F0", opacity * 0.64))
 	if ghost:
-		arrow(canvas, center, direction, GOLD, 19.0)
+		if kind not in ["power_pole", "water_wheel"]:
+			arrow(canvas, center, direction, GOLD, 19.0)
 		for c in [Vector2(2, 2), Vector2(46, 2), Vector2(2, 46), Vector2(46, 46)]:
 			canvas.draw_circle(at + c, 2.0, Color("#AFFFE8"))
-	else:
+	elif kind not in ["power_pole", "water_wheel"]:
 		var normal: Vector2 = DIRS[posmod(direction, 4)]
 		canvas.draw_circle(center + normal * 20.0, 3.0, GOLD)
 		canvas.draw_circle(center + normal * 20.0, 1.25, Color.WHITE)
@@ -47,7 +49,12 @@ static func machine_source(kind: String) -> Rect2:
 	var index: int = int({"miner": 0, "belt": 1, "smelter": 2, "storage": 3}.get(kind, 0))
 	return Rect2(Vector2.ZERO, Vector2(144, 144)) if kind in ["water_wheel", "power_pole"] 		else Atlas.region(index)
 
-static func machine_destination(kind: String, at: Vector2) -> Rect2:
+static func machine_destination(kind: String, at: Vector2,
+	direction: int = 0) -> Rect2:
+	if kind == "water_wheel":
+		var delta: Vector2 = DIRS[posmod(direction, 4)] * TILE
+		var corner := at + Vector2(minf(0.0, delta.x), minf(0.0, delta.y))
+		return Rect2(corner, Vector2(TILE + absf(delta.x), TILE + absf(delta.y)))
 	if kind == "smelter":
 		# Existing accepted furnace/belt alignment, intentionally unchanged.
 		return Rect2(at + Vector2(0, -2), Vector2(48, 48))

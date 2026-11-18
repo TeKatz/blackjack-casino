@@ -24,6 +24,68 @@ static func texture(kind: String) -> Texture2D:
 	_cache[kind] = tex
 	return tex
 
+## The world waterwheel is a physical two-cell machine: dry gearbox on the
+## land cell, a paddle wheel and its water wake in the second (river) cell.
+## The geometry is authored once vertically, then SVG-transformed into all
+## four shore orientations. Never simply rotate a 1x1 sprite in empty grass.
+static var _world_wheels: Dictionary = {}
+
+static func wheel_world(direction: int) -> Texture2D:
+	var facing: int = posmod(direction, 4)
+	if _world_wheels.has(facing):
+		return _world_wheels[facing]
+	var horizontal: bool = facing == 0 or facing == 2
+	var width: int = 288 if horizontal else 144
+	var height: int = 144 if horizontal else 288
+	var transform := ""
+	match facing:
+		0: transform = 'matrix(0 -1 1 0 0 144)' # water on right
+		1: transform = 'matrix(1 0 0 1 0 0)' # water below
+		2: transform = 'matrix(0 1 -1 0 288 0)' # water on left
+		3: transform = 'matrix(-1 0 0 -1 144 288)' # water above
+	var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d">' % [
+		width, height, width, height]
+	svg += _defs()
+	svg += '<g transform="' + transform + '">'
+	# In-ground steel generator body. All geometry within the first 144
+	# coordinate units is dry; the wheel itself begins past the shoreline.
+	svg += '<ellipse cx="72" cy="127" rx="48" ry="12" fill="#06161C" opacity=".3"/>'
+	svg += '<path d="M16 112L71 94L126 111L70 137Z" fill="#19313C" stroke="#071D28" stroke-width="5"/>'
+	svg += '<path d="M17 109L71 93L124 110L70 128Z" fill="url(#steel)" stroke="#87A6AC" stroke-width="3"/>'
+	svg += '<path d="M36 59L73 45L111 58L111 102L74 118L36 99Z" fill="#162D38" stroke="#091923" stroke-width="5"/>'
+	svg += '<path d="M36 59L73 45L111 58L73 73Z" fill="url(#steel)" stroke="#B5CED1" stroke-width="2"/>'
+	svg += '<path d="M37 61L74 75L74 116L37 99Z" fill="#2D4E5D" stroke="#0B1D26" stroke-width="3"/>'
+	svg += '<path d="M78 74L111 61L111 100L78 114Z" fill="#152F3A" stroke="#547985" stroke-width="2"/>'
+	svg += '<rect x="45" y="72" width="22" height="16" rx="3" fill="#0B242F" stroke="#9BAFB5" stroke-width="2"/>'
+	svg += '<path d="M49 79h14" stroke="#53E3F2" stroke-width="4"/>'
+	svg += '<circle cx="94" cy="87" r="9" fill="url(#rim)" stroke="#162B37" stroke-width="3"/>'
+	svg += '<circle cx="94" cy="87" r="4" fill="url(#glow)"/>'
+	svg += '<path d="M67 112L62 160" stroke="#081B24" stroke-width="14"/>'
+	svg += '<path d="M67 112L62 160" stroke="url(#steel)" stroke-width="8"/>'
+	svg += '<path d="M72 113L71 155" stroke="#BD8E54" stroke-width="3"/>'
+	# Actual rotating wheel + ripples occupy the river half.
+	svg += '<path d="M18 238Q36 223 52 239T91 241T134 229" fill="none" stroke="#B4FAFD" stroke-width="3" opacity=".66"/>'
+	svg += '<path d="M11 255Q40 245 57 258T125 249" fill="none" stroke="#159FB9" stroke-width="4" opacity=".57"/>'
+	svg += '<path d="M30 269L44 266M94 263L116 257" stroke="#71D6E4" stroke-width="2" opacity=".63"/>'
+	svg += '<g transform="translate(0 138)">' + _wheel() + '</g>'
+	svg += '</g></svg>'
+	var img := Image.new()
+	if img.load_svg_from_buffer(svg.to_utf8_buffer()) != OK:
+		img = Image.create(width, height, false, Image.FORMAT_RGBA8)
+		img.fill(Color.TRANSPARENT)
+	img.generate_mipmaps()
+	var output: Texture2D = ImageTexture.create_from_image(img)
+	_world_wheels[facing] = output
+	return output
+
+static func _defs() -> String:
+	var defs := '<defs><linearGradient id="steel" x1="0" y1="0" x2="1" y2="1">'
+	defs += '<stop stop-color="#A8C7D1"/><stop offset=".32" stop-color="#4D6E79"/><stop offset=".65" stop-color="#203944"/><stop offset="1" stop-color="#0D232E"/></linearGradient>'
+	defs += '<linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">'
+	defs += '<stop stop-color="#F4CB7E"/><stop offset=".45" stop-color="#B5793A"/><stop offset="1" stop-color="#653C26"/></linearGradient>'
+	defs += '<radialGradient id="glow"><stop stop-color="#A6F9FF"/><stop offset=".43" stop-color="#2BBBD2"/><stop offset="1" stop-color="#06566F"/></radialGradient></defs>'
+	return defs
+
 static func _wheel() -> String:
 	var svg := ''
 	# Perspective footing, steel gearcase, upstream intake and copper conduit.

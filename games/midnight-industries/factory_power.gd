@@ -31,6 +31,30 @@ func can_add_generator(kind: String) -> bool:
 func is_powered(cell: Vector2i) -> bool:
 	return bool(powered.get(cell, false))
 
+func status(cell: Vector2i) -> String:
+	# Consumers need to distinguish no generator/connection from a real
+	# overloaded grid. Visuals and inspector share the same source of truth.
+	if not powered.has(cell):
+		return "not_required"
+	if bool(powered[cell]):
+		return "ok"
+	if not network_for.has(cell):
+		return "no_power"
+	var index: int = int(network_for[cell])
+	if index < 0 or index >= networks.size():
+		return "no_power"
+	return "no_power" if int(networks[index].supply) == 0 else "insufficient"
+
+func network_stats(cell: Vector2i) -> Dictionary:
+	if not network_for.has(cell):
+		return {"supply":0, "demand":0, "used":0}
+	var index: int = int(network_for[cell])
+	if index < 0 or index >= networks.size():
+		return {"supply":0, "demand":0, "used":0}
+	var network: Dictionary = networks[index]
+	return {"supply":int(network.supply), "demand":int(network.requested),
+		"used":int(network.used)}
+
 func _near(a: Vector2i, b: Vector2i) -> bool:
 	return (Vector2(a) - Vector2(b)).length_squared() <= LINK_RANGE * LINK_RANGE
 
@@ -65,7 +89,7 @@ func rebuild(buildings: Dictionary, max_slots: int) -> void:
 	for start in nodes:
 		if visited.has(start):
 			continue
-		var component := {"nodes": [], "supply":0, "used":0}
+		var component := {"nodes": [], "supply":0, "used":0, "requested":0}
 		var queue: Array[Vector2i] = [start]
 		visited[start] = true
 		var cursor := 0
@@ -103,6 +127,7 @@ func rebuild(buildings: Dictionary, max_slots: int) -> void:
 		network_for[at] = best_group
 		var circuit: Dictionary = networks[best_group]
 		var need: int = demand(str(buildings[at].kind))
+		circuit.requested += need
 		if int(circuit.used) + need <= int(circuit.supply):
 			circuit.used += need
 			total_powered += need

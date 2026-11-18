@@ -69,31 +69,47 @@ func _initialize() -> void:
 	assert(roundtrip.restore(JSON.parse_string(JSON.stringify(completed_snapshot))))
 	assert(roundtrip.snapshot() == completed_snapshot)
 
-	# Water wheels must sit on LAND with an adjacent actual flowing river,
-	# not inside water or next to an isolated lake.
+	# A wheel now occupies exactly TWO cells, one land anchor and one
+	# real flowing river tile. Rotation decides which neighbor is water.
 	var bank := Vector2i(-1, -1)
+	var bank_direction := -1
 	var other_bank := Vector2i(-1, -1)
+	var other_direction := -1
 	for water_cell in sim.water:
 		if str(sim.water[water_cell].kind) != "river":
 			continue
-		for direction in Model.DIRS:
-			var candidate: Vector2i = water_cell + direction
-			if sim.can_place_site(candidate, "water_wheel"):
+		for direction in range(4):
+			var candidate: Vector2i = water_cell - Model.DIRS[direction]
+			if sim.can_place_site(candidate, "water_wheel", direction):
 				if bank.x < 0:
 					bank = candidate
+					bank_direction = direction
 				elif candidate.distance_squared_to(bank) > 100:
 					other_bank = candidate
+					other_direction = direction
 					break
 		if other_bank.x >= 0:
 			break
-	assert(bank.x >= 0 and other_bank.x >= 0, "No actual river banks found")
+	assert(bank.x >= 0 and other_bank.x >= 0, "No two-cell river banks found")
 	assert(not sim.can_place_site(Vector2i(100, 100), "water_wheel"))
-	assert(sim.place(bank, "water_wheel", 0))
+	var river_tile: Vector2i = sim.wheel_water_cell(bank, bank_direction)
+	assert(sim.water.has(river_tile) and not sim.water.has(bank))
+	assert(sim.place(bank, "water_wheel", bank_direction))
+	assert(sim.buildings.size() > 0)
+	assert(sim.occupied[river_tile] == bank)
+	assert(sim.anchor_at(river_tile) == bank)
+	assert(sim.footprint_cells(bank, "water_wheel", bank_direction).size() == 2)
+	assert(not sim.can_place(river_tile, "power_pole"))
 	sim._update_power()
 	assert(sim.power.slot_used == 1 and sim.power.slot_limit == 1)
 	assert(sim.power.total_supply == 30)
-	assert(not sim.can_place(other_bank, "water_wheel"))
-	assert(sim.placement_issue(other_bank, "water_wheel") == "slots")
+	assert(not sim.can_place(other_bank, "water_wheel", other_direction))
+	assert(sim.placement_issue(other_bank, "water_wheel", other_direction) == "slots")
+	var wheel_snapshot: Dictionary = sim.snapshot()
+	var wheel_loaded = Model.new(false)
+	assert(wheel_loaded.restore(JSON.parse_string(JSON.stringify(wheel_snapshot))))
+	assert(wheel_loaded.snapshot() == wheel_snapshot)
+	assert(wheel_loaded.anchor_at(river_tile) == bank)
 
 	# The power pole consumes no energy and no generation slot.
 	var pole_cell := Vector2i(-1, -1)
@@ -126,6 +142,9 @@ func _initialize() -> void:
 		else:
 			offline = cell
 	assert(powered_count == 3 and offline.x >= 0)
+	assert(sim.power.status(offline) == "insufficient")
+	var stats: Dictionary = sim.power.network_stats(offline)
+	assert(int(stats.supply) == 30 and int(stats.demand) == 40)
 	for tick in range(9):
 		sim.advance(Model.STEP)
 	assert(int(sim.buildings[offline].output) == 0,
@@ -134,14 +153,19 @@ func _initialize() -> void:
 	for cell in smelters:
 		produced += int(sim.buildings[cell].output)
 	assert(produced == 3, "Three powered smelters did not produce")
-	assert(sim.erase(bank))
+	# Secondary water-tile interactions also remove the anchored building.
+	assert(sim.erase(river_tile))
+	assert(not sim.occupied.has(river_tile))
+	assert(not sim.buildings.has(bank))
 	sim._update_power()
 	assert(sim.power.slot_used == 0 and sim.power.total_supply == 0)
 	assert(sim.power.total_powered == 0)
 	for cell in smelters:
 		assert(not sim.power.is_powered(cell))
-	assert(sim.can_place(bank, "water_wheel"), "Dismantling must free power slot")
-	assert(sim.place(other_bank, "water_wheel", 0))
+		assert(sim.power.status(cell) == "no_power")
+	assert(sim.can_place(bank, "water_wheel", bank_direction),
+		"Dismantling must free power slot")
+	assert(sim.place(other_bank, "water_wheel", other_direction))
 	sim._update_power()
 	assert(sim.power.slot_used == 1)
 
@@ -159,12 +183,31 @@ func _initialize() -> void:
 	assert(network.total_supply == 30 and network.total_demand == 20)
 	assert(network.is_powered(Vector2i(24, 10)))
 	assert(not network.is_powered(Vector2i(80, 80)))
+	assert(network.status(Vector2i(80, 80)) == "no_power")
+	assert(network.status(Vector2i(24, 10)) == "ok")
 	assert(network.edges.size() >= 2)
+
+	# A wheel rotates its physical footprint, never just the visual arrow.
+	var spin = Model.new(false)
+	spin.progression.record_delivery("iron_ore", 100)
+	var pivot := Vector2i(58, 58)
+	while spin.water.has(pivot) or spin.resources.has(pivot) 		or spin.construction.inside(pivot):
+		pivot += Vector2i(1, 0)
+	spin.water[pivot + Vector2i.RIGHT] = {"kind":"river"}
+	spin.water[pivot + Vector2i.DOWN] = {"kind":"river"}
+	assert(spin.place(pivot, "water_wheel", 0))
+	assert(spin.rotate(pivot))
+	assert(int(spin.buildings[pivot].direction) == 1)
+	assert(not spin.occupied.has(pivot + Vector2i.RIGHT))
+	assert(spin.anchor_at(pivot + Vector2i.DOWN) == pivot)
+	assert(spin.erase(pivot + Vector2i.DOWN))
+	assert(spin.occupied.is_empty())
 
 	# Existing saved furnaces from pre-job versions retain the milestone.
 	# The legacy factory is not discarded; real paid stock is preserved.
 	var old_save: Dictionary = sim.snapshot()
 	old_save.erase("progression")
+	old_save.erase("wheel_footprint_version")
 	var added := {"x":62,"y":82,"kind":"smelter","direction":0,"item":"",
 		"buffer":0,"ore":0,"output":0,"recipe":"","progress":0.0,
 		"inventory":{},"paid":{"iron_ingot":12},"kit":false}
@@ -174,6 +217,22 @@ func _initialize() -> void:
 	assert(legacy.progression.is_complete("first_iron_delivery"))
 	assert(legacy.progression.power_slots == 1)
 	assert(legacy.buildings.has(Vector2i(62, 82)))
+	# Legacy single-cell wheels from the previous build auto-align their
+	# direction with their neighboring real river; new saves store both cells.
+	var older_wheel: Dictionary = sim.snapshot()
+	older_wheel.erase("wheel_footprint_version")
+	for machine in older_wheel["machines"]:
+		if machine.kind == "water_wheel":
+			machine.direction = (int(machine.direction) + 1) % 4
+	var migrated = Model.new(false)
+	assert(migrated.restore(older_wheel))
+	assert(migrated.anchor_at(sim.wheel_water_cell(
+		other_bank, other_direction)) == other_bank)
+	var invalid_footprint: Dictionary = sim.snapshot()
+	for machine in invalid_footprint["machines"]:
+		if machine.kind == "water_wheel":
+			machine.direction = (int(machine.direction) + 2) % 4
+	assert(not Model.new(false).restore(invalid_footprint))
 	var malformed := sim.snapshot()
 	malformed["progression"]["power_slots"] = 500
 	assert(not Model.new(false).restore(malformed))

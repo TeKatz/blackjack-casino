@@ -155,6 +155,24 @@ func _run() -> void:
 		if illustration == null or illustration.get_width() != 144 			or illustration.get_image().get_used_rect().size.x < 75:
 			_fail("Dedicated high-detail generator/mast art missing: " + name)
 			return
+	# All four shore orientations use distinct two-tile artwork, and the
+	# logical drawing rectangle matches the submerged Land/River footprint.
+	for direction in range(4):
+		var wheel: Texture2D = PowerArt.wheel_world(direction)
+		var horizontal: bool = direction % 2 == 0
+		var expected: Vector2i = Vector2i(288, 144) if horizontal else Vector2i(144, 288)
+		if wheel == null or wheel.get_size() != Vector2(expected):
+			_fail("Rotated two-tile waterwheel art has incorrect resolution")
+			return
+		var rect: Rect2 = Art.machine_destination("water_wheel",
+			Vector2.ZERO, direction)
+		var expected_extent: Vector2 = Vector2(96, 48) if horizontal else Vector2(48, 96)
+		if rect.size != expected_extent:
+			_fail("Waterwheel sprite rectangle does not cover exactly two tiles")
+			return
+		if wheel.get_image().get_used_rect().size.y < (220 if not horizontal else 90):
+			_fail("Waterwheel sprite does not contain both land and water machinery")
+			return
 	if Art.machine_destination("smelter", Vector2.ZERO).position.y >= 0.0:
 		_fail("Furnace outlet was not moved up to belt height")
 		return

@@ -123,6 +123,18 @@ func _run() -> void:
 	if game.objectives_drawer == null:
 		_fail("Objectives drawer missing", game)
 		return
+	game.navigation._choose("power_lines", "always")
+	if game.motion_view.power_line_mode != "always":
+		_fail("Always-visible power connections setting not applied", game)
+		return
+	game.navigation._choose("power_lines", "off")
+	if game.motion_view.power_line_mode != "off":
+		_fail("Power lines Off setting not applied", game)
+		return
+	game.navigation._choose("power_lines", "auto")
+	if game.motion_view.power_line_mode != "auto":
+		_fail("Power lines Auto setting not restored", game)
+		return
 	game.objectives_drawer.set_expanded(true)
 	if not game.objectives_drawer.expanded:
 		_fail("Objectives drawer failed to expand", game)
@@ -168,6 +180,42 @@ func _run() -> void:
 		or game.tool != "power_pole" or game.mode != "build":
 		_fail("Energy category did not expose new electricity buildings", game)
 		return
+	var riverside := Vector2i(-1, -1)
+	var bank_dir := 0
+	for tile in game.model.water:
+		if str(game.model.water[tile].kind) != "river":
+			continue
+		for direction in range(4):
+			var land: Vector2i = tile - game.model.DIRS[direction]
+			if game.model.can_place_site(land, "water_wheel", direction):
+				riverside = land
+				bank_dir = direction
+				break
+		if riverside.x >= 0:
+			break
+	if riverside.x < 0 or not game.model.place(riverside, "water_wheel", bank_dir):
+		_fail("Rotatable two-cell river waterwheel cannot be placed", game)
+		return
+	game._inspect(game.model.wheel_water_cell(riverside, bank_dir))
+	if game.inspected != riverside or game.inspector_title.text.is_empty() \
+		or game.rotate_button.disabled:
+		_fail("Clicking the submerged wheel half did not inspect the full machine", game)
+		return
+	game._demolish_selected()
+	if game.model.buildings.has(riverside) or not game.model.occupied.is_empty():
+		_fail("Dismantling a two-cell wheel left an occupied river tile", game)
+		return
+	# A disconnected smelter must show a visible, localizable warning.
+	var furnace_at := Vector2i(30, 30)
+	while not game.model.can_place_site(furnace_at, "smelter"):
+		furnace_at += Vector2i(1, 0)
+	assert(game.model.place(furnace_at, "smelter", 0))
+	game._inspect(furnace_at)
+	if not game.inspector_power_banner.visible \
+		or not "NO POWER" in game.inspector_power_label.text:
+		_fail("Disconnected furnace missing prominent No Power inspector banner", game)
+		return
+	game._demolish_selected()
 	game._set_mode("inspect")
 	game.return_to_main()
 	if not game.worlds.delete_world(world_id):

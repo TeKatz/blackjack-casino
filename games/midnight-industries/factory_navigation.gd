@@ -562,6 +562,10 @@ func _build_settings() -> void:
 	_slider(world, "autosave", _word("Autosave-Abstand", "Autosave interval"),
 		30, 300, 1, "s")
 	_toggle(world, "grid", _word("Bauraster", "Construction grid"))
+	_options(world, "power_lines", _word("Stromleitungen", "Power lines"),
+		[["off", _word("Aus", "Off")],
+		 ["auto", _word("Automatisch", "Auto")],
+		 ["always", _word("Immer an", "Always")]])
 	var controls: VBoxContainer = settings_tabs["controls"]
 	var control_card := _section(controls, _word("TASTENBELEGUNG", "KEY BINDINGS"),
 		_word("Klicke eine Aktion und drücke die gewünschte Taste.",

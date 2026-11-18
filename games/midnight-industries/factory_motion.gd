@@ -18,6 +18,8 @@ var menu_open := false
 var simulation_paused := false
 var reduced_motion := false
 var effect_quality := 2
+## off: never show links; auto: while building/inspecting power; always: every frame.
+var power_line_mode := "auto"
 var tick := 0.0
 
 func _process(delta: float) -> void:
@@ -30,6 +32,7 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	if model == null or camera == null:
 		return
+	model._update_power()
 	var view: Vector2 = get_viewport_rect().size / camera.zoom
 	var world_origin: Vector2 = camera.position - view * 0.5
 	var left := clampi(floori(world_origin.x / TILE) - 2, 0, Model.WIDTH - 1)
@@ -70,14 +73,18 @@ func _draw() -> void:
 					_wheel_vfx(at, cell)
 				"power_pole":
 					_pole_vfx(at, cell)
+			if model.power.demand(str(machine.kind)) > 0:
+				var power_state: String = model.power.status(cell)
+				if power_state in ["no_power", "insufficient"]:
+					_power_warning(at, power_state, cell)
 	_power_network_vfx()
 	_selection_vfx()
 	if menu_open or not model.inside(hovered):
 		return
 	var position := Vector2(hovered) * TILE
 	if cursor_mode == "build":
-		_hologram(position, model.can_place(hovered, tool))
-	elif model.buildings.has(hovered):
+		_hologram(position, model.can_place(hovered, tool, facing))
+	elif model.anchor_at(hovered).x >= 0:
 		_brackets(position, CYAN, 0.76, 3.0)
 	elif model.resources.has(hovered):
 		_brackets(position, Color("#80B9FF"), 0.43, 2.0)
@@ -157,16 +164,20 @@ func _depot_vfx(at: Vector2, cell: Vector2i) -> void:
 			Color("#19D3EC", 0.26 + 0.28 * pulse), 1.7)
 
 func _wheel_vfx(at: Vector2, cell: Vector2i) -> void:
+	var direction: int = int(model.buildings[cell].direction)
+	var water_at: Vector2 = at + Vector2(Model.DIRS[direction]) * TILE
+	var hub := water_at + Vector2(22, 23)
 	var glow := 0.70 if reduced_motion else 0.62 + 0.24 * sin(tick * 3.1 + float(cell.x))
-	draw_circle(at + Vector2(29, 24), 7.5, Color("#7CF2FF", 0.13 * glow))
-	draw_circle(at + Vector2(29, 24), 3.0, Color("#C6FDFF", 0.58 * glow))
-	var middle := at + Vector2(21, 23)
-	var radius := 10.0
+	draw_circle(hub, 8.5, Color("#7CF2FF", 0.12 * glow))
+	draw_circle(hub, 3.1, Color("#C6FDFF", 0.52 * glow))
 	var angle := 0.3 if reduced_motion else tick * 1.8
 	for index in range(4):
-		var direction := Vector2.RIGHT.rotated(angle + float(index) * PI / 2.0)
-		draw_line(middle, middle + direction * radius,
-			Color("#E6B471", 0.50), 1.6)
+		var spoke: Vector2 = Vector2.RIGHT.rotated(angle + float(index) * PI / 2.0)
+		draw_line(hub, hub + spoke * 10.0, Color("#E6B471", 0.48), 1.6)
+	if not reduced_motion:
+		var ripple: float = fposmod(tick * 0.65 + float(cell.y) * 0.1, 1.0)
+		draw_arc(water_at + Vector2(23, 37), 5.0 + ripple * 12.0,
+			0.15, PI - 0.1, 16, Color("#B6F9FF", 0.36 * (1.0 - ripple)), 1.9)
 
 func _pole_vfx(at: Vector2, cell: Vector2i) -> void:
 	var pulse := 0.78 if reduced_motion else 0.65 + 0.23 * sin(tick * 4.0 + float(cell.y))
@@ -179,7 +190,9 @@ func _power_network_vfx() -> void:
 	var design := cursor_mode == "build" and tool in ["power_pole", "water_wheel"]
 	var selected_power: bool = model.buildings.has(inspected) \
 		and str(model.buildings[inspected].kind) in ["power_pole", "water_wheel"]
-	if not design and not selected_power:
+	if power_line_mode == "off":
+		return
+	if power_line_mode != "always" and not design and not selected_power:
 		return
 	for link in model.power.edges:
 		var from: Vector2 = (Vector2(link[0]) + Vector2.ONE * 0.5) * TILE
@@ -190,17 +203,49 @@ func _power_network_vfx() -> void:
 		draw_circle(from.lerp(to, travel), 2.4, Color("#B3FAFF", 0.86))
 
 func _selection_vfx() -> void:
-	if not model.inside(inspected) or not model.buildings.has(inspected):
+	var anchor: Vector2i = model.anchor_at(inspected)
+	if not model.inside(anchor) or not model.buildings.has(anchor):
 		return
-	var p := Vector2(inspected) * TILE
+	var kind: String = str(model.buildings[anchor].kind)
+	var direction: int = int(model.buildings[anchor].direction)
 	var glow := 0.83 if reduced_motion else 0.71 + 0.18 * sin(tick * 3.3)
-	draw_rect(Rect2(p + Vector2(0.5, 0.5), Vector2(47, 47)),
-		Color(CYAN, 0.11 * glow))
-	_brackets(p, GOLD, glow, 4.0)
-	if not reduced_motion:
-		var scan := 7.0 + fposmod(tick * 18.0, 34.0)
-		draw_line(p + Vector2(7, scan), p + Vector2(41, scan),
-			Color(CYAN, 0.13), 1.1)
+	for cell in model.footprint_cells(anchor, kind, direction):
+		var p: Vector2 = Vector2(cell) * TILE
+		draw_rect(Rect2(p + Vector2(0.5, 0.5), Vector2(47, 47)),
+			Color(CYAN, 0.11 * glow))
+		_brackets(p, GOLD, glow, 4.0)
+		if not reduced_motion:
+			var scan := 7.0 + fposmod(tick * 18.0, 34.0)
+			draw_line(p + Vector2(7, scan), p + Vector2(41, scan),
+				Color(CYAN, 0.13), 1.1)
+
+func _power_warning(at: Vector2, state: String, cell: Vector2i) -> void:
+	# A floating, animated alert is legible even when a furnace is idle.
+	# Disconnected = red; connected but oversubscribed = amber.
+	var color: Color = Color("#F16469") if state == "no_power" else Color("#F3B856")
+	var offset: float = 0.0 if reduced_motion else sin(tick * 2.6 + float(cell.x + cell.y)) * 3.4
+	var center: Vector2 = at + Vector2(24.0, -9.0 + offset)
+	var pulse: float = 0.95 if reduced_motion else 0.78 + 0.18 * sin(tick * 3.8)
+	draw_circle(center, 14.0, Color("#081A25", 0.74))
+	draw_circle(center, 11.5, Color(color, 0.12 * pulse))
+	draw_colored_polygon(PackedVector2Array([
+		center + Vector2(-9, -8), center + Vector2(9, -8),
+		center + Vector2(9, 8), center + Vector2(-9, 8)]),
+		Color("#152833", 0.94))
+	draw_rect(Rect2(center - Vector2(9, 8), Vector2(18, 16)),
+		Color(color, 0.84 * pulse), false, 1.6)
+	# A jagged electric bolt with a break on overloaded circuits.
+	var bolt := PackedVector2Array([
+		center + Vector2(1, -7), center + Vector2(-5, 1),
+		center + Vector2(-1, 1), center + Vector2(-3, 7),
+		center + Vector2(6, -2), center + Vector2(2, -2)])
+	draw_colored_polygon(bolt, color)
+	if state == "no_power":
+		draw_line(center + Vector2(-7, 7), center + Vector2(7, -7),
+			Color("#FFF1EE", 0.90), 1.9)
+	else:
+		draw_line(center + Vector2(-7, 8), center + Vector2(7, 8),
+			Color("#FDF1CA", 0.90), 1.6)
 
 func _brackets(p: Vector2, color: Color, alpha: float, thickness: float) -> void:
 	var glow := Color(color, alpha * 0.19)
@@ -219,14 +264,20 @@ func _brackets(p: Vector2, color: Color, alpha: float, thickness: float) -> void
 func _hologram(p: Vector2, can_build: bool) -> void:
 	var tint := CYAN if can_build else ERROR
 	var phase := 0.8 if reduced_motion else 0.66 + 0.12 * sin(tick * 5.8)
-	draw_rect(Rect2(p + Vector2(1, 1), Vector2(46, 46)), Color(tint, phase * 0.21))
-	_brackets(p, tint, phase, 2.5)
+	for cell in model.footprint_cells(hovered, tool, facing):
+		var at: Vector2 = Vector2(cell) * TILE
+		draw_rect(Rect2(at + Vector2(1, 1), Vector2(46, 46)),
+			Color(tint, phase * 0.20))
+		_brackets(at, tint, phase, 2.5)
 	if can_build:
 		Art.machine(self, p, tool, facing, true)
 		var scan := 5.0 if reduced_motion else 3.0 + fposmod(tick * 27.0, 40.0)
-		draw_line(p + Vector2(4, scan), p + Vector2(44, scan), Color(CYAN, 0.65), 1.8)
-		Art.arrow(self, p + Vector2(24, 24), facing, GOLD, 21.0)
+		draw_line(p + Vector2(4, scan), p + Vector2(44, scan),
+			Color(CYAN, 0.55), 1.8)
+		if tool not in ["power_pole", "water_wheel"]:
+			Art.arrow(self, p + Vector2(24, 24), facing, GOLD, 21.0)
 	else:
-		draw_rect(Rect2(p + Vector2(5, 5), Vector2(38, 38)), Color(ERROR, 0.13))
-		draw_line(p + Vector2(12, 12), p + Vector2(36, 36), Color(ERROR, 0.85), 3)
-		draw_line(p + Vector2(36, 12), p + Vector2(12, 36), Color(ERROR, 0.85), 3)
+		draw_line(p + Vector2(12, 12), p + Vector2(36, 36),
+			Color(ERROR, 0.85), 3)
+		draw_line(p + Vector2(36, 12), p + Vector2(12, 36),
+			Color(ERROR, 0.85), 3)
