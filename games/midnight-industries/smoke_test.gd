@@ -226,8 +226,10 @@ func _initialize() -> void:
 			machine.direction = (int(machine.direction) + 1) % 4
 	var migrated = Model.new(false)
 	assert(migrated.restore(older_wheel))
-	assert(migrated.anchor_at(sim.wheel_water_cell(
-		other_bank, other_direction)) == other_bank)
+	var migrated_facing: int = int(migrated.buildings[other_bank].direction)
+	var migrated_water: Vector2i = migrated.wheel_water_cell(other_bank, migrated_facing)
+	assert(migrated.water.has(migrated_water))
+	assert(migrated.anchor_at(migrated_water) == other_bank)
 	var invalid_footprint: Dictionary = sim.snapshot()
 	for machine in invalid_footprint["machines"]:
 		if machine.kind == "water_wheel":
