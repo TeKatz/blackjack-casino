@@ -1,14 +1,15 @@
 extends Node2D
-## One camera-clipped terrain quad blends meadow, mineral ground and flowing
-## rivers/lakes. The same deterministic water cells are collision data.
+## One camera-clipped terrain quad blends original Poly Haven CC0 diffuse
+## textures (grass_ground, rocks_ground_05) under existing ore biome masks.
+## Rivers/lakes retain their original deterministic mask and GPU animation.
 const Model = preload("res://factory_model.gd")
 const TILE := 48.0
 const MASK_SCALE := 2
 var model
 var meadow_rect: ColorRect
 var water_motion := true
-static var _grass_detail_cache: Texture2D
-static var _stone_detail_cache: Texture2D
+const GRASS_DIFFUSE = preload("res://assets/grass_ground_diff_1k.jpg")
+const ROCKS_DIFFUSE = preload("res://assets/rocks_ground_05_diff_1k.jpg")
 
 func _ready() -> void:
 	_build_terrain()
@@ -26,40 +27,41 @@ func _build_terrain() -> void:
 shader_type canvas_item;
 render_mode unshaded;
 uniform sampler2D rock_influence : filter_linear, repeat_disable;
-uniform sampler2D terrain_detail : filter_linear_mipmap, repeat_enable;
-uniform sampler2D stone_detail : filter_linear_mipmap, repeat_enable;
+uniform sampler2D terrain_detail : source_color, filter_linear_mipmap, repeat_enable;
+uniform sampler2D stone_detail : source_color, filter_linear_mipmap, repeat_enable;
 uniform sampler2D water_info : filter_linear, repeat_disable;
 uniform float water_speed = 1.0;
 
 void fragment() {
 	vec2 tiles = UV * vec2(224.0, 176.0);
 	float mask = texture(rock_influence, UV).r;
-	// Each tile receives ~128 source texels at the close-detail scale.
-	// Actual painted blades and sharp grit survive zooming; the previous
-	// smooth-noise-only ground blurred even with 1024px source images.
-	float g_macro = texture(terrain_detail, tiles * 0.019).r;
-	float g_mid = texture(terrain_detail, tiles * 0.055 + vec2(0.28, 0.41)).r;
-	float g_blades = texture(terrain_detail, tiles * 0.125 + vec2(0.63, 0.15)).r;
-	float g_specks = texture(terrain_detail, tiles * 0.165 + vec2(0.11, 0.72)).r;
-	float s_macro = texture(stone_detail, tiles * 0.022).r;
-	float s_mid = texture(stone_detail, tiles * 0.061 + vec2(0.72, 0.34)).r;
-	float s_grit = texture(stone_detail, tiles * 0.125 + vec2(0.34, 0.07)).r;
-	float s_grains = texture(stone_detail, tiles * 0.175 + vec2(0.53, 0.18)).r;
-	float edge_noise = (g_mid - 0.5) * 0.15 + (s_macro - 0.5) * 0.16;
-	float rock = smoothstep(0.17, 0.79, mask + edge_noise);
+	// CC0 Poly Haven materials are sampled in full RGB, preserving the
+	// actual grass/soil and pebbled-rock color data instead of recoloring
+	// procedural grayscale noise. Each 1K image repeats roughly every
+	// 12-15 terrain tiles (48 world pixels per tile).
+	vec3 grass_primary = texture(terrain_detail, tiles * 0.082).rgb;
+	vec3 grass_secondary = texture(terrain_detail,
+		tiles * 0.121 + vec2(0.41, 0.69)).rgb;
+	vec3 rock_primary = texture(stone_detail, tiles * 0.071).rgb;
+	vec3 rock_secondary = texture(stone_detail,
+		tiles * 0.103 + vec2(0.65, 0.23)).rgb;
 
-	vec3 meadow = mix(vec3(0.130, 0.213, 0.111),
-		vec3(0.215, 0.292, 0.154), g_macro * 0.44 + g_mid * 0.56);
-	meadow += (g_blades - 0.5) * vec3(0.145, 0.167, 0.079);
-	meadow += (g_specks - 0.5) * vec3(0.041, 0.063, 0.016);
-	vec3 stones = mix(vec3(0.227, 0.224, 0.207),
-		vec3(0.343, 0.333, 0.295), s_macro * 0.35 + s_mid * 0.65);
-	stones += (s_grit - 0.5) * vec3(0.175, 0.159, 0.140);
-	stones += (s_grains - 0.5) * vec3(0.062, 0.057, 0.049);
-	float transition = smoothstep(0.08, 0.40, rock) *
-		(1.0 - smoothstep(0.67, 0.98, rock));
+	// Lightly layered scales reduce visible repetition on the large map,
+	// without hiding distinctive color and grain of the source textures.
+	vec3 meadow = mix(grass_primary, grass_secondary, 0.12);
+	vec3 stones = mix(rock_primary, rock_secondary, 0.10);
+
+	float g_luma = dot(grass_secondary, vec3(0.299, 0.587, 0.114));
+	float s_luma = dot(rock_secondary, vec3(0.299, 0.587, 0.114));
+	float edge_noise = (g_luma - 0.5) * 0.16 +
+		(s_luma - 0.5) * 0.19;
+	float rock = smoothstep(0.17, 0.79, mask + edge_noise);
+	float transition = smoothstep(0.10, 0.37, rock) *
+		(1.0 - smoothstep(0.73, 0.97, rock));
 	vec3 result = mix(meadow, stones, rock);
-	result = mix(result, vec3(0.270, 0.245, 0.188), transition * 0.12);
+	// Subtle soil tint in the transition only, not on solid rock/grass.
+	result = mix(result, mix(meadow, stones, 0.5),
+		transition * 0.085);
 
 	// One flow vector per water cell (R = mask, GB = river direction,
 	// A = river/lake type). Flow motion runs entirely on the GPU.
@@ -99,53 +101,10 @@ void fragment() {
 	add_child(meadow_rect)
 
 func _grass_texture() -> Texture2D:
-	if _grass_detail_cache == null:
-		_grass_detail_cache = _surface_texture(17291, 0.022, false)
-	return _grass_detail_cache
+	return GRASS_DIFFUSE
 
 func _stone_texture() -> Texture2D:
-	if _stone_detail_cache == null:
-		_stone_detail_cache = _surface_texture(28719, 0.042, true)
-	return _stone_detail_cache
-
-func _surface_texture(seed: int, frequency: float, stone: bool) -> Texture2D:
-	# Native seamless base gives organic large-scale color, then sharp
-	# individual blades or gravel facets are painted at source resolution.
-	# Unlike smooth noise alone, close camera zoom reveals real fine shapes.
-	var noise := FastNoiseLite.new()
-	noise.seed = seed
-	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
-	noise.frequency = frequency
-	noise.fractal_type = FastNoiseLite.FRACTAL_FBM
-	noise.fractal_octaves = 4
-	var image: Image = noise.get_seamless_image(1024, 1024)
-	image.convert(Image.FORMAT_RGBA8)
-	var rng := RandomNumberGenerator.new()
-	rng.seed = seed
-	var count := 27000 if stone else 23000
-	for i in range(count):
-		var x := rng.randi_range(0, 1023)
-		var y := rng.randi_range(0, 1023)
-		var bright := rng.randf() > 0.53
-		var tone := rng.randf_range(0.70, 0.89) if bright else rng.randf_range(0.18, 0.35)
-		var color := Color(tone, tone, tone, 1.0)
-		if stone:
-			# Broken gravel flecks, usually 2-4 source pixels across.
-			var width := rng.randi_range(1, 4)
-			var height := rng.randi_range(1, 3)
-			for dy in range(height):
-				for dx in range(width):
-					image.set_pixel(posmod(x + dx, 1024), posmod(y + dy, 1024), color)
-		else:
-			# Slender, slightly slanted grass strokes, not round noise blobs.
-			var length := rng.randi_range(4, 10)
-			var slant := -1 if rng.randf() < 0.52 else 1
-			for pixel in range(length):
-				var px := posmod(x + slant * (pixel / 4), 1024)
-				var py := posmod(y - pixel, 1024)
-				image.set_pixel(px, py, color)
-	image.generate_mipmaps()
-	return ImageTexture.create_from_image(image)
+	return ROCKS_DIFFUSE
 
 func refresh_from_model() -> void:
 	if meadow_rect == null:

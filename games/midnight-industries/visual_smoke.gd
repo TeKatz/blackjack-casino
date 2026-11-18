@@ -61,6 +61,28 @@ func _run() -> void:
 	if stone_detail.get_width() < 1024 or stone_detail.get_height() < 1024:
 		_fail("Rock detail was not upgraded to 1024px")
 		return
+	# Guarantee these are the two requested Poly Haven originals and not
+	# synthetic noise or accidentally swapped placeholder ground maps.
+	var expected_grass: Texture2D = load("res://assets/grass_ground_diff_1k.jpg")
+	var expected_stones: Texture2D = load("res://assets/rocks_ground_05_diff_1k.jpg")
+	if expected_grass == null or expected_stones == null:
+		_fail("User-selected CC0 Poly Haven diffuse textures missing from packaged game")
+		return
+	if grass_detail != expected_grass or stone_detail != expected_stones:
+		_fail("World shader does not use the original grass/rock diffuse textures")
+		return
+	var grass_image: Image = grass_detail.get_image()
+	var stone_image: Image = stone_detail.get_image()
+	if grass_image == null or stone_image == null:
+		_fail("Poly Haven ground textures cannot be decoded")
+		return
+	if grass_image.get_data() == stone_image.get_data():
+		_fail("Grass and ore-ground textures are identical")
+		return
+	if not material.shader.code.contains("grass_primary") \
+		or not material.shader.code.contains("rock_primary"):
+		_fail("Terrain shader does not sample the requested RGB materials")
+		return
 	var water_texture: Texture2D = material.get_shader_parameter("water_info")
 	if water_texture == null or water_texture.get_width() != 224 or water_texture.get_height() != 176:
 		_fail("Terrain water/directional flow texture is missing")

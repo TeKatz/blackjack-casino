@@ -6,13 +6,13 @@ Standalone Godot 4.5.1 Windows mode integrated into The Midnight Club via the **
 
 The visual identity is **Modern Industrial / Premium Automation**. Previous green-teal debug grids, flat rounded button boxes, primitive geometric machine drawings, placeholder ore icons and old selection rectangles are removed from the rendering path.
 
-- **World:** a subdued green meadow with independent 1024px grass and stone detail textures, now containing explicitly painted small grass blades and gravel facets (not just blurred smooth noise). Ore patches sit in natural grey-brown stony soil, with noise-broken, smoothly blended margins rather than grid-aligned edges. A single masked terrain shader replaces the former metal floor tiles; machinery stays cached in independently redrawable 16×16-cell chunks.
+- **World:** original 1K CC0 Poly Haven **Grass Ground** diffuse texture across the meadow and **Rocks Ground 05** diffuse texture specifically beneath ore deposits. The shader preserves their real color and gravel/grass detail, blending both with the existing organic resource-influence mask. Flowing rivers and lakes retain their animation. Machinery stays in independently cached 16×16-cell chunks.
 - **Machines:** dedicated 144-pixel metallic art for drill, conveyor, furnace and storage. The warehouse and other machines sample isolated cached 144px textures rather than neighboring atlas cells, preventing mipmap bleed and left-neighbor clipping. Smelters are optically offset two pixels upward for clean conveyor joins. Four conveyor orientations use dedicated artwork: the approved right-facing machine remains intact; the left-facing moving track is reversed inside the original chassis; north/south combine the original detailed tread with independently lit supports. Terrain deposits now use **twelve distinct boulder formations per mineral** with different outlines, layered heights, individual rock sizes and clustered silhouettes, textured from the approved source art. Transported ore uses distinct single-stone cargo artwork with contact shadows and belt-rail occlusion rather than a pasted full deposit icon; ingots retain their approved source look.
 - **Production animation:** belts show directional cyan pulses, goods interpolate at the display framerate, drills indicate mechanical motion, active furnaces emit warm glow, sparks and smoke, storage displays a subtle status light.
 - **Interaction:** selection uses amber industrial scan brackets; build previews show the final machine graphic and a strong outgoing arrow; invalid placement uses red hazard feedback.
 - **UI:** distinct embossed graphite and steel panel families, amber active controls, restrained cyan information channels, a compact HUD and a collapsible idle inspector, a German/English machine catalog with genuine sprite icons, selected-machine telemetry, resource readouts, quick slots, an animated menu and usable typography (Bahnschrift/Segoe UI with fallbacks).
 
-The approved 144-pixel machine and material artwork is shipped as `assets/industrial_hd_atlas.webp`. `factory_art.gd` varies ground mineral clusters by arranging this existing artwork; `factory_belt_art.gd` combines the approved illustrated conveyor surface with new north/south metal frames once. `factory_terrain.gd` builds cached 1024px grass/stone detail textures and a resource-aware transition mask once on startup. `factory_skin.gd` caches nine-slice metal UI textures; `factory_chunk.gd` and `factory_static.gd` draw only placed assets and visible resource deposits; `factory_motion.gd` contains animation only. No runtime downloads are required.
+The approved 144-pixel machine and material artwork is shipped as `assets/industrial_hd_atlas.webp`. `factory_art.gd` varies ground mineral clusters by arranging this existing artwork; `factory_belt_art.gd` combines the approved illustrated conveyor surface with new north/south metal frames once. `factory_terrain.gd` loads the bundled Poly Haven CC0 1024px diffuse files (no runtime downloads), reuses them with two tile scales, and builds only the resource-aware transition mask on startup. `factory_skin.gd` caches nine-slice metal UI textures; `factory_chunk.gd` and `factory_static.gd` draw only placed assets and visible resource deposits; `factory_motion.gd` contains animation only. No runtime downloads are required.
 
 Colors: graphite `#111A21`, steel `#273743`, illuminated amber `#F5C04A`, neon cyan `#00D8F4`, furnace orange `#FF982D`, critical red `#FF5B50`. Avoid the old green pixel-fantasy casino panel language.
 
@@ -126,12 +126,12 @@ godot --headless --path games/midnight-industries --script res://visual_smoke.gd
 godot --headless --path games/midnight-industries --script res://performance_smoke.gd
 ```
 
-The CI workflow validates 1024px grass/stone details, unchanged raw material artwork, different ground-ore layouts, the vertical belt textures, safe machine footprints, the grid toggle, sector-panel removal, atlas decoding, machine icons, building/inspection UI and production/model behavior. The Windows export script additionally validates the premium visual package before packaging. A headless factory benchmark is not a GPU framerate guarantee; device-specific 1080p/1440p quality and performance still require visual testing on a Windows client.
+The CI workflow validates the two original Poly Haven 1024px RGB ground assets, unchanged raw material artwork, different ground-ore layouts, the vertical belt textures, safe machine footprints, the grid toggle, sector-panel removal, atlas decoding, machine icons, building/inspection UI and production/model behavior. The Windows export script additionally validates the premium visual package before packaging. A headless factory benchmark is not a GPU framerate guarantee; device-specific 1080p/1440p quality and performance still require visual testing on a Windows client.
 
 ### Current quality/performance pass
 
 - A protected 12×12 casino foundation adds twelve empty progression phases and 48 inward-facing item intakes, without altering existing ore patches or the original material recipes.
-- The old repetitive metal platform was replaced with one meadow-to-rock shader surface. Two 1024px detail textures now hold sharp material variation at close zoom, while ore deposits retain softly blended organic rocky patches. No per-frame primitive ground drawing.
+- The old repetitive metal platform is replaced by one meadow-to-rock shader surface. Its two 1024px CC0 Poly Haven diffuse textures are bundled and retain their natural grass and rock color details. Ore deposits retain softly blended, organic rocky patches. No per-frame ground drawing or procedural 1024px texture painting.
 - The machine inspector collapses when no building is selected; header, catalog and quickbar are substantially narrower.
 - Approved original ore and cargo sprites were restored; only ground-cluster arrangements vary. Vertical conveyors have dedicated lighting-correct artwork, belts and ore have no oversized drop shadows, and warehouses no longer overlap left neighbors.
 - Actual Windows FPS remains a device-side acceptance check; headless simulation speed is not a GPU benchmark.
@@ -287,3 +287,19 @@ same native, shadowed steel aesthetic as the approved menu surfaces.
   selection, demolition/rotation, legacy saves, power-line visibility,
   10/30/40 kW overloading and both power-fault states.
 
+
+### Selected Poly Haven CC0 ground textures
+
+- **Grass Ground**: https://polyhaven.com/a/grass_ground
+  – `assets/grass_ground_diff_1k.jpg` (1K diffuse)
+- **Rocks Ground 05**: https://polyhaven.com/a/rocks_ground_05
+  – `assets/rocks_ground_05_diff_1k.jpg` (1K diffuse)
+- License: **CC0 1.0** – https://polyhaven.com/license
+- Source and import instructions: `assets/POLYHAVEN-SOURCES.txt`
+  and `tools/import_polyhaven_terrain.py`.
+
+The game does not fetch these files during play. The GPU terrain shader
+tiles both original RGB textures, lightly mixes two different sample scales
+to avoid an obvious repeating stamp, and uses the pre-existing ore-proximity
+mask for smooth grass/rock transitions. Machine sprites, ore boulders,
+waterways and the gameplay/saves are unaffected.
