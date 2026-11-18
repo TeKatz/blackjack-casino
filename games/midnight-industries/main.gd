@@ -834,32 +834,6 @@ func _refresh_inspector() -> void:
 		"belt": _tr("Förderband", "Conveyor belt"),
 		"smelter": _tr("Schmelzofen", "Smelting furnace"),
 		"constructor": _tr("Constructor", "Constructor"),
-		"constructor":
-			var circuit: Dictionary = model.power.network_stats(inspected)
-			var current_recipe: String = str(machine.recipe)
-			var input_name: String = _tr("Eisenbarren", "Iron ingot") if (
-				current_recipe == "iron_plate") else _tr("Kupferbarren", "Copper ingot")
-			var result_name: String = _tr("Eisenplatte", "Iron plate") if (
-				current_recipe == "iron_plate") else _tr("Kupferplatte", "Copper plate")
-			inspector_body.text = _tr("Leistungsbedarf: 15 kW", "Power demand: 15 kW") + "\n" + (
-				_tr("Netzleistung: %d kW · Netzlast: %d kW",
-					"Grid supply: %d kW · Grid demand: %d kW") % [
-					int(circuit.supply), int(circuit.demand)]) + "\n" + (
-				"%s → %s   (1:1)" % [input_name, result_name]) + "\n" + (
-				_tr("Eingang: %d/8   Ausgang: %d/8",
-					"Input: %d/8   Output: %d/8") % [int(machine.ore),
-					int(machine.output)]) + "\n" + _tr(
-				"Tempo: 1 Platte / 3 Sekunden", "Rate: 1 plate / 3 seconds")
-			inspector_progress.value = clampf(
-				100.0 * float(machine.progress) / 3.0, 0.0, 100.0)
-			var busy: bool = int(machine.ore) > 0 or int(machine.output) > 0 \
-				or float(machine.progress) > 0.0
-			for recipe in constructor_recipe_buttons:
-				var btn: Button = constructor_recipe_buttons[recipe]
-				var chosen: bool = current_recipe == str(recipe)
-				btn.disabled = busy and not chosen
-				btn.button_pressed = chosen
-				MenuSkin.style_button(btn, false, chosen)
 		"storage": _tr("Zwischenlager", "Warehouse"),
 		"depot": _tr("Globales Depot", "Global depot"),
 		"power_pole": _tr("Strommast", "Power pole"),
@@ -898,6 +872,32 @@ func _refresh_inspector() -> void:
 					% [machine.ore, machine.output]) + "\n" + _tr(
 				"Tempo: 1 Barren / 2 Sekunden", "Rate: 1 ingot / 2 seconds")
 			inspector_progress.value = clampf(100.0 * float(machine.progress) / 2.0, 0.0, 100.0)
+		"constructor":
+			var constructor_circuit: Dictionary = model.power.network_stats(inspected)
+			var current_recipe: String = str(machine.recipe)
+			var input_name: String = _tr("Eisenbarren", "Iron ingot") if (
+				current_recipe == "iron_plate") else _tr("Kupferbarren", "Copper ingot")
+			var result_name: String = _tr("Eisenplatte", "Iron plate") if (
+				current_recipe == "iron_plate") else _tr("Kupferplatte", "Copper plate")
+			inspector_body.text = _tr("Leistungsbedarf: 15 kW", "Power demand: 15 kW") + "\n" + (
+				_tr("Netzleistung: %d kW · Netzlast: %d kW",
+					"Grid supply: %d kW · Grid demand: %d kW") % [
+					int(constructor_circuit.supply), int(constructor_circuit.demand)]) + "\n" + (
+				"%s → %s   (1:1)" % [input_name, result_name]) + "\n" + (
+				_tr("Eingang: %d/8   Ausgang: %d/8",
+					"Input: %d/8   Output: %d/8") % [int(machine.ore),
+					int(machine.output)]) + "\n" + _tr(
+				"Tempo: 1 Platte / 3 Sekunden", "Rate: 1 plate / 3 seconds")
+			inspector_progress.value = clampf(
+				100.0 * float(machine.progress) / 3.0, 0.0, 100.0)
+			var busy: bool = int(machine.ore) > 0 or int(machine.output) > 0 \
+				or float(machine.progress) > 0.0
+			for recipe in constructor_recipe_buttons:
+				var btn: Button = constructor_recipe_buttons[recipe]
+				var chosen: bool = current_recipe == str(recipe)
+				btn.disabled = busy and not chosen
+				btn.button_pressed = chosen
+				MenuSkin.style_button(btn, false, chosen)
 		"storage":
 			var inventory: Dictionary = machine.get("inventory", {})
 			var used := 0
