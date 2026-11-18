@@ -1,0 +1,24 @@
+Midnight Industries — ground texture source notes
+=================================================
+
+grass_ground_diff_1k.jpg
+  Title: Grass Ground
+  Source: https://polyhaven.com/a/grass_ground
+  File: Official 1K JPG diffuse map, discovered through
+        https://api.polyhaven.com/files/grass_ground
+
+rocks_ground_05_diff_1k.jpg
+  Title: Rocks Ground 05
+  Source: https://polyhaven.com/a/rocks_ground_05
+  File: Official 1K JPG diffuse map, discovered through
+        https://api.polyhaven.com/files/rocks_ground_05
+
+License for both assets: CC0 1.0 / Public Domain dedication.
+https://polyhaven.com/license
+
+Both textures are bundled for offline Windows play. They are sampled only by
+the world-ground shader; the original industrial atlas, ore sprites, machines,
+water and UI graphics retain their existing sources and artwork.
+
+Refresh these files explicitly with tools/import_polyhaven_terrain.py.
+No texture assets are downloaded by the game at runtime.
