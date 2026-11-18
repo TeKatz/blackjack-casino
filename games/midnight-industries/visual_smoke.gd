@@ -205,10 +205,10 @@ func _run() -> void:
 		if constructor.get_image().get_used_rect().size.x < 85:
 			_fail("Constructor illustration is blank or too small")
 			return
-	for material in ["iron_plate", "copper_plate"]:
-		var sheet: Texture2D = ItemCatalog.icon(material)
+	for plate_id in ["iron_plate", "copper_plate"]:
+		var sheet: Texture2D = ItemCatalog.icon(plate_id)
 		if sheet == null or sheet.get_width() < 128:
-			_fail("High-detail metal plate icon missing: " + material)
+			_fail("High-detail metal plate icon missing: " + plate_id)
 			return
 	if Art.machine_destination("smelter", Vector2.ZERO).position.y >= 0.0:
 		_fail("Furnace outlet was not moved up to belt height")
