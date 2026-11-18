@@ -91,6 +91,10 @@ func _wheel_water_valid(cell: Vector2i, direction: int,
 	return not occupied.has(water_cell) or occupied[water_cell] == ignore_owner
 
 func _update_power() -> void:
+	# Earning a power slot must take effect immediately, even if the
+	# milestone was completed while the simulation was paused.
+	if power.slot_limit != progression.power_slots:
+		power_dirty = true
 	if not power_dirty:
 		return
 	power.rebuild(buildings, progression.power_slots)
