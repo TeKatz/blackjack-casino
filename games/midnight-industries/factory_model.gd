@@ -26,7 +26,8 @@ var buildings: Dictionary = {}
 ## Secondary occupied cells of multi-tile machines, mapped to land anchors.
 var occupied: Dictionary = {}
 var delivered: Dictionary = {"iron_ingot": 0, "copper_ingot": 0, "gold_ingot": 0,
-	"iron_ore": 0, "copper_ore": 0, "gold_ore": 0}
+	"iron_ore": 0, "copper_ore": 0, "gold_ore": 0,
+	"iron_plate": 0, "copper_plate": 0}
 var steps := 0
 var accumulator := 0.0
 ## Renderer-only movement trace, not part of the save or authority model.
@@ -134,7 +135,7 @@ func _make_machine(kind: String, direction: int, paid: Dictionary = {},
 	return {
 		"kind": kind, "direction": posmod(direction, 4), "item": "",
 		"buffer": 0, "ore": 0, "output": 0,
-		"recipe": "", "progress": 0.0,
+		"recipe": "iron_plate" if kind == "constructor" else "", "progress": 0.0,
 		"inventory": {}, "paid": paid.duplicate(), "kit": free_kit
 	}
 
@@ -147,6 +148,8 @@ func place(cell: Vector2i, kind: String, direction: int,
 		occupied[wheel_water_cell(cell, direction)] = cell
 	cells_dirty = true
 	power_dirty = true
+	# Avoid rebuilding the power graph for every belt/miner placement.
+	# The side job is also observed on the next simulation tick.
 	return true
 
 func erase(cell: Vector2i) -> bool:
@@ -182,6 +185,23 @@ func rotate(cell: Vector2i) -> bool:
 				return true
 		return false
 	machine.direction = (int(machine.direction) + 1) % 4
+	return true
+
+func set_constructor_recipe(cell: Vector2i, recipe: String) -> bool:
+	var anchor: Vector2i = anchor_at(cell)
+	if not buildings.has(anchor):
+		return false
+	var machine: Dictionary = buildings[anchor]
+	if str(machine.kind) != "constructor" or recipe not in [
+		"iron_plate", "copper_plate"] or not is_recipe_unlocked(recipe):
+		return false
+	if str(machine.recipe) == recipe:
+		return true
+	# Do not silently convert a buffered ingot into a different metal.
+	if int(machine.ore) > 0 or int(machine.output) > 0 \
+		or float(machine.progress) > 0.0:
+		return false
+	machine.recipe = recipe
 	return true
 
 func advance(delta: float) -> void:
@@ -225,6 +245,9 @@ func _outgoing(cell: Vector2i, machine: Dictionary) -> String:
 		"smelter":
 			if machine.output > 0:
 				return str(machine.recipe) + "_ingot"
+		"constructor":
+			if machine.output > 0:
+				return str(machine.recipe)
 		"storage":
 			return _warehouse_item(machine)
 	return ""
@@ -233,6 +256,10 @@ func _can_receive(machine: Dictionary, item: String) -> bool:
 	match machine.kind:
 		"belt":
 			return machine.item == ""
+		"constructor":
+			if not is_recipe_unlocked(str(machine.recipe)):
+				return false
+			return item == str(machine.recipe).trim_suffix("_plate") + "_ingot" 				and machine.ore < MAX_BUFFER
 		"smelter":
 			if not item in ["iron_ore", "copper_ore", "gold_ore"]:
 				return false
@@ -254,6 +281,8 @@ func _remove_output(machine: Dictionary) -> void:
 			machine.item = ""
 		"smelter":
 			machine.output -= 1
+		"constructor":
+			machine.output -= 1
 		"storage":
 			var item: String = _warehouse_item(machine)
 			if item != "":
@@ -268,6 +297,8 @@ func _receive(machine: Dictionary, item: String) -> void:
 			machine.item = item
 		"smelter":
 			machine.recipe = item.trim_suffix("_ore")
+			machine.ore += 1
+		"constructor":
 			machine.ore += 1
 		"storage":
 			var inventory: Dictionary = machine["inventory"]
@@ -307,6 +338,18 @@ func _step() -> void:
 					machine.progress = 0.0
 					if machine.ore == 0 and machine.output == 0:
 						machine.recipe = ""
+			"constructor":
+				if not power.is_powered(cell):
+					continue
+				if machine.ore > 0 and machine.output < MAX_BUFFER \
+					and is_recipe_unlocked(str(machine.recipe)):
+					machine.progress += STEP
+					if machine.progress >= 3.0:
+						machine.progress -= 3.0
+						machine.ore -= 1
+						machine.output += 1
+				else:
+					machine.progress = 0.0
 	# Two-phase transport: items can move only one belt per tick, regardless
 	# of dictionary iteration order; each destination accepts at most one.
 	var moves: Array = []
@@ -344,6 +387,8 @@ func _step() -> void:
 		_receive(buildings[move["to"]], move["item"])
 		if buildings[move["to"]].kind == "belt":
 			transit[move["to"]] = {"from": move["from"], "item": move["item"]}
+	# Side objectives observe real concurrent operation.
+	progression.observe_factory(buildings, power)
 
 func snapshot() -> Dictionary:
 	var machines: Array = []
@@ -385,7 +430,8 @@ func restore(data: Variant) -> bool:
 			if not World.restore_legacy_miner(cell, migrated_resources, migrated_water):
 				return false
 		if kind != "miner" and not kind in [
-			"belt", "smelter", "storage", "depot", "power_pole", "water_wheel"]:
+			"belt", "smelter", "storage", "depot", "power_pole", "water_wheel",
+			"constructor"]:
 			return false
 		var direction := int(raw.get("direction", -1))
 		if direction < 0 or direction >= 4:
@@ -393,15 +439,21 @@ func restore(data: Variant) -> bool:
 		var item := str(raw.get("item", ""))
 		var recipe := str(raw.get("recipe", ""))
 		if not item in ["", "iron_ore", "copper_ore", "gold_ore",
-			"iron_ingot", "copper_ingot", "gold_ingot"]:
+			"iron_ingot", "copper_ingot", "gold_ingot",
+			"iron_plate", "copper_plate"]:
 			return false
-		if not recipe in ["", "iron", "copper", "gold"]:
+		if not recipe in ["", "iron", "copper", "gold",
+			"iron_plate", "copper_plate"]:
+			return false
+		if kind == "constructor" and recipe not in ["iron_plate", "copper_plate"]:
+			return false
+		if kind != "constructor" and recipe in ["iron_plate", "copper_plate"]:
 			return false
 		var buffer := int(raw.get("buffer", 0))
 		var ore := int(raw.get("ore", 0))
 		var output := int(raw.get("output", 0))
 		var progress := float(raw.get("progress", 0.0))
-		if buffer < 0 or buffer > MAX_BUFFER or ore < 0 or ore > MAX_BUFFER or output < 0 or output > MAX_BUFFER or not is_finite(progress) or progress < 0.0 or progress > 2.0:
+		if buffer < 0 or buffer > MAX_BUFFER or ore < 0 or ore > MAX_BUFFER or output < 0 or output > MAX_BUFFER or not is_finite(progress) or progress < 0.0 or progress > (3.0 if kind == "constructor" else 2.0):
 			return false
 		var inventory: Variant = raw.get("inventory", {})
 		var paid: Variant = raw.get("paid", {})
@@ -576,7 +628,7 @@ func load_game() -> bool:
 
 func counts() -> Dictionary:
 	var totals := {"miner": 0, "belt": 0, "smelter": 0, "storage": 0,
-		"depot": 0, "power_pole": 0, "water_wheel": 0}
+		"depot": 0, "power_pole": 0, "water_wheel": 0, "constructor": 0}
 	for building in buildings.values():
 		var kind: String = str(building.kind)
 		totals[kind] = int(totals.get(kind, 0)) + 1

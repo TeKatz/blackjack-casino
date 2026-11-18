@@ -303,3 +303,33 @@ tiles both original RGB textures, lightly mixes two different sample scales
 to avoid an obvious repeating stamp, and uses the pre-existing ore-proximity
 mask for smooth grass/rock transitions. Machine sprites, ore boulders,
 waterways and the gameplay/saves are unaffected.
+
+## Stage 2 — metal supply, Constructor and optional furnace expansion
+
+- **Main Job 002: Metal supply / Die Metallversorgung.** Unlocks after the
+  first 100-iron-ore delivery. Deliver **50 iron ingots AND 50 copper ingots**
+  to a Depot as new physical arrivals. Both materials track separate
+  persistent counters. Existing stock is not counted retroactively.
+- Completing the job permanently unlocks the **Constructor** and exactly
+  two selectable recipes: **1 iron ingot → 1 iron plate** or **1 copper
+  ingot → 1 copper plate**. Both have an initial 3-second processing time.
+- The Constructor consumes **15 kW** from its local electric network.
+  Without sufficient electricity it pauses in exactly the same way as a
+  furnace. An authored high-detail 144px industrial pressing machine has
+  four true rotational variants; corresponding iron/copper plate icons and
+  in-world conveyor cargo are bundled procedurally and cached.
+- The machine inspector includes **two recipe controls**. Switching is
+  blocked if input/output buffers or in-progress production contain material
+  to prevent silently converting iron into copper. All outputs are real
+  logistics items deliverable to depots or warehouses and stored in saves.
+- **Side job: Furnace expansion / Schmelzofen-Ausbau** becomes available
+  after Main Job 001, parallel with Job 002. At least **four furnaces must
+  be built while three are simultaneously powered and processing ore**.
+  The fourth does not have to be powered initially: one 30-kW water wheel
+  can run the three 10-kW furnaces. The one-time reward is **+1 global
+  generator slot**, immediately usable on completion. Idle or merely
+  electrically connected furnaces do not count.
+- Both jobs and their reward states are persisted via the existing
+  progression snapshot. The jobs page shows both the primary stage and
+  live side-job progress. The objectives drawer follows the active main
+  job automatically. No further fabricated quests are added.

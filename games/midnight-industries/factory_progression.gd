@@ -20,6 +20,32 @@ const JOBS := [
 		"slots_reward": 1,
 		"reward_de": "Strommast · Wasserrad · Schmelzofen · +1 Stromplatz",
 		"reward_en": "Power pole · Water wheel · Smelting furnace · +1 power slot"
+	},
+	{
+		"id": "metal_ingot_delivery",
+		"stage": 2, "type": "main",
+		"requires": ["first_iron_delivery"],
+		"de": "Die Metallversorgung", "en": "Metal supply",
+		"description_de": "Liefere 50 Eisenbarren und 50 Kupferbarren an ein Depot.",
+		"description_en": "Deliver 50 iron ingots and 50 copper ingots to a depot.",
+		"delivery": {"iron_ingot": 50, "copper_ingot": 50},
+		"unlocks": ["constructor"],
+		"recipes": ["iron_plate", "copper_plate"],
+		"slots_reward": 0,
+		"reward_de": "Constructor · Eisenplatten · Kupferplatten",
+		"reward_en": "Constructor · Iron plates · Copper plates"
+	},
+	{
+		"id": "furnace_expansion",
+		"stage": 1, "type": "side",
+		"requires": ["first_iron_delivery"],
+		"de": "Schmelzofen-Ausbau", "en": "Furnace expansion",
+		"description_de": "Lass 3 Schmelzöfen gleichzeitig arbeiten und baue einen vierten.",
+		"description_en": "Run 3 smelting furnaces simultaneously and build a fourth.",
+		"condition": "four_furnaces_three_running",
+		"delivery": {},
+		"unlocks": [], "recipes": [], "slots_reward": 1,
+		"reward_de": "+1 Stromslot", "reward_en": "+1 power slot"
 	}
 ]
 var progress: Dictionary = {}
@@ -102,7 +128,30 @@ func record_delivery(material: String, amount: int = 1) -> void:
 		if ready:
 			complete_job(id)
 
-func complete_job(id: String) -> void:
+## Live side-job condition: four built furnaces, at least three are currently
+## powered AND processing ore (not idle or merely connected to the grid).
+## Re-evaluated when the layout changes and during simulation ticks.
+func running_furnaces(buildings: Dictionary, power) -> int:
+	var total := 0
+	for at in buildings:
+		var machine: Dictionary = buildings[at]
+		if str(machine.kind) == "smelter" and power.is_powered(at) \
+			and int(machine.ore) > 0 and int(machine.output) < 8:
+			total += 1
+	return total
+
+func observe_factory(buildings: Dictionary, power) -> void:
+	for entry in active_jobs():
+		if str(entry.get("condition", "")) != "four_furnaces_three_running":
+			continue
+		var built := 0
+		for machine in buildings.values():
+			if str(machine.kind) == "smelter":
+				built += 1
+		if built >= 4 and running_furnaces(buildings, power) >= 3:
+			complete_job(str(entry.id), true)
+
+func complete_job(id: String, condition_verified: bool = false) -> void:
 	if is_complete(id) or job(id).is_empty():
 		return
 	var entry: Dictionary = job(id)
@@ -112,6 +161,8 @@ func complete_job(id: String) -> void:
 			eligible = true
 			break
 	if not eligible:
+		return
+	if not str(entry.get("condition", "")).is_empty() and not condition_verified:
 		return
 	var requirements: Dictionary = entry.delivery
 	for key in requirements:

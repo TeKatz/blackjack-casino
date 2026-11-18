@@ -3,11 +3,12 @@ extends RefCounted
 ## are only local logistics buffers. The casino site has a separate ledger.
 const COSTS := {
 	"miner": {}, "belt": {}, "depot": {}, "smelter": {},
-	"storage": {}, "power_pole": {}, "water_wheel": {}
+	"storage": {}, "power_pole": {}, "water_wheel": {}, "constructor": {}
 }
 const MATERIALS := [
 	"iron_ore", "copper_ore", "gold_ore",
-	"iron_ingot", "copper_ingot", "gold_ingot"
+	"iron_ingot", "copper_ingot", "gold_ingot",
+	"iron_plate", "copper_plate"
 ]
 const START_COPPER := 0
 

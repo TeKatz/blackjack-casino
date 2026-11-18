@@ -16,6 +16,11 @@ var reward_label: Label
 var next_label: Label
 var energy_label: Label
 var completed_label: Label
+var side_card: PanelContainer
+var side_heading: Label
+var side_description: Label
+var side_progress: Label
+var side_reward: Label
 var _elapsed := 0.0
 
 func _ready() -> void:
@@ -104,6 +109,21 @@ func _build() -> void:
 		13, Menu.AMBER)
 	reward_label = _label(rewards, "", 15, Menu.TEXT)
 	reward_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# Side objectives remain visible beside the current main-stage mission,
+	# with their own requirements and permanent slot rewards.
+	side_card = PanelContainer.new()
+	side_card.name = "OptionalFurnaceExpansion"
+	side_card.add_theme_stylebox_override("panel", Menu.panel("section"))
+	col.add_child(side_card)
+	var side_col := VBoxContainer.new()
+	side_col.add_theme_constant_override("separation", 7)
+	side_card.add_child(side_col)
+	side_heading = _label(side_col, "", 17, Menu.AMBER)
+	side_description = _label(side_col, "", 13, Menu.MUTED)
+	side_description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	side_progress = _label(side_col, "", 13, Menu.CYAN)
+	side_reward = _label(side_col, "", 13, Menu.TEXT)
+	side_card.visible = false
 	var electricity := PanelContainer.new()
 	electricity.add_theme_stylebox_override("panel", Menu.panel("section"))
 	col.add_child(electricity)
@@ -132,28 +152,65 @@ func refresh() -> void:
 	if model == null or job_label == null:
 		return
 	title_label.text = _word("AUFTRÄGE & FORTSCHRITT", "JOBS & PROGRESSION")
-	var entry: Dictionary = Progression.JOBS[0]
-	var complete: bool = model.progression.is_complete(str(entry.id))
-	job_label.text = _word("HAUPTAUFTRAG 001 · ", "MAIN JOB 001 · ") + \
+	var entry: Dictionary = model.progression.current_job()
+	var complete := false
+	if entry.is_empty():
+		for candidate in Progression.JOBS:
+			if str(candidate.get("type", "")) == "main":
+				entry = candidate
+		complete = true
+	else:
+		complete = model.progression.is_complete(str(entry.id))
+	if entry.is_empty():
+		return
+	var id: String = str(entry.id)
+	var stage: int = int(entry.get("stage", 1))
+	job_label.text = (_word("HAUPTAUFTRAG %03d · ", "MAIN JOB %03d · ") % stage) + \
 		str(entry.get("de" if german else "en", ""))
 	description.text = str(entry.get("description_de" if german else "description_en", ""))
-	var current: int = model.progression.delivered_count(str(entry.id), "iron_ore")
-	var goal: int = int(entry.delivery.iron_ore)
-	progress_text.text = _word("Geliefertes Eisenerz: ", "Iron ore delivered: ") + \
-		"%d / %d" % [current, goal]
-	progress_bar.value = float(current) / float(goal) * 100.0
+	var parts: Array[String] = []
+	var done := 0
+	var total := 0
+	for material in entry.get("delivery", {}):
+		var required: int = int(entry.delivery[material])
+		var received: int = model.progression.delivered_count(id, str(material))
+		var name: String = Catalog.name_for(str(material), german)
+		parts.append("%s: %d / %d" % [name, received, required])
+		done += received
+		total += required
+	progress_text.text = "   ·   ".join(parts)
+	progress_bar.value = 100.0 * float(done) / float(maxi(1, total))
 	reward_label.text = str(entry.get("reward_de" if german else "reward_en", ""))
 	completed_label.text = _word("ABGESCHLOSSEN · DAUERHAFT FREIGESCHALTET",
 		"COMPLETED · PERMANENTLY UNLOCKED") if complete else _word(
-		"Lieferungen werden automatisch im Depot gezählt.",
-		"Physical depot deliveries count automatically.")
+		"Es zählen nur tatsächliche Anlieferungen im Depot.",
+		"Only new physical depot deliveries count.")
+	var optional: Dictionary = model.progression.job("furnace_expansion")
+	var eligible: bool = model.progression.is_complete("first_iron_delivery")
+	side_card.visible = eligible
+	if eligible:
+		var finished: bool = model.progression.is_complete("furnace_expansion")
+		model._update_power()
+		var built: int = int(model.counts().get("smelter", 0))
+		var running: int = model.progression.running_furnaces(
+			model.buildings, model.power)
+		side_heading.text = _word("NEBENAUFTRAG · ", "SIDE JOB · ") + str(
+			optional.get("de" if german else "en", ""))
+		side_description.text = str(optional.get(
+			"description_de" if german else "description_en", ""))
+		side_progress.text = _word("Schmelzöfen in Betrieb: ", "Furnaces running: ") + \
+			"%d / 3     ·     " % mini(running, 3) + \
+			(_word("Gebaut: ", "Built: ") + "%d / 4" % mini(built, 4))
+		side_reward.text = (_word("ABGESCHLOSSEN · ", "COMPLETED · ") if finished else
+			_word("BELOHNUNG · ", "REWARD · ")) + str(optional.get(
+			"reward_de" if german else "reward_en", ""))
 	model._update_power()
-	energy_label.text = _word("Stromslots: %d / %d     ·     Leistung: %d / %d kW",
+	energy_label.text = _word("Stromslots: %d / %d     ·     Last / Erzeugung: %d / %d kW",
 		"Power slots: %d / %d     ·     Demand / Supply: %d / %d kW") % [
 		model.power.slot_used, model.power.slot_limit,
 		model.power.total_demand, model.power.total_supply]
-	next_label.text = _word("Weitere Hauptaufträge und Nebenaufträge folgen in späteren Stages.",
-		"More main jobs and optional side jobs will be added in future stages.")
+	next_label.text = _word("Weitere Aufträge und Maschinen folgen in späteren Stages.",
+		"More jobs and machines will follow in later stages.")
 
 func _process(delta: float) -> void:
 	if not visible:

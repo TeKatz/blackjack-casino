@@ -15,7 +15,7 @@ func _initialize() -> void:
 	assert(sim.progression.active_jobs().size() == 1)
 	for name in ["miner", "belt", "depot"]:
 		assert(sim.is_unlocked(name))
-	for name in ["smelter", "water_wheel", "power_pole", "storage"]:
+	for name in ["smelter", "water_wheel", "power_pole", "storage", "constructor"]:
 		assert(not sim.is_unlocked(name), "Premature machine unlock: " + name)
 	assert(not sim.is_recipe_unlocked("iron_ingot"))
 	assert(not sim.is_recipe_unlocked("copper_ingot"))
@@ -62,8 +62,10 @@ func _initialize() -> void:
 	assert(not sim.is_unlocked("storage"))
 	assert(sim.is_recipe_unlocked("iron_ingot"))
 	assert(sim.is_recipe_unlocked("copper_ingot"))
-	assert(sim.progression.active_jobs().is_empty())
-	assert(sim.progression.current_job().is_empty())
+	assert(sim.progression.current_job().id == "metal_ingot_delivery")
+	assert(sim.progression.active_jobs().size() == 2)
+	assert(not sim.is_unlocked("constructor"))
+	assert(not sim.is_recipe_unlocked("iron_plate"))
 	var completed_snapshot: Dictionary = sim.snapshot()
 	var roundtrip = Model.new(false)
 	assert(roundtrip.restore(JSON.parse_string(JSON.stringify(completed_snapshot))))
@@ -153,6 +155,14 @@ func _initialize() -> void:
 	for cell in smelters:
 		produced += int(sim.buildings[cell].output)
 	assert(produced == 3, "Three powered smelters did not produce")
+	assert(sim.progression.is_complete("furnace_expansion"),
+		"Four installed furnaces with three simultaneously operating must complete side job")
+	assert(sim.progression.power_slots == 2, "Side job must grant exactly one extra slot")
+	var side_state: Dictionary = sim.snapshot()
+	var side_restored = Model.new(false)
+	assert(side_restored.restore(JSON.parse_string(JSON.stringify(side_state))))
+	assert(side_restored.progression.power_slots == 2)
+	assert(side_restored.progression.is_complete("furnace_expansion"))
 	# Secondary water-tile interactions also remove the anchored building.
 	assert(sim.erase(river_tile))
 	assert(not sim.occupied.has(river_tile))

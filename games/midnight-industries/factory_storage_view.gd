@@ -394,6 +394,9 @@ func _refresh_live() -> void:
 		elif kind == "smelter":
 			status.text = _word("10 kW Verbrauch · Stromanschluss nötig",
 				"10 kW demand · requires power network")
+		elif kind == "constructor":
+			status.text = _word("15 kW · Eisenplatten / Kupferplatten",
+				"15 kW · Iron plates / Copper plates")
 		elif kind == "power_pole":
 			status.text = _word("0 kW · Reichweite 5 Felder",
 				"0 kW · 5-tile link range")

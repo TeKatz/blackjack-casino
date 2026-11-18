@@ -101,14 +101,22 @@ func set_progression(factory) -> void:
 	var job: Dictionary = factory.progression.current_job()
 	if job.is_empty():
 		heading.text = _word("HAUPTAUFTRAG ERLEDIGT", "MAIN JOB COMPLETED")
-		body.text = _word("Die erste Lieferung ist abgeschlossen. Weitere Aufträge folgen.",
-			"The first delivery is complete. More jobs are coming.")
+		body.text = _word("Alle aktuellen Hauptaufträge abgeschlossen.",
+			"All current main jobs completed.")
 	else:
 		heading.text = _word("AKTUELLER HAUPTAUFTRAG", "CURRENT MAIN JOB")
-		var delivered: int = factory.progression.delivered_count(
-			str(job.id), "iron_ore")
-		body.text = _word("100 Eisenerz ans Depot liefern: ",
-			"Deliver 100 iron ore to depot: ") + "%d / 100" % delivered
+		body.text = str(job.get("description_de" if german else "description_en", ""))
+		for item in job.get("delivery", {}):
+			var current: int = factory.progression.delivered_count(str(job.id), str(item))
+			body.text += "\n" + str(item).replace("_", " ").capitalize() + (
+				": %d / %d" % [current, int(job.delivery[item])])
+	if factory.progression.is_complete("first_iron_delivery") and not \
+		factory.progression.is_complete("furnace_expansion"):
+		var active: int = factory.progression.running_furnaces(
+			factory.buildings, factory.power)
+		var built: int = int(factory.counts().get("smelter", 0))
+		body.text += "\n" + _word("Nebenjob: ", "Side job: ") + (
+			"%d/3 + %d/4" % [mini(3, active), mini(4, built)])
 	factory._update_power()
 	body.text += "\n" + _word("Stromslots: ", "Power slots: ") + \
 		"%d/%d" % [factory.power.slot_used, factory.power.slot_limit]

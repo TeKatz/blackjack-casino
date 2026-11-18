@@ -8,7 +8,7 @@ const ACTIONS := {
 	"up": KEY_W, "down": KEY_S, "left": KEY_A, "right": KEY_D,
 	"tool_1": KEY_1, "tool_2": KEY_2, "tool_3": KEY_3,
 	"tool_4": KEY_4, "tool_5": KEY_5,
-	"tool_6": KEY_6, "tool_7": KEY_7
+	"tool_6": KEY_6, "tool_7": KEY_7, "tool_8": KEY_8
 }
 var values := {"language":"en", "language_explicit":false, "grid":false, "reduced_motion":false,
 	"high_contrast":false, "power_lines":"auto", "ui_scale":1.0, "autosave":60, "tooltip_density":1,

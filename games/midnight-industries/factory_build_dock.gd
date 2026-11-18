@@ -254,6 +254,8 @@ func _build_machines() -> void:
 func _unlock_message(entry: Dictionary) -> String:
 	if str(entry.get("unlock_job", "")) == "first_iron_delivery":
 		return _word("Job 001 abschließen", "Complete job 001")
+	if str(entry.get("unlock_job", "")) == "metal_ingot_delivery":
+		return _word("Hauptjob 002 abschließen", "Complete main job 002")
 	return _word("Noch nicht verfügbar", "Future stage")
 
 func _tooltip(entry: Dictionary, unlocked: bool) -> String:
@@ -272,6 +274,10 @@ func _tooltip(entry: Dictionary, unlocked: bool) -> String:
 	if str(entry.id) == "power_pole":
 		return title + "\n" + _word("0 kW · Reichweite 5 Felder",
 			"0 kW · 5-tile connection range")
+	if str(entry.id) == "constructor":
+		return title + "\n" + _word(
+			"15 kW · Eisenplatte / Kupferplatte · Rezept im Inspector wählen",
+			"15 kW · Iron plate / Copper plate · choose recipe in inspector")
 	return title + "\n" + (_word("Kostenlos", "Free") if parts.is_empty() else ", ".join(parts))
 
 func _refresh_materials() -> void:
@@ -309,6 +315,8 @@ func _refresh_materials() -> void:
 				"%d/%d" % [model.power.slot_used, model.power.slot_limit]
 		elif kind == "power_pole":
 			caption = _word("0 kW · kostenlos", "0 kW · free")
+		elif kind == "constructor":
+			caption = "15 kW · " + _word("KOSTENLOS", "FREE")
 		else:
 			var price: Dictionary = model.building_cost(kind)
 			var parts: Array[String] = []

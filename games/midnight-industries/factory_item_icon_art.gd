@@ -26,7 +26,19 @@ static func icon(id: String, entry: Dictionary = {}) -> Texture2D:
 	svg += '<stop offset="0.42" stop-color="#' + light + '"/>'
 	svg += '<stop offset="0.8" stop-color="#' + face + '"/>'
 	svg += '<stop offset="1" stop-color="#' + deep + '"/></linearGradient></defs>'
-	if category == "ingot" or id.ends_with("_ingot"):
+	if category == "component" and id.ends_with("_plate"):
+		# Thin stamped metal sheet with chamfered corners, a dark lower
+		# extrusion, mechanical punch holes and directional brushed highlights.
+		svg += '<path d="M22 103L39 63L122 44L145 70L125 114L42 132Z" fill="#' + edge + '" opacity=".42"/>'
+		svg += '<path d="M22 99L39 61L118 43L139 67L123 103L40 122Z" fill="url(#metal)" stroke="#' + deep + '" stroke-width="3"/>'
+		svg += '<path d="M40 122L123 103L136 93L134 105L123 116L42 135L21 113L22 99Z" fill="#' + deep + '" stroke="#' + edge + '" stroke-width="2"/>'
+		svg += '<path d="M41 62L116 45L127 60L50 79Z" fill="#' + highlight + '" opacity=".68"/>'
+		svg += '<path d="M40 113L119 96M44 106L124 89" fill="none" stroke="#' + highlight + '" stroke-width="2.5" opacity=".56"/>'
+		svg += '<path d="M55 87L116 72M52 95L113 80" stroke="#' + deep + '" stroke-width="1.2" opacity=".30"/>'
+		svg += '<ellipse cx="48" cy="91" rx="5" ry="3" fill="#' + edge + '"/>'
+		svg += '<ellipse cx="115" cy="75" rx="5" ry="3" fill="#' + edge + '"/>'
+		svg += '<ellipse cx="55" cy="90" rx="1.8" ry="1.2" fill="#' + highlight + '"/>'
+	elif category == "ingot" or id.ends_with("_ingot"):
 		# Forged, three-dimensional metallic bar, top/side/front faces,
 		# cut-metal glints and bevels. Each base metal has its own tint.
 		svg += '<path d="M17 102 L39 59 L121 47 L145 80 L126 124 L37 135 Z" fill="#' + edge + '" opacity=".35"/>'

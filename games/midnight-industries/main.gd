@@ -21,6 +21,7 @@ const BuildDock = preload("res://factory_build_dock.gd")
 const Objectives = preload("res://factory_objectives_drawer.gd")
 const CommandIcons = preload("res://factory_ui_icons.gd")
 const PowerArt = preload("res://factory_power_art.gd")
+const ConstructorArt = preload("res://factory_constructor_art.gd")
 const JobsView = preload("res://factory_jobs_view.gd")
 const TILE := 48.0
 const GOLD := Color("#F5C04A")
@@ -29,7 +30,7 @@ const INK := Color("#0C161D")
 const TEXT := Color("#F0F3F3")
 const MUTED := Color("#94ACB5")
 const DANGER := Color("#FF725F")
-const TOOLS := ["miner", "belt", "smelter", "storage", "depot", "power_pole", "water_wheel"]
+const TOOLS := ["miner", "belt", "smelter", "storage", "depot", "power_pole", "water_wheel", "constructor"]
 const DIR_TEXT := ["→", "↓", "←", "↑"]
 
 @onready var camera: Camera2D = $Camera
@@ -87,6 +88,8 @@ var inspector_power_label: Label
 var inspector_subtitle: Label
 var inspector_progress: ProgressBar
 var inspector_controls: HBoxContainer
+var constructor_recipes: HBoxContainer
+var constructor_recipe_buttons: Dictionary = {}
 var rotate_button: Button
 var demolish_button: Button
 var pause_button: Button
@@ -191,8 +194,9 @@ func _machine_icon(kind: String) -> Texture2D:
 	if icon_cache.has(kind):
 		return icon_cache[kind]
 	var index: int = int({"miner":0, "belt":1, "smelter":2, "storage":3}.get(kind, 0))
-	var icon: Texture2D = PowerArt.texture(kind) if kind in ["power_pole", "water_wheel"] else (
-		DepotArt.texture() if kind == "depot" else Atlas.sprite(index))
+	var icon: Texture2D = ConstructorArt.texture(0) if kind == "constructor" else (
+		PowerArt.texture(kind) if kind in ["power_pole", "water_wheel"] else (
+		DepotArt.texture() if kind == "depot" else Atlas.sprite(index)))
 	icon_cache[kind] = icon
 	return icon
 
@@ -454,6 +458,20 @@ func _create_interface() -> void:
 	inspector_body.custom_minimum_size.y = 79
 	inspector_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	inspect_col.add_child(inspector_body)
+	constructor_recipes = HBoxContainer.new()
+	constructor_recipes.name = "ConstructorRecipePicker"
+	constructor_recipes.add_theme_constant_override("separation", 7)
+	inspect_col.add_child(constructor_recipes)
+	for recipe in ["iron_plate", "copper_plate"]:
+		var button := _button(
+			_tr("EISENPLATTE", "IRON PLATE") if recipe == "iron_plate" else
+				_tr("KUPFERPLATTE", "COPPER PLATE"),
+			_set_constructor_recipe.bind(recipe))
+		button.name = "Recipe_" + recipe
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		constructor_recipes.add_child(button)
+		constructor_recipe_buttons[recipe] = button
+	constructor_recipes.visible = false
 	inspector_progress = ProgressBar.new()
 	inspector_progress.custom_minimum_size.y = 8
 	inspector_progress.show_percentage = false
@@ -652,11 +670,27 @@ func _on_job_completed(id: String) -> void:
 		build_dock.refresh()
 	if jobs_view != null:
 		jobs_view.refresh()
-	if id == "first_iron_delivery":
-		_notice(_tr("Job 001 abgeschlossen: Wasserrad, Strommast und Schmelzofen freigeschaltet! +1 Stromslot",
-			"Job 001 complete: Water wheel, power pole and furnace unlocked! +1 power slot"))
+	match id:
+		"first_iron_delivery":
+			_notice(_tr("Job 001 abgeschlossen: Wasserrad, Strommast und Schmelzofen freigeschaltet! +1 Stromslot",
+				"Job 001 complete: Water wheel, power pole and furnace unlocked! +1 power slot"))
+		"metal_ingot_delivery":
+			_notice(_tr("Job 002 abgeschlossen: Constructor und zwei Plattenrezepte freigeschaltet!",
+				"Job 002 complete: Constructor and two plate recipes unlocked!"))
+		"furnace_expansion":
+			_notice(_tr("Nebenauftrag abgeschlossen: +1 Stromslot!",
+				"Side job completed: +1 power slot!"))
 	_refresh_ui()
 
+
+func _set_constructor_recipe(recipe: String) -> void:
+	if not model.buildings.has(inspected) or str(
+		model.buildings[inspected].kind) != "constructor":
+		return
+	if not model.set_constructor_recipe(inspected, recipe):
+		_notice(_tr("Rezeptwechsel nur bei leeren Eingangs- und Ausgangspuffern",
+			"Clear input and output buffers before changing recipes"))
+	_refresh_inspector()
 
 func _set_mode(next_mode: String) -> void:
 	_cancel_select_drag()
@@ -765,6 +799,7 @@ func _refresh_inspector() -> void:
 		_animate_inspector(false)
 		inspector_portrait.visible = false
 		inspector_power_banner.visible = false
+		constructor_recipes.visible = false
 		inspector_title.text = _tr("Kein Gebäude gewählt", "No building selected")
 		inspector_subtitle.text = _tr("AUSWAHLMODUS  [V]", "INSPECT MODE  [V]")
 		inspector_body.text = _tr("Klicke einen Miner, ein Förderband, einen Ofen oder ein Lager. Hier erscheinen Zustand, Inventar und Produktionswerte.",
@@ -794,9 +829,37 @@ func _refresh_inspector() -> void:
 	inspector_progress.visible = true
 	inspector_controls.visible = true
 	rotate_button.disabled = kind in ["depot", "power_pole"]
+	constructor_recipes.visible = kind == "constructor"
 	var label_name := {"miner": _tr("Abbaumaschine", "Mining drill"),
 		"belt": _tr("Förderband", "Conveyor belt"),
 		"smelter": _tr("Schmelzofen", "Smelting furnace"),
+		"constructor": _tr("Constructor", "Constructor"),
+		"constructor":
+			var circuit: Dictionary = model.power.network_stats(inspected)
+			var current_recipe: String = str(machine.recipe)
+			var input_name: String = _tr("Eisenbarren", "Iron ingot") if (
+				current_recipe == "iron_plate") else _tr("Kupferbarren", "Copper ingot")
+			var result_name: String = _tr("Eisenplatte", "Iron plate") if (
+				current_recipe == "iron_plate") else _tr("Kupferplatte", "Copper plate")
+			inspector_body.text = _tr("Leistungsbedarf: 15 kW", "Power demand: 15 kW") + "\n" + (
+				_tr("Netzleistung: %d kW · Netzlast: %d kW",
+					"Grid supply: %d kW · Grid demand: %d kW") % [
+					int(circuit.supply), int(circuit.demand)]) + "\n" + (
+				"%s → %s   (1:1)" % [input_name, result_name]) + "\n" + (
+				_tr("Eingang: %d/8   Ausgang: %d/8",
+					"Input: %d/8   Output: %d/8") % [int(machine.ore),
+					int(machine.output)]) + "\n" + _tr(
+				"Tempo: 1 Platte / 3 Sekunden", "Rate: 1 plate / 3 seconds")
+			inspector_progress.value = clampf(
+				100.0 * float(machine.progress) / 3.0, 0.0, 100.0)
+			var busy: bool = int(machine.ore) > 0 or int(machine.output) > 0 \
+				or float(machine.progress) > 0.0
+			for recipe in constructor_recipe_buttons:
+				var btn: Button = constructor_recipe_buttons[recipe]
+				var chosen: bool = current_recipe == str(recipe)
+				btn.disabled = busy and not chosen
+				btn.button_pressed = chosen
+				MenuSkin.style_button(btn, false, chosen)
 		"storage": _tr("Zwischenlager", "Warehouse"),
 		"depot": _tr("Globales Depot", "Global depot"),
 		"power_pole": _tr("Strommast", "Power pole"),

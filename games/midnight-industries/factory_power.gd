@@ -4,7 +4,7 @@ extends RefCounted
 ## never share power across physically disconnected networks.
 const LINK_RANGE := 5.0
 const GENERATORS := {"water_wheel":{"kw":30, "slots":1}}
-const CONSUMERS := {"smelter":10}
+const CONSUMERS := {"smelter":10, "constructor":15}
 const CONNECTORS := ["power_pole", "water_wheel"]
 var slot_limit := 0
 var slot_used := 0

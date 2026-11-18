@@ -174,6 +174,8 @@ func _run() -> void:
 		return
 	assert(game.build_dock.machine_buttons.has("smelter"))
 	assert(game.model.progression.power_slots == 1)
+	assert(not game.model.is_unlocked("constructor"))
+	assert(game.jobs_view.side_card.visible == false or game.model.progression.is_complete("first_iron_delivery"))
 	game.build_dock._activate_category("energy")
 	if not game.build_dock.machine_buttons.has("power_pole") \
 		or not game.build_dock.machine_buttons.has("water_wheel") \
@@ -214,6 +216,33 @@ func _run() -> void:
 	if not game.inspector_power_banner.visible \
 		or not "NO POWER" in game.inspector_power_label.text:
 		_fail("Disconnected furnace missing prominent No Power inspector banner", game)
+		return
+	game._demolish_selected()
+	game.model.progression.record_delivery("iron_ingot", 50)
+	game.model.progression.record_delivery("copper_ingot", 50)
+	if not game.model.is_unlocked("constructor"):
+		_fail("Metal ingot job did not unlock Constructor", game)
+		return
+	game.build_dock._activate_category("production")
+	if not game.build_dock.machine_buttons.has("constructor"):
+		_fail("Build dock did not display unlocked Constructor", game)
+		return
+	var constructor_at := Vector2i(40, 40)
+	while not game.model.can_place(constructor_at, "constructor"):
+		constructor_at += Vector2i(1, 0)
+	assert(game.model.place(constructor_at, "constructor", 0))
+	game._inspect(constructor_at)
+	if not game.constructor_recipes.visible or not game.inspector_power_banner.visible:
+		_fail("Constructor inspector is missing recipe selection or No Power warning", game)
+		return
+	game._set_constructor_recipe("copper_plate")
+	if game.model.buildings[constructor_at].recipe != "copper_plate":
+		_fail("Constructor recipe buttons failed to change metal plates", game)
+		return
+	game.model.buildings[constructor_at].ore = 2
+	game._set_constructor_recipe("iron_plate")
+	if game.model.buildings[constructor_at].recipe != "copper_plate":
+		_fail("Constructor illegally switched recipes with ingots buffered", game)
 		return
 	game._demolish_selected()
 	game._set_mode("inspect")

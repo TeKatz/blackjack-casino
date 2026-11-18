@@ -65,6 +65,8 @@ func _draw() -> void:
 					_miner_vfx(at, machine, cell)
 				"smelter":
 					_smelter_vfx(at, machine, cell)
+				"constructor":
+					_constructor_vfx(at, machine, cell)
 				"storage":
 					_storage_vfx(at, cell)
 				"depot":
@@ -147,6 +149,24 @@ func _smelter_vfx(at: Vector2, machine: Dictionary, cell: Vector2i) -> void:
 	var progress := clampf(float(machine.progress) / 2.0, 0.0, 1.0)
 	draw_rect(Rect2(at + Vector2(8, 45), Vector2(32, 2)), Color("#171A1C"))
 	draw_rect(Rect2(at + Vector2(8, 45), Vector2(32.0 * progress, 2)), GOLD)
+
+func _constructor_vfx(at: Vector2, machine: Dictionary, cell: Vector2i) -> void:
+	if not model.power.is_powered(cell):
+		return
+	if int(machine.ore) <= 0 and int(machine.output) <= 0:
+		return
+	var center: Vector2 = at + Vector2(26, 22)
+	var strength: float = 0.60 if reduced_motion else 0.50 + sin(tick * 6.0 + cell.x) * 0.22
+	draw_circle(center, 10.0, Color("#3EE0F0", strength * 0.11))
+	draw_circle(center, 4.2, Color("#BCF9FC", strength * 0.37))
+	var ratio: float = clampf(float(machine.progress) / 3.0, 0.0, 1.0)
+	draw_rect(Rect2(at + Vector2(9, 44), Vector2(30, 2)), Color("#132C38"))
+	draw_rect(Rect2(at + Vector2(9, 44), Vector2(30.0 * ratio, 2)),
+		Color("#68D2E8"))
+	if not reduced_motion and effect_quality > 0:
+		var travel := fposmod(tick * 2.2, 1.0)
+		draw_circle(at + Vector2(17 + 12 * travel, 18), 1.5,
+			Color("#FFD18B", 0.65 * (1.0 - travel)))
 
 func _storage_vfx(at: Vector2, cell: Vector2i) -> void:
 	var phase := 0.85 if reduced_motion else 0.75 + sin(tick * 2.4 + cell.x) * 0.20

@@ -7,6 +7,8 @@ const BeltArt = preload("res://factory_belt_art.gd")
 const OreVariants = preload("res://factory_ore_variants.gd")
 const DepotArt = preload("res://factory_depot_art.gd")
 const PowerArt = preload("res://factory_power_art.gd")
+const ConstructorArt = preload("res://factory_constructor_art.gd")
+const ItemCatalog = preload("res://item_catalog.gd")
 
 func _initialize() -> void:
 	call_deferred("_run")
@@ -195,6 +197,19 @@ func _run() -> void:
 		if wheel.get_image().get_used_rect().size.y < (220 if not horizontal else 90):
 			_fail("Waterwheel sprite does not contain both land and water machinery")
 			return
+	for direction in range(4):
+		var constructor: Texture2D = ConstructorArt.texture(direction)
+		if constructor == null or constructor.get_size() != Vector2(144, 144):
+			_fail("Constructor must have a 144px illustration in every facing direction")
+			return
+		if constructor.get_image().get_used_rect().size.x < 85:
+			_fail("Constructor illustration is blank or too small")
+			return
+	for material in ["iron_plate", "copper_plate"]:
+		var sheet: Texture2D = ItemCatalog.icon(material)
+		if sheet == null or sheet.get_width() < 128:
+			_fail("High-detail metal plate icon missing: " + material)
+			return
 	if Art.machine_destination("smelter", Vector2.ZERO).position.y >= 0.0:
 		_fail("Furnace outlet was not moved up to belt height")
 		return
@@ -227,7 +242,7 @@ func _run() -> void:
 	if dock._open:
 		_fail("Machine shelf must retract in inspect mode")
 		return
-	for kind in ["miner", "belt", "smelter", "storage", "depot", "power_pole", "water_wheel"]:
+	for kind in ["miner", "belt", "smelter", "storage", "depot", "power_pole", "water_wheel", "constructor"]:
 		if game._machine_icon(kind) == null \
 			or game._machine_icon(kind).get_width() < 64:
 			_fail("Machine illustration missing for " + kind)
