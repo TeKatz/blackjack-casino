@@ -1,0 +1,67 @@
+name: Casino Anomaly Godot Smoke
+
+on:
+  pull_request:
+    paths:
+      - 'games/casino-anomaly/**'
+      - '.github/workflows/casino-anomaly-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  godot-import-and-scene:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify original Poly Haven texture maps
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path("games/casino-anomaly")
+          asset_dir = root / "assets/oak_wood_planks"
+          info = json.loads((asset_dir / "source.json").read_text(encoding="utf-8"))
+          assert info["asset"] == "oak_wood_planks"
+          assert info["license"] == "CC0-1.0"
+          assert len(info["maps"]) == 3
+          for filename, metadata in info["maps"].items():
+              data = (asset_dir / filename).read_bytes()
+              assert hashlib.sha256(data).hexdigest() == metadata["sha256"]
+              assert len(data) == metadata["bytes"]
+              assert metadata["url"].startswith("https://dl.polyhaven.org/")
+          material = (root / "floor_material.tres").read_text(encoding="utf-8")
+          for filename in info["maps"]:
+              assert filename in material, f"Material must reference source map: {filename}"
+          print("Casino Anomaly asset consistency PASS")
+          PY
+
+      - name: Install Godot 4.5.1 editor
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 -o /tmp/godot.zip https://github.com/godotengine/godot-builds/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip
+          unzip -q /tmp/godot.zip -d /tmp/casino-anomaly-godot
+          chmod +x /tmp/casino-anomaly-godot/Godot_v4.5.1-stable_linux.x86_64
+          echo "/tmp/casino-anomaly-godot" >> "$GITHUB_PATH"
+
+      - name: Import scene and validate headless launch
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot=Godot_v4.5.1-stable_linux.x86_64
+          project=games/casino-anomaly
+          "$godot" --headless --path "$project" --editor --import 2>&1 | tee /tmp/casino-anomaly-import.log
+          if grep -Eq 'SCRIPT ERROR:|Parse Error:|Failed to load|ERROR:' /tmp/casino-anomaly-import.log; then
+            exit 1
+          fi
+          "$godot" --headless --path "$project" --quit-after 20 2>&1 | tee /tmp/casino-anomaly-run.log
+          if grep -Eq 'SCRIPT ERROR:|Parse Error:|Failed to load|ERROR:' /tmp/casino-anomaly-run.log; then
+            exit 1
+          fi
+          echo 'Casino Anomaly Godot floor smoke PASS'

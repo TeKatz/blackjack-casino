@@ -1,0 +1,94 @@
+name: Casino Anomaly Oak Floor Asset Test
+
+on:
+  push:
+    branches:
+      - feature/casino-anomaly-oak-floor
+    paths:
+      - .github/workflows/casino-anomaly-oak-floor.yml
+      - games/casino-anomaly/**
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import-textures:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout test branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Validate repository documentation contract
+        run: python3 tools/check_repo_contract.py
+
+      - name: Download Poly Haven 2K PBR maps
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=games/casino-anomaly/assets/oak_wood_planks
+          mkdir -p "$out"
+          base=https://dl.polyhaven.org/file/ph-assets/Textures
+          curl --fail --location --silent --show-error --retry 3 --max-time 180 \
+            -H 'User-Agent: TheMidnightClubAssetImporter/1.0' \
+            "$base/jpg/2k/oak_wood_planks/oak_wood_planks_diff_2k.jpg" \
+            --output "$out/oak_wood_planks_diff_2k.jpg"
+          curl --fail --location --silent --show-error --retry 3 --max-time 180 \
+            -H 'User-Agent: TheMidnightClubAssetImporter/1.0' \
+            "$base/jpg/2k/oak_wood_planks/oak_wood_planks_rough_2k.jpg" \
+            --output "$out/oak_wood_planks_rough_2k.jpg"
+          curl --fail --location --silent --show-error --retry 3 --max-time 180 \
+            -H 'User-Agent: TheMidnightClubAssetImporter/1.0' \
+            "$base/png/2k/oak_wood_planks/oak_wood_planks_nor_gl_2k.png" \
+            --output "$out/oak_wood_planks_nor_gl_2k.png"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          folder = Path("games/casino-anomaly/assets/oak_wood_planks")
+          sources = {
+              "oak_wood_planks_diff_2k.jpg": "jpg/2k",
+              "oak_wood_planks_rough_2k.jpg": "jpg/2k",
+              "oak_wood_planks_nor_gl_2k.png": "png/2k",
+          }
+          provenance = {
+              "asset": "oak_wood_planks",
+              "sourcePage": "https://polyhaven.com/a/oak_wood_planks",
+              "creator": "Dimitrios Savva",
+              "license": "CC0-1.0",
+              "maps": {},
+          }
+          for filename, path_kind in sources.items():
+              contents = (folder / filename).read_bytes()
+              is_png = filename.endswith(".png")
+              signature = contents[:8] == bytes([137, 80, 78, 71, 13, 10, 26, 10]) if is_png else contents[:3] == bytes([255, 216, 255])
+              if not signature or not 4096 < len(contents) < 24 * 1024 * 1024:
+                  raise SystemExit(f"Invalid image payload or size: {filename}")
+              url = f"https://dl.polyhaven.org/file/ph-assets/Textures/{path_kind}/oak_wood_planks/{filename}"
+              provenance["maps"][filename] = {
+                  "url": url,
+                  "sha256": hashlib.sha256(contents).hexdigest(),
+                  "bytes": len(contents),
+              }
+          (folder / "source.json").write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
+          print("Validated 3 source image maps for Godot import")
+          PY
+
+      - name: Commit verified image maps to test branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- games/casino-anomaly/assets/oak_wood_planks
+          if git diff --cached --quiet; then
+            echo 'Texture maps are already current.'
+          else
+            git commit -m 'assets(casino-anomaly): import Poly Haven oak floor PBR maps'
+            git push origin HEAD:refs/heads/feature/casino-anomaly-oak-floor
+          fi
